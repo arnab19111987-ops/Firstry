@@ -1,0 +1,19 @@
+{
+  "name": "firsttry-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'skip lint for dashboard skeleton'",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "build": "node -e \"console.log('dashboard build placeholder')\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^8.57.0"
+  }
+}

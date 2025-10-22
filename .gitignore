@@ -1,0 +1,61 @@
+/.venv
+/.pytest_cache
+/.mypy_cache
+/.coverage
+/.cache
+/.pytest_cache/
+/.venv/
+venv/
+env/
+ENV/
+node_modules/
+**/node_modules/
+dist/
+build/
+coverage/
+coverage/**
+.DS_Store
+/.idea
+.vscode/
+*.log
+*.pyc
+__pycache__/
+*.egg-info/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+.eggs/
+*.egg-info/
+/.tox/
+/.nox/
+/.coverage
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / JS
+node_modules/
+coverage/
+dist/
+build/
+*.log
+pnpm-lock.yaml
+yarn.lock
+
+# Next.js / web
+.next/
+.turbo/
+
+# Misc
+.env
+.env.*
