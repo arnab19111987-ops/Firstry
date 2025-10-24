@@ -5,7 +5,9 @@ import logging
 def test_runner_stubs_emit_debug_logs(caplog):
     caplog.set_level(logging.DEBUG, logger="firsttry.cli")
 
-    m = importlib.import_module("firsttry.cli")
+    # Import a fresh copy of the module to avoid interference from earlier
+    # tests that may monkeypatch attributes on the already-imported module.
+    m = importlib.reload(importlib.import_module("firsttry.cli"))
 
     # Call a couple of stubbed runners
     r1 = m.runners.run_ruff(["file1.py"])
