@@ -3,23 +3,12 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
+    environment: 'node',
+    include: ['test/**/*.test.ts', 'test/**/*.test.tsx', 'test/**/*.test.js'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'lcov', 'html'],
       reportsDirectory: 'coverage'
     }
   }
 })
-import { defineConfig } from "vitest/config";
-
-export default defineConfig({
-  test: {
-    globals: true,
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "lcov"],
-      reportsDirectory: "coverage"
-    },
-    include: ["test/**/*.test.ts"]
-  }
-});

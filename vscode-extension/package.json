@@ -1,41 +1,17 @@
 {
-  "name": "vscode-extension",
+  "name": "firsttry-vscode-extension",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "displayName": "FirstTry",
   "scripts": {
     "lint": "echo 'skip lint for vscode-extension skeleton'",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "build": "tsc -p tsconfig.json"
   },
-  "devDependencies": {
-    "typescript": "^5.5.0",
-    "vitest": "^2.0.0",
-    "@types/node": "^20.11.0",
-    "@types/vscode": "^1.88.0",
-    "@vitest/coverage-v8": "^2.0.0"
-  }
-}
-{
-  "name": "firsttry-vscode-extension",
-  "displayName": "FirstTry",
-  "version": "0.1.0",
-  "publisher": "your-id",
-  "engines": { "vscode": "^1.90.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onCommand:firsttry.hello"],
-  "main": "./dist/extension.js",
-  "scripts": {
-    "lint": "eslint . || echo 'skip lint'",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run --coverage",
-    "build": "tsc -p tsconfig.json"
-  },
   "contributes": {
-    "commands": [
-      { "command": "firsttry.hello", "title": "FirstTry: Hello" }
-    ]
+    "commands": [{ "command": "firsttry.hello", "title": "FirstTry: Hello" }]
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
