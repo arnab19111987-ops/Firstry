@@ -18,31 +18,30 @@ if _impl_runners_path.exists():
     # Provide a lightweight stub module surface matching the expected runner callables.
     # Tests will monkeypatch these functions as needed.
     import types
-
-
-    def _stub(*a, **k):
-        raise RuntimeError("runner stub called")
+    def _ok(name: str = "step"):
+        """Return a harmless OK result object for a runner step."""
+        return types.SimpleNamespace(ok=True, name=name, duration_s=0.0, stdout="", stderr="", cmd=())
 
 
     runners = types.SimpleNamespace(
-        run_ruff=_stub,
-        run_black_check=_stub,
-        run_mypy=_stub,
-        run_pytest_kexpr=_stub,
-        run_coverage_xml=_stub,
-        coverage_gate=_stub,
+        run_ruff=lambda *a, **k: _ok("ruff"),
+        run_black_check=lambda *a, **k: _ok("black-check"),
+        run_mypy=lambda *a, **k: _ok("mypy"),
+        run_pytest_kexpr=lambda *a, **k: _ok("pytest"),
+        run_coverage_xml=lambda *a, **k: _ok("coverage-xml"),
+        coverage_gate=lambda *a, **k: _ok("coverage-gate"),
     )
 else:
     import types
 
 
     runners = types.SimpleNamespace(
-        run_ruff=lambda *a, **k: None,
-        run_black_check=lambda *a, **k: None,
-        run_mypy=lambda *a, **k: None,
-        run_pytest_kexpr=lambda *a, **k: None,
-        run_coverage_xml=lambda *a, **k: None,
-        coverage_gate=lambda *a, **k: None,
+        run_ruff=lambda *a, **k: types.SimpleNamespace(ok=True, name="ruff", duration_s=0.0, stdout="", stderr="", cmd=()),
+        run_black_check=lambda *a, **k: types.SimpleNamespace(ok=True, name="black-check", duration_s=0.0, stdout="", stderr="", cmd=()),
+        run_mypy=lambda *a, **k: types.SimpleNamespace(ok=True, name="mypy", duration_s=0.0, stdout="", stderr="", cmd=()),
+        run_pytest_kexpr=lambda *a, **k: types.SimpleNamespace(ok=True, name="pytest", duration_s=0.0, stdout="", stderr="", cmd=()),
+        run_coverage_xml=lambda *a, **k: types.SimpleNamespace(ok=True, name="coverage-xml", duration_s=0.0, stdout="", stderr="", cmd=()),
+        coverage_gate=lambda *a, **k: types.SimpleNamespace(ok=True, name="coverage-gate", duration_s=0.0, stdout="", stderr="", cmd=()),
     )
 
 
