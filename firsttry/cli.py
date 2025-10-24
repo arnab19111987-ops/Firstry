@@ -15,34 +15,49 @@ from .gates import run_pre_commit_gate
 # Attempt to import the runners module implementation from tools/firsttry if present
 _repo_root = Path(__file__).resolve().parent
 _impl_runners_path = _repo_root.parent / "tools" / "firsttry" / "firsttry" / "runners.py"
-if _impl_runners_path.exists():
-    # Provide a lightweight stub module surface matching the expected runner callables.
-    # Tests will monkeypatch these functions as needed.
-    import types
+import importlib.util
+import types
 
-    logger = logging.getLogger(__name__)
+# Decide whether to try importing the real runners implementation.
+_use_real = os.environ.get("FIRSTTRY_USE_REAL_RUNNERS", "").lower() in ("1", "true", "yes")
+logger = logging.getLogger(__name__)
 
-    def _make_stub(name: str):
-        def _fn(*a, **k):
-            logger.debug("runners.stub %s called; args=%r kwargs=%r", name, a, k)
-            return types.SimpleNamespace(ok=True, name=name, duration_s=0.0, stdout="", stderr="", cmd=())
+if _use_real and _impl_runners_path.exists():
+    # Try to dynamically import the implementation from tools/firsttry.
+    try:
+        spec = importlib.util.spec_from_file_location("firsttry.runners_impl", str(_impl_runners_path))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[attr-defined]
 
-        return _fn
+        # Pull expected callables if present; fall back to stubs for missing names.
+        def _wrap(name: str, default_name: str):
+            if hasattr(mod, name):
+                logger.debug("Using real runner %s from %s", name, _impl_runners_path)
+                return getattr(mod, name)
+            logger.warning("Real runners module missing %s; using stub", name)
+            return _make_stub(default_name)
 
+        def _make_stub(name: str):
+            def _fn(*a, **k):
+                logger.debug("runners.stub %s called; args=%r kwargs=%r", name, a, k)
+                return types.SimpleNamespace(ok=True, name=name, duration_s=0.0, stdout="", stderr="", cmd=())
 
-    runners = types.SimpleNamespace(
-        run_ruff=_make_stub("ruff"),
-        run_black_check=_make_stub("black-check"),
-        run_mypy=_make_stub("mypy"),
-        run_pytest_kexpr=_make_stub("pytest"),
-        run_coverage_xml=_make_stub("coverage-xml"),
-        coverage_gate=_make_stub("coverage-gate"),
-    )
-else:
-    import types
+            return _fn
 
-    logger = logging.getLogger(__name__)
+        runners = types.SimpleNamespace(
+            run_ruff=_wrap("run_ruff", "ruff"),
+            run_black_check=_wrap("run_black_check", "black-check"),
+            run_mypy=_wrap("run_mypy", "mypy"),
+            run_pytest_kexpr=_wrap("run_pytest_kexpr", "pytest"),
+            run_coverage_xml=_wrap("run_coverage_xml", "coverage-xml"),
+            coverage_gate=_wrap("coverage_gate", "coverage-gate"),
+        )
+    except Exception:
+        logger.exception("Failed to import real runners from %s; falling back to safe stubs", _impl_runners_path)
+        _use_real = False
 
+if not _use_real:
+    # Safe stub implementations that log when used.
     def _make_stub(name: str):
         def _fn(*a, **k):
             logger.debug("runners.stub %s called; args=%r kwargs=%r", name, a, k)
