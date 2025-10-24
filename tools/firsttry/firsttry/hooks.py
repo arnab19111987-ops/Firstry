@@ -17,3 +17,26 @@ def install_pre_commit_hook(repo_root: Path | None = None) -> Path:
     hook.write_text(HOOK_TEXT, encoding="utf-8")
     os.chmod(hook, os.stat(hook).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     return hook
+
+
+def install_git_hooks(repo_root: Path | None = None) -> tuple[Path, Path]:
+    """
+    Install both pre-commit and pre-push hooks and return their paths.
+
+    This is a small convenience wrapper used by tests and by the
+    simplified CLI implementation.
+    """
+    root = repo_root or Path.cwd()
+    pre_commit = install_pre_commit_hook(root)
+    pre_push = root / ".git" / "hooks" / "pre-push"
+    pre_push.parent.mkdir(parents=True, exist_ok=True)
+    # simple pre-push that runs the pre-push gate
+    pre_push.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+python -m firsttry run --gate pre-push
+""",
+        encoding="utf-8",
+    )
+    os.chmod(pre_push, os.stat(pre_push).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return pre_commit, pre_push
