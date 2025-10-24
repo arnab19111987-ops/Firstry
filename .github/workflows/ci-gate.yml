@@ -1,0 +1,92 @@
+name: ci-gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    name: Lint GitHub workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install actionlint
+        run: |
+          curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
+          echo "$PWD/bin" >> $GITHUB_PATH
+      - name: Run actionlint
+        run: actionlint
+
+  python:
+    name: Python gate (ruff/mypy/pytest/coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('tools/firsttry/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Create venv & install deps
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install -U pip
+          pip install ruff black mypy pytest coverage click rich PyYAML
+          pip install -e tools/firsttry
+
+      - name: Ruff
+        run: . .venv/bin/activate && ruff check tools/firsttry
+
+      - name: Black (check only)
+        run: . .venv/bin/activate && black --check tools/firsttry
+
+      - name: Mypy
+        run: . .venv/bin/activate && mypy tools/firsttry
+
+      - name: Pytest (fast)
+        run: . .venv/bin/activate && pytest -q tools/firsttry/tests
+
+      - name: Coverage XML
+        run: |
+          . .venv/bin/activate
+          coverage run -m pytest -q tools/firsttry/tests
+          coverage xml -o coverage.xml
+
+      - name: Coverage gate (80%)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys, xml.etree.ElementTree as ET
+          xml = Path("coverage.xml")
+          if not xml.exists():
+              print("coverage.xml missing"); sys.exit(1)
+          rate = float(ET.parse(str(xml)).getroot().attrib.get("line-rate", "0"))*100
+          print(f"coverage: {rate:.2f}% (threshold 80%)")
+          sys.exit(0 if rate >= 80.0 else 1)
+          PY
+
+      - name: Upload coverage.xml
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage.xml
+          path: coverage.xml

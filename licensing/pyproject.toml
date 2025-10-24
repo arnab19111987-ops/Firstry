@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firsttry-licensing"
+version = "0.1.0"
+description = "License server for FirstTry"
+requires-python = ">=3.11"
+dependencies = ["fastapi>=0.115", "uvicorn>=0.30.0", "pydantic>=2.8"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

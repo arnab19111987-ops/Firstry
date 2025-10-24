@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firsttry"
+version = "0.1.0"
+description = "FirstTry CLI: pre-commit CI-mirror gates for monorepos"
+authors = [{ name = "you" }]
+requires-python = ">=3.11"
+dependencies = [
+  "click>=8.1",
+  "rich>=13.7",
+  "PyYAML>=6.0",
+]
+
+[project.scripts]
+firsttry = "firsttry.cli:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["firsttry"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tools/firsttry/tests"]

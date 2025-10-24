@@ -1,0 +1,65 @@
+name: firsttry-ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firsttry-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-cli:
+    name: firsttry gate (ruff/black/mypy/pytest/coverage + license)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps (CLI + test runners)
+        run: |
+          python -m pip install -U pip
+          pip install ruff black mypy pytest coverage click rich PyYAML
+          pip install -e tools/firsttry
+
+      - name: Install licensing deps
+        run: |
+          pip install fastapi uvicorn pydantic
+
+      - name: Boot licensing server (background)
+        env:
+          FIRSTTRY_KEYS: "ABC123:featX|featY"
+        run: |
+          export PYTHONPATH=licensing
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8081 >/tmp/lic.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8081/health >/dev/null; then
+              echo "Licensing API healthy"; break
+            fi
+            sleep 1
+          done
+          echo "Licensing logs (tail):"
+          tail -n 50 /tmp/lic.log || true
+
+      - name: Run firsttry gate with license requirement
+        env:
+          FIRSTTRY_LICENSE_KEY: "ABC123"
+          FIRSTTRY_LICENSE_URL: "http://127.0.0.1:8081"
+        run: |
+          python -m firsttry run --gate pre-commit --require-license
+
+      - name: Upload coverage.xml (from CLI gate)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firsttry-coverage
+          path: coverage.xml
+          if-no-files-found: warn
