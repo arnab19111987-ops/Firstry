@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 import argparse
+import logging
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -18,30 +19,45 @@ if _impl_runners_path.exists():
     # Provide a lightweight stub module surface matching the expected runner callables.
     # Tests will monkeypatch these functions as needed.
     import types
-    def _ok(name: str = "step"):
-        """Return a harmless OK result object for a runner step."""
-        return types.SimpleNamespace(ok=True, name=name, duration_s=0.0, stdout="", stderr="", cmd=())
+
+    logger = logging.getLogger(__name__)
+
+    def _make_stub(name: str):
+        def _fn(*a, **k):
+            logger.debug("runners.stub %s called; args=%r kwargs=%r", name, a, k)
+            return types.SimpleNamespace(ok=True, name=name, duration_s=0.0, stdout="", stderr="", cmd=())
+
+        return _fn
 
 
     runners = types.SimpleNamespace(
-        run_ruff=lambda *a, **k: _ok("ruff"),
-        run_black_check=lambda *a, **k: _ok("black-check"),
-        run_mypy=lambda *a, **k: _ok("mypy"),
-        run_pytest_kexpr=lambda *a, **k: _ok("pytest"),
-        run_coverage_xml=lambda *a, **k: _ok("coverage-xml"),
-        coverage_gate=lambda *a, **k: _ok("coverage-gate"),
+        run_ruff=_make_stub("ruff"),
+        run_black_check=_make_stub("black-check"),
+        run_mypy=_make_stub("mypy"),
+        run_pytest_kexpr=_make_stub("pytest"),
+        run_coverage_xml=_make_stub("coverage-xml"),
+        coverage_gate=_make_stub("coverage-gate"),
     )
 else:
     import types
 
+    logger = logging.getLogger(__name__)
+
+    def _make_stub(name: str):
+        def _fn(*a, **k):
+            logger.debug("runners.stub %s called; args=%r kwargs=%r", name, a, k)
+            return types.SimpleNamespace(ok=True, name=name, duration_s=0.0, stdout="", stderr="", cmd=())
+
+        return _fn
+
 
     runners = types.SimpleNamespace(
-        run_ruff=lambda *a, **k: types.SimpleNamespace(ok=True, name="ruff", duration_s=0.0, stdout="", stderr="", cmd=()),
-        run_black_check=lambda *a, **k: types.SimpleNamespace(ok=True, name="black-check", duration_s=0.0, stdout="", stderr="", cmd=()),
-        run_mypy=lambda *a, **k: types.SimpleNamespace(ok=True, name="mypy", duration_s=0.0, stdout="", stderr="", cmd=()),
-        run_pytest_kexpr=lambda *a, **k: types.SimpleNamespace(ok=True, name="pytest", duration_s=0.0, stdout="", stderr="", cmd=()),
-        run_coverage_xml=lambda *a, **k: types.SimpleNamespace(ok=True, name="coverage-xml", duration_s=0.0, stdout="", stderr="", cmd=()),
-        coverage_gate=lambda *a, **k: types.SimpleNamespace(ok=True, name="coverage-gate", duration_s=0.0, stdout="", stderr="", cmd=()),
+        run_ruff=_make_stub("ruff"),
+        run_black_check=_make_stub("black-check"),
+        run_mypy=_make_stub("mypy"),
+        run_pytest_kexpr=_make_stub("pytest"),
+        run_coverage_xml=_make_stub("coverage-xml"),
+        coverage_gate=_make_stub("coverage-gate"),
     )
 
 
