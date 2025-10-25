@@ -106,10 +106,13 @@ jobs:
             exit 1;
           }
 
-      - name: Package Extension Artifact
+      - name: Package VS Code extension
         if: steps.vscheck.outputs.present == 'true'
-        working-directory: vscode-extension
         run: |
+          cd vscode-extension
+          npm ci
+          npm run build
+          npm test
           npm run package || {
             echo "::error ::vsce packaging failed";
             exit 1;

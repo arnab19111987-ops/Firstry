@@ -1,0 +1,19 @@
+[run]
+branch = True
+source =
+    firsttry
+    licensing/app
+    tools/firsttry/tests
+omit =
+    */site-packages/*
+    tools/firsttry/firsttry/runners.py
+    tools/firsttry/firsttry/*
+    firsttry/runners.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:    
+    # defensive license checks etc.
+    raise NotImplementedError
+precision = 1

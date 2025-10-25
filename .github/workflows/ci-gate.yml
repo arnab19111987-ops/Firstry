@@ -54,9 +54,9 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest -q
-          coverage xml
-          coverage report -m
+          coverage run --rcfile=.coveragerc -m pytest -q
+          coverage xml --rcfile=.coveragerc
+          coverage report -m --rcfile=.coveragerc
 
       - name: Enforce temporary relaxed coverage gate (55%)
         run: |
