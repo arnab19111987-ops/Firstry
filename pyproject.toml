@@ -20,7 +20,9 @@ classifiers = [
 firsttry = "firsttry.cli:main"
 
 [tool.setuptools]
-packages = ["firsttry"]
+# Use setuptools' package discovery to ensure all `firsttry*` modules are included
+[tool.setuptools.packages.find]
+include = ["firsttry*"]
 
 [tool.mypy]
 exclude = [
@@ -36,4 +38,8 @@ dev = [
     "pytest",
     "coverage",
     "types-PyYAML",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "sqlalchemy",
 ]
