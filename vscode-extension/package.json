@@ -1,19 +1,31 @@
 {
-  "name": "firsttry-gate",
-  "displayName": "FirstTry Gate",
-  "description": "Run FirstTry local gate (lint/tests/probes) from VS Code.",
+  "name": "firsttry-extension",
+  "displayName": "FirstTry",
+  "description": "Run FirstTry doctor and view health reports in VS Code.",
   "version": "0.0.1",
-  "publisher": "you",
+  "publisher": "firsttry",
   "engines": { "vscode": "^1.80.0" },
-  "activationEvents": [ "onCommand:firsttry.runGate" ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "firsttry.runGate",
-        "title": "FirstTry: Run Gate",
-        "category": "FirstTry"
+        "command": "firsttry.runDoctor",
+        "title": "FirstTry: Run Doctor"
       }
     ]
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "vitest run",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   }
 }

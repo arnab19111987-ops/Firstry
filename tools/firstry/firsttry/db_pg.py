@@ -105,10 +105,7 @@ def _alembic_autogen_pg(import_target: str, db_url: str) -> dict:
         script_text = rev_file.read_text(encoding="utf-8")
 
         # Presence of any upgrade ops means drift.
-        has_drift = (
-            "def upgrade()" in script_text
-            and "pass" not in script_text
-        )
+        has_drift = "def upgrade()" in script_text and "pass" not in script_text
 
         ops = parse_destructive_ops(script_text)
 
@@ -162,8 +159,7 @@ def run_pg_probe(
     if destructive_ops and not allow_destructive:
         # Hard fail
         raise RuntimeError(
-            "Destructive migration ops detected: "
-            + "; ".join(destructive_ops)
+            "Destructive migration ops detected: " + "; ".join(destructive_ops)
         )
 
     return {

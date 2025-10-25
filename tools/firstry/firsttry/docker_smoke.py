@@ -27,7 +27,9 @@ def build_compose_cmds(compose_file: str = "docker-compose.yml") -> Tuple[str, s
     return up_cmd, down_cmd
 
 
-def check_health(url: str = "http://localhost:8000/healthz", timeout: float = 5.0) -> bool:
+def check_health(
+    url: str = "http://localhost:8000/healthz", timeout: float = 5.0
+) -> bool:
     """
     Returns True if GET <url> returns HTTP 200 within timeout seconds.
     Simple polling loop.
@@ -88,7 +90,7 @@ def run_docker_smoke(
         "up_ok": up_ok,
         "health_ok": health_ok,
         "down_ok": down_ok,
-        "error": None
-        if (up_ok and health_ok and down_ok)
-        else "Health or teardown failed",
+        "error": (
+            None if (up_ok and health_ok and down_ok) else "Health or teardown failed"
+        ),
     }

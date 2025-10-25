@@ -6,11 +6,11 @@
 Public API:
     run_sqlite_probe(import_target: str = "backend") -> dict
 """
+
 from __future__ import annotations
 
 import importlib
 import os
-import sys
 import tempfile
 import time
 from pathlib import Path
@@ -232,8 +232,9 @@ def _run_alembic_autogen(import_target: str, db_url: str) -> dict:
         script_text = rev_file.read_text(encoding="utf-8")
 
         # Heuristic: if upgrade() body is only "pass", no drift.
-        has_drift = "def upgrade()" in script_text and "pass" not in _extract_upgrade_body(
-            script_text
+        has_drift = (
+            "def upgrade()" in script_text
+            and "pass" not in _extract_upgrade_body(script_text)
         )
 
         return {
@@ -302,7 +303,5 @@ def run_sqlite_probe(import_target: str = "backend") -> dict:
         "import_ok": True,
         "import_error": None,
         "drift": drift_status,
-        "details": (
-            "Import ok" if drift_status == "none" else "Schema drift detected"
-        ),
+        "details": ("Import ok" if drift_status == "none" else "Schema drift detected"),
     }
