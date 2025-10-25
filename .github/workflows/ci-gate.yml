@@ -22,9 +22,10 @@ jobs:
       - name: Install actionlint
         run: |
           curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
-          echo "$PWD/bin" >> $GITHUB_PATH
+          # download-actionlint places the binary at $PWD/actionlint; ensure we can run it directly
+          echo "$PWD" >> $GITHUB_PATH
       - name: Run actionlint
-        run: actionlint
+        run: $PWD/actionlint || $PWD/actionlint -version
 
   python:
     name: Python gate (ruff/mypy/pytest/coverage)
@@ -50,7 +51,7 @@ jobs:
           python -m venv .venv
           . .venv/bin/activate
           python -m pip install -U pip
-          pip install ruff black mypy pytest coverage click rich PyYAML
+          pip install ruff black mypy pytest coverage click rich PyYAML types-PyYAML
           pip install -e tools/firsttry
 
       - name: Ruff
