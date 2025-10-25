@@ -21,6 +21,8 @@ firsttry = "firsttry.cli:main"
 
 [tool.setuptools]
 # Use setuptools' package discovery to ensure all `firsttry*` modules are included
+[tool.setuptools]
+package-dir = {"" = "."}
 [tool.setuptools.packages.find]
 include = ["firsttry*"]
 
@@ -38,6 +40,7 @@ dev = [
     "pytest",
     "coverage",
     "types-PyYAML",
+    "PyYAML",
     "fastapi",
     "uvicorn",
     "httpx",
