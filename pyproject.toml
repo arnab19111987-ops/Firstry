@@ -16,13 +16,36 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 
+# runtime deps for the CLI
+dependencies = [
+    "PyYAML",
+]
+
 [project.scripts]
 firsttry = "firsttry.cli:main"
 
-[tool.setuptools]
-# Use setuptools' package discovery to ensure all `firsttry*` modules are included
+[project.optional-dependencies]
+dev = [
+    # quality / tooling
+    "mypy",
+    "ruff",
+    "pytest",
+    "coverage",
+
+    # typing helpers
+    "types-PyYAML",
+
+    # libs required by tests
+    "PyYAML",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "sqlalchemy",
+]
+
 [tool.setuptools]
 package-dir = {"" = "."}
+
 [tool.setuptools.packages.find]
 include = ["firsttry*"]
 
@@ -31,18 +54,61 @@ exclude = [
     "^tools/",
     "^my-monorepo/",
 ]
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firsttry"
+version = "0.1.0"
+description = "Ship code that passes CI on the first try."
+authors = [
+    { name = "FirstTry", email = "founder@example.com" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+# runtime dependencies for the CLI
+dependencies = [
+    "PyYAML",
+]
+
+[project.scripts]
+firsttry = "firsttry.cli:main"
 
 [project.optional-dependencies]
-# Development / quality tooling used by CI and local `make check`.
 dev = [
+    # quality/tooling
     "mypy",
     "ruff",
     "pytest",
     "coverage",
+
+    # typing helpers
     "types-PyYAML",
+
+    # libs the tests rely on
     "PyYAML",
     "fastapi",
     "uvicorn",
     "httpx",
     "sqlalchemy",
+]
+
+[tool.setuptools]
+# tell setuptools how to find our package
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+# include the firsttry package and all of its modules
+include = ["firsttry*"]
+
+[tool.mypy]
+exclude = [
+    "^tools/",
+    "^my-monorepo/",
 ]
