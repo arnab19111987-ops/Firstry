@@ -33,8 +33,12 @@ jobs:
           python -m pip install --upgrade pip
           # install your package editable so imports work
           python -m pip install -e .
-          # test tooling
-          python -m pip install pytest coverage
+          # install the tools/firsttry package (some tests import from tools/firsttry)
+          if [ -d "tools/firsttry" ]; then
+            python -m pip install -e tools/firsttry || true
+          fi
+          # test tooling and runtime deps required by tests
+          python -m pip install pytest coverage click PyYAML types-PyYAML sqlalchemy fastapi uvicorn pydantic httpx rich || true
 
       - name: Run tests with coverage
         run: |
