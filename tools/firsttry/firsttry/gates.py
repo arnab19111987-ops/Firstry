@@ -14,7 +14,6 @@ from typing import List, Tuple
 
 import importlib.machinery
 import importlib.util
-import types
 import traceback
 
 
@@ -44,7 +43,9 @@ def _locate_and_load_impl() -> object:
         repo_root = highest_found
     else:
         # fallback to a fixed relative guess (three levels up from shim)
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        repo_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        )
 
     candidates = [
         os.path.join(repo_root, "tools", "firstry", "firsttry", "gates.py"),
@@ -80,7 +81,13 @@ def _locate_and_load_impl() -> object:
     if last_exc is not None:
         msg_lines.append("")
         msg_lines.append("Last loader exception:")
-        msg_lines.append("".join(traceback.format_exception(type(last_exc), last_exc, last_exc.__traceback__)))
+        msg_lines.append(
+            "".join(
+                traceback.format_exception(
+                    type(last_exc), last_exc, last_exc.__traceback__
+                )
+            )
+        )
 
     raise ImportError("\n".join(msg_lines))
 
@@ -95,6 +102,7 @@ _impl = _locate_and_load_impl()
 if hasattr(_impl, "run_gate"):
     run_gate = _impl.run_gate
 else:
+
     def run_gate(which: str):
         if which == "pre-commit":
             if hasattr(_impl, "run_pre_commit_gate"):
@@ -107,6 +115,7 @@ else:
             if hasattr(_impl, "run_pre_commit_gate"):
                 return _impl.run_pre_commit_gate()
             raise AttributeError("underlying gates impl has no pre-push runner")
+
 
 # Historical convenience functions that some callers/tests use
 if hasattr(_impl, "run_pre_commit_gate"):

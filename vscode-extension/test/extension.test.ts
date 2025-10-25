@@ -5,7 +5,13 @@ vi.mock('vscode', () => {
   const registered: Array<{ command: string; cb: Function }> = []
   return {
     window: {
-      showInformationMessage: vi.fn((msg: string) => msg),
+      createOutputChannel: vi.fn(() => ({
+        appendLine: vi.fn(),
+        show: vi.fn(),
+      })),
+    },
+    workspace: {
+      workspaceFolders: [],
     },
     commands: {
       registerCommand: vi.fn((command: string, cb: Function) => {
@@ -20,6 +26,13 @@ vi.mock('vscode', () => {
   }
 })
 
+// Mock child_process
+vi.mock('child_process', () => ({
+  exec: vi.fn((_cmd: string, _opts: any, cb: any) => {
+    cb(null, '# FirstTry Doctor Report\nHealth: OK\n', '')
+  }),
+}))
+
 import * as vscode from 'vscode' // resolved to our mock above
 import { activate, deactivate } from '../src/extension.js'
 
@@ -29,11 +42,11 @@ describe('FirstTry VS Code extension', () => {
     ;(vscode as any).__internal.getRegistered().length = 0
   })
 
-  it('registers the hello command on activate', () => {
+  it('registers the runDoctor command on activate', () => {
     const context = { subscriptions: [] } as unknown as import('vscode').ExtensionContext
     activate(context)
     const regs = (vscode as any).__internal.getRegistered()
-    expect(regs.some((r: any) => r.command === 'firsttry.hello')).toBe(true)
+    expect(regs.some((r: any) => r.command === 'firsttry.runDoctor')).toBe(true)
     expect(context.subscriptions.length).toBeGreaterThan(0)
   })
 

@@ -38,5 +38,7 @@ python -m firsttry run --gate pre-push
 """,
         encoding="utf-8",
     )
-    os.chmod(pre_push, os.stat(pre_push).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    os.chmod(
+        pre_push, os.stat(pre_push).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+    )
     return pre_commit, pre_push

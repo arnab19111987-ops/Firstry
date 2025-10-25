@@ -24,7 +24,9 @@ def _http_ok(url: str, timeout: float) -> bool:
         return False
 
 
-def check_health(url: str = "http://localhost:8000/healthz", timeout: float = 5.0) -> bool:
+def check_health(
+    url: str = "http://localhost:8000/healthz", timeout: float = 5.0
+) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         if _http_ok(url, timeout=timeout):

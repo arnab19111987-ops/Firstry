@@ -11,7 +11,9 @@ _DROP_COLUMN_FUNC = re.compile(
     r"op\.drop_column\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]",
     re.IGNORECASE,
 )
-_RAW_DROP_TABLE_SQL = re.compile(r"\bDROP\s+TABLE\b\s+([A-Za-z0-9_\".]+)", re.IGNORECASE)
+_RAW_DROP_TABLE_SQL = re.compile(
+    r"\bDROP\s+TABLE\b\s+([A-Za-z0-9_\".]+)", re.IGNORECASE
+)
 
 
 def parse_destructive_ops(script_text: str) -> Dict[str, List[str]]:
@@ -41,7 +43,12 @@ def parse_destructive_ops(script_text: str) -> Dict[str, List[str]]:
 def _alembic_autogen_pg(import_target: str, db_url: str) -> Dict[str, Any]:
     script_text = ""
     ops = parse_destructive_ops(script_text)
-    return {"has_drift": False, "script_text": script_text, "skipped": False, "ops": ops}
+    return {
+        "has_drift": False,
+        "script_text": script_text,
+        "skipped": False,
+        "ops": ops,
+    }
 
 
 def run_pg_probe(import_target: str, allow_destructive: bool = True) -> Dict[str, Any]:
@@ -53,6 +60,13 @@ def run_pg_probe(import_target: str, allow_destructive: bool = True) -> Dict[str
     ops = result.get("ops", {"destructive": [], "non_destructive": []})
     destructive_ops = ops.get("destructive", [])
     if destructive_ops and not allow_destructive:
-        raise RuntimeError("Destructive Postgres migration detected: " + "; ".join(destructive_ops))
+        raise RuntimeError(
+            "Destructive Postgres migration detected: " + "; ".join(destructive_ops)
+        )
 
-    return {"skipped": False, "has_drift": bool(result.get("has_drift", False)), "ops": ops, "script_text": result.get("script_text", "")}
+    return {
+        "skipped": False,
+        "has_drift": bool(result.get("has_drift", False)),
+        "ops": ops,
+        "script_text": result.get("script_text", ""),
+    }

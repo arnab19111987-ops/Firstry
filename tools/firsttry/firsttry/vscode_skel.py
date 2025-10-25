@@ -7,7 +7,9 @@ from importlib.util import spec_from_loader, module_from_spec
 
 
 def _locate_and_load():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    repo_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..")
+    )
     candidates = [
         os.path.join(repo_root, "firsttry", "vscode_skel.py"),
         os.path.join(repo_root, "tools", "firstry", "firsttry", "vscode_skel.py"),

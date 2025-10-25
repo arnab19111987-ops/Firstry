@@ -28,7 +28,7 @@ def run_pre_commit_gate() -> List[str]:
         f"{python_exe} -m pytest -q tests/",
         # sqlite import & drift sanity
         (
-            f"{python_exe} -c \"from firsttry.db_sqlite import run_sqlite_probe; "
+            f'{python_exe} -c "from firsttry.db_sqlite import run_sqlite_probe; '
             "res=run_sqlite_probe(); "
             "print('sqlite import_ok=',res['import_ok'],'drift=',res['drift'])\""
         ),
@@ -50,15 +50,15 @@ def run_pre_push_gate() -> List[str]:
     # docker smoke test
     cmds.append(
         (
-            f"{python_exe} -c \"from firsttry.docker_smoke import run_docker_smoke; "
-            "print(run_docker_smoke())\""
+            f'{python_exe} -c "from firsttry.docker_smoke import run_docker_smoke; '
+            'print(run_docker_smoke())"'
         )
     )
 
     # PG drift check (will exit non-zero if destructive drift detected)
     cmds.append(
         (
-            f"{python_exe} -c \"from firsttry.db_pg import run_pg_probe; "
+            f'{python_exe} -c "from firsttry.db_pg import run_pg_probe; '
             "import os,sys; "
             "try: res=run_pg_probe(allow_destructive=False); print('pg drift:', res); "
             "except RuntimeError as e: print('PG DRIFT BLOCKER:', e); sys.exit(1)\""

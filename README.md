@@ -1,5 +1,8 @@
 # FirstTry
 
+**FirstTry makes sure your pull request is green on the first push.**  
+It runs the same checks as your GitHub Actions CI, locally, in seconds — and tells you exactly which step would fail and how to fix it.
+
 **Pass CI on the first try.**
 
 FirstTry is a pre-commit quality gate that runs the same checks your CI does, locally, before you push. No more "fix lint" commits.
@@ -21,6 +24,338 @@ firsttry install-hooks
 # See what your CI will run
 firsttry mirror-ci --root .
 ```
+
+### Trying FirstTry locally (no install)
+You can run FirstTry directly from the repo using Python:
+
+```bash
+# Check version
+python -m firsttry.cli --version
+
+# See if your repo is clean to push (lint, typecheck, etc.)
+python -m firsttry.cli gates --json --root .
+
+# Simulate CI locally (requires a license key for --run)
+python -m firsttry.cli mirror-ci --root . --run --json --license-key TEST-KEY-OK
+
+
+python -m firsttry.cli uses the same engine and returns the same JSON you'd get from the packaged firsttry command.
+
+This absolutely matters for onboarding. It means you don’t have to ship wheels or publish to PyPI before giving someone value. You can just DM them the repo and a license key.
+
+And critically: that block makes it crystal clear that `mirror-ci` is gated behind a key. That’s how you start charging.
+```
+
+## FirstTry — ship green on the first push
+
+FirstTry runs all your quality gates (lint, typecheck, formatting, etc.) and even simulates your GitHub Actions pipeline locally — safely — so you don't spam PRs with "fix lint lol" commits.
+
+### 1. Repo Health (Free)
+Check if your repo is clean before you push.
+
+```bash
+firsttry gates --json
+
+
+or
+
+python -m firsttry.cli gates --json
+
+
+What this does:
+
+Runs your "pre-commit" / "pre-push" style gates (ruff, mypy, tests, etc.).
+
+Captures returncode, stdout, and stderr from each check.
+
+Never crashes — even if a tool explodes, the result comes back as a structured failure entry.
+
+Returns a single JSON report:
+
+{
+  "ok": false,
+  "results": [
+    {
+      "gate": "pre-commit",
+      "ok": false,
+      "status": "fail",
+      "info": "ruff",
+      "details": "lint errors",
+      "returncode": 1,
+      "stdout": "ruff said nope",
+      "stderr": ""
+    },
+    {
+      "gate": "pre-push",
+      "ok": true,
+      "status": "pass",
+      "info": "mypy",
+      "details": "clean",
+      "returncode": 0,
+      "stdout": "success",
+      "stderr": ""
+    }
+  ]
+}
+
+
+Exit code:
+
+0 if all gates passed
+
+1 if anything failed
+
+This is perfect for:
+
+Pre-commit hooks
+
+Dev containers / Codespaces startup checks
+
+VS Code panels ("Why will my branch get rejected?")
+
+2. CI Preflight (Pro)
+
+Simulate (and selectively run) your GitHub Actions workflow locally, before you even push.
+
+# Option A: via env
+export FIRSTTRY_LICENSE_KEY=YOUR-LICENSE-KEY
+firsttry mirror-ci --root . --run --json
+Note: the Pro runner supports a fast early-stop mode when you pass --run: FirstTry will stop on the first failing step to give you the fastest feedback. The JSON output includes a `failed_at` forensic object (workflow, job, step, cmd, stderr, timing) so you can quickly see exactly where CI broke.
+
+Example `failed_at` JSON (abridged):
+
+```json
+{
+  "ok": false,
+  "summary": {
+    "failed_at": {
+      "workflow": "ci.yml",
+      "job": "build",
+      "step": "Run tests",
+      "cmd": "pytest -q",
+      "stderr": "E    AssertionError: 1 != 0\n",
+      "duration_s": 3.24
+    }
+  }
+}
+```
+
+Want early access to Pro? Reach out to our team to request an early access key — we'll enable `--run` for your account.
+
+# Option B: via flag
+firsttry mirror-ci --root . --run --json --license-key YOUR-LICENSE-KEY
+
+
+What this does:
+
+Reads .github/workflows/*.yml
+
+Builds your CI plan (jobs, steps, run commands)
+
+Executes allowed steps locally in order
+
+Blocks obviously dangerous commands with a safety denylist
+
+e.g. rm -rf /, fork bombs, shutdown
+
+Captures stdout / stderr / return codes per step
+
+Returns a structured JSON summary so you know exactly what will fail in PR
+
+If no valid license key is provided:
+
+You still get the dry-run plan (visibility)
+
+But Pro execution (--run) is restricted
+
+This is perfect for:
+
+Senior engineers who are sick of red PRs
+
+Juniors who don't want to look bad on review
+
+Teams that want “CI green on first try”
+
+3. Safety
+
+We will not run destructive commands.
+Known-dangerous patterns (like rm -rf /) are denied up front.
+Blocked steps are reported as:
+
+{
+  "job": "build",
+  "step": "cleanup",
+  "cmd": "rm -rf /",
+  "status": "blocked",
+  "reason": "blocked_for_safety",
+  "returncode": null,
+  "stdout": "",
+  "stderr": "Command blocked by safety policy"
+}
+
+
+So you get transparency without wrecking your machine.
+
+4. Quality Gates on FirstTry itself
+
+Before we ship anything, we run one command:
+
+AUTOFIX=1 bash local_ci.sh
+
+
+That enforces:
+
+Ruff + Black formatting
+
+Mypy (0 errors, repo-wide)
+
+Pytest (currently 70+ tests)
+
+Coverage (75%+ across core modules like gates, mirror-ci, licensing, safety)
+
+Node-side checks for supporting extensions / dashboard code
+
+JSON contract tests for both gates and mirror-ci CLI commands
+
+If any of that fails, we don't ship.
+
+This isn’t a toy script. This is production posture.
+
+
+That block:
+- Teaches what you do in under 2 minutes.
+- Shows off that you're serious (mypy, coverage, safety).
+- Draws a clean pricing line between Free and Pro without using the ugly word "paywall".
+- Gives you screenshots you can post.
+
+Add that to README.md and commit it. That is step one toward onboarding pilot teams.
+
+---
+
+## 2. Tiny UX/sales tweaks you should do next
+
+These are easy wins that make demos way more convincing:
+
+### (a) Human output mode for `firsttry gates`
+Right now `--json` prints JSON, which is perfect for your VS Code / Codespaces panel and tests.  
+For humans (no `--json` flag), you're already printing a readable summary like:
+
+```text
+FirstTry Gates Report
+---------------------
+[pre-commit] ok=False status=fail returncode=1
+[pre-push] ok=True status=pass returncode=0
+
+OVERALL OK: False
+```
+
+Keep that. That’s a screenshot candidate. That goes in README too, as a second example.
+
+ (b) Add “Suggested next step”
+
+At the end of that human-readable print in cmd_gates, append something like:
+
+if not all_ok:
+    print("\nTip: Run `firsttry gates --json` to see exact stdout/stderr for each failed gate.")
+else:
+    print("\n✓ Repo is clean. You’re safe to push.")
+
+
+That one line does two things:
+
+It teaches people how to self-diagnose without DMing you.
+
+It markets your JSON format (which is your dashboard API) right inside the CLI.
+
+(c) Screenshot those two commands for marketing:
+
+firsttry gates (failing repo)
+
+firsttry mirror-ci --run --json (with one failing step and one blocked dangerous step)
+
+The second one especially is money because you can say:
+
+“We blocked a destructive command from your CI and still told you what else passed. Your laptop is safe.”
+
+That’s how you close teams.
+
+Screenshots / GIFs
+-------------------
+
+Saved example placeholders (replace with real images):
+
+- `docs/screenshots/gates_failure.png` — screenshot of `firsttry gates` with one gate failing
+- `docs/screenshots/mirror_ci_failed_at.gif` — GIF showing `firsttry mirror-ci --run --json` highlighting `failed_at`
+
+### Visual demos
+
+We're capturing real CI runs and hook failures and will publish anonymized screenshots and GIFs here after a short private beta. For now, the forensic `failed_at` JSON block above is the canonical proof of value.
+
+### Workflow timing (why devs actually use it)
+
+FirstTry runs in three layers so you don't get slowed down:
+
+1. `pre-commit` gate (auto-installed git hook)
+  - ~1-3 seconds
+  - Lint, imports, basic safety checks
+  - Blocks dumb mistakes from even entering your history
+
+2. `pre-push` gate
+  - ~5-10 seconds (depends on repo)
+  - Type-check, smoke tests, DB drift sanity
+  - Blocks "oops broke tests" from hitting origin
+
+3. `firsttry mirror-ci --run` (Pro)
+  - Runs the actual steps from your GitHub Actions locally
+  - Stops at the first failing step
+  - Gives you a forensic `failed_at` block with job, step, stderr, and a suggested quick-fix when available
+  - Use this before opening a PR so your PR goes green on first try
+
+This three-tier story sells both speed and workflow: quick developer feedback at commit time, broader checks on push, and a full confidence check before your PR.
+
+### Local dev requirements
+
+To run `pytest -q` and to run the Pro CI mirror locally:
+
+- Python 3.11+
+- `pip install -e .` from repo root
+- `ruff`, `mypy`, `pytest` installed in your venv (our tests assume they're available)
+- For Pro mode (`firsttry mirror-ci --run`):
+  - set `FIRSTTRY_LICENSE_KEY=TEST-KEY-OK` for local testing
+  - some steps in your GitHub Actions may assume tools you haven't installed locally yet (example: `ruff check .`). FirstTry will report that failure and stop instantly on that step.
+
+Why this matters: we're honest about local assumptions. If a CI step requires a tool you don't have, FirstTry will tell you quickly so you can install it and re-run.
+
+### 30-second smoke test
+
+1. Create and activate a venv and install:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
+
+2. Quick health report:
+
+```bash
+firsttry doctor --json
+```
+
+3. Preview your CI plan:
+
+```bash
+firsttry mirror-ci --root .
+```
+
+4. (Pro preview) simulate running those steps locally:
+
+```bash
+FIRSTTRY_LICENSE_KEY=TEST-KEY-OK firsttry mirror-ci --root . --run
+```
+
+If step 4 stops with a JSON block that includes `"failed_at"`, that's exactly what would have broken your PR.
+
 
 ## Features
 

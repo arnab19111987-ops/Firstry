@@ -1,147 +1,226 @@
-from __future__ import annotations
-
-import glob
 import os
-from typing import Dict, List, Any
+import glob
+from typing import Any, Dict, List, Optional
+
+import yaml
+
+# Heuristics for skipping or rewriting steps to make local run faster
+# You can tune this list over time.
+SKIP_KEYWORDS = [
+    "actions/checkout",       # already in local workspace
+    "actions/setup-python",   # we already have python locally
+    "actions/setup-node",     # we already have node locally
+    "actions/cache",          # caching is irrelevant locally
+]
+
+# Commands that are "setup / install" and usually slow.
+# We'll keep them but mark them so runner can optionally group / dedupe them later.
+INSTALL_HINTS = [
+    "pip install",
+    "pip3 install",
+    "npm ci",
+    "npm install",
+    "pnpm install",
+    "yarn install",
+]
 
 
-def rewrite_run_cmd(cmd: str) -> str:
-    """
-    Map CI commands to local equivalents.
-
-    What we do (intentionally simple and predictable for tests):
-    - Strip GitHub Actions expression syntax like ${{ ... }} so it becomes runnable locally.
-    - Trim whitespace.
-
-    We do NOT shell-escape or try to rewrite job environments beyond that,
-    because the tests only assert that we normalized out the ${{ }} bits.
-    """
-    cleaned = cmd.replace("${{", "").replace("}}", "")
-    return cleaned.strip()
+def _looks_like_setup_step(step: Dict[str, Any]) -> bool:
+    """Determine if this step is mostly environment setup / install."""
+    run_cmd = step.get("run", "") or ""
+    if not run_cmd.strip():
+        return False
+    for kw in INSTALL_HINTS:
+        if kw in run_cmd:
+            return True
+    return False
 
 
-def _extract_run_lines_from_file(path: str) -> List[str]:
-    """
-    Very lightweight workflow parser.
+def _should_skip_step(step: Dict[str, Any]) -> bool:
+    """Skip steps that don't matter locally (like setup actions)."""
+    uses = step.get("uses")
+    if uses:
+        for bad in SKIP_KEYWORDS:
+            if bad in str(uses):
+                return True
+    # Skip steps with no-op run
+    run_cmd = step.get("run", "") or ""
+    if not run_cmd.strip() and not uses:
+        # nothing to do
+        return True
+    return False
 
-    Strategy:
-    - Read the .yml file line by line.
-    - Capture any inline `run: <one-liner>`.
-    - Capture multi-line `run:` blocks until we detect dedent / new key.
-      We collapse those multi-line steps into a single " && "-joined command
-      so the plan can present them as one step.
 
-    This is intentionally "close enough" YAML parsing, not spec-complete.
-    It's only for generating a human-friendly preview, which is what tests assert.
-    """
-    runs: List[str] = []
-    cur_block: List[str] = []
-    in_block = False
+def _collect_workflow_files(root: str) -> List[str]:
+    pattern = os.path.join(root, ".github", "workflows", "*.yml")
+    files = sorted(glob.glob(pattern))
+    # also include .yaml
+    pattern_yaml = pattern.replace(".yml", ".yaml")
+    files += sorted(glob.glob(pattern_yaml))
+    return files
 
+
+def _safe_load_yaml(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
-        for raw in f:
-            line = raw.rstrip("\n")
+        return yaml.safe_load(f) or {}
 
-            # Case 1: inline one-liner
-            # e.g. `run: pytest -q`
-            if "run:" in line and not line.strip().endswith("run:"):
-                after = line.split("run:", 1)[1].strip()
-                if after:
-                    runs.append(after)
-                in_block = False
-                cur_block = []
-                continue
 
-            # Case 2: block start
-            # e.g.
-            # run:
-            #   python -m pip install -r reqs.txt
-            #   pytest -q
-            if line.strip().endswith("run:"):
-                in_block = True
-                cur_block = []
-                continue
+def _normalize_step(step: Dict[str, Any], job_name: str, step_idx: int, wf_name: str) -> Optional[Dict[str, Any]]:
+    """
+    Convert a GitHub Actions step into our internal fast plan step.
 
-            # Case 3: inside a block
-            if in_block:
-                # Heuristic "block termination":
-                # If dedented back to column 0/1,
-                # or we see a new YAML-ish key (something ending with ':' and not a list item),
-                # then we end the block.
-                dedent_amount = len(line) - len(line.lstrip(" "))
-                is_new_key = (
-                    line.strip().endswith(":")
-                    and not line.strip().startswith("-")
-                )
-                if dedent_amount <= 1 or is_new_key:
-                    # close the block
-                    if cur_block:
-                        runs.append(
-                            " && ".join(s.strip() for s in cur_block if s.strip())
+    Returns:
+      {
+        "job": "qa",
+        "step_name": "Run tests",
+        "cmd": "pytest -q",
+        "install": False,
+        "meta": { ... }  # source info for debugging
+      }
+    or None if skipped.
+    """
+    # Ignore useless steps
+    if _should_skip_step(step):
+        return None
+
+    run_cmd = step.get("run", "") or ""
+    step_name = step.get("name") or f"step-{step_idx}"
+
+    # Tags for speed classification
+    is_install = _looks_like_setup_step(step)
+
+    return {
+        "job": job_name,
+        "step_name": step_name,
+        "cmd": run_cmd.strip(),
+        "install": is_install,
+        "meta": {
+            "workflow": wf_name,
+            "job": job_name,
+            "original_index": step_idx,
+            "original_step": step,
+        },
+    }
+
+
+def build_ci_plan(root: str) -> Dict[str, Any]:
+    """
+    Scan all workflows and build a local execution plan.
+
+    Output shape:
+    {
+      "jobs": [
+        {
+          "job_name": "qa",
+          "steps": [
+             {
+               "step_name": "Ruff Lint",
+               "cmd": "ruff check .",
+               "install": False,
+               "meta": {...}
+             },
+             ...
+          ]
+        },
+        ...
+      ]
+    }
+
+    Notes:
+    - We merge jobs across all workflows.
+    - Steps that are skipped (like setup-python) are removed.
+    - We keep order within each job.
+    """
+    workflows = _collect_workflow_files(root)
+    jobs_out: List[Dict[str, Any]] = []
+    workflows_out: List[Dict[str, Any]] = []
+
+    for wf_path in workflows:
+        wf_data = _safe_load_yaml(wf_path)
+        wf_name = wf_data.get("name", os.path.basename(wf_path))
+        wf_file = os.path.basename(wf_path)
+
+        jobs_dict = wf_data.get("jobs", {}) or {}
+        wf_jobs_legacy: List[Dict[str, Any]] = []
+
+        for job_name, job_body in jobs_dict.items():
+            raw_steps = job_body.get("steps", []) or []
+            norm_steps: List[Dict[str, Any]] = []
+
+            # legacy job shape: job_id and steps list with name/run/env
+            legacy_steps: List[Dict[str, Any]] = []
+
+            # job-level env that should be inherited by steps
+            job_env = job_body.get("env", {}) or {}
+
+            for idx, st in enumerate(raw_steps):
+                # Build legacy step if it has a run
+                if not _should_skip_step(st):
+                    step_run = st.get("run", "") or ""
+                    step_name = st.get("name") or f"step-{idx}"
+                    step_env = dict(job_env)  # start with job env
+                    step_env.update(st.get("env", {}) or {})
+
+                    # Only include legacy step if it has a run command
+                    if step_run.strip():
+                        legacy_steps.append(
+                            {
+                                "name": step_name,
+                                "run": step_run.strip(),
+                                "env": step_env,
+                            }
                         )
-                    in_block = False
-                    cur_block = []
-                    # we DO NOT `continue` here on purpose:
-                    # this line might itself be another key we don't care about,
-                    # so we just fall through and let outer loop continue.
-                else:
-                    # still in the run: block
-                    cur_block.append(line)
-                    continue
 
-    # EOF cleanup: still in a block at end of file
-    if in_block and cur_block:
-        runs.append(" && ".join(s.strip() for s in cur_block if s.strip()))
+                # New normalized step
+                norm = _normalize_step(st, job_name=job_name, step_idx=idx, wf_name=wf_name)
+                if norm is not None:
+                    norm_steps.append(norm)
 
-    return runs
+            # Only include the job if it has any actionable steps.
+            if norm_steps:
+                jobs_out.append(
+                    {
+                        "job_name": job_name,
+                        "workflow_name": wf_name,
+                        "steps": norm_steps,
+                    }
+                )
+
+            # legacy job included if it has any steps
+            if legacy_steps:
+                wf_jobs_legacy.append({"job_id": job_name, "steps": legacy_steps})
+
+        if wf_jobs_legacy:
+            workflows_out.append({"workflow_file": wf_file, "jobs": wf_jobs_legacy})
+
+    # Return both new 'jobs' shape and legacy 'workflows' shape for backwards compat
+    out: Dict[str, Any] = {"jobs": jobs_out}
+    if workflows_out:
+        out["workflows"] = workflows_out
+    return out
 
 
-def build_ci_plan(workflows_dir: str = ".github/workflows") -> List[Dict[str, Any]]:
+def rewrite_run_cmd(cmd: str, python_exe: Optional[str] = None) -> str:
+    """Compatibility shim: optionally rewrite a run command for local execution.
+
+    Current implementation is a no-op and returns the original command. In future
+    this can rewrite matrix/docker steps to local equivalents.
     """
-    Scan GitHub Actions workflow YAMLs under `workflows_dir` and build a list
-    of the commands CI will run.
+    import os
+    import re
 
-    Return shape (ordered by discovery):
-        [
-            {"workflow": "ci.yml", "step": 0, "cmd": "pytest -q"},
-            {"workflow": "ci.yml", "step": 1, "cmd": "ruff check ."},
-            ...
-        ]
+    py = python_exe or os.environ.get("FIRSTTRY_PYTHON")
+    if not py:
+        return cmd
 
-    This is what FirstTry shows users under `firsttry mirror-ci`:
-    "Here's what CI will do". The tests assert against this shape.
-    """
-    plan: List[Dict[str, Any]] = []
-    files = sorted(glob.glob(os.path.join(workflows_dir, "*.yml")))
-    step_counter = 0
+    # Replace standalone 'python' or 'python3' tokens with the preferred interpreter
+    out = re.sub(r"\bpython3?\b", py, cmd)
 
-    for wf in files:
-        run_lines = _extract_run_lines_from_file(wf)
-        for rl in run_lines:
-            plan.append(
-                {
-                    "workflow": os.path.basename(wf),
-                    "step": step_counter,
-                    "cmd": rewrite_run_cmd(rl),
-                }
-            )
-            step_counter += 1
+    # Replace 'pytest' invocations with 'PY -m pytest' so they run under the chosen interpreter
+    # but avoid double-replacing when pytest already invoked via 'python -m pytest'
+    out = re.sub(r"(?<!-m\s)\bpytest\b", f"{py} -m pytest", out)
 
-    return plan
+    return out
 
 
-def check_ci_consistency() -> None:
-    """
-    Human-readable dump (used for reassurance / marketing copy):
-    "Your local checks match CI."
-    """
-    plan = build_ci_plan()
-    if not plan:
-        print("No CI steps discovered.")
-        return
-
-    print("CI Plan:")
-    for item in plan:
-        print(
-            f"- [{item['workflow']}] step {item['step']}: {item['cmd']}"
-        )
+# End of ci_mapper

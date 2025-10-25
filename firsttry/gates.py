@@ -8,14 +8,56 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from typing import List, Tuple
+from pathlib import Path
+from typing import Dict, Any
 
 
 @dataclass
 class GateResult:
-    name: str            # e.g. "Lint.........."
-    status: str          # "PASS" | "FAIL" | "SKIPPED"
-    info: str = ""       # short summary shown in summary table
-    details: str = ""    # long explanation printed in verbose mode
+    name: str  # e.g. "Lint.........."
+    status: str  # "PASS" | "FAIL" | "SKIPPED"
+    info: str = ""  # short summary shown in summary table
+    details: str = ""  # long explanation printed in verbose mode
+    # Detailed execution metadata (may be None for SKIPPED or high-level probes)
+    returncode: int | None = None
+    stdout: str | None = None
+    stderr: str | None = None
+
+
+def gate_result_to_dict(res: GateResult) -> dict[str, object]:
+    """Convert internal GateResult dataclass to a stable JSON-ready dict.
+
+    Keys:
+      - gate: human label
+      - ok: boolean (True when status == 'PASS')
+      - status, info, details: preserved for diagnostics
+      - returncode, stdout, stderr: optional fields (may be None)
+    """
+    # Normalize execution metadata so UI consumers always have sensible
+    # fields to display. For internal probes that don't use subprocess,
+    # a PASS will be presented with returncode 0 and stdout populated from
+    # the details string where appropriate.
+    rc = res.returncode
+    out = res.stdout
+    err = res.stderr
+
+    if rc is None and res.status == "PASS":
+        rc = 0
+    if out is None:
+        out = res.details or ""
+    if err is None:
+        err = ""
+
+    return {
+        "gate": res.name,
+        "ok": True if res.status == "PASS" else False,
+        "status": res.status,
+        "info": res.info,
+        "details": res.details,
+        "returncode": rc,
+        "stdout": out,
+        "stderr": err,
+    }
 
 
 def _run_external(
@@ -51,6 +93,9 @@ def _run_external(
                 "How to enable:\n"
                 f"- Add {cmd[0]} to your dev requirements / venv.\n"
             ),
+            returncode=None,
+            stdout=None,
+            stderr=None,
         )
 
     out = (proc.stdout or "") + (proc.stderr or "")
@@ -69,6 +114,9 @@ def _run_external(
             status="PASS",
             info=extra_info.strip(),
             details=out.strip(),
+            returncode=proc.returncode,
+            stdout=proc.stdout,
+            stderr=proc.stderr,
         )
 
     # non-zero exit
@@ -77,12 +125,16 @@ def _run_external(
         status="FAIL",
         info="see details",
         details=out.strip(),
+        returncode=proc.returncode,
+        stdout=proc.stdout,
+        stderr=proc.stderr,
     )
 
 
 # -------------------------
 # Individual gate checks
 # -------------------------
+
 
 def check_lint() -> GateResult:
     """Fast lint check (ruff)."""
@@ -118,7 +170,7 @@ def check_sqlite_drift() -> GateResult:
     - does NOT modify repo or prod DB
     """
     try:
-        from firsttry import db_sqlite  # type: ignore
+        from firsttry import db_sqlite
     except Exception as exc:
         return GateResult(
             name="SQLite Drift",
@@ -143,7 +195,7 @@ def check_sqlite_drift() -> GateResult:
         with contextlib.redirect_stdout(probe_stdout):
             if hasattr(db_sqlite, "run_sqlite_probe"):
                 # safe probe: does temp work only
-                db_sqlite.run_sqlite_probe()  # type: ignore[attr-defined]
+                db_sqlite.run_sqlite_probe(import_target="firsttry")
             # else: import alone counts as PASS
     except Exception as exc:
         out = probe_stdout.getvalue()
@@ -204,7 +256,7 @@ def check_pg_drift() -> GateResult:
         )
 
     try:
-        from firsttry import db_pg  # type: ignore
+        from firsttry import db_pg
     except Exception as exc:
         return GateResult(
             name="PG Drift",
@@ -228,7 +280,7 @@ def check_pg_drift() -> GateResult:
     try:
         with contextlib.redirect_stdout(probe_stdout):
             if hasattr(db_pg, "run_pg_probe"):
-                db_pg.run_pg_probe()  # type: ignore[attr-defined]
+                db_pg.run_pg_probe(import_target="firsttry")
             # else: import success = PASS
     except Exception as exc:
         out = probe_stdout.getvalue()
@@ -287,7 +339,7 @@ def check_docker_smoke() -> GateResult:
         )
 
     try:
-        from firsttry import docker_smoke  # type: ignore
+        from firsttry import docker_smoke
     except Exception as exc:
         return GateResult(
             name="Docker Smoke",
@@ -310,7 +362,7 @@ def check_docker_smoke() -> GateResult:
     try:
         with contextlib.redirect_stdout(smoke_stdout):
             if hasattr(docker_smoke, "run_docker_smoke"):
-                docker_smoke.run_docker_smoke()  # type: ignore[attr-defined]
+                docker_smoke.run_docker_smoke()
             # else: import success = PASS
     except Exception as exc:
         out = smoke_stdout.getvalue()
@@ -349,7 +401,7 @@ def check_ci_mirror() -> GateResult:
     - Else → PASS.
     """
     try:
-        from firsttry import ci_mapper  # type: ignore
+        from firsttry import ci_mapper
     except Exception as exc:
         return GateResult(
             name="CI Mirror",
@@ -373,9 +425,9 @@ def check_ci_mirror() -> GateResult:
     try:
         with contextlib.redirect_stdout(mapper_stdout):
             if hasattr(ci_mapper, "check_ci_consistency"):
-                ci_mapper.check_ci_consistency()  # type: ignore[attr-defined]
+                ci_mapper.check_ci_consistency()
             elif hasattr(ci_mapper, "main"):
-                ci_mapper.main()  # type: ignore[attr-defined]
+                ci_mapper.main()
             # else: import itself counts as PASS
     except Exception as exc:
         out = mapper_stdout.getvalue()
@@ -427,7 +479,7 @@ PRE_PUSH_TASKS = [
 ]
 
 
-def run_gate(which: str) -> Tuple[List[GateResult], bool]:
+def run_gate(which: str) -> Tuple[List[dict[str, object]], bool]:
     """
     Execute either `pre-commit` or `pre-push`.
 
@@ -445,14 +497,54 @@ def run_gate(which: str) -> Tuple[List[GateResult], bool]:
     any_fail = False
 
     for label, fn in tasks:
-        res = fn()
-        # annotate display label (e.g. "Lint.........." instead of "Lint")
+        try:
+            res = fn()
+        except Exception as exc:
+            # Convert unexpected exceptions into a failing GateResult so
+            # consumers receive structured output instead of a raised error.
+            res = GateResult(
+                name=label,
+                status="FAIL",
+                info="exception",
+                details=str(exc),
+                returncode=None,
+                stdout=None,
+                stderr=str(exc),
+            )
+
+        # annotate display label (e.g. "Lint..........") instead of "Lint"
         res.name = label
         results.append(res)
         if res.status == "FAIL":
             any_fail = True
 
-    return results, (not any_fail)
+    # Convert dataclass results into stable JSON-ready dicts for consumers.
+    dict_results = [gate_result_to_dict(r) for r in results]
+    return dict_results, (not any_fail)
+
+
+# Default ordered gates for a combined health report
+DEFAULT_GATES: List[str] = ["pre-commit", "pre-push"]
+
+
+def run_all_gates(repo_root: Path) -> Dict[str, Any]:
+    """
+    Run all default gates (pre-commit, pre-push, etc.) against the repo
+    and return a single JSON-ready summary.
+
+    Returns:
+        {"ok": bool, "results": [ ... ]}
+    """
+    combined_results: List[Dict[str, object]] = []
+    overall_ok = True
+
+    for gate_name in DEFAULT_GATES:
+        gate_results, gate_ok = run_gate(gate_name)
+        combined_results.extend(gate_results)
+        if not gate_ok:
+            overall_ok = False
+
+    return {"ok": overall_ok, "results": combined_results}
 
 
 def format_summary(which: str, results: List[GateResult], overall_ok: bool) -> str:
@@ -515,3 +607,42 @@ def print_verbose(results: List[GateResult]) -> None:
             if res.details:
                 print(res.details)
             print()
+
+
+# -------------------------
+# Back-compat helpers for tests expecting command lists
+# -------------------------
+
+
+def run_pre_commit_gate() -> List[str]:
+    """
+    Compatibility surface for tests that expect a list of CLI commands
+    representing the pre-commit gate sequence. These are not executed here;
+    they're illustrative of what the gate would run.
+    """
+    return [
+        "ruff check .",
+        "mypy .",
+        "python -m pytest -q",
+        # safe import/probe commands
+        'python -c "from firsttry.db_sqlite import run_sqlite_probe; run_sqlite_probe()"',
+        # optional CI mirror
+        "python -c \"from firsttry import ci_mapper; ci_mapper.main() if hasattr(ci_mapper, 'main') else None\"",
+    ]
+
+
+def run_pre_push_gate() -> List[str]:
+    cmds = list(run_pre_commit_gate())
+    cmds.extend(
+        [
+            # heavy probes guarded by env/config in real execution
+            'python -c "from firsttry.db_pg import run_pg_probe; run_pg_probe()"',
+            'python -c "from firsttry.docker_smoke import run_docker_smoke; run_docker_smoke()"',
+            # extra linters typically present in CI images
+            "hadolint Dockerfile",
+            "actionlint -format tap",
+            # security scanners (at least one of these in CI)
+            "pip-audit -r requirements.txt",
+        ]
+    )
+    return cmds

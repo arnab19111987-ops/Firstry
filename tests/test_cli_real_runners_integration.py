@@ -1,5 +1,4 @@
 import importlib
-import os
 from pathlib import Path
 
 
@@ -19,7 +18,7 @@ def test_dynamic_loader_uses_real_runners(monkeypatch):
 
     backup = None
     if target_file.exists():
-        backup = target_file.with_suffix('.bak')
+        backup = target_file.with_suffix(".bak")
         target_file.rename(backup)
 
     try:

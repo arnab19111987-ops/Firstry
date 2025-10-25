@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+import sys
 
 import yaml
 
@@ -29,18 +30,18 @@ class WorkflowPlan:
 
 def _collect_workflow_files(root: Path | str) -> List[Path]:
     """Collect workflow files from root/.github/workflows.
-    
+
     Args:
         root: Path or string pointing to either the repo root or directly to .github/workflows
     """
     root_path = Path(root) if isinstance(root, str) else root
-    
+
     # If root already points to .github/workflows, use it directly
     if root_path.name == "workflows" and root_path.parent.name == ".github":
         wf_dir = root_path
     else:
         wf_dir = root_path / ".github" / "workflows"
-    
+
     if not wf_dir.exists():
         return []
     paths = []
@@ -61,7 +62,7 @@ def _extract_steps_from_job(job_id: str, job_dict: Dict[str, Any]) -> JobPlan:
         if not run_cmd:
             continue
 
-        step_env = {}
+        step_env: Dict[str, str] = {}
         step_env.update(job_env)
         step_env.update(s.get("env", {}) or {})
 
@@ -77,7 +78,7 @@ def _extract_steps_from_job(job_id: str, job_dict: Dict[str, Any]) -> JobPlan:
 
 def build_ci_plan(root: Path | str) -> Dict[str, Any]:
     """Build a CI plan from GitHub workflows.
-    
+
     Args:
         root: Path or string pointing to repo root or .github/workflows directory
     """
@@ -123,7 +124,7 @@ def build_ci_plan(root: Path | str) -> Dict[str, Any]:
 
 def rewrite_run_cmd(cmd: str, python_exe: Optional[str] = None) -> str:
     if python_exe is None:
-        python_exe = os.environ.get("FIRSTTRY_PYTHON", os.sys.executable)
+        python_exe = os.environ.get("FIRSTTRY_PYTHON", sys.executable)
 
     out = cmd
 

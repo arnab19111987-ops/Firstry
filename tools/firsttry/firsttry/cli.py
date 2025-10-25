@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 
 import click
 
@@ -22,6 +22,7 @@ logger = logging.getLogger("firsttry.cli")
 # ---------------------------------------------------------------------------------
 # dynamic runner loader
 # ---------------------------------------------------------------------------------
+
 
 def _fake_result(name: str):
     """Minimal stub result for when real runners aren't available."""
@@ -37,6 +38,7 @@ def _fake_result(name: str):
 
 def _make_stub_runners():
     """Create stub runners for when FIRSTTRY_USE_REAL_RUNNERS is not set."""
+
     def run_ruff(*args, **kwargs):
         logger.debug("runners.stub ruff called args=%r kwargs=%r", args, kwargs)
         return _fake_result("ruff")
@@ -48,17 +50,19 @@ def _make_stub_runners():
     def run_mypy(*args, **kwargs):
         logger.debug("runners.stub mypy called args=%r kwargs=%r", args, kwargs)
         return _fake_result("mypy")
-    
+
     def run_pytest_kexpr(*args, **kwargs):
         logger.debug("runners.stub pytest called args=%r kwargs=%r", args, kwargs)
         return _fake_result("pytest")
-    
+
     def run_coverage_xml(*args, **kwargs):
         logger.debug("runners.stub coverage_xml called args=%r kwargs=%r", args, kwargs)
         return _fake_result("coverage_xml")
-    
+
     def coverage_gate(*args, **kwargs):
-        logger.debug("runners.stub coverage_gate called args=%r kwargs=%r", args, kwargs)
+        logger.debug(
+            "runners.stub coverage_gate called args=%r kwargs=%r", args, kwargs
+        )
         return _fake_result("coverage_gate")
 
     return SimpleNamespace(
@@ -103,19 +107,20 @@ def _load_real_runners_or_stub() -> SimpleNamespace:
         try:
             # Invalidate import caches
             importlib.invalidate_caches()
-            
+
             # Exec runners.py manually into a new module spec
             spec = importlib.util.spec_from_file_location(
                 "firsttry.runners.dynamic_loaded", str(runners_path)
             )
-            mod = importlib.util.module_from_spec(spec)
-            # spec.loader is guaranteed here because file exists
-            assert spec and spec.loader
-            spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+            # mypy: ensure spec is not None before calling module_from_spec
+            assert spec is not None, "spec_from_file_location() returned None"
+            module = importlib.util.module_from_spec(spec)
+            assert spec.loader is not None, "spec.loader is None; cannot exec_module"
+            spec.loader.exec_module(module)
 
             # Now wrap the functions we care about into a fresh namespace
             def _wrap(fn_name, fallback_name):
-                fn = getattr(mod, fn_name, None)
+                fn = getattr(module, fn_name, None)
                 if callable(fn):
                     return fn
                 # fallback: still return stub so callers don't explode
@@ -172,7 +177,8 @@ def get_changed_files(*args, **kwargs):
 
 
 def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
-    steps = [
+    # steps is a list of (label, callable, args)
+    steps: List[Tuple[str, Any, list]] = [
         ("Lint..........", runners.run_ruff, []),
         ("Format........", runners.run_black_check, []),
         ("Types.........", runners.run_mypy, []),
@@ -188,7 +194,14 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
             r = fn(*args)
             ok = bool(getattr(r, "ok", False))
         except Exception as exc:
-            r = SimpleNamespace(ok=False, name=getattr(fn, "__name__", "unknown"), duration_s=0.0, stdout="", stderr=str(exc), cmd=())
+            r = SimpleNamespace(
+                ok=False,
+                name=getattr(fn, "__name__", "unknown"),
+                duration_s=0.0,
+                stdout="",
+                stderr=str(exc),
+                cmd=(),
+            )
             ok = False
 
         status = "PASS" if ok else "FAIL"
@@ -200,7 +213,9 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
 
     if not any_fail:
         verdict = (
-            "SAFE TO COMMIT ✅" if gate == "pre-commit" else "SAFE TO PUSH ✅" if gate == "pre-push" else "SAFE ✅"
+            "SAFE TO COMMIT ✅"
+            if gate == "pre-commit"
+            else "SAFE TO PUSH ✅" if gate == "pre-push" else "SAFE ✅"
         )
         exit_code = 0
     else:
@@ -210,7 +225,7 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
     lines = []
     lines.append("FirstTry Gate Summary")
     lines.append("---------------------")
-    for (label, status, info, _r) in results:
+    for label, status, info, _r in results:
         info_part = f" {info}" if info else ""
         lines.append(f"{label} {status}{info_part}")
     lines.append("")
@@ -218,9 +233,13 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
     lines.append("")
 
     if any_fail:
-        lines.append("One or more checks FAILED. Fix the issues above before continuing.")
+        lines.append(
+            "One or more checks FAILED. Fix the issues above before continuing."
+        )
     else:
-        lines.append("Everything looks good. You'll almost certainly pass CI on the first try.")
+        lines.append(
+            "Everything looks good. You'll almost certainly pass CI on the first try."
+        )
 
     return "\n".join(lines) + "\n", exit_code
 
@@ -283,18 +302,33 @@ def cli_install_hooks():
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="firsttry", description="FirstTry: pass CI in one shot.")
+    parser = argparse.ArgumentParser(
+        prog="firsttry", description="FirstTry: pass CI in one shot."
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    run_parser = subparsers.add_parser("run", help="Run a quality gate and print summary.")
+    run_parser = subparsers.add_parser(
+        "run", help="Run a quality gate and print summary."
+    )
     run_parser.add_argument("--gate", choices=["pre-commit", "pre-push"], required=True)
-    run_parser.add_argument("--require-license", action="store_true", help="Fail immediately if license is missing/invalid.")
+    run_parser.add_argument(
+        "--require-license",
+        action="store_true",
+        help="Fail immediately if license is missing/invalid.",
+    )
 
-    subparsers.add_parser("install-hooks", help="Install Git pre-commit and pre-push hooks that call FirstTry.")
+    subparsers.add_parser(
+        "install-hooks",
+        help="Install Git pre-commit and pre-push hooks that call FirstTry.",
+    )
 
     # mirror-ci (tests expect this argparse command)
-    mirror = subparsers.add_parser("mirror-ci", help="Show local dry-run of CI workflow steps.")
-    mirror.add_argument("--root", required=True, help="Project root containing .github/workflows")
+    mirror = subparsers.add_parser(
+        "mirror-ci", help="Show local dry-run of CI workflow steps."
+    )
+    mirror.add_argument(
+        "--root", required=True, help="Project root containing .github/workflows"
+    )
 
     # attach argparse-compatible callables used by tests
     def _cmd_mirror_ci_argparse(ns: argparse.Namespace) -> int:
@@ -306,7 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
         if not plan or not plan.get("workflows"):
             print("No CI steps discovered.")
             return 0
-        
+
         # Print structured plan matching test expectations
         for wf in plan["workflows"]:
             print(f"Workflow: {wf['workflow_file']}")
@@ -341,5 +375,3 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.set_defaults(func=_cmd_run_argparse)
 
     return parser
-
-

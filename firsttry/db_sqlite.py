@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 import re
 from pathlib import Path
 from typing import Dict, Any
@@ -32,18 +31,16 @@ def _extract_upgrade_body(script_text: str) -> str:
 
     # dedent by minimum leading spaces among non-empty lines
     if block_lines:
+
         def leading_spaces(s: str) -> int:
             return len(s) - len(s.lstrip(" "))
 
         non_blank_indents = [
-            leading_spaces(line)
-            for line in block_lines
-            if line.strip()
+            leading_spaces(line) for line in block_lines if line.strip()
         ]
         min_indent = min(non_blank_indents) if non_blank_indents else 0
         block_lines = [
-            line[min_indent:] if len(line) >= min_indent else ""
-            for line in block_lines
+            line[min_indent:] if len(line) >= min_indent else "" for line in block_lines
         ]
 
     return "\n".join(block_lines)

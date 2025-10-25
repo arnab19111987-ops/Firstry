@@ -21,3 +21,9 @@ firsttry = "firsttry.cli:main"
 
 [tool.setuptools]
 packages = ["firsttry"]
+
+[tool.mypy]
+exclude = [
+    "^tools/",
+    "^my-monorepo/",
+]

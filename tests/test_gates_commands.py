@@ -3,6 +3,7 @@
 These tests are lightweight and only validate the returned command shapes
 and presence of expected fragments (they don't execute the commands).
 """
+
 from __future__ import annotations
 
 from firsttry import gates

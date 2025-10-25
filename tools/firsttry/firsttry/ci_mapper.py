@@ -1,17 +1,19 @@
 """Proxy loader: try to prefer project's top-level firsttry.ci_mapper when available.
 If not available, fall back to importing a local mapper implementation if present.
 """
+
 from __future__ import annotations
 
 import os
 import sys
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader, module_from_spec
-from typing import Any, Dict, List
 
 
 def _locate_and_load():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    repo_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "..")
+    )
     candidates = [
         os.path.join(repo_root, "firsttry", "ci_mapper_impl.py"),
         os.path.join(repo_root, "firsttry", "ci_mapper.py"),
