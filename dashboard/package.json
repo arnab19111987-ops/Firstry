@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "echo 'skip lint for dashboard skeleton'",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --coverage",
+  "test": "vitest run --coverage",
     "build": "node -e \"console.log('dashboard build placeholder')\""
   },
   "devDependencies": {

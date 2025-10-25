@@ -16,7 +16,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "test": "vitest run",
+  "test": "vitest run",
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {

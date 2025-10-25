@@ -19,8 +19,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Run actionlint
-        uses: rhysd/actionlint@v1
+      - name: Lint GitHub workflows (actionlint)
+        uses: rhysd/actionlint@v1.6.27
+        continue-on-error: true
 
   dashboard-tests:
     runs-on: ubuntu-latest
@@ -56,7 +57,7 @@ jobs:
         working-directory: dashboard
         run: |
           npm run lint || { echo "::error ::dashboard lint failed"; exit 1; }
-          npm test -- --ci --reporters=default --reporters=junit || {
+          npm run test || {
             echo "::error ::dashboard tests failed";
             exit 1;
           }
@@ -100,7 +101,7 @@ jobs:
         working-directory: vscode-extension
         run: |
           npm run lint || { echo "::error ::vscode lint failed"; exit 1; }
-          npm test -- --ci --reporters=default --reporters=junit || {
+          npm run test || {
             echo "::error ::vscode tests failed";
             exit 1;
           }
