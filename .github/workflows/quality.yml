@@ -8,25 +8,31 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install deps
+      - name: Install dev tools
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install -e .
-          pip install -r requirements-dev.txt || true
+          python -m pip install --upgrade pip
+          # install project (editable) + dev extras if you have them
+          if [ -f "pyproject.toml" ]; then
+            python -m pip install -e ".[dev]" || true
+          fi
+          # hard-install core linters/typecheckers/test deps unconditionally
+          python -m pip install ruff black mypy pytest coverage
 
-      - name: Run quality gate
+      - name: Run code quality gate (ruff/black/mypy/pytest smoke)
         run: |
-          source .venv/bin/activate
-          make check
+          make check || {
+            echo "::error ::make check failed. Run 'make check' locally to reproduce."
+            exit 1
+          }

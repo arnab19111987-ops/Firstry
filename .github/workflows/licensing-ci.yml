@@ -14,41 +14,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  python:
+  licensing-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     defaults:
       run:
         working-directory: licensing
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-licensing-${{ hashFiles('licensing/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-licensing-
-
-      - name: Install deps
+      - name: Install licensing package + test deps
+        working-directory: licensing
         run: |
-          python -m pip install -U pip
-          pip install fastapi uvicorn pydantic pytest httpx
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest coverage
 
-      - name: Pytest
-        env:
-          PYTHONPATH: licensing
-        run: pytest -q
-
-      - name: Upload pytest artifacts (if needed)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: licensing-pytest-cache
-          path: |
-            .pytest_cache
-          if-no-files-found: ignore
+      - name: Run licensing tests
+        run: |
+          coverage run -m pytest -q
+          coverage report -m

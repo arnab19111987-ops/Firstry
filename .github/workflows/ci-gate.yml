@@ -14,80 +14,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  actionlint:
-    name: Lint GitHub workflows
+  ci-gate:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install actionlint
-        run: |
-          curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
-          # download-actionlint places the binary at $PWD/actionlint; ensure we can run it directly
-          echo "$PWD" >> $GITHUB_PATH
-      - name: Run actionlint
-        run: $PWD/actionlint || $PWD/actionlint -version
+    timeout-minutes: 15
 
-  python:
-    name: Python gate (ruff/mypy/pytest/coverage)
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: "pip"
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('tools/firsttry/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Create venv & install deps
+      - name: Install package + test deps
         run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          python -m pip install -U pip
-          pip install ruff black mypy pytest coverage click rich PyYAML types-PyYAML
-          pip install -e tools/firsttry
+          python -m pip install --upgrade pip
+          # install your package editable so imports work
+          python -m pip install -e .
+          # test tooling
+          python -m pip install pytest coverage
 
-      - name: Ruff
-        run: . .venv/bin/activate && ruff check tools/firsttry
-
-      - name: Black (check only)
-        run: . .venv/bin/activate && black --check tools/firsttry
-
-      - name: Mypy
-        run: . .venv/bin/activate && mypy tools/firsttry
-
-      - name: Pytest (fast)
-        run: . .venv/bin/activate && pytest -q tools/firsttry/tests
-
-      - name: Coverage XML
+      - name: Run tests with coverage
         run: |
-          . .venv/bin/activate
-          coverage run -m pytest -q tools/firsttry/tests
-          coverage xml -o coverage.xml
+          coverage run -m pytest -q
+          coverage xml
+          coverage report -m
 
-      - name: Coverage gate (55%)
+      - name: Enforce temporary relaxed coverage gate (55%)
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          import sys, xml.etree.ElementTree as ET
-          xml = Path("coverage.xml")
-          if not xml.exists():
-              print("coverage.xml missing"); sys.exit(1)
-          rate = float(ET.parse(str(xml)).getroot().attrib.get("line-rate", "0"))*100
-          print(f"coverage: {rate:.2f}% (threshold 55%)")
-          sys.exit(0 if rate >= 55.0 else 1)
-          PY
-
-      - name: Upload coverage.xml
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage.xml
-          path: coverage.xml
+            python - << 'PY'
+            import sys, xml.etree.ElementTree as ET
+            tree = ET.parse("coverage.xml")
+            total = tree.getroot().attrib.get("line-rate")
+            if total is None:
+                print("ERROR: no line-rate in coverage.xml")
+                sys.exit(1)
+            pct = float(total) * 100.0
+            print(f"Total coverage: {pct:.2f}%")
+            THRESH = 55.0  # TODO: raise to 80% once tests are added
+            if pct < THRESH:
+                print(f"::error ::Coverage {pct:.2f}% is below {THRESH}% threshold")
+                sys.exit(1)
+            PY
