@@ -1,5 +1,4 @@
 name: licensing-ci
-name: licensing-ci
 
 on:
   push:
@@ -30,15 +29,15 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install licensing package + test deps
-        working-directory: licensing
+      - name: Install licensing service + test deps
         run: |
           python -m pip install --upgrade pip
+          # install the licensing package so `from app.main import app` works
           python -m pip install -e .
-          python -m pip install pytest coverage
+          # test tooling
+          python -m pip install pytest coverage fastapi uvicorn httpx pydantic rich
 
-      - name: Run licensing tests
+      - name: Run licensing tests with coverage
         run: |
           coverage run -m pytest -q
           coverage report -m
-          coverage run -m pytest -q

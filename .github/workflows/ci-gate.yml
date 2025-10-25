@@ -2,9 +2,21 @@ name: ci-gate
 
 on:
   push:
-    branches: [ main ]
+    paths:
+      - "**/*.py"
+      - ".github/workflows/ci-gate.yml"
+      - "pyproject.toml"
+      - "pytest.ini"
+      - "Makefile"
+      - "tools/firsttry/**"
   pull_request:
-  workflow_dispatch:
+    paths:
+      - "**/*.py"
+      - ".github/workflows/ci-gate.yml"
+      - "pyproject.toml"
+      - "pytest.ini"
+      - "Makefile"
+      - "tools/firsttry/**"
 
 permissions:
   contents: read
@@ -28,12 +40,19 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install package + test deps
+      - name: Install repo + firsttry package + test deps
         run: |
           python -m pip install --upgrade pip
-          # install repo so imports work
+
+          # install root project so imports like `import <mainpkg>` work
           python -m pip install -e .
-          # install test + static analysis tooling required by tests
+
+          # install the FirstTry CLI/tooling package (tools/firsttry) so tests can `import firsttry.*`
+          if [ -d "tools/firsttry" ]; then
+            python -m pip install -e tools/firsttry
+          fi
+
+          # install test / static-analysis tooling required by tests
           python -m pip install pytest coverage mypy ruff click rich PyYAML types-PyYAML sqlalchemy fastapi uvicorn pydantic httpx
 
       - name: Run tests with coverage
