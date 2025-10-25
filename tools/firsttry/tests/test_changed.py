@@ -19,4 +19,10 @@ def test_get_changed_files_monkeypatch(monkeypatch):
 
     monkeypatch.setattr("firsttry.changed.run", fake_run)
     out = get_changed_files("HEAD")
+
+    # expected both paths from the fake stdout to be present
     assert "tools/firsttry/firsttry/cli.py" in out or "firsttry/cli.py" in out
+    assert "README.md" in out
+
+    # deterministic: should already be sorted and deduped
+    assert out == sorted(dict.fromkeys(out))

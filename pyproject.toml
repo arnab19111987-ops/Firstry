@@ -27,3 +27,13 @@ exclude = [
     "^tools/",
     "^my-monorepo/",
 ]
+
+[project.optional-dependencies]
+# Development / quality tooling used by CI and local `make check`.
+dev = [
+    "mypy",
+    "ruff",
+    "pytest",
+    "coverage",
+    "types-PyYAML",
+]
