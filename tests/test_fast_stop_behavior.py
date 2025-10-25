@@ -1,4 +1,3 @@
-import os
 from firsttry import pro_features
 
 
@@ -45,7 +44,7 @@ def test_runner_stops_after_first_failure(monkeypatch):
                     },
                     {
                         "step_name": "should never run",
-                        "cmd": 'python -c "print(\'SHOULD_NOT_RUN\')"',
+                        "cmd": "python -c \"print('SHOULD_NOT_RUN')\"",
                         "install": False,
                         "meta": {
                             "workflow": "wf",

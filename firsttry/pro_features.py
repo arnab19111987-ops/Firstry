@@ -206,7 +206,9 @@ def _run_single_command(cmd: str) -> Dict[str, Any]:
     }
 
 
-def run_ci_plan_locally(plan: Dict[str, Any], license_key: Optional[str]) -> Dict[str, Any]:
+def run_ci_plan_locally(
+    plan: Dict[str, Any], license_key: Optional[str]
+) -> Dict[str, Any]:
     """
     Execute plan from ci_mapper.build_ci_plan().
 
@@ -304,7 +306,9 @@ def run_ci_plan_locally(plan: Dict[str, Any], license_key: Optional[str]) -> Dic
                     # First prefer the quickfix reference imported into this module (if any)
                     if quickfix is not None and hasattr(quickfix, "suggest_fix"):
                         specific = quickfix.suggest_fix(
-                            cmd=cmd, stdout=result.get("stdout", ""), stderr=result.get("stderr", "")
+                            cmd=cmd,
+                            stdout=result.get("stdout", ""),
+                            stderr=result.get("stderr", ""),
                         )
                         if specific:
                             hint_text = specific
@@ -315,7 +319,9 @@ def run_ci_plan_locally(plan: Dict[str, Any], license_key: Optional[str]) -> Dic
 
                             if _pkg_q is not None and hasattr(_pkg_q, "suggest_fix"):
                                 specific = _pkg_q.suggest_fix(
-                                    cmd=cmd, stdout=result.get("stdout", ""), stderr=result.get("stderr", "")
+                                    cmd=cmd,
+                                    stdout=result.get("stdout", ""),
+                                    stderr=result.get("stderr", ""),
                                 )
                                 if specific:
                                     hint_text = specific
@@ -324,7 +330,9 @@ def run_ci_plan_locally(plan: Dict[str, Any], license_key: Optional[str]) -> Dic
                             pass
                 except Exception:
                     # Don't let quickfix errors break the runner; fall back to generic hint.
-                    hint_text = "This is the first failing step. Fix this step to unblock CI."
+                    hint_text = (
+                        "This is the first failing step. Fix this step to unblock CI."
+                    )
 
                 failed_at = {
                     "workflow_name": wf_name,

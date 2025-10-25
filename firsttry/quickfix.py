@@ -122,7 +122,6 @@ def suggest_fix(cmd: str, stdout: str, stderr: str) -> str | None:
     This is intentionally conservative and best-effort.
     """
     import re
-    from typing import Optional
 
     combined = (stdout or "") + "\n" + (stderr or "")
     lower = combined.lower().strip()
@@ -147,9 +146,7 @@ def suggest_fix(cmd: str, stdout: str, stderr: str) -> str | None:
             missing_mod = m.group(1)
             # safety: don't suggest installing stdlib names
             if missing_mod not in ("sys", "os", "subprocess", "typing"):
-                return (
-                    f"Missing module '{missing_mod}'. Try: pip install {missing_mod}  # then re-run firsttry"
-                )
+                return f"Missing module '{missing_mod}'. Try: pip install {missing_mod}  # then re-run firsttry"
 
     # 3. NameError -> ask to run pytest locally
     if "nameerror" in lower:

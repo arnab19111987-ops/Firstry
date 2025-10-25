@@ -539,7 +539,9 @@ def cmd_mirror_ci(ns: argparse.Namespace) -> int:
                 )
         normalized_plan = {"jobs": jobs}
 
-    summary = pro_features_mod.run_ci_steps_locally(normalized_plan, license_key=license_key)
+    summary = pro_features_mod.run_ci_steps_locally(
+        normalized_plan, license_key=license_key
+    )
 
     if getattr(ns, "json", False):
         print(json.dumps(summary, indent=2))
@@ -708,6 +710,7 @@ def argparse_main() -> int:
     # (avoid argparse enforcing required subparsers when users call
     # `python -m firsttry.cli --version`).
     import sys as _sys
+
     if "--version" in _sys.argv:
         from firsttry import __version__
 

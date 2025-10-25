@@ -7,10 +7,10 @@ import yaml
 # Heuristics for skipping or rewriting steps to make local run faster
 # You can tune this list over time.
 SKIP_KEYWORDS = [
-    "actions/checkout",       # already in local workspace
-    "actions/setup-python",   # we already have python locally
-    "actions/setup-node",     # we already have node locally
-    "actions/cache",          # caching is irrelevant locally
+    "actions/checkout",  # already in local workspace
+    "actions/setup-python",  # we already have python locally
+    "actions/setup-node",  # we already have node locally
+    "actions/cache",  # caching is irrelevant locally
 ]
 
 # Commands that are "setup / install" and usually slow.
@@ -65,7 +65,9 @@ def _safe_load_yaml(path: str) -> Dict[str, Any]:
         return yaml.safe_load(f) or {}
 
 
-def _normalize_step(step: Dict[str, Any], job_name: str, step_idx: int, wf_name: str) -> Optional[Dict[str, Any]]:
+def _normalize_step(
+    step: Dict[str, Any], job_name: str, step_idx: int, wf_name: str
+) -> Optional[Dict[str, Any]]:
     """
     Convert a GitHub Actions step into our internal fast plan step.
 
@@ -172,7 +174,9 @@ def build_ci_plan(root: str) -> Dict[str, Any]:
                         )
 
                 # New normalized step
-                norm = _normalize_step(st, job_name=job_name, step_idx=idx, wf_name=wf_name)
+                norm = _normalize_step(
+                    st, job_name=job_name, step_idx=idx, wf_name=wf_name
+                )
                 if norm is not None:
                     norm_steps.append(norm)
 

@@ -11,10 +11,12 @@ def test_get_changed_files_monkeypatch(monkeypatch):
     def fake_run(args, check, stdout, stderr, text):
         ns = types.SimpleNamespace()
         ns.returncode = 0
+        # git output may be normalized to repository-relative paths (e.g. "firsttry/cli.py")
+        # or include the tools path depending on how the package is installed. Accept either.
         ns.stdout = "tools/firsttry/firsttry/cli.py\nREADME.md\n"
         ns.stderr = ""
         return ns
 
     monkeypatch.setattr("firsttry.changed.run", fake_run)
     out = get_changed_files("HEAD")
-    assert "tools/firsttry/firsttry/cli.py" in out
+    assert "tools/firsttry/firsttry/cli.py" in out or "firsttry/cli.py" in out

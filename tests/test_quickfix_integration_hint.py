@@ -12,7 +12,9 @@ def test_failed_at_includes_quickfix_hint(monkeypatch):
     # to make this test robust regardless of import timing.
     monkeypatch.setattr("firsttry.pro_features.quickfix", DummyQuickfix, raising=True)
     # Also patch the package quickfix's suggest_fix in case pro_features kept the module reference.
-    monkeypatch.setattr("firsttry.quickfix.suggest_fix", DummyQuickfix.suggest_fix, raising=False)
+    monkeypatch.setattr(
+        "firsttry.quickfix.suggest_fix", DummyQuickfix.suggest_fix, raising=False
+    )
 
     plan = {
         "jobs": [
@@ -24,7 +26,12 @@ def test_failed_at_includes_quickfix_hint(monkeypatch):
                         "step_name": "bad",
                         "cmd": 'python -c "import sys; sys.exit(9)"',
                         "install": False,
-                        "meta": {"workflow": "wf", "job": "qa", "original_index": 0, "original_step": {}},
+                        "meta": {
+                            "workflow": "wf",
+                            "job": "qa",
+                            "original_index": 0,
+                            "original_step": {},
+                        },
                     },
                 ],
             }

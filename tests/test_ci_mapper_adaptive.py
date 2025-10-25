@@ -1,4 +1,3 @@
-import os
 import textwrap
 from firsttry import ci_mapper
 

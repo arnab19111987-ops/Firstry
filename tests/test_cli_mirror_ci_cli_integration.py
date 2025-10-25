@@ -1,6 +1,6 @@
 import json
 import time
-from firsttry import cli, ci_mapper, pro_features
+from firsttry import cli, ci_mapper
 
 
 def test_cli_mirror_ci_run_integration(monkeypatch, capsys, tmp_path):
@@ -17,15 +17,25 @@ def test_cli_mirror_ci_run_integration(monkeypatch, capsys, tmp_path):
                     "steps": [
                         {
                             "step_name": "Lint",
-                            "cmd": 'python -c "print(\'lint ok\')"',
+                            "cmd": "python -c \"print('lint ok')\"",
                             "install": False,
-                            "meta": {"workflow":"SpeedCheck","job":"qa","original_index":0,"original_step":{}},
+                            "meta": {
+                                "workflow": "SpeedCheck",
+                                "job": "qa",
+                                "original_index": 0,
+                                "original_step": {},
+                            },
                         },
                         {
                             "step_name": "Tests",
-                            "cmd": 'python -c "print(\'pytest ok\')"',
+                            "cmd": "python -c \"print('pytest ok')\"",
                             "install": False,
-                            "meta": {"workflow":"SpeedCheck","job":"qa","original_index":1,"original_step":{}},
+                            "meta": {
+                                "workflow": "SpeedCheck",
+                                "job": "qa",
+                                "original_index": 1,
+                                "original_step": {},
+                            },
                         },
                     ],
                 }

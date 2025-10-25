@@ -1,5 +1,4 @@
-import json
-from firsttry import ci_mapper, pro_features
+from firsttry import pro_features
 
 
 def _fake_plan_two_steps_ok_then_fail():
@@ -11,7 +10,7 @@ def _fake_plan_two_steps_ok_then_fail():
                 "steps": [
                     {
                         "step_name": "Echo ok",
-                        "cmd": 'python -c "print(\'hello\')"',
+                        "cmd": "python -c \"print('hello')\"",
                         "install": False,
                         "meta": {
                             "workflow": "UnitPipeline",
@@ -33,7 +32,7 @@ def _fake_plan_two_steps_ok_then_fail():
                     },
                     {
                         "step_name": "Should never run",
-                        "cmd": 'python -c "print(\'NEVER\')"',
+                        "cmd": "python -c \"print('NEVER')\"",
                         "install": False,
                         "meta": {
                             "workflow": "UnitPipeline",
