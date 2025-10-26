@@ -9,6 +9,7 @@ omit =
     tools/firsttry/firsttry/runners.py
     tools/firsttry/firsttry/*
     firsttry/runners.py
+    firsttry/__main__.py
 
 [report]
 exclude_lines =

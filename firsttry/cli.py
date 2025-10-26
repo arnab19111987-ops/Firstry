@@ -172,6 +172,12 @@ def get_changed_files(*args, **kwargs):
     return []
 
 
+# Module-level sentinel so tests can monkeypatch `firsttry.cli.install_git_hooks`.
+# Use a non-callable sentinel to allow runtime detection whether it was overridden.
+_INSTALL_GIT_HOOKS_DEFAULT = object()
+install_git_hooks = _INSTALL_GIT_HOOKS_DEFAULT
+
+
 # ---------------------------------------------------------------------
 # core gate execution
 # ---------------------------------------------------------------------
@@ -224,7 +230,9 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
         verdict_str = (
             "SAFE TO COMMIT ✅"
             if gate == "pre-commit"
-            else "SAFE TO PUSH ✅" if gate == "pre-push" else "SAFE ✅"
+            else "SAFE TO PUSH ✅"
+            if gate == "pre-push"
+            else "SAFE ✅"
         )
         exit_code = 0
 
@@ -301,9 +309,16 @@ def cli_install_hooks():
     """
     Install git hooks so FirstTry runs before commit/push.
     """
-    from .hooks import install_git_hooks
+    # Allow tests to monkeypatch `firsttry.cli.install_git_hooks` directly.
+    # If a module-level `install_git_hooks` has been injected (tests), prefer it.
+    install_fn = globals().get("install_git_hooks", _INSTALL_GIT_HOOKS_DEFAULT)
+    # If the module-level name is still the sentinel (or not callable), prefer
+    # the real implementation from firsttry.hooks so tests that patch
+    # `firsttry.hooks.install_git_hooks` continue to work.
+    if install_fn is _INSTALL_GIT_HOOKS_DEFAULT or not callable(install_fn):
+        from .hooks import install_git_hooks as install_fn
 
-    pre_commit_path, pre_push_path = install_git_hooks()
+    pre_commit_path, pre_push_path = install_fn()
     click.echo(
         "Installed Git hooks:\n"
         f"  {pre_commit_path}\n"

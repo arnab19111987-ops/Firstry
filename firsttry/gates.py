@@ -498,7 +498,14 @@ def run_gate(which: str) -> Tuple[List[dict[str, object]], bool]:
 
     for label, fn in tasks:
         try:
-            res = fn()
+            # Resolve the callable by name from the current module globals.
+            # Tests may monkeypatch functions on the module (e.g. monkeypatch.setattr(gates, "check_lint", ...)).
+            # PRE_*_TASKS stores function objects at import time; re-resolving here ensures
+            # the latest attribute (possibly a monkeypatched stub) is used instead of the
+            # original reference stored in the list.
+            fn_name = getattr(fn, "__name__", None)
+            current_fn = globals().get(fn_name, fn) if fn_name else fn
+            res = current_fn()
         except Exception as exc:
             # Convert unexpected exceptions into a failing GateResult so
             # consumers receive structured output instead of a raised error.

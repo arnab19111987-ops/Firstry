@@ -34,8 +34,13 @@ jobs:
           python -m pip install --upgrade pip
           # Best effort: editable install with dev extras if you defined them
           python -m pip install -e ".[dev]" || true
-          # Guaranteed baseline tools (match what make check expects)
-          python -m pip install ruff black mypy pytest coverage types-PyYAML click rich PyYAML
+          # If present, install pinned dev tool versions for reproducible CI
+          if [ -f requirements-dev.txt ]; then
+            python -m pip install -r requirements-dev.txt
+          else
+            # Guaranteed baseline tools (match what make check expects)
+            python -m pip install ruff black mypy pytest coverage types-PyYAML click rich PyYAML
+          fi
 
       - name: Run quality gate (ruff / black / mypy / pytest smoke)
         run: |

@@ -1,10 +1,16 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from time import perf_counter
-from subprocess import run, PIPE
+import subprocess
 from typing import Iterable, Sequence
 from pathlib import Path
 import xml.etree.ElementTree as ET
+
+# Optional compatibility alias; keep after other imports so linters don't
+# complain about non-top-level imports. Tests should patch `subprocess.run`
+# directly, but exposing this alias doesn't hurt external users that import
+# `firsttry.runners.run`.
+run = subprocess.run
 
 
 @dataclass(frozen=True)
@@ -19,7 +25,19 @@ class StepResult:
 
 def _exec(name: str, args: Sequence[str], cwd: Path | None = None) -> StepResult:
     t0 = perf_counter()
-    proc = run(args, stdout=PIPE, stderr=PIPE, text=True, cwd=str(cwd) if cwd else None)
+    # Debug: write the current 'run' callable to a debug log to help track
+    # test-order related monkeypatching issues. This is temporary and will be
+    # removed once the root cause is confirmed.
+    # Call subprocess.run dynamically so tests can monkeypatch
+    # `subprocess.run` at runtime and have `_exec` pick up the stub even if
+    # this module bound an alias at import time.
+    proc = subprocess.run(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=str(cwd) if cwd else None,
+    )
     dt = perf_counter() - t0
     return StepResult(
         name=name,

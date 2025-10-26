@@ -47,6 +47,13 @@ jobs:
           # Prefer editable install with dev extras; fall back to a non-editable install
           python -m pip install -e ".[dev]" || python -m pip install ".[dev]"
 
+          # If present, install pinned dev tool versions to avoid surprises from
+          # floating dev-dependency versions. This file is created/committed by
+          # contributors to lock the toolchain used in CI.
+          if [ -f requirements-dev.txt ]; then
+            python -m pip install -r requirements-dev.txt
+          fi
+
           # install the FirstTry CLI/tooling package (tools/firsttry) so tests can `import firsttry.*`
           if [ -d "tools/firsttry" ]; then
             python -m pip install -e tools/firsttry
@@ -69,7 +76,7 @@ jobs:
                 sys.exit(1)
             pct = float(total) * 100.0
             print(f"Total coverage: {pct:.2f}%")
-            THRESH = 55.0  # TODO: raise to 80% once tests are added
+            THRESH = 80.0
             if pct < THRESH:
                 print(f"::error ::Coverage {pct:.2f}% is below {THRESH}% threshold")
                 sys.exit(1)
