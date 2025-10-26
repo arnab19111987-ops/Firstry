@@ -76,7 +76,7 @@ jobs:
                 sys.exit(1)
             pct = float(total) * 100.0
             print(f"Total coverage: {pct:.2f}%")
-            THRESH = 55.0  # TODO: raise to 80% once tests are added
+            THRESH = 80.0
             if pct < THRESH:
                 print(f"::error ::Coverage {pct:.2f}% is below {THRESH}% threshold")
                 sys.exit(1)
