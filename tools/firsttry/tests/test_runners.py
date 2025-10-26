@@ -29,6 +29,8 @@ def test_exec_wrapper_monkeypatch(monkeypatch):
         ns = types.SimpleNamespace(returncode=0, stdout="ok", stderr="")
         return ns
 
-    monkeypatch.setattr("firsttry.runners.run", fake_run)
+    # Patch the subprocess.run entrypoint so `_exec` uses the stub regardless
+    # of import-time binding differences.
+    monkeypatch.setattr("subprocess.run", fake_run)
     r = runners.run_ruff(["tools/firsttry/firsttry"])
     assert r.ok and r.name == "ruff"
