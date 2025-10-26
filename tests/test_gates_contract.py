@@ -1,5 +1,3 @@
-import importlib
-
 from firsttry import gates
 
 
