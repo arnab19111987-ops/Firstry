@@ -4,4 +4,6 @@ This is intentionally minimal: real code lives in subpackages and is re-exported
 by `tools.firsttry` wrapper.
 """
 
-__all__ = []
+from __future__ import annotations
+
+__all__: list[str] = []
