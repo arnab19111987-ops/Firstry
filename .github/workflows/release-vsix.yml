@@ -1,0 +1,38 @@
+name: release-vsix
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-publish-vsix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node for VS Code extension
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install deps for extension
+        working-directory: vscode-extension
+        run: |
+          npm install --no-audit --no-fund
+
+      - name: Package VSIX
+        working-directory: vscode-extension
+        run: |
+          npx vsce package --no-yarn --out firsttry-extension.vsix
+
+      - name: Create or update GitHub Release & upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: vscode-extension/firsttry-extension.vsix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

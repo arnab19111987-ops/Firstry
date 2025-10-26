@@ -78,56 +78,42 @@ Returns a single JSON report:
     {
       "gate": "pre-commit",
       "ok": false,
-      "status": "fail",
-      "info": "ruff",
-      "details": "lint errors",
-      "returncode": 1,
-      "stdout": "ruff said nope",
-      "stderr": ""
-    },
-    {
-      "gate": "pre-push",
-      "ok": true,
-      "status": "pass",
-      "info": "mypy",
-      "details": "clean",
-      "returncode": 0,
-      "stdout": "success",
-      "stderr": ""
-    }
-  ]
-}
+      > **Public Beta (v0.1.0-beta)**  
+      > You can start using FirstTry right now:
+      >
+      > 1. **CLI setup & workflow** → [GET_STARTED.md](./GET_STARTED.md)  
+      > 2. **VS Code extension install** → [INSTALL_VSCODE_EXTENSION.md](./INSTALL_VSCODE_EXTENSION.md)  
+      > 3. **Download the extension (.vsix)** → Check the latest Release tagged `v0.1.0-beta`
+      >
+      > FirstTry = ship code that passes CI on the first try. No more "fix lint lol" commits.
 
+      ````markdown
+      # FirstTry
 
-Exit code:
+      **FirstTry makes sure your pull request is green on the first push.**  
+      It runs the same checks as your GitHub Actions CI, locally, in seconds — and tells you exactly which step would fail and how to fix it.
 
-0 if all gates passed
+      **Pass CI on the first try.**
 
-1 if anything failed
+      FirstTry is a pre-commit quality gate that runs the same checks your CI does, locally, before you push. No more "fix lint" commits.
 
-This is perfect for:
+      <!-- ci-trigger: touch to run CI workflows -->
 
-Pre-commit hooks
+      ## Quick Start
 
-Dev containers / Codespaces startup checks
+      ```bash
+      # Install
+      pip install firsttry
 
-VS Code panels ("Why will my branch get rejected?")
+      # Run checks before commit
+      firsttry run --gate pre-commit
 
-2. CI Preflight (Pro)
+      # Install git hooks for automatic checking
+      firsttry install-hooks
 
-Simulate (and selectively run) your GitHub Actions workflow locally, before you even push.
-
-# Option A: via env
-export FIRSTTRY_LICENSE_KEY=YOUR-LICENSE-KEY
-firsttry mirror-ci --root . --run --json
-Note: the Pro runner supports a fast early-stop mode when you pass --run: FirstTry will stop on the first failing step to give you the fastest feedback. The JSON output includes a `failed_at` forensic object (workflow, job, step, cmd, stderr, timing) so you can quickly see exactly where CI broke.
-
-Example `failed_at` JSON (abridged):
-
-```json
-{
-  "ok": false,
-  "summary": {
+      # See what your CI will run
+      firsttry mirror-ci --root .
+      ```
     "failed_at": {
       "workflow": "ci.yml",
       "job": "build",
