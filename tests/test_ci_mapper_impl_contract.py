@@ -26,7 +26,11 @@ def test_build_ci_plan_parses_workflow(tmp_path):
                 "env": {"A": "1"},
                 "steps": [
                     {"uses": "actions/checkout@v2"},
-                    {"name": "Install", "run": "python -m pip install -r requirements.txt", "env": {"B": "2"}},
+                    {
+                        "name": "Install",
+                        "run": "python -m pip install -r requirements.txt",
+                        "env": {"B": "2"},
+                    },
                     {"name": "Test", "run": "pytest -q"},
                 ],
             }

@@ -2,11 +2,15 @@ from firsttry import gates
 
 
 def make_pass(name: str):
-    return gates.GateResult(name=name, status="PASS", info="ok", details="fine", returncode=0)
+    return gates.GateResult(
+        name=name, status="PASS", info="ok", details="fine", returncode=0
+    )
 
 
 def make_fail(name: str):
-    return gates.GateResult(name=name, status="FAIL", info="bad", details="failed", returncode=1)
+    return gates.GateResult(
+        name=name, status="FAIL", info="bad", details="failed", returncode=1
+    )
 
 
 def test_run_gate_all_pass(monkeypatch):
