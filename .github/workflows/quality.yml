@@ -27,8 +27,13 @@ jobs:
           if [ -f "pyproject.toml" ]; then
             python -m pip install -e ".[dev]" || true
           fi
-          # hard-install core linters/typecheckers/test deps unconditionally
-          python -m pip install ruff black mypy pytest coverage
+          # If present, install pinned dev tool versions for reproducible CI
+          if [ -f requirements-dev.txt ]; then
+            python -m pip install -r requirements-dev.txt
+          else
+            # hard-install core linters/typecheckers/test deps unconditionally
+            python -m pip install ruff black mypy pytest coverage
+          fi
 
       - name: Run code quality gate (ruff/black/mypy/pytest smoke)
         run: |

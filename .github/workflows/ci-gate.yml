@@ -47,6 +47,13 @@ jobs:
           # Prefer editable install with dev extras; fall back to a non-editable install
           python -m pip install -e ".[dev]" || python -m pip install ".[dev]"
 
+          # If present, install pinned dev tool versions to avoid surprises from
+          # floating dev-dependency versions. This file is created/committed by
+          # contributors to lock the toolchain used in CI.
+          if [ -f requirements-dev.txt ]; then
+            python -m pip install -r requirements-dev.txt
+          fi
+
           # install the FirstTry CLI/tooling package (tools/firsttry) so tests can `import firsttry.*`
           if [ -d "tools/firsttry" ]; then
             python -m pip install -e tools/firsttry
