@@ -339,7 +339,78 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
         ("Coverage Gate.", runners.coverage_gate, []),
     ]
 
-    results = []
+    # Helper: human single-line formatter
+    def _format_single_result(step_name: str, result) -> str:
+        """
+        Human-readable single-line status for the summary table.
+        """
+        status = "OK" if getattr(result, "ok", False) else "FAIL"
+        return f"{step_name:<20} {status}"
+
+    def _print_gate_summary(results: TList[tuple[str, object]]) -> TList[str]:
+        """
+        Build the short summary table lines for all steps and return as list
+        of lines (caller will join/print as needed).
+        """
+        out = []
+        out.append("")
+        out.append("=== FirstTry Gate Summary ===")
+        for step_name, result in results:
+            out.append(_format_single_result(step_name, result))
+        out.append("")
+        return out
+
+    def _print_failure_details_if_any(results: TList[tuple[str, object]]) -> TList[str]:
+        """
+        If any runner failed, produce actionable diagnostics lines:
+        - which step failed
+        - which command ran
+        - stdout / stderr
+
+        Returns a list of lines.
+        """
+        lines: TList[str] = []
+        failed = [
+            (step_name, result)
+            for step_name, result in results
+            if not getattr(result, "ok", False)
+        ]
+
+        if not failed:
+            return lines
+
+        lines.append("=== Failure Details (do this before committing) ===")
+        for step_name, result in failed:
+            lines.append(f"\n--- {step_name} FAILED ---")
+
+            # Command context
+            cmd = getattr(result, "cmd", None)
+            if cmd:
+                lines.append("Command:")
+                if isinstance(cmd, (list, tuple)):
+                    lines.append("  " + " ".join(str(x) for x in cmd))
+                else:
+                    lines.append("  " + str(cmd))
+
+            # Stdout
+            stdout = getattr(result, "stdout", "") or ""
+            if stdout:
+                lines.append("stdout:")
+                lines.append(stdout.rstrip())
+
+            # Stderr
+            stderr = getattr(result, "stderr", "") or ""
+            if stderr:
+                lines.append("stderr:")
+                lines.append(stderr.rstrip())
+
+        lines.append("")
+        lines.append("Hint: run 'ruff --fix .' and 'black .' locally, then re-commit.")
+        lines.append("If it's tests/coverage, run 'pytest -q' and inspect failures.")
+        lines.append("")
+        return lines
+
+    results: TList[tuple[str, object]] = []
     any_fail = False
 
     for label, fn, args in steps:
@@ -357,40 +428,33 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
             )
             ok = False
 
-        status = "PASS" if ok else "FAIL"
         if not ok:
             any_fail = True
 
-        info = getattr(r, "name", "")
-        results.append((label, status, info))
+        results.append((label, r))
+
+    exit_code = 1 if any_fail else 0
+
+    # summary lines
+    lines: TList[str] = []
+    lines.extend(_print_gate_summary(results))
 
     if any_fail:
-        verdict_str = "BLOCKED ❌"
-        exit_code = 1
+        lines.append("Verdict: BLOCKED ❌")
     else:
-        verdict_str = (
-            "SAFE TO COMMIT ✅"
-            if gate == "pre-commit"
-            else "SAFE TO PUSH ✅"
-            if gate == "pre-push"
-            else "SAFE ✅"
-        )
-        exit_code = 0
+        if gate == "pre-commit":
+            lines.append("Verdict: SAFE TO COMMIT ✅")
+        elif gate == "pre-push":
+            lines.append("Verdict: SAFE TO PUSH ✅")
+        else:
+            lines.append("Verdict: SAFE ✅")
 
-    lines = []
-    lines.append("FirstTry Gate Summary")
-    lines.append("---------------------")
-    for label, status, info in results:
-        info_part = f" {info}" if info else ""
-        lines.append(f"{label} {status}{info_part}")
-    lines.append("")
-    lines.append(f"Verdict: {verdict_str}")
-    lines.append("")
-    if any_fail:
-        lines.append(
-            "One or more checks FAILED. Fix the issues above before continuing."
-        )
-    else:
+    # actionable failure details
+    lines.extend(_print_failure_details_if_any(results))
+
+    # final guidance when nothing failed
+    if not any_fail:
+        lines.append("")
         lines.append(
             "Everything looks good. You'll almost certainly pass CI on the first try."
         )
