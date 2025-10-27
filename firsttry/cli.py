@@ -103,14 +103,52 @@ def _load_real_runners_or_stub() -> SimpleNamespace:
     repo_root = pkg_root.parent  # workspace root guess
     runners_path = repo_root / "tools" / "firsttry" / "firsttry" / "runners.py"
 
+    # Allow tests to override which module to load by setting
+    # FIRSTTRY_RUNNERS_MODULE to a dotted import path. This lets tests
+    # inject a fake module into sys.modules without needing to write files.
+    runners_module_override = os.getenv("FIRSTTRY_RUNNERS_MODULE", "")
+
     # Clean any polluted modules from previous loads
     sys.modules.pop("firsttry.runners", None)
     sys.modules.pop("firsttry.runners_impl", None)
     sys.modules.pop("firsttry.runners.dynamic_loaded", None)
 
+    if runners_module_override:
+        try:
+            mod = importlib.import_module(runners_module_override)
+
+            def _wrap_from_mod(fn_name, fallback_name):
+                fn = getattr(mod, fn_name, None)
+                if callable(fn):
+                    return fn
+                return getattr(_make_stub_runners(), fallback_name)
+
+            return SimpleNamespace(
+                run_ruff=_wrap_from_mod("run_ruff", "run_ruff"),
+                run_black_check=_wrap_from_mod("run_black_check", "run_black_check"),
+                run_mypy=_wrap_from_mod("run_mypy", "run_mypy"),
+                run_pytest_kexpr=_wrap_from_mod("run_pytest_kexpr", "run_pytest_kexpr"),
+                run_coverage_xml=_wrap_from_mod("run_coverage_xml", "run_coverage_xml"),
+                coverage_gate=_wrap_from_mod("coverage_gate", "coverage_gate"),
+            )
+        except Exception:
+            logger.debug(
+                "failed to import runners module override %r",
+                runners_module_override,
+                exc_info=True,
+            )
+
     if runners_path.exists():
         try:
-            importlib.invalidate_caches()
+            try:
+                importlib.invalidate_caches()
+            except Exception:
+                # In some test environments importlib.invalidate_caches() may
+                # raise due to non-standard finders; don't let that break the
+                # runner loading path — fallback logic will handle failures.
+                logger.debug(
+                    "importlib.invalidate_caches() raised, continuing", exc_info=True
+                )
             spec = importlib.util.spec_from_file_location(
                 "firsttry.runners.dynamic_loaded", str(runners_path)
             )
@@ -138,7 +176,8 @@ def _load_real_runners_or_stub() -> SimpleNamespace:
     # Fallback if we couldn't load mod (like in external repos with no /tools layout)
     # We'll create "direct" runners here that actually shell out.
     def _shell(cmd: TList[str], name: str):
-        import subprocess, time
+        import subprocess
+        import time
 
         t0 = time.time()
         try:
@@ -162,20 +201,20 @@ def _load_real_runners_or_stub() -> SimpleNamespace:
             cmd=tuple(cmd),
         )
 
-    def run_ruff():
+    def run_ruff(*args, **kwargs):
         return _shell(["ruff", "check", "."], "ruff")
 
-    def run_black_check():
+    def run_black_check(*args, **kwargs):
         return _shell(["black", "--check", "."], "black-check")
 
-    def run_mypy():
+    def run_mypy(*args, **kwargs):
         return _shell(["mypy", "."], "mypy")
 
-    def run_pytest_kexpr():
+    def run_pytest_kexpr(*args, **kwargs):
         # pytest only. coverage gate happens separately.
         return _shell(["pytest", "-q"], "pytest")
 
-    def run_coverage_xml():
+    def run_coverage_xml(*args, **kwargs):
         # generate coverage.xml or run coverage run; adjust as needed.
         return _shell(
             [
@@ -188,10 +227,11 @@ def _load_real_runners_or_stub() -> SimpleNamespace:
             "coverage_xml",
         )
 
-    def coverage_gate():
+    def coverage_gate(*args, **kwargs):
         # Enforce >=80 coverage locally, just like CI.
         # 1) run report
-        import subprocess, json, tempfile
+        import subprocess
+        import json
 
         # We'll parse `coverage json` if available, else fallback to text parse.
         try:

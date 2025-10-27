@@ -91,49 +91,63 @@ def self_repair() -> None:
         print("[firsttry] ✅ All required tooling installed.")
 
 
-def ensure_dev_support_files():
+def ensure_dev_support_files(base_dir: Path | None = None) -> bool:
     """
-    Make sure the repo has the basic support files FirstTry expects:
+    Ensure the repo has the basic support files FirstTry expects.
+
     - requirements-dev.txt
     - Makefile with `check` and `ruff-fix`
-    This is used by `firsttry init`.
+
+    If `base_dir` is provided, files are created relative to that path.
+    Returns True if operation succeeded or files already existed, False on
+    expected failures (like permission errors).
     """
+    base = Path(base_dir) if base_dir else Path.cwd()
+
     # 1. requirements-dev.txt
-    req_path = Path("requirements-dev.txt")
-    if not req_path.exists():
-        req_path.write_text(
-            "\n".join(
-                [
-                    "ruff==0.6.9",
-                    "mypy==1.13.0",
-                    "pytest==8.3.3",
-                    "coverage==7.6.4",
-                    "black==23.1.0",
-                    "click",
-                    "pyyaml",
-                ]
+    req_path = base / "requirements-dev.txt"
+    try:
+        if not req_path.exists():
+            req_path.write_text(
+                "\n".join(
+                    [
+                        "ruff==0.6.9",
+                        "mypy==1.13.0",
+                        "pytest==8.3.3",
+                        "coverage==7.6.4",
+                        "black==23.1.0",
+                        "click",
+                        "pyyaml",
+                    ]
+                )
+                + "\n"
             )
-            + "\n"
-        )
-        print("[firsttry] wrote requirements-dev.txt")
+            print("[firsttry] wrote requirements-dev.txt")
+    except Exception:
+        return False
 
     # 2. Makefile
-    mk_path = Path("Makefile")
-    if not mk_path.exists():
-        mk_path.write_text(
-            """\
+    mk_path = base / "Makefile"
+    try:
+        if not mk_path.exists():
+            mk_path.write_text(
+                """\
 .PHONY: check ruff-fix
 
 check:
-\t@echo "[firsttry] running full quality gate..."
-\truff check .
-\tmypy .
-\tcoverage run -m pytest -q
-\tcoverage report --fail-under=80
+	@echo "[firsttry] running full quality gate..."
+	ruff check .
+	mypy .
+	coverage run -m pytest -q
+	coverage report --fail-under=80
 
 ruff-fix:
-\truff check . --fix
-\tblack .
+	ruff check . --fix
+	black .
 """
-        )
-        print("[firsttry] wrote Makefile with `check` and `ruff-fix` targets")
+            )
+            print("[firsttry] wrote Makefile with `check` and `ruff-fix` targets")
+    except Exception:
+        return False
+
+    return True

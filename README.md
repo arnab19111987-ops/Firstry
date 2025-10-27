@@ -9,6 +9,26 @@ FirstTry is a pre-commit quality gate that runs the same checks your CI does, lo
 
 <!-- ci-trigger: touch to run CI workflows -->
 
+---
+
+# FirstTry — Ship Green On The First Try ✅
+
+Quick Start
+- Install: `pip install -e .` or `pip install firsttry`
+- Run the pre-commit gate locally: `firsttry run --gate pre-commit`
+- Install hooks: `firsttry install-hooks`
+
+Pro vs Free
+- Free: local gating (`firsttry gates`) that prevents obviously broken commits and surfaces failing steps.
+- Pro: `firsttry mirror-ci --run` executes your CI steps locally (safe sandbox, denies destructive commands) and requires a license key.
+
+VS Code flow (one-click onboarding)
+- Click the extension `Protect this repo` action.
+- Extension runs: `firsttry init`, `firsttry install-hooks`, `firsttry run --gate pre-commit`.
+- Extension writes `.firsttry.json` with install metadata and coverage threshold and surfaces PASS/FAIL inline in the editor.
+
+---
+
 ## Quick Start
 
 ```bash
