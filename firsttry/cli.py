@@ -14,6 +14,7 @@ import click
 
 from . import ci_mapper
 from . import __version__
+from . import self_repair
 
 logger = logging.getLogger("firsttry.cli")
 
@@ -76,69 +77,209 @@ def _make_stub_runners():
 
 def _load_real_runners_or_stub() -> SimpleNamespace:
     """
-    Deterministic loader for runners.
+    Loader for runners.
 
-    Rules:
-    - If FIRSTTRY_USE_REAL_RUNNERS=1:
-        1. We *ignore* any cached firsttry.runners
-        2. We resolve tools/firsttry/firsttry/runners.py from THIS package root
-        3. We exec that file into a new module object
-        4. We wrap the callables into a SimpleNamespace so tests get a stable API
-    - Else:
-        return stub runners.
+    New rules:
+    - By default we try to load REAL runners that actually run ruff, mypy, pytest, etc.
+    - If FIRSTTRY_USE_STUB_RUNNERS=1 is set, we fall back to stub (for internal testing).
+    - We NEVER default to "always PASS" in normal user flow.
     """
-    use_real = os.getenv("FIRSTTRY_USE_REAL_RUNNERS") == "1"
-    if not use_real:
+    # Prefer stub runners during tests (pytest) or when explicitly requested
+    use_stub = os.getenv("FIRSTTRY_USE_STUB_RUNNERS") == "1"
+    # Allow an explicit override to force real runners even during pytest runs.
+    force_real = os.getenv("FIRSTTRY_USE_REAL_RUNNERS") == "1"
+    # If running under pytest (or pytest injected env), prefer stubs so tests
+    # don't accidentally shell out to real external tools during module import.
+    if (
+        "PYTEST_CURRENT_TEST" in os.environ or "pytest" in sys.modules
+    ) and not force_real:
+        use_stub = True
+    if use_stub:
         return _make_stub_runners()
 
-    # Figure out where this package lives on disk.
-    # __file__ is something like /.../firsttry/cli.py
-    # We need to find tools/firsttry/firsttry/runners.py relative to repo root
+    # ---- attempt to load the real runners implementation dynamically ----
+    # This preserves your existing dynamic import-from-tools behavior.
     pkg_root = Path(__file__).resolve().parent  # .../firsttry
-    repo_root = pkg_root.parent  # workspace root
+    repo_root = pkg_root.parent  # workspace root guess
     runners_path = repo_root / "tools" / "firsttry" / "firsttry" / "runners.py"
 
-    # Important: ignore anything already in sys.modules.
-    # This neutralizes pollution from earlier tests.
+    # Allow tests to override which module to load by setting
+    # FIRSTTRY_RUNNERS_MODULE to a dotted import path. This lets tests
+    # inject a fake module into sys.modules without needing to write files.
+    runners_module_override = os.getenv("FIRSTTRY_RUNNERS_MODULE", "")
+
+    # Clean any polluted modules from previous loads
     sys.modules.pop("firsttry.runners", None)
     sys.modules.pop("firsttry.runners_impl", None)
     sys.modules.pop("firsttry.runners.dynamic_loaded", None)
 
-    if runners_path.exists():
+    if runners_module_override:
         try:
-            # Invalidate import caches
-            importlib.invalidate_caches()
+            mod = importlib.import_module(runners_module_override)
 
-            # Exec runners.py manually into a new module spec
-            spec = importlib.util.spec_from_file_location(
-                "firsttry.runners.dynamic_loaded", str(runners_path)
-            )
-            if spec is None or spec.loader is None:
-                return _make_stub_runners()
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-
-            # Now wrap the functions we care about into a fresh namespace
-            def _wrap(fn_name, fallback_name):
+            def _wrap_from_mod(fn_name, fallback_name):
                 fn = getattr(mod, fn_name, None)
                 if callable(fn):
                     return fn
-                # fallback: still return stub so callers don't explode
                 return getattr(_make_stub_runners(), fallback_name)
 
             return SimpleNamespace(
-                run_ruff=_wrap("run_ruff", "run_ruff"),
-                run_black_check=_wrap("run_black_check", "run_black_check"),
-                run_mypy=_wrap("run_mypy", "run_mypy"),
-                run_pytest_kexpr=_wrap("run_pytest_kexpr", "run_pytest_kexpr"),
-                run_coverage_xml=_wrap("run_coverage_xml", "run_coverage_xml"),
-                coverage_gate=_wrap("coverage_gate", "coverage_gate"),
+                run_ruff=_wrap_from_mod("run_ruff", "run_ruff"),
+                run_black_check=_wrap_from_mod("run_black_check", "run_black_check"),
+                run_mypy=_wrap_from_mod("run_mypy", "run_mypy"),
+                run_pytest_kexpr=_wrap_from_mod("run_pytest_kexpr", "run_pytest_kexpr"),
+                run_coverage_xml=_wrap_from_mod("run_coverage_xml", "run_coverage_xml"),
+                coverage_gate=_wrap_from_mod("coverage_gate", "coverage_gate"),
             )
         except Exception:
-            logger.debug("failed to load runners from tools path", exc_info=True)
+            logger.debug(
+                "failed to import runners module override %r",
+                runners_module_override,
+                exc_info=True,
+            )
 
-    # If file doesn't exist, fall back quietly
-    return _make_stub_runners()
+    if runners_path.exists():
+        try:
+            try:
+                importlib.invalidate_caches()
+            except Exception:
+                # In some test environments importlib.invalidate_caches() may
+                # raise due to non-standard finders; don't let that break the
+                # runner loading path — fallback logic will handle failures.
+                logger.debug(
+                    "importlib.invalidate_caches() raised, continuing", exc_info=True
+                )
+            spec = importlib.util.spec_from_file_location(
+                "firsttry.runners.dynamic_loaded", str(runners_path)
+            )
+            if spec and spec.loader:
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+
+                def _wrap(fn_name, fallback_name):
+                    fn = getattr(mod, fn_name, None)
+                    if callable(fn):
+                        return fn
+                    return getattr(_make_stub_runners(), fallback_name)
+
+                return SimpleNamespace(
+                    run_ruff=_wrap("run_ruff", "run_ruff"),
+                    run_black_check=_wrap("run_black_check", "run_black_check"),
+                    run_mypy=_wrap("run_mypy", "run_mypy"),
+                    run_pytest_kexpr=_wrap("run_pytest_kexpr", "run_pytest_kexpr"),
+                    run_coverage_xml=_wrap("run_coverage_xml", "run_coverage_xml"),
+                    coverage_gate=_wrap("coverage_gate", "coverage_gate"),
+                )
+        except Exception:
+            logger.debug("failed to load real runners", exc_info=True)
+
+    # Fallback if we couldn't load mod (like in external repos with no /tools layout)
+    # We'll create "direct" runners here that actually shell out.
+    def _shell(cmd: TList[str], name: str):
+        import subprocess
+        import time
+
+        t0 = time.time()
+        try:
+            p = subprocess.run(cmd, capture_output=True, text=True)
+            ok = p.returncode == 0
+        except Exception as exc:
+            return SimpleNamespace(
+                ok=False,
+                name=name,
+                duration_s=0.0,
+                stdout="",
+                stderr=str(exc),
+                cmd=tuple(cmd),
+            )
+        return SimpleNamespace(
+            ok=ok,
+            name=name,
+            duration_s=time.time() - t0,
+            stdout=p.stdout,
+            stderr=p.stderr,
+            cmd=tuple(cmd),
+        )
+
+    def run_ruff(*args, **kwargs):
+        return _shell(["ruff", "check", "."], "ruff")
+
+    def run_black_check(*args, **kwargs):
+        return _shell(["black", "--check", "."], "black-check")
+
+    def run_mypy(*args, **kwargs):
+        return _shell(["mypy", "."], "mypy")
+
+    def run_pytest_kexpr(*args, **kwargs):
+        # pytest only. coverage gate happens separately.
+        return _shell(["pytest", "-q"], "pytest")
+
+    def run_coverage_xml(*args, **kwargs):
+        # generate coverage.xml or run coverage run; adjust as needed.
+        return _shell(
+            [
+                "coverage",
+                "run",
+                "-m",
+                "pytest",
+                "-q",
+            ],
+            "coverage_xml",
+        )
+
+    def coverage_gate(*args, **kwargs):
+        # Enforce >=80 coverage locally, just like CI.
+        # 1) run report
+        import subprocess
+        import json
+
+        # We'll parse `coverage json` if available, else fallback to text parse.
+        try:
+            # Try coverage json
+            p = subprocess.run(
+                ["coverage", "json", "-q", "-o", "-"],
+                capture_output=True,
+                text=True,
+            )
+            if p.returncode == 0:
+                data = json.loads(p.stdout)
+                total = data["totals"]["percent_covered"]  # float like 86.3
+                ok = float(total) >= 80.0
+                return SimpleNamespace(
+                    ok=ok,
+                    name="coverage_gate",
+                    duration_s=0.0,
+                    stdout=p.stdout,
+                    stderr=p.stderr,
+                    cmd=("coverage", "json"),
+                )
+        except Exception:
+            pass
+
+        # Fallback: just run `coverage report --fail-under=80`
+        p2 = subprocess.run(
+            ["coverage", "report", "--fail-under=80"],
+            capture_output=True,
+            text=True,
+        )
+        ok2 = p2.returncode == 0
+        return SimpleNamespace(
+            ok=ok2,
+            name="coverage_gate",
+            duration_s=0.0,
+            stdout=p2.stdout,
+            stderr=p2.stderr,
+            cmd=("coverage", "report", "--fail-under=80"),
+        )
+
+    return SimpleNamespace(
+        run_ruff=run_ruff,
+        run_black_check=run_black_check,
+        run_mypy=run_mypy,
+        run_pytest_kexpr=run_pytest_kexpr,
+        run_coverage_xml=run_coverage_xml,
+        coverage_gate=coverage_gate,
+    )
 
 
 # Expose runners for the rest of cli.py - this gets called at module load time
@@ -198,7 +339,78 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
         ("Coverage Gate.", runners.coverage_gate, []),
     ]
 
-    results = []
+    # Helper: human single-line formatter
+    def _format_single_result(step_name: str, result) -> str:
+        """
+        Human-readable single-line status for the summary table.
+        """
+        status = "OK" if getattr(result, "ok", False) else "FAIL"
+        return f"{step_name:<20} {status}"
+
+    def _print_gate_summary(results: TList[tuple[str, object]]) -> TList[str]:
+        """
+        Build the short summary table lines for all steps and return as list
+        of lines (caller will join/print as needed).
+        """
+        out = []
+        out.append("")
+        out.append("=== FirstTry Gate Summary ===")
+        for step_name, result in results:
+            out.append(_format_single_result(step_name, result))
+        out.append("")
+        return out
+
+    def _print_failure_details_if_any(results: TList[tuple[str, object]]) -> TList[str]:
+        """
+        If any runner failed, produce actionable diagnostics lines:
+        - which step failed
+        - which command ran
+        - stdout / stderr
+
+        Returns a list of lines.
+        """
+        lines: TList[str] = []
+        failed = [
+            (step_name, result)
+            for step_name, result in results
+            if not getattr(result, "ok", False)
+        ]
+
+        if not failed:
+            return lines
+
+        lines.append("=== Failure Details (do this before committing) ===")
+        for step_name, result in failed:
+            lines.append(f"\n--- {step_name} FAILED ---")
+
+            # Command context
+            cmd = getattr(result, "cmd", None)
+            if cmd:
+                lines.append("Command:")
+                if isinstance(cmd, (list, tuple)):
+                    lines.append("  " + " ".join(str(x) for x in cmd))
+                else:
+                    lines.append("  " + str(cmd))
+
+            # Stdout
+            stdout = getattr(result, "stdout", "") or ""
+            if stdout:
+                lines.append("stdout:")
+                lines.append(stdout.rstrip())
+
+            # Stderr
+            stderr = getattr(result, "stderr", "") or ""
+            if stderr:
+                lines.append("stderr:")
+                lines.append(stderr.rstrip())
+
+        lines.append("")
+        lines.append("Hint: run 'ruff --fix .' and 'black .' locally, then re-commit.")
+        lines.append("If it's tests/coverage, run 'pytest -q' and inspect failures.")
+        lines.append("")
+        return lines
+
+    results: TList[tuple[str, object]] = []
     any_fail = False
 
     for label, fn, args in steps:
@@ -216,40 +428,33 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
             )
             ok = False
 
-        status = "PASS" if ok else "FAIL"
         if not ok:
             any_fail = True
 
-        info = getattr(r, "name", "")
-        results.append((label, status, info))
+        results.append((label, r))
+
+    exit_code = 1 if any_fail else 0
+
+    # summary lines
+    lines: TList[str] = []
+    lines.extend(_print_gate_summary(results))
 
     if any_fail:
-        verdict_str = "BLOCKED ❌"
-        exit_code = 1
+        lines.append("Verdict: BLOCKED ❌")
     else:
-        verdict_str = (
-            "SAFE TO COMMIT ✅"
-            if gate == "pre-commit"
-            else "SAFE TO PUSH ✅"
-            if gate == "pre-push"
-            else "SAFE ✅"
-        )
-        exit_code = 0
+        if gate == "pre-commit":
+            lines.append("Verdict: SAFE TO COMMIT ✅")
+        elif gate == "pre-push":
+            lines.append("Verdict: SAFE TO PUSH ✅")
+        else:
+            lines.append("Verdict: SAFE ✅")
 
-    lines = []
-    lines.append("FirstTry Gate Summary")
-    lines.append("---------------------")
-    for label, status, info in results:
-        info_part = f" {info}" if info else ""
-        lines.append(f"{label} {status}{info_part}")
-    lines.append("")
-    lines.append(f"Verdict: {verdict_str}")
-    lines.append("")
-    if any_fail:
-        lines.append(
-            "One or more checks FAILED. Fix the issues above before continuing."
-        )
-    else:
+    # actionable failure details
+    lines.extend(_print_failure_details_if_any(results))
+
+    # final guidance when nothing failed
+    if not any_fail:
+        lines.append("")
         lines.append(
             "Everything looks good. You'll almost certainly pass CI on the first try."
         )
@@ -325,6 +530,39 @@ def cli_install_hooks():
         f"  {pre_push_path}\n\n"
         "Now every commit/push will be checked by FirstTry automatically."
     )
+    raise SystemExit(0)
+
+
+@click_main.command("init")
+def cli_init():
+    """
+    Initialize FirstTry in this repo:
+    - write .git/hooks/pre-commit and pre-push
+    - ensure requirements-dev.txt exists
+    - optionally drop a Makefile.check if none exists
+    - print next steps for the user
+    """
+    # 1. Make sure required tools are present (try to self-repair the env)
+    self_repair.self_repair()
+
+    # 2. Write support files (requirements-dev.txt, Makefile) if missing
+    self_repair.ensure_dev_support_files()
+
+    # 3. Install Git hooks that call the real gate and block on failure
+    from .hooks import install_git_hooks as _install
+
+    pre_commit_path, pre_push_path = _install()
+
+    click.echo("FirstTry initialized ✅")
+    click.echo(f"- pre-commit hook: {pre_commit_path}")
+    click.echo(f"- pre-push hook:   {pre_push_path}")
+    click.echo("- requirements-dev.txt ensured")
+    click.echo("- Makefile ensured")
+    click.echo("")
+    click.echo("Next steps:")
+    click.echo("  1. python -m venv .venv && source .venv/bin/activate")
+    click.echo("  2. pip install -r requirements-dev.txt")
+    click.echo("  3. make check   # (or just commit: FirstTry will auto-run)")
     raise SystemExit(0)
 
 
