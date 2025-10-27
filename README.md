@@ -461,6 +461,20 @@ firsttry run --gate pre-push
 firsttry run --gate pre-commit --require-license
 ```
 
+When something fails, FirstTry explains exactly what broke and how to fix it.
+
+Example:
+
+```text
+--- Format (black) FAILED ---
+Fix:
+  Run: black .
+
+--- Lint (ruff) FAILED ---
+Fix:
+  Run: ruff --fix .
+```
+
 **Options:**
 - `--gate`: Which gate to run (`pre-commit` | `pre-push`)
 - `--require-license`: Fail if license check fails
