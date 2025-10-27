@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Tuple, Any, Callable, List as TList
+from typing import Tuple, Any, Callable, List as TList, Optional
 
 import click
 
@@ -324,7 +324,7 @@ install_git_hooks = _INSTALL_GIT_HOOKS_DEFAULT
 # ---------------------------------------------------------------------
 
 
-def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
+def _run_gate_via_runners(gate: Optional[str]) -> Tuple[str, int]:
     """
     Call runners.* in a known order.
     Build pretty summary with SAFE TO COMMIT ✅ / SAFE TO PUSH ✅ etc.
@@ -359,6 +359,22 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
             out.append(_format_single_result(step_name, result))
         out.append("")
         return out
+
+    # Map a short normalized step name -> a suggested autofix hint
+    _TOOL_HINTS = {
+        "Lint": "Run: ruff --fix .",
+        "Format": "Run: black .",
+        "Types": (
+            "Run: mypy .\nIf you see 'library stubs not installed', install types-* packages "
+            "(ex: python3 -m pip install types-PyYAML)."
+        ),
+        "Tests": "Run: pytest -q",
+        "Coverage XML": "Re-run locally: pytest --cov . --cov-report=xml",
+        "Coverage Gate": (
+            "Your tested coverage is below the required threshold. Add tests or "
+            "adjust the threshold in your .firsttry.json (Pro policy)."
+        ),
+    }
 
     def _print_failure_details_if_any(results: TList[tuple[str, object]]) -> TList[str]:
         """
@@ -403,6 +419,13 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
             if stderr:
                 lines.append("stderr:")
                 lines.append(stderr.rstrip())
+
+            # Autofix hint: normalize the step name (remove dots and extra spaces)
+            norm = step_name.replace(".", "").strip()
+            hint = _TOOL_HINTS.get(norm)
+            if hint:
+                lines.append("Fix:")
+                lines.append("  " + hint)
 
         lines.append("")
         lines.append("Hint: run 'ruff --fix .' and 'black .' locally, then re-commit.")

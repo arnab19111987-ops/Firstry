@@ -118,6 +118,7 @@ def ensure_dev_support_files(base_dir: Path | None = None) -> bool:
                         "black==23.1.0",
                         "click",
                         "pyyaml",
+                        "types-PyYAML",
                     ]
                 )
                 + "\n"
