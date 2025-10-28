@@ -16,6 +16,7 @@ Public API:
 from __future__ import annotations
 
 import subprocess
+import shlex
 import time
 import urllib.request
 from typing import Tuple
@@ -68,7 +69,11 @@ def run_docker_smoke(
     up_cmd, down_cmd = build_compose_cmds(compose_file)
 
     def _run(cmd: str) -> bool:
-        p = subprocess.run(cmd, shell=True)
+        # Prefer calling subprocess with a list of args to avoid shell=True
+        try:
+            p = subprocess.run(shlex.split(cmd) if isinstance(cmd, str) else cmd)
+        except FileNotFoundError:
+            return False
         return p.returncode == 0
 
     up_ok = _run(up_cmd)

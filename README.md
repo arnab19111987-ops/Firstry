@@ -7,6 +7,8 @@ It runs the same checks as your GitHub Actions CI, locally, in seconds — and t
 
 FirstTry is a pre-commit quality gate that runs the same checks your CI does, locally, before you push. No more "fix lint" commits.
 
+Security Gate: Blocks unsafe shell execution patterns and secret leaks before you ever push to GitHub. This is what your CI wishes it did locally.
+
 <!-- ci-trigger: touch to run CI workflows -->
 
 ---
@@ -284,6 +286,10 @@ The second one especially is money because you can say:
 “We blocked a destructive command from your CI and still told you what else passed. Your laptop is safe.”
 
 That’s how you close teams.
+
+## Roadmap
+
+- [ ] Security baseline noise reducer (group known test/tool files instead of flooding output)
 
 Screenshots / GIFs
 -------------------

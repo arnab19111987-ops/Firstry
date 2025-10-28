@@ -13,6 +13,7 @@ This is the core of FirstTry Pro:
 """
 
 import subprocess
+import shlex
 import time
 from typing import Any, Dict, List, Optional
 from types import ModuleType
@@ -149,7 +150,11 @@ def run_ci_steps_locally(
                 overall_ok = False
                 continue
 
-            completed = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            completed = subprocess.run(
+                shlex.split(cmd) if isinstance(cmd, str) else cmd,
+                capture_output=True,
+                text=True,
+            )
             rc = completed.returncode
             out = f"STDOUT:\n{completed.stdout.strip()}\n\nSTDERR:\n{completed.stderr.strip()}"
 
@@ -191,8 +196,7 @@ def _run_single_command(cmd: str) -> Dict[str, Any]:
     """
     start = time.time()
     proc = subprocess.run(
-        cmd,
-        shell=True,
+        shlex.split(cmd) if isinstance(cmd, str) else cmd,
         capture_output=True,
         text=True,
     )
