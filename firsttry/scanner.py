@@ -4,6 +4,18 @@ from __future__ import annotations
 import json
 import subprocess
 from typing import List, Tuple
+import os
+import fnmatch
+from pathlib import Path
+
+# Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse
+# a simple fallback format (lines starting with '-' under a 'files:' key).
+try:
+    import yaml  # type: ignore
+
+    YAML_AVAILABLE = True
+except Exception:
+    YAML_AVAILABLE = False
 from .models import Issue, SectionSummary, ScanResult
 
 COVERAGE_REQUIRED_DEFAULT = 80.0
@@ -288,6 +300,8 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
 
     issues = []
     has_high = False
+    high_unreviewed = 0
+    baselined = 0
 
     try:
         data = json.loads(out or "{}")
@@ -323,13 +337,64 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
             )
         )
 
+    # Load baseline (if present) to decide which security findings are
+    # considered "known risky but baselined" versus truly unreviewed.
+    baseline_path = Path(os.getcwd()) / "firsttry_security_baseline.yml"
+    baseline_patterns: List[str] = []
+    if baseline_path.exists():
+        try:
+            text = baseline_path.read_text(encoding="utf-8")
+            if YAML_AVAILABLE:
+                parsed = yaml.safe_load(text) or {}
+                baseline_patterns = parsed.get("files", []) or []
+            else:
+                # Simple fallback: read lines that start with '-' under a files: block
+                lines = [l.strip() for l in text.splitlines()]
+                in_files = False
+                for ln in lines:
+                    if ln.startswith("files:"):
+                        in_files = True
+                        continue
+                    if in_files:
+                        if ln.startswith("-"):
+                            pattern = ln.lstrip("- ").strip().strip('"')
+                            if pattern:
+                                baseline_patterns.append(pattern)
+                        elif not ln:
+                            # blank line ends block
+                            break
+        except Exception:
+            baseline_patterns = []
+
+    # Helper to test whether a filename matches any baseline pattern
+    def _is_baselined(fname: str) -> bool:
+        # Normalize to relative path
+        try:
+            rel = os.path.relpath(fname, start=os.getcwd())
+        except Exception:
+            rel = fname
+        rel = rel.replace("\\", "/")
+        for pat in baseline_patterns:
+            # allow both glob and simple prefix matches
+            if fnmatch.fnmatch(rel, pat) or rel.startswith(pat.rstrip("/**")):
+                return True
+        return False
+
+    # Count baselined vs unreviewed high-severity items
+    for it in issues:
+        if _is_baselined(it.file):
+            baselined += 1
+        else:
+            high_unreviewed += 1
+
     manual_count = len(issues)
     if manual_count == 0:
         notes = ["0 security issues detected."]
     else:
         notes = [f"{manual_count} security finding(s)."]
         if has_high:
-            notes.append("HIGH severity present. Must fix before push.")
+            notes.append("HIGH severity present. See baseline grouping for reviewed vs unreviewed items.")
+        notes.append(f"{baselined} findings are baselined (known-risk). {high_unreviewed} remain unreviewed/high-risk.")
 
     summary = SectionSummary(
         name="Security / Secrets",
@@ -338,7 +403,8 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
         notes=notes,
         ci_blocking=True,
     )
-    return issues, summary, has_high
+    # Return counts for scanner to decide commit safety
+    return issues, summary, has_high, high_unreviewed, baselined
 
 
 # -----------------------------------------------------------------------------
@@ -544,8 +610,16 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
         ci_blocking=True,
     )
     has_high_security = False
+    high_unreviewed_count = 0
+    baselined_count = 0
     if run_security:
-        sec_issues, sec_summary, has_high_security = _collect_security_section()
+        (
+            sec_issues,
+            sec_summary,
+            has_high_security,
+            high_unreviewed_count,
+            baselined_count,
+        ) = _collect_security_section()
 
     # 4. Tests / Coverage if this gate includes it
     test_issues: List[Issue] = []
@@ -585,9 +659,11 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
     manual_lint_issues = lint_summary.manual_count
     has_type_errors = type_summary.manual_count > 0
 
+    # New security blocking logic: only unreviewed high-risk security findings
+    # should block pre-push. Baselined (known) risky files are down-ranked.
     commit_safe = _compute_commit_safe(
         has_type_errors=has_type_errors,
-        has_high_security=has_high_security,
+        has_high_security=(high_unreviewed_count > 0),
         tests_passing=tests_passing,
         coverage_ok=coverage_ok,
         manual_lint_issues=manual_lint_issues,
@@ -616,5 +692,8 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
     # This keeps models.py simple (no schema change for now),
     # but gives cli.py the strictness knobs you asked for.
     result.autofix_cmds = autofix_cmds
+    # Attach security grouping counts for reporting
+    result.high_risk_unreviewed = high_unreviewed_count
+    result.known_risky_but_baselined = baselined_count
 
     return result

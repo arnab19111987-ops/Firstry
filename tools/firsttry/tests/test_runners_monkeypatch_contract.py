@@ -1,3 +1,10 @@
+"""
+FIRSTTRY_SECURITY_CONTEXT: test-only
+
+This test intentionally monkeypatches subprocess.exec and exercises dynamic exec
+behaviour required by the runner contract. It's intentionally noisy for security scanners.
+"""
+
 import types
 import subprocess
 import firsttry.runners as runners

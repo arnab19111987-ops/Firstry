@@ -55,6 +55,9 @@ class ScanResult:
     # scanner.py may also set this attribute at runtime; declare it here
     # so static type checking (mypy) and consumers can rely on the attribute.
     autofix_cmds: List[str] = field(default_factory=list)
+    # Security grouping counts (scanner will populate these when available)
+    high_risk_unreviewed: int = 0
+    known_risky_but_baselined: int = 0
 
     def as_dict(self) -> Dict[str, object]:
         """
@@ -90,4 +93,8 @@ class ScanResult:
             ],
             # include autofix_cmds in the dict if scanner attached it
             "autofix_cmds": getattr(self, "autofix_cmds", []),
+            "high_risk_unreviewed": getattr(self, "high_risk_unreviewed", 0),
+            "known_risky_but_baselined": getattr(
+                self, "known_risky_but_baselined", 0
+            ),
         }

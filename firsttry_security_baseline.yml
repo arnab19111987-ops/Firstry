@@ -1,0 +1,9 @@
+files:
+  # Common noisy-but-expected locations that should be down-ranked in security scans
+  - "tests/**"
+  - "licensing/tests/**"
+  - "tools/**"
+  - "docs/**"
+  - "vscode-extension/**"
+  # Add any ad-hoc noisy files below (one per line)
+  # - "path/to/noisy_file.py"

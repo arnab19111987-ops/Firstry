@@ -1,4 +1,6 @@
 """
+FIRSTTRY_SECURITY_CONTEXT: test-only
+
 Tests for the runner loader logic in firsttry.cli.
 
 Why this matters:

@@ -122,7 +122,8 @@ def verify_license(
 # -----------------------------
 
 # For dev/tests only. In production load from env/secret store.
-DEFAULT_SHARED_SECRET = "dev-secret-change-me"
+# Prefer reading from environment so secrets aren't hardcoded in source.
+DEFAULT_SHARED_SECRET = os.getenv("FIRSTTRY_SHARED_SECRET", "dev-secret-change-me")
 
 
 def _license_cache_path() -> Path:
