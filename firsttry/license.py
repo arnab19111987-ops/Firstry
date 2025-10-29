@@ -6,6 +6,7 @@ import os
 import pathlib
 from dataclasses import dataclass
 from typing import Callable, Optional, Protocol, Any, Dict, Tuple
+from datetime import datetime, timezone, timedelta
 import base64
 import hashlib
 import hmac
@@ -115,6 +116,87 @@ def verify_license(
     return LicenseInfo(
         valid=False, plan="free", expiry=None, raw={"valid": False, "plan": "free"}
     )
+
+
+def license_summary_for_humans(lic_obj) -> str:
+    """
+    Produce a compact human-friendly one-line summary for the given license object.
+
+    Accepts either a mapping (dict-like) or an object with attributes. The function
+    adapts common field names (`plan` / `tier`, `expiry` / `expires_at`, `valid` / `is_valid`).
+    Expiry strings in ISO format (including a trailing 'Z') are handled.
+    """
+
+    def _get(o, k):
+        try:
+            if isinstance(o, dict):
+                return o.get(k)
+            return getattr(o, k, None)
+        except Exception:
+            return None
+
+    plan = _get(lic_obj, "plan") or _get(lic_obj, "tier") or "trial"
+    expires_raw = (
+        _get(lic_obj, "expires_at")
+        or _get(lic_obj, "expiry")
+        or _get(lic_obj, "expiry_date")
+    )
+    is_valid = _get(lic_obj, "is_valid")
+    if is_valid is None:
+        is_valid = _get(lic_obj, "valid")
+    if is_valid is None:
+        is_valid = True
+
+    expires_dt = None
+    if isinstance(expires_raw, str):
+        try:
+            # handle trailing Z (UTC) which fromisoformat doesn't accept
+            iso = expires_raw
+            if iso.endswith("Z"):
+                iso = iso[:-1] + "+00:00"
+            expires_dt = datetime.fromisoformat(iso)
+        except Exception:
+            expires_dt = None
+    elif isinstance(expires_raw, datetime):
+        expires_dt = expires_raw
+
+    days_remaining_txt = ""
+    if expires_dt is not None:
+        now = datetime.now(timezone.utc)
+        # normalize naive datetimes to UTC
+        if expires_dt.tzinfo is None:
+            expires_dt = expires_dt.replace(tzinfo=timezone.utc)
+        remaining_days = (expires_dt - now).days
+        days_remaining_txt = (
+            f" ({remaining_days} day(s) left)" if remaining_days >= 0 else " (expired)"
+        )
+
+    status = "valid" if bool(is_valid) else "invalid"
+    return f"License: {plan}{days_remaining_txt} • Status: {status}"
+
+
+def ensure_trial_license_if_missing(days: int = 3, plan: str = "trial") -> LicenseInfo:
+    """
+    Ensure a trial license is present in the cache. If a cached license exists, return it.
+    Otherwise create a short-lived trial license (signed) and save it to the cache,
+    returning the resulting LicenseInfo.
+    """
+    cached = load_cached_license()
+    if cached:
+        return cached
+
+    expiry_dt = datetime.now(timezone.utc) + timedelta(days=days)
+    # represent expiry in ISO 8601 with Z for UTC to be compatible with callers
+    expiry_iso = expiry_dt.isoformat().replace("+00:00", "Z")
+
+    payload = build_license_payload(valid=True, plan=plan, expiry=expiry_iso)
+    info = LicenseInfo(valid=True, plan=plan, expiry=expiry_iso, raw=payload)
+    try:
+        save_cached_license(info)
+    except Exception:
+        # best-effort: ignore write errors and still return the info object
+        pass
+    return info
 
 
 # -----------------------------

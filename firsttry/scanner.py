@@ -278,7 +278,9 @@ def _collect_type_section() -> Tuple[List[Issue], SectionSummary]:
 # -----------------------------------------------------------------------------
 
 
-def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
+def _collect_security_section() -> (
+    Tuple[List[Issue], SectionSummary, bool, int, int, List[str], List[str]]
+):
     """
     Run bandit with JSON output and capture findings.
 
@@ -300,6 +302,9 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
 
     issues = []
     has_high = False
+    # We'll track findings per-file so we can present file-level lists
+    file_has_high: dict[str, bool] = {}
+    files_with_findings: set[str] = set()
     high_unreviewed = 0
     baselined = 0
 
@@ -336,6 +341,8 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
                 autofixable=False,
             )
         )
+        files_with_findings.add(filename)
+        file_has_high[filename] = file_has_high.get(filename, False) or (sev == "HIGH")
 
     # Load baseline (if present) to decide which security findings are
     # considered "known risky but baselined" versus truly unreviewed.
@@ -380,12 +387,18 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
                 return True
         return False
 
-    # Count baselined vs unreviewed high-severity items
-    for it in issues:
-        if _is_baselined(it.file):
+    # Determine baselined files vs unreviewed high-risk files
+    baselined_files: List[str] = []
+    high_unreviewed_files: List[str] = []
+    for fname in sorted(files_with_findings):
+        if _is_baselined(fname):
             baselined += 1
+            baselined_files.append(fname)
         else:
-            high_unreviewed += 1
+            # only treat files with a HIGH finding as high-risk-unreviewed
+            if file_has_high.get(fname, False):
+                high_unreviewed += 1
+                high_unreviewed_files.append(fname)
 
     manual_count = len(issues)
     if manual_count == 0:
@@ -393,8 +406,12 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
     else:
         notes = [f"{manual_count} security finding(s)."]
         if has_high:
-            notes.append("HIGH severity present. See baseline grouping for reviewed vs unreviewed items.")
-        notes.append(f"{baselined} findings are baselined (known-risk). {high_unreviewed} remain unreviewed/high-risk.")
+            notes.append(
+                "HIGH severity present. See baseline grouping for reviewed vs unreviewed items."
+            )
+        notes.append(
+            f"{baselined} findings are baselined (known-risk). {high_unreviewed} remain unreviewed/high-risk."
+        )
 
     summary = SectionSummary(
         name="Security / Secrets",
@@ -403,8 +420,16 @@ def _collect_security_section() -> Tuple[List[Issue], SectionSummary, bool]:
         notes=notes,
         ci_blocking=True,
     )
-    # Return counts for scanner to decide commit safety
-    return issues, summary, has_high, high_unreviewed, baselined
+    # Return counts and file lists for scanner to decide commit safety
+    return (
+        issues,
+        summary,
+        has_high,
+        high_unreviewed,
+        baselined,
+        high_unreviewed_files,
+        baselined_files,
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -619,6 +644,8 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
             has_high_security,
             high_unreviewed_count,
             baselined_count,
+            high_unreviewed_files,
+            baselined_files,
         ) = _collect_security_section()
 
     # 4. Tests / Coverage if this gate includes it
@@ -695,5 +722,12 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
     # Attach security grouping counts for reporting
     result.high_risk_unreviewed = high_unreviewed_count
     result.known_risky_but_baselined = baselined_count
+    # Attach file lists
+    result.high_risk_unreviewed_files = getattr(
+        locals().get("high_unreviewed_files", None), "copy", lambda: []
+    )()
+    result.known_risky_but_baselined_files = getattr(
+        locals().get("baselined_files", None), "copy", lambda: []
+    )()
 
     return result

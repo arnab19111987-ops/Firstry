@@ -58,6 +58,9 @@ class ScanResult:
     # Security grouping counts (scanner will populate these when available)
     high_risk_unreviewed: int = 0
     known_risky_but_baselined: int = 0
+    # File-level lists for quick triage
+    high_risk_unreviewed_files: List[str] = field(default_factory=list)
+    known_risky_but_baselined_files: List[str] = field(default_factory=list)
 
     def as_dict(self) -> Dict[str, object]:
         """
@@ -94,7 +97,11 @@ class ScanResult:
             # include autofix_cmds in the dict if scanner attached it
             "autofix_cmds": getattr(self, "autofix_cmds", []),
             "high_risk_unreviewed": getattr(self, "high_risk_unreviewed", 0),
-            "known_risky_but_baselined": getattr(
-                self, "known_risky_but_baselined", 0
+            "known_risky_but_baselined": getattr(self, "known_risky_but_baselined", 0),
+            "high_risk_unreviewed_files": getattr(
+                self, "high_risk_unreviewed_files", []
+            ),
+            "known_risky_but_baselined_files": getattr(
+                self, "known_risky_but_baselined_files", []
             ),
         }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import shlex
 import sys
@@ -8,11 +9,18 @@ import os
 from typing import Literal
 
 from .scanner import run_all_checks_dry_run
+from .state import load_last_run
+from .license import (
+    load_cached_license,
+    ensure_trial_license_if_missing,
+    license_summary_for_humans,
+)
 from .report import (
     print_human_report,
     print_detailed_issue_table,
     print_after_autofix_report,
 )
+
 
 # Compatibility shim for tests that expect a runner-loader on firsttry.cli
 def _load_real_runners_or_stub():
@@ -241,19 +249,122 @@ def main(argv: list[str] | None = None) -> int:
         help="Install git pre-commit / pre-push hooks that call FirstTry automatically.",
     )
 
+    # firsttry status --json
+    status_p = sub.add_parser("status", help="Show license and last-run status.")
+    status_p.add_argument(
+        "--json",
+        "-j",
+        dest="as_json",
+        action="store_true",
+        help="Emit machine-readable JSON.",
+    )
+
+    # firsttry baseline add <path>
+    baseline_p = sub.add_parser(
+        "baseline",
+        help="Manage the security baseline (known noisy files).",
+    )
+    baseline_sub = baseline_p.add_subparsers(dest="baseline_cmd", required=True)
+    add_p = baseline_sub.add_parser("add", help="Add a glob/path to the baseline")
+    add_p.add_argument(
+        "path", help="glob or path to add to firsttry_security_baseline.yml"
+    )
+
     args = parser.parse_args(argv)
 
     # handle install-hooks first
     if args.cmd == "install-hooks":
         return _install_git_hooks()
 
+    # handle baseline subcommands
+    if args.cmd == "baseline":
+        # only command supported today: add
+        if args.baseline_cmd == "add":
+            pat = args.path
+            from pathlib import Path
+
+            baseline_file = Path("firsttry_security_baseline.yml")
+
+            # Try YAML first if available
+            try:
+                import yaml
+
+                if baseline_file.exists():
+                    with baseline_file.open("r", encoding="utf-8") as fh:
+                        data = yaml.safe_load(fh) or {}
+                else:
+                    data = {}
+
+                files = data.get("files") or []
+                if pat not in files:
+                    files.append(pat)
+                    data["files"] = files
+                    with baseline_file.open("w", encoding="utf-8") as fh:
+                        yaml.safe_dump(data, fh)
+                    print(f"Added '{pat}' to {baseline_file}")
+                else:
+                    print(f"Pattern '{pat}' already present in {baseline_file}")
+            except Exception:
+                # Fallback simple append-based format
+                if not baseline_file.exists():
+                    baseline_file.write_text("files:\n  - %s\n" % pat, encoding="utf-8")
+                    print(f"Created {baseline_file} with '{pat}'")
+                else:
+                    text = baseline_file.read_text(encoding="utf-8")
+                    if "files:" not in text:
+                        # naive prepend
+                        baseline_file.write_text(
+                            "files:\n  - %s\n" % pat + text, encoding="utf-8"
+                        )
+                        print(f"Added '{pat}' to {baseline_file}")
+                    else:
+                        # append under files: block
+                        baseline_file.write_text(
+                            text + ("\n  - %s\n" % pat), encoding="utf-8"
+                        )
+                        print(f"Appended '{pat}' to {baseline_file}")
+
+            # Re-run the full gate so dev sees the impact immediately
+            scan = run_all_checks_dry_run(gate_name="pre-push")
+            print_human_report(scan, "pre-push")
+            return 0
+
+    # handle status
+    if args.cmd == "status":
+        # Load active license (cached) if present, otherwise bootstrap a short trial
+        lic_obj = load_cached_license()
+        if not lic_obj:
+            lic_obj = ensure_trial_license_if_missing(days=3)
+
+        last = load_last_run()
+
+        if args.as_json:
+            payload = {
+                "license": {
+                    "summary": license_summary_for_humans(lic_obj),
+                },
+                "last_run": last,
+            }
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return 0
+
+        # human readable
+        print(license_summary_for_humans(lic_obj))
+        if last:
+            print("Last run summary:")
+            # show top-level keys of the last run in a friendly form
+            for k, v in last.items():
+                print(f"  {k}: {v}")
+        else:
+            print("No previous run recorded.")
+        return 0
+
     # handle run
     if args.cmd == "run":
         # 1. dry-run scan (no mutation)
         before_scan = run_all_checks_dry_run(gate_name=args.gate)
-
         # 2. high-level report with per-section counts
-        print_human_report(before_scan)
+        print_human_report(before_scan, args.gate)
 
         # 3. ask user what next
         choice = _prompt_user_choice(

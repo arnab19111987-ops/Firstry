@@ -376,14 +376,16 @@ If step 4 stops with a JSON block that includes `"failed_at"`, that's exactly wh
 Run quality checks before commits hit CI:
 
 ```bash
-firsttry run --gate pre-commit
-```
-
 **Output:**
 ```
-FirstTry Gate Summary
----------------------
 Lint.......... PASS ruff
+## FirstTry security gate & baseline
+
+FirstTry includes a local CI gate you can run with `python -m firsttry.cli run --gate pre-push`.
+It executes linting, type checks, security scans (bandit), and tests with coverage. Findings are grouped into
+two buckets: (1) unreviewed high-risk security files which will block a push, and (2) baselined files
+that are known noisy/test/tool paths and are shown for information only. Use `python -m firsttry.cli baseline add <glob>`
+to add a path or glob to the baseline and immediately re-run the full gate to see its effect.
 Format........ PASS black-check
 Types......... PASS mypy
 Tests......... PASS pytest

@@ -4,6 +4,7 @@ import os
 import stat
 from typing import Tuple
 from pathlib import Path
+from .license import ensure_trial_license_if_missing, license_summary_for_humans
 
 
 PRE_COMMIT_HOOK = """#!/bin/sh
@@ -53,6 +54,31 @@ def install_git_hooks(repo_root: str | Path = ".") -> Tuple[Path, Path]:
     _write_executable(pre_push_path, PRE_PUSH_HOOK)
 
     return pre_commit_path, pre_push_path
+
+
+def install_hooks_and_bootstrap_trial(repo_root: str | Path = ".") -> None:
+    """
+    Convenience wrapper: install git hooks and ensure a short trial license is present.
+    Prints onboarding information including the human-friendly license summary.
+    """
+    # 1. install hooks using existing logic
+    install_git_hooks(repo_root)
+
+    # 2. ensure a small trial license exists (best-effort)
+    lic_obj = ensure_trial_license_if_missing(days=3)
+
+    # 3. onboarding messages
+    print("")
+    print("✅ Git hooks installed (pre-commit / pre-push).")
+    print("✅ Trial license bootstrapped.")
+    try:
+        print(license_summary_for_humans(lic_obj))
+    except Exception:
+        # avoid crashing installers if summary formatting fails
+        pass
+    print("")
+    print("You're now in trial mode. Run:")
+    print("  python3 -m firsttry.cli run --gate pre-commit")
 
 
 def install_pre_commit_hook(repo_root: str | Path | None = None) -> Path:
