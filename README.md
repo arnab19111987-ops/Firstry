@@ -68,6 +68,28 @@ This absolutely matters for onboarding. It means you don’t have to ship wheels
 And critically: that block makes it crystal clear that `mirror-ci` is gated behind a key. That’s how you start charging.
 ```
 
+## Fast start — one-command activation
+
+If you want a single command to install hooks, run an initial autofix pass, and finish onboarding, use the
+`activate` command we added to the CLI. This is the smoothest way to get FirstTry protecting a repo.
+
+```bash
+# Install
+pip install firsttry
+
+# One-command activation (installs hooks + runs autofix scan)
+python -m firsttry.cli activate
+```
+
+What this does:
+- Installs `pre-commit` and `pre-push` git hooks for FirstTry.
+- Runs the `pre-commit` gate once in non-interactive autofix mode (applies safe fixes).
+- Prints onboarding instructions and next steps.
+
+If the initial scan finds issues that require manual attention, `activate` will still install hooks and
+print guidance on how to review and finish onboarding.
+
+
 ## FirstTry — ship green on the first push
 
 FirstTry runs all your quality gates (lint, typecheck, formatting, etc.) and even simulates your GitHub Actions pipeline locally — safely — so you don't spam PRs with "fix lint lol" commits.

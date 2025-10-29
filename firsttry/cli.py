@@ -6,6 +6,7 @@ import subprocess
 import shlex
 import sys
 import os
+import textwrap
 from typing import Literal
 
 from .scanner import run_all_checks_dry_run
@@ -20,6 +21,7 @@ from .report import (
     print_detailed_issue_table,
     print_after_autofix_report,
 )
+from . import hooks, gates
 
 
 # Compatibility shim for tests that expect a runner-loader on firsttry.cli
@@ -219,6 +221,96 @@ exec python -m firsttry.cli run --gate pre-push
     return 0
 
 
+def handle_activate(args: argparse.Namespace) -> int:
+    """
+    1. Install/refresh git hooks (pre-commit, pre-push).
+    2. Run the pre-commit gate once in autofix mode.
+    3. Print onboarding message.
+
+    Returns process exit code (0 = success, nonzero = block).
+    """
+
+    # 1. Install / refresh hooks
+    try:
+        if hasattr(hooks, "install_git_hooks"):
+            hooks.install_git_hooks()
+        else:
+            rc_install = subprocess.run(
+                [sys.executable, "-m", "firsttry.cli", "install-hooks"],
+                capture_output=True,
+                text=True,
+            )
+            if rc_install.returncode != 0:
+                print("[FirstTry] Failed to install hooks:")
+                print(rc_install.stdout)
+                print(rc_install.stderr, file=sys.stderr)
+                return rc_install.returncode
+    except Exception as e:
+        print(f"[FirstTry] Error while installing hooks: {e}", file=sys.stderr)
+        return 1
+
+    # 2. Run pre-commit gate once in autofix mode (non-interactive "choice 2")
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "firsttry.cli", "run", "--gate", "pre-commit"],
+            input="2\n",
+            text=True,
+        )
+        rc_gate = proc.returncode
+    except Exception as e:
+        print(f"[FirstTry] Error while running initial scan: {e}", file=sys.stderr)
+        return 1
+
+    if rc_gate != 0:
+        print(
+            textwrap.dedent(
+                """
+                [FirstTry] Activation partially completed.
+
+                - Hooks are installed.
+                - FirstTry ran your repo gate and found issues that block a clean commit.
+
+                Next steps:
+                  1. Review any changes FirstTry already applied.
+                  2. Fix remaining red items that require manual attention.
+                  3. git add .
+                  4. git commit normally (no --no-verify needed).
+
+                Once that's green, you're fully onboarded.
+                """
+            ).strip()
+        )
+        return rc_gate
+
+    # 3. Success message
+    print(
+        textwrap.dedent(
+            """
+            ✅ FirstTry is now active on this repo.
+
+            What this means:
+              • Git pre-commit / pre-push hooks are installed.
+              • Your codebase was scanned and auto-fixed where it was safe.
+              • Every future `git commit` will be checked & cleaned before it lands.
+
+            Workflow from now on:
+              1. Edit code
+              2. git add .
+              3. git commit -m "message"
+                 → FirstTry runs automatically, fixes safe stuff, blocks bad code
+              4. git push
+
+            You can also run FirstTry on demand at any time:
+              python -m firsttry.cli run --gate pre-commit
+
+            You're good to go. Ship green on first push. 🚀
+            """
+        ).strip()
+    )
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="firsttry",
@@ -249,6 +341,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Install git pre-commit / pre-push hooks that call FirstTry automatically.",
     )
 
+    # firsttry activate
+    sub.add_parser(
+        "activate",
+        help="Install hooks, run initial autofix scan, and finalize setup.",
+    )
+
     # firsttry status --json
     status_p = sub.add_parser("status", help="Show license and last-run status.")
     status_p.add_argument(
@@ -275,6 +373,10 @@ def main(argv: list[str] | None = None) -> int:
     # handle install-hooks first
     if args.cmd == "install-hooks":
         return _install_git_hooks()
+
+    # handle activate
+    if args.cmd == "activate":
+        return handle_activate(args)
 
     # handle baseline subcommands
     if args.cmd == "baseline":
