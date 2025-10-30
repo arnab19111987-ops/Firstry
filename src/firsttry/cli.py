@@ -16,12 +16,14 @@ from .license import (
     ensure_trial_license_if_missing,
     license_summary_for_humans,
 )
+# licensing helper (developer-friendly global license store)
+from .licensing import save_license, load_license
 from .report import (
     print_human_report,
     print_detailed_issue_table,
     print_after_autofix_report,
 )
-from . import hooks, gates
+from . import hooks
 
 
 # Compatibility shim for tests that expect a runner-loader on firsttry.cli
@@ -341,6 +343,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Install git pre-commit / pre-push hooks that call FirstTry automatically.",
     )
 
+    # firsttry license set/status (global user license helper)
+    lic_parser = sub.add_parser("license", help="Manage FirstTry license")
+    lic_sub = lic_parser.add_subparsers(dest="license_cmd")
+
+    lic_set = lic_sub.add_parser("set", help="Set and save your license key")
+    lic_set.add_argument("key", help="Your license key string")
+
+    lic_sub.add_parser("status", help="Show license info")
+
     # firsttry activate
     sub.add_parser(
         "activate",
@@ -373,6 +384,21 @@ def main(argv: list[str] | None = None) -> int:
     # handle install-hooks first
     if args.cmd == "install-hooks":
         return _install_git_hooks()
+
+    # handle license subcommands early
+    if args.cmd == "license":
+        if args.license_cmd == "set":
+            save_license(args.key)
+            print("✅ License saved.")
+            return 0
+        if args.license_cmd == "status":
+            data = load_license()
+            if not data:
+                print("⚠️  No license found. Run: firsttry license set <KEY>")
+            else:
+                print("✅ License found.")
+                print(f"Key: {data.get('license_key', '???')}")
+            return 0
 
     # handle activate
     if args.cmd == "activate":

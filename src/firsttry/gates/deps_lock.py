@@ -12,8 +12,14 @@ class DepsLockGate(Gate):
     - if poetry.lock exists but no pyproject.toml -> warn
     - if both exist, compare mtime and size as cheap heuristic
     """
+
     gate_id = "deps:lock"
-    patterns = ("requirements.txt", "requirements.lock", "poetry.lock", "pyproject.toml")
+    patterns = (
+        "requirements.txt",
+        "requirements.lock",
+        "poetry.lock",
+        "pyproject.toml",
+    )
 
     def run(self, root: Path) -> GateResult:
         req = root / "requirements.txt"
@@ -34,7 +40,9 @@ class DepsLockGate(Gate):
                 try:
                     if lock_req.stat().st_mtime < req.stat().st_mtime:
                         ok = False
-                        msgs.append("requirements.lock is older than requirements.txt (run lock update).")
+                        msgs.append(
+                            "requirements.lock is older than requirements.txt (run lock update)."
+                        )
                 except Exception:
                     # stat issues shouldn't crash gate
                     pass
@@ -43,12 +51,16 @@ class DepsLockGate(Gate):
         if poetry.exists():
             if not poetry_lock.exists():
                 ok = False
-                msgs.append("pyproject.toml exists but poetry.lock is missing (run `poetry lock`).")
+                msgs.append(
+                    "pyproject.toml exists but poetry.lock is missing (run `poetry lock`)."
+                )
             else:
                 try:
                     if poetry_lock.stat().st_mtime < poetry.stat().st_mtime:
                         ok = False
-                        msgs.append("poetry.lock is older than pyproject.toml (run `poetry lock`).")
+                        msgs.append(
+                            "poetry.lock is older than pyproject.toml (run `poetry lock`)."
+                        )
                 except Exception:
                     pass
 

@@ -356,7 +356,7 @@ def _collect_security_section() -> (
                 baseline_patterns = parsed.get("files", []) or []
             else:
                 # Simple fallback: read lines that start with '-' under a files: block
-                lines = [l.strip() for l in text.splitlines()]
+                lines = [line.strip() for line in text.splitlines()]
                 in_files = False
                 for ln in lines:
                     if ln.startswith("files:"):

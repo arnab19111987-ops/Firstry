@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from firsttry.runner_light import run_profile
 
 

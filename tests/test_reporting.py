@@ -6,7 +6,9 @@ def test_print_summary(capsys):
     results = [
         GateResult(gate_id="python:ruff", ok=True),
         GateResult(gate_id="python:mypy", ok=False, output="error"),
-        GateResult(gate_id="security:bandit", ok=True, skipped=True, reason="not installed"),
+        GateResult(
+            gate_id="security:bandit", ok=True, skipped=True, reason="not installed"
+        ),
     ]
     print_summary(results)
     out = capsys.readouterr().out

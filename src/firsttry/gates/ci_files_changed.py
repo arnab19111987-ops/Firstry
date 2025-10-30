@@ -11,6 +11,7 @@ class CiFilesChangedGate(Gate):
     - If .github/workflows exists, list the workflow files.
     - Later you can teach this gate to compare mtimes or hashes and fail on change.
     """
+
     gate_id = "ci:files"
     patterns = (".github/workflows/", "tox.ini")
 

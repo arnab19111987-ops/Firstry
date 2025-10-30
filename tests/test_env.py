@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from firsttry.env import detect_environment, DetectedEnv
 
 

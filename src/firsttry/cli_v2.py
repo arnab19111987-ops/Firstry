@@ -1,6 +1,7 @@
 from __future__ import annotations
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -206,19 +207,92 @@ def print_human_report(report: Dict[str, Any], show_details: bool = False) -> No
                 print(info["output"].strip())
 
 
+def _is_tty() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def _interactive_menu(report: Dict[str, Any]) -> int:
+    failed = [
+        g
+        for g, info in report["per_gate"].items()
+        if not info["ok"] and not info["skipped"]
+    ]
+    if not failed:
+        print("\n✅ Nothing to fix. You’re good.")
+        return 0
+
+    print("\nWhat do you want to do next?")
+    print("[1] Show detailed report with gate outputs")
+    print("[2] Let FirstTry attempt safe fixes for autofixable issues")
+    print("[3] Cancel (I will fix manually)")
+
+    try:
+        choice = input("Choose 1 / 2 / 3: ").strip()
+    except EOFError:
+        # non-interactive shell — just print summary and exit 1
+        print("\n(non-interactive shell, skipping interactive choices)")
+        return 1
+
+    if choice == "1":
+        print_human_report(report, show_details=True)
+        return 1  # still fail, because issues exist
+
+    if choice == "2":
+        _run_safe_fixes(report)
+        # after fixes we still exit 1 to let user re-run
+        return 1
+
+    # choice == "3" or anything else
+    return 1
+
+
+SAFE_AUTOFIX_CMDS = {
+    "python:ruff": ["ruff", "check", "--fix", "."],
+    "precommit:all": ["pre-commit", "run", "--all-files"],
+    # later: "python:black:check": ["black", "."],
+}
+
+
+def _run_safe_fixes(report: Dict[str, Any]) -> None:
+    print("\n🛠  Running safe fixes...")
+    for gate_id, info in report["per_gate"].items():
+        if info["ok"] or info["skipped"]:
+            continue
+        cmd = SAFE_AUTOFIX_CMDS.get(gate_id)
+        if not cmd:
+            continue
+        print(f"→ {gate_id}: {' '.join(cmd)}")
+        try:
+            import subprocess
+
+            subprocess.run(cmd, check=False)
+        except FileNotFoundError:
+            print("   (skipped: tool not installed)")
+    print("Done. Re-run `firsttry ... report` to verify.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser("firsttry")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     run_p = sub.add_parser("run", help="run gates for a profile")
-    run_p.add_argument("--profile", default="fast", choices=["fast", "strict", "release"])
+    run_p.add_argument(
+        "--profile", default="fast", choices=["fast", "strict", "release"]
+    )
     run_p.add_argument("--since", default=None)
 
     rep_p = sub.add_parser("report", help="run and show detailed report")
-    rep_p.add_argument("--profile", default="strict", choices=["fast", "strict", "release"])
+    rep_p.add_argument(
+        "--profile", default="strict", choices=["fast", "strict", "release"]
+    )
     rep_p.add_argument("--since", default=None)
     rep_p.add_argument("--detail", action="store_true")
     rep_p.add_argument("--json", action="store_true")
+    rep_p.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask what to do next (local use only)",
+    )
 
     args = parser.parse_args()
 
@@ -230,10 +304,19 @@ def main() -> int:
     if args.cmd == "report":
         results = run_pipeline(args.profile, args.since)
         report = build_issue_report(results)
+
+        # JSON mode → never interactive
         if args.json:
             print(json.dumps(report, indent=2))
             return 1 if report["failed"] else 0
+
+        # normal human report
         print_human_report(report, show_details=args.detail)
+
+        # interactive (only if TTY)
+        if args.interactive and _is_tty():
+            return _interactive_menu(report)
+
         return 1 if report["failed"] else 0
 
     return 0

@@ -27,17 +27,14 @@ _STRICT = GateProfile(
         # 1) environment health first
         "env:tools",
         "ci:files",
-
         # 2) core quality
         "python:ruff",
         "python:mypy",
         "python:pytest",
-
         # 3) parity / consistency
         "coverage:check",
         "deps:lock",
         "config:drift",
-
         # 4) optional / nice-to-have
         "precommit:all?",
         "python:black:check?",

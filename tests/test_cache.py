@@ -4,7 +4,6 @@ from firsttry.cache import (
     should_skip_gate,
     update_gate_cache,
 )
-from pathlib import Path
 
 
 def test_load_cache_when_missing(tmp_path):

@@ -13,6 +13,7 @@ class DriftCheckGate(Gate):
       - compare requirements.txt vs lock
       - compare generated client vs spec
     """
+
     gate_id = "drift:check"
     patterns = (
         "alembic/",

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import subprocess
 
 from firsttry.changes import get_changed_files

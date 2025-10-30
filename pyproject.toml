@@ -19,6 +19,8 @@ dependencies = ["PyYAML"]
 
 [project.scripts]
 firsttry = "firsttry.cli:main"
+# developer-only entrypoint (internal/testing). Keep default `firsttry` for end users.
+firsttry-dev = "firsttry.cli_v2:main"
 
 [project.optional-dependencies]
 dev = [
@@ -42,9 +44,10 @@ dev = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "."}
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["firsttry*"]
 
 [tool.mypy]

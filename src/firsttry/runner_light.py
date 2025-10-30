@@ -34,7 +34,6 @@ GATE_REGISTRY: Dict[str, Type[Gate]] = {
     "drift:check": DriftCheckGate,
     "node:npm": NodeNpmTestGate,
     "go:test": GoTestGate,
-
     # new gates
     "deps:lock": DepsLockGate,
     "coverage:check": CoverageCheckGate,

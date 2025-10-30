@@ -19,6 +19,7 @@ class EnvToolsGate(Gate):
     Check that the tools our other gates expect are actually installed in PATH.
     This prevents 'passed because tool missing' situations.
     """
+
     gate_id = "env:tools"
     patterns: tuple[str, ...] = ()
 

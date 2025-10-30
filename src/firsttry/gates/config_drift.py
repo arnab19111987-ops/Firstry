@@ -50,7 +50,9 @@ def _pyproject_config_hash(p: Path) -> str:
     interested = {
         "ruff": tool.get("ruff"),
         "mypy": tool.get("mypy"),
-        "pytest": tool.get("pytest", {}).get("ini_options") if isinstance(tool.get("pytest"), dict) else None,
+        "pytest": tool.get("pytest", {}).get("ini_options")
+        if isinstance(tool.get("pytest"), dict)
+        else None,
     }
 
     # if nothing of interest present, hash whole file

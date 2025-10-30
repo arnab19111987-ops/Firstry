@@ -1,6 +1,5 @@
 import subprocess
 
-from pathlib import Path
 from firsttry.gates.node_tests import NodeNpmTestGate
 
 

@@ -1,6 +1,5 @@
 import subprocess
 
-from pathlib import Path
 from firsttry.gates.python_lint import PythonRuffGate
 
 
