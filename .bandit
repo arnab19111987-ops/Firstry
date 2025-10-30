@@ -1,0 +1,4 @@
+exclude:
+  - tests
+  - tools/tests
+  - tools/firsttry/tests

@@ -1,0 +1,14 @@
+{
+  "updated_at": 1761803915.9463956,
+  "gates": {
+    "drift:check": {
+      "watched": [
+        "alembic/",
+        "migrations/",
+        "requirements.txt",
+        "pyproject.toml"
+      ],
+      "last_ok": true
+    }
+  }
+}
