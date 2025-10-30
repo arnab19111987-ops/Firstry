@@ -24,13 +24,25 @@ _FAST = GateProfile(
 _STRICT = GateProfile(
     name="strict",
     gates=[
+        # 1) environment health first
+        "env:tools",
+        "ci:files",
+
+        # 2) core quality
         "python:ruff",
-        "python:black:check?",
         "python:mypy",
         "python:pytest",
-        "coverage:xml?",
-        "security:bandit?",
+
+        # 3) parity / consistency
+        "coverage:check",
+        "deps:lock",
+        "config:drift",
+
+        # 4) optional / nice-to-have
+        "precommit:all?",
+        "python:black:check?",
         "drift:check?",
+        "security:bandit?",
     ],
 )
 

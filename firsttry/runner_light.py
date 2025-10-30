@@ -17,6 +17,12 @@ from .gates.security_bandit import SecurityBanditGate
 from .gates.drift_check import DriftCheckGate
 from .gates.node_tests import NodeNpmTestGate
 from .gates.go_tests import GoTestGate
+from .gates.deps_lock import DepsLockGate
+from .gates.coverage_check import CoverageCheckGate
+from .gates.config_drift import ConfigDriftGate
+from .gates.precommit_all import PreCommitAllGate
+from .gates.ci_files_changed import CiFilesChangedGate
+from .gates.env_tools import EnvToolsGate
 
 
 # registry of known gates
@@ -28,6 +34,14 @@ GATE_REGISTRY: Dict[str, Type[Gate]] = {
     "drift:check": DriftCheckGate,
     "node:npm": NodeNpmTestGate,
     "go:test": GoTestGate,
+
+    # new gates
+    "deps:lock": DepsLockGate,
+    "coverage:check": CoverageCheckGate,
+    "config:drift": ConfigDriftGate,
+    "precommit:all": PreCommitAllGate,
+    "ci:files": CiFilesChangedGate,
+    "env:tools": EnvToolsGate,
 }
 
 

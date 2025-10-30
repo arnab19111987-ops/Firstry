@@ -1,5 +1,5 @@
 {
-  "updated_at": 1761803915.9463956,
+  "updated_at": 1761814820.639962,
   "gates": {
     "drift:check": {
       "watched": [
@@ -10,5 +10,10 @@
       ],
       "last_ok": true
     }
+  },
+  "config_hashes": {
+    "pyproject.toml": "d864040027dfe59cdaa93958c1caa621e44b04aa8d79475adb9ba02c8a9015a2",
+    "pytest.ini": "7da22ef2aaa896c8f60bd9b3e567b171532cfa6428d65c4675321a6a39e96115",
+    "mypy.ini": "ca0293293bdb742749cd424eaf457b0d6eae77c491958afd1b0c6e7b2ed80e7f"
   }
 }
