@@ -22,6 +22,8 @@ except ImportError:
         spec = importlib.util.spec_from_file_location(
             "firsttry.gates", str(_gates_path)
         )
+        if spec is None:
+            raise ImportError("Could not load gates spec")
         _gates = importlib.util.module_from_spec(spec)
         sys.modules["firsttry.gates"] = _gates
         if spec and spec.loader:
@@ -35,10 +37,10 @@ try:
     from .hooks import hooks_installed, install_all_hooks
 except ImportError:
 
-    def hooks_installed():
+    def hooks_installed(repo_root: str | Path = ".") -> bool:
         return True
 
-    def install_all_hooks():
+    def install_all_hooks(repo_root: str | Path = ".") -> bool:
         return True
 
 

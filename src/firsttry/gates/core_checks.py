@@ -7,6 +7,7 @@ Level 4 checks are simulated (safe to ship / demo).
 All commands auto-skip if tool not installed → never crash.
 """
 
+import importlib.util
 import subprocess
 from pathlib import Path
 
@@ -32,17 +33,72 @@ def _run(cmd, desc=None):
 # Level 1
 # ────────────────────────────────
 def run_lint_basic():
-    return _run(["ruff", "check", "."], "running lint (ruff)")
+    """Run ruff and count issues from stdout."""
+    try:
+        print("   ⏳ running lint (ruff)…")
+        result = subprocess.run(
+            ["ruff", "check", "."],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print("   ⚠️  ruff not installed — skipping.")
+        return True, 0
+
+    if result.returncode == 0:
+        return True, 0
+
+    # quick+dirty count: lines that look like diagnostics
+    issues = sum(1 for line in result.stdout.splitlines() if ":" in line and line.strip())
+    print(result.stdout)
+    return False, issues
 
 
 def run_autofix():
     return _run(["ruff", "check", ".", "--fix"], "auto-fixing trivial issues")
 
 
+IGNORE_DIRS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".venv",
+    ".venv-build",
+    ".idea",
+    ".vscode",
+    ".devcontainer",
+    "docs",
+    "dist",
+    "build",
+    ".github",
+    "__pycache__",
+    "htmlcov",
+    "coverage",
+}
+
 def run_repo_sanity():
-    missing_inits = [p for p in Path(".").rglob("*") if p.is_dir() and not (p / "__init__.py").exists()]
-    if missing_inits:
-        print("   ⚠️  missing __init__.py in:", ", ".join(str(p) for p in missing_inits[:5]))
+    missing = []
+    for p in Path(".").rglob("*"):
+        if not p.is_dir():
+            continue
+        name = p.name
+        # skip ignored dirs
+        if name in IGNORE_DIRS:
+            continue
+        # skip .egg-info directories
+        if name.endswith(".egg-info"):
+            continue
+        # skip hidden tool dirs
+        if name.startswith(".") and name not in ("src",):
+            continue
+        # only complain for python-package-like dirs
+        if (p / "__init__.py").exists():
+            continue
+        # typical src/{pkg} layout: require __init__.py
+        if str(p).startswith("src/"):
+            missing.append(p)
+    if missing:
+        print("   ⚠️  missing __init__.py in:", ", ".join(str(p) for p in missing[:10]))
         return False
     return True
 
@@ -51,7 +107,25 @@ def run_repo_sanity():
 # Level 2
 # ────────────────────────────────
 def run_type_check_fast():
-    return _run(["mypy", "--ignore-missing-imports", "."], "type-checking (fast)")
+    """Run mypy and count type errors."""
+    try:
+        print("   ⏳ type-checking (fast)…")
+        result = subprocess.run(
+            ["mypy", "--ignore-missing-imports", "."],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print("   ⚠️  mypy not installed — skipping.")
+        return True, 0
+
+    if result.returncode == 0:
+        return True, 0
+
+    # Count errors from mypy output - they typically contain ": error:"
+    errors = sum(1 for line in result.stdout.splitlines() if ": error:" in line)
+    print(result.stdout)
+    return False, errors
 
 
 def run_tests_fast():
@@ -60,7 +134,31 @@ def run_tests_fast():
 
 
 def run_env_deps_check():
-    return _run(["pip", "check"], "checking dependencies")
+    print("   ⏳ checking dependencies…")
+
+    reqs_file = Path("requirements.txt")
+    if not reqs_file.exists():
+        print("   ⚠️  requirements.txt not found — skipping dependency check.")
+        return True, 0
+
+    with reqs_file.open() as f:
+        required = [line.strip().split("==")[0].lower() for line in f if line.strip() and not line.startswith("#")]
+
+    missing = []
+    for pkg in required:
+        if importlib.util.find_spec(pkg) is None:
+            missing.append(pkg)
+
+    if not missing:
+        print("   ✅ all required dependencies are installed.")
+        return True, 0
+
+    print(f"   ❌ {len(missing)} missing dependencies:")
+    for name in missing:
+        print(f"      • {name}")
+
+    print("   💡 run: pip install " + " ".join(missing))
+    return False, len(missing)
 
 
 # ────────────────────────────────
@@ -118,14 +216,14 @@ def run_security_full():
 
 def run_coverage_enforce():
     print("   ⏳ enforcing coverage threshold (80%)… ✅ coverage 83% [simulated]")
-    return True
+    return True, 0
 
 
 def run_migrations_drift():
     print("   ⏳ checking DB schema drift… ✅ schema up-to-date [simulated]")
-    return True
+    return True, 0
 
 
 def run_deps_license():
     print("   ⏳ verifying OSS licenses… ✅ all compliant [simulated]")
-    return True
+    return True, 0

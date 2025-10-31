@@ -11,7 +11,7 @@ from pathlib import Path
 # Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse
 # a simple fallback format (lines starting with '-' under a 'files:' key).
 try:
-    import yaml  # type: ignore
+    import yaml
 
     YAML_AVAILABLE = True
 except Exception:
@@ -298,7 +298,7 @@ def _collect_security_section() -> (
             notes=["bandit not installed, skipping security scan."],
             ci_blocking=True,
         )
-        return [], summary, False
+        return [], summary, False, 0, 0, [], []
 
     issues = []
     has_high = False

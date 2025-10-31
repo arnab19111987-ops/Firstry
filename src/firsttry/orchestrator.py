@@ -30,7 +30,6 @@ def print_ci_like_conclusion(report: dict):
         print(f"\n❌ {failed_count}/{total_count} checks failed.")
 
         # Show autofix suggestion if applicable
-        fixable_steps = [s for s in report["summary"] if not s["ok"] and s.get("fixed")]
         autofix_available = any(
             s
             for s in report["summary"]
@@ -135,23 +134,56 @@ GATE_MAP = {
 }
 
 
-def run_unified_gates(gates: list[str]) -> bool:
-    """Run each gate sequentially."""
-    all_ok = True
+def run_unified_gates(gates: list[str]):
+    """Run each gate sequentially and return detailed summary."""
+    summary = {
+        "total": len(gates),
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "details": [],
+    }
+
     for gate in gates:
         func = GATE_MAP.get(gate)
         print(f"→ Running {gate}")
         if func is None:
             print(f"   ⚠️  Gate {gate} not found.")
+            summary["skipped"] += 1
+            summary["details"].append({"name": gate, "status": "skipped", "errors": 0})
             continue
+
         try:
-            ok = func()
-            if not ok:
-                all_ok = False
+            ok, errors = _run_gate_with_errors(func)
         except Exception as e:
             print(f"   ⚠️  {gate} crashed: {e}")
-            all_ok = False
-    return all_ok
+            ok, errors = False, 1
+
+        if ok:
+            summary["passed"] += 1
+            summary["details"].append({"name": gate, "status": "passed", "errors": errors})
+        else:
+            summary["failed"] += 1
+            summary["details"].append({"name": gate, "status": "failed", "errors": errors})
+
+    return summary
+
+
+def _run_gate_with_errors(func):
+    """
+    Expect gate functions to either:
+    - return True/False
+    - or return (True/False, error_count)
+    We normalize to (bool, int).
+    """
+    res = func()
+    if isinstance(res, tuple) and len(res) == 2:
+        try:
+            error_count = int(res[1])
+        except (ValueError, TypeError):
+            error_count = 0
+        return bool(res[0]), error_count
+    return bool(res), 0
 
 
 def run_fix_only(root=".", no_license_prompt=False):

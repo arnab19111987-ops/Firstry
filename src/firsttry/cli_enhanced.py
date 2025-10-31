@@ -121,8 +121,6 @@ def print_run_summary(results, elapsed: float, missing_deps: list[str] | None = 
             if not result_obj.passed:
                 failed.append(result_obj)
 
-    passed = total - len(failed)
-
     if not failed:
         print(
             f"✅ All checks passed ({total} gate{'s' if total != 1 else ''}) in {elapsed:.1f}s\n"

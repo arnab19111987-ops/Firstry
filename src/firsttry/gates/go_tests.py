@@ -1,0 +1,59 @@
+"""Go test gate implementation."""
+
+import subprocess
+from typing import Optional, Any
+from .base import Gate, GateResult
+
+
+class GoTestGate(Gate):
+    """Gate that runs Go tests."""
+    
+    gate_id = "go_tests"
+    
+    def run(self, project_root: Optional[Any] = None) -> GateResult:
+        """Run Go tests."""
+        try:
+            result = subprocess.run(
+                ["go", "test", "./..."],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode == 0:
+                return GateResult(
+                    gate_id=self.gate_id,
+                    ok=True,
+                    skipped=False,
+                    reason="Go tests passed"
+                )
+            else:
+                return GateResult(
+                    gate_id=self.gate_id,
+                    ok=False,
+                    skipped=False,
+                    reason=f"Go tests failed:\n{result.stdout}\n{result.stderr}"
+                )
+                
+        except FileNotFoundError:
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=True,
+                skipped=True,
+                reason="go not installed, skipping Go tests"
+            )
+        except subprocess.TimeoutExpired:
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason="Go tests timed out"
+            )
+        except Exception as e:
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"Go test error: {e}"
+            )

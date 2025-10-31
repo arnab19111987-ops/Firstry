@@ -3,15 +3,8 @@ from __future__ import annotations
 import sys
 from typing import List
 
-# Try to import the GateResult if available, otherwise define a simple type
-try:
-    from .gates.base import GateResult
-except ImportError:
-    # Fallback for when gates.base is not available
-    class GateResult:
-        def __init__(self, **kwargs):
-            for k, v in kwargs.items():
-                setattr(self, k, v)
+# Import the GateResult from gates.base
+from .gates.base import GateResult
 
 
 def color(txt: str, code: str) -> str:
