@@ -275,3 +275,17 @@ def require_license() -> Tuple[Dict[str, Any], None]:
         raise SystemExit(3)
 
     return lic_payload, None
+
+
+def get_active_license_key():
+    """Get active license key from either environment variable or trial file."""
+    # paid
+    k = os.environ.get("FIRSTTRY_LICENSE_KEY")
+    if k:
+        return k
+    # trial (from file)
+    from .license_trial import load_trial
+    t = load_trial()
+    if t:
+        return t.get("license_key")
+    return None

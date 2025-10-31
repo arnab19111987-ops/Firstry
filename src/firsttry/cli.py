@@ -1,6 +1,9 @@
 import argparse
+import os
+import sys
 from .orchestrator import run_unified, run_setup, show_status
 from .hooks import install_git_hooks
+from .license_trial import init_trial, trial_status
 
 LEVEL_TO_CHECKS = {
     "1": [
@@ -65,36 +68,74 @@ def build_parser():
     return p
 
 
+def handle_run(args, trial_state, meta, paid_key):
+    # Level 1 is ALWAYS free
+    level = getattr(args, "level", "2")
+
+    # If user is trying Level 2+ BUT trial is over and no paid license
+    if level != "1" and not paid_key:
+        if trial_state == "trial_active":
+            print(f"⏳ Trial active — {meta} day(s) left.")
+        elif trial_state == "grace_active":
+            print(f"🎁 Trial ended — {meta} bonus run(s) left.")
+        else:
+            print("🚫 Your trial and bonus runs are over.")
+            print("💡 Activate FirstTry to keep using Level 2+.")
+            print("   Run: firsttry activate  (or set FIRSTTRY_LICENSE_KEY)")
+            sys.exit(4)
+
+    # proceed to run your current level logic
+    selected = LEVEL_TO_CHECKS[level]
+    print(f"🔹 Running FirstTry Level {level} — {len(selected)} checks")
+    print("   (" + ", ".join(selected) + ")")
+
+    summary = run_unified(selected)
+
+    print(f"\n📋 Report for Level {level}")
+    for item in summary["details"]:
+        status_icon = "✅" if item["status"] == "passed" else ("⚠️" if item["status"] == "skipped" else "❌")
+        extra = f" — {item['errors']} issue(s)" if item["errors"] else ""
+        print(f" {status_icon} {item['name']}{extra}")
+
+    print(
+        f"\n✅ {summary['passed']} passed · ❌ {summary['failed']} failed · ⏭ {summary['skipped']} skipped "
+        f"· total {summary['total']}"
+    )
+
+    if summary["failed"] == 0:
+        print(f"🥳 Level {level} passed cleanly!")
+        # upsell
+        if level != "4":
+            nxt = str(int(level) + 1)
+            print(f"💡 Try `firsttry run --level {nxt}` for stricter tests.")
+    else:
+        print(f"❌ Level {level} failed. Fix above issues before pushing.")
+
+
 def main():
     parser = build_parser()
     args = parser.parse_args()
 
+    # 1) check if user already has paid license (env)
+    paid_key = os.environ.get("FIRSTTRY_LICENSE_KEY")
+
+    # 2) load trial state
+    status, meta = trial_status()
+
+    # 3) if no trial and no paid license → ask once
+    if status == "no_trial" and not paid_key:
+        print("🗝️  FirstTry needs a trial license key to start your 3-day trial.")
+        print("    Get one from: https://www.firsttry.run/trial")
+        key = input("    Enter license key: ").strip()
+        if not key:
+            print("❌ No license key provided. Exiting.")
+            sys.exit(3)
+        init_trial(key)
+        status, meta = trial_status()
+
+    # now route by command
     if args.cmd == "run":
-        selected = LEVEL_TO_CHECKS[args.level]
-        print(f"🔹 Running FirstTry Level {args.level} — {len(selected)} checks")
-        print("   (" + ", ".join(selected) + ")")
-
-        summary = run_unified(selected)
-
-        print(f"\n📋 Report for Level {args.level}")
-        for item in summary["details"]:
-            status_icon = "✅" if item["status"] == "passed" else ("⚠️" if item["status"] == "skipped" else "❌")
-            extra = f" — {item['errors']} issue(s)" if item["errors"] else ""
-            print(f" {status_icon} {item['name']}{extra}")
-
-        print(
-            f"\n✅ {summary['passed']} passed · ❌ {summary['failed']} failed · ⏭ {summary['skipped']} skipped "
-            f"· total {summary['total']}"
-        )
-
-        if summary["failed"] == 0:
-            print(f"🥳 Level {args.level} passed cleanly!")
-            # upsell
-            if args.level != "4":
-                nxt = str(int(args.level) + 1)
-                print(f"💡 Try `firsttry run --level {nxt}` for stricter tests.")
-        else:
-            print(f"❌ Level {args.level} failed. Fix above issues before pushing.")
+        handle_run(args, status, meta, paid_key)
 
     elif args.cmd == "activate":
         run_setup()
