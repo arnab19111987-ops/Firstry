@@ -68,6 +68,34 @@ This absolutely matters for onboarding. It means you don’t have to ship wheels
 And critically: that block makes it crystal clear that `mirror-ci` is gated behind a key. That’s how you start charging.
 ```
 
+## 🚀 Progressive Levels of Discipline
+
+FirstTry makes code quality simple — not overwhelming.
+
+Instead of 40 toggles, you get **4 Levels** that scale from fast autofix checks to full CI-grade coverage.  
+Start small. Level up when you're ready.
+
+| Level | What It Does | Typical Runtime | Status |
+|-------|---------------|-----------------|---------|
+| **1 — Fix the obvious stuff** | Lint, format, and sanity checks (ruff + black + basic repo checks) | ⚡ 2–5 s | ✅ Stable |
+| **2 — Make it correct** | Adds typing (mypy fast) + unit tests (pytest fast) + dependency sanity | ⚡ 5–10 s | ✅ Stable |
+| **3 — Team hygiene** | Adds duplication, light security scan, coverage check, and conventions | ⚙️ 15–20 s | ✅ Stable |
+| **4 — CI-grade discipline** | Full strict typing, deep tests, coverage ≥ 80%, full security & license scan | 🧪 30–60 s | 🚧 Coming Soon |
+
+Run it just like this:
+
+```bash
+firsttry run                # default = Level 2
+firsttry run --level 1      # autofix-only mode
+firsttry run --level 3      # team hygiene mode
+firsttry run --level 4      # full CI-grade (coming soon)
+```
+
+Each level builds on the previous one.
+When you're clean on Level 1, try Level 2 — and so on.
+
+💡 **Pro Tip**: Levels 3–4 unlock automatically with a paid license.
+
 ## Fast start — one-command activation
 
 If you want a single command to install hooks, run an initial autofix pass, and finish onboarding, use the
