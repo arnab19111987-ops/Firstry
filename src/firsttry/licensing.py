@@ -36,3 +36,30 @@ def load_license() -> dict[str, Any] | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return None
+
+
+# Simple licensing functions for the new pipeline system
+LICENSE_FILE = Path.home() / ".firsttry_license"
+
+
+def get_saved_license():
+    if LICENSE_FILE.exists():
+        return LICENSE_FILE.read_text(encoding="utf-8").strip()
+    return None
+
+
+def validate_license(key: str) -> bool:
+    return bool(key) and len(key) > 10
+
+
+def ensure_license_interactive():
+    lic = get_saved_license()
+    if lic and validate_license(lic):
+        return
+    print("🔐 FirstTry license required.")
+    key = input("Enter license key: ").strip()
+    if not validate_license(key):
+        print("❌ Invalid license key.")
+        raise SystemExit(2)
+    LICENSE_FILE.write_text(key, encoding="utf-8")
+    print("✅ License saved.")

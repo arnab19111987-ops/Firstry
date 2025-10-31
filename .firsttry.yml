@@ -1,0 +1,12 @@
+# FirstTry configuration
+gates:
+  pre-commit:
+    - lint
+    - types
+    - tests
+  pre-push:
+    - lint
+    - types
+    - tests
+    - docker-smoke
+# Test change

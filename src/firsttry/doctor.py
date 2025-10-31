@@ -36,8 +36,7 @@ class DoctorReport:
 class Runner(Protocol):
     """Abstraction to allow mocking in tests."""
 
-    def run(self, cmd: List[str]) -> Tuple[int, str]:
-        ...
+    def run(self, cmd: List[str]) -> Tuple[int, str]: ...
 
 
 class ShellRunner:

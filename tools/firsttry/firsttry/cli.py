@@ -215,9 +215,7 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
         verdict = (
             "SAFE TO COMMIT ✅"
             if gate == "pre-commit"
-            else "SAFE TO PUSH ✅"
-            if gate == "pre-push"
-            else "SAFE ✅"
+            else "SAFE TO PUSH ✅" if gate == "pre-push" else "SAFE ✅"
         )
         exit_code = 0
     else:

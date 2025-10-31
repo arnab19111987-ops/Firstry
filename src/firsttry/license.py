@@ -16,8 +16,7 @@ from pathlib import Path
 class HTTPResponseLike(Protocol):
     """Protocol for HTTP response objects."""
 
-    def json(self) -> dict:
-        ...
+    def json(self) -> dict: ...
 
 
 @dataclass

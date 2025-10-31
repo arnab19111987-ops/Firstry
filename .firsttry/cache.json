@@ -1,5 +1,5 @@
 {
-  "updated_at": 1761817113.1556406,
+  "updated_at": 1761850872.7274296,
   "gates": {
     "drift:check": {
       "watched": [
@@ -9,10 +9,36 @@
         "pyproject.toml"
       ],
       "last_ok": true
+    },
+    "python:ruff": {
+      "watched": [
+        "pyproject.toml",
+        "ruff.toml",
+        ".ruff.toml"
+      ],
+      "last_ok": true
+    },
+    "ci:files": {
+      "watched": [
+        ".github/workflows/"
+      ],
+      "last_ok": true
+    },
+    "config:drift": {
+      "watched": [
+        "ruff.toml",
+        ".ruff.toml",
+        "pyproject.toml",
+        "pytest.ini",
+        "tox.ini",
+        ".flake8",
+        "mypy.ini"
+      ],
+      "last_ok": true
     }
   },
   "config_hashes": {
-    "pyproject.toml": "d864040027dfe59cdaa93958c1caa621e44b04aa8d79475adb9ba02c8a9015a2",
+    "pyproject.toml": "a7c0864d8ff1421d402e0d6de98ea056f8752a34fac3fafd6627b1e19e359cdd",
     "pytest.ini": "7da22ef2aaa896c8f60bd9b3e567b171532cfa6428d65c4675321a6a39e96115",
     "mypy.ini": "ca0293293bdb742749cd424eaf457b0d6eae77c491958afd1b0c6e7b2ed80e7f"
   }

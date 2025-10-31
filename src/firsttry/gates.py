@@ -6,22 +6,41 @@ import os
 import re
 import shutil
 import subprocess
-from dataclasses import dataclass
 from typing import List, Tuple
 from pathlib import Path
 from typing import Dict, Any
 
 
-@dataclass
 class GateResult:
-    name: str  # e.g. "Lint.........."
-    status: str  # "PASS" | "FAIL" | "SKIPPED"
-    info: str = ""  # short summary shown in summary table
-    details: str = ""  # long explanation printed in verbose mode
-    # Detailed execution metadata (may be None for SKIPPED or high-level probes)
-    returncode: int | None = None
-    stdout: str | None = None
-    stderr: str | None = None
+    """Lightweight gate result following the standard format."""
+
+    def __init__(
+        self,
+        name: str,
+        passed: bool,
+        errors: int = 0,
+        warnings: int = 0,
+        fixable: int = 0,
+        mode: str = "auto",  # "auto" | "detect" | "advisory"
+        extra: Dict[str, Any] | None = None,
+    ):
+        self.name = name  # "lint", "tests", "typecheck", "security"
+        self.passed = passed  # bool
+        self.errors = errors or 0
+        self.warnings = warnings or 0
+        self.fixable = fixable or 0
+        self.mode = mode  # how this gate behaves: auto-fix, detect-only, advisory
+        self.extra = (
+            extra or {}
+        )  # e.g. {"failed_tests": [...]} or {"first_failed_test": "..."}
+
+        # Legacy fields for backward compatibility
+        self.status = "PASS" if passed else "FAIL"
+        self.info = ""
+        self.details = ""
+        self.returncode = 0 if passed else 1
+        self.stdout: str | None = None
+        self.stderr: str | None = None
 
 
 def gate_result_to_dict(res: GateResult) -> dict[str, object]:
@@ -33,37 +52,95 @@ def gate_result_to_dict(res: GateResult) -> dict[str, object]:
       - status, info, details: preserved for diagnostics
       - returncode, stdout, stderr: optional fields (may be None)
     """
-    # Normalize execution metadata so UI consumers always have sensible
-    # fields to display. For internal probes that don't use subprocess,
-    # a PASS will be presented with returncode 0 and stdout populated from
-    # the details string where appropriate.
-    rc = res.returncode
-    out = res.stdout
-    err = res.stderr
-
-    if rc is None and res.status == "PASS":
-        rc = 0
-    if out is None:
-        out = res.details or ""
-    if err is None:
-        err = ""
-
     return {
         "gate": res.name,
-        "ok": True if res.status == "PASS" else False,
+        "ok": res.passed,
         "status": res.status,
         "info": res.info,
         "details": res.details,
-        "returncode": rc,
-        "stdout": out,
-        "stderr": err,
+        "returncode": res.returncode,
+        "stdout": res.stdout or "",
+        "stderr": res.stderr or "",
+        "errors": res.errors,
+        "warnings": res.warnings,
+        "fixable": res.fixable,
+        "mode": res.mode,
+        "extra": res.extra,
     }
+
+
+def _analyze_output_for_counts(tool_name: str, output: str) -> tuple[int, int, int]:
+    """Analyze tool output to extract error, warning, and fixable counts.
+
+    Returns: (errors, warnings, fixable)
+    """
+    errors = 0
+    warnings = 0
+    fixable = 0
+
+    if not output:
+        return errors, warnings, fixable
+
+    lines = output.split("\n")
+
+    if "ruff" in tool_name.lower() or "lint" in tool_name.lower():
+        # Count ruff errors and fixable issues
+        for line in lines:
+            line = line.strip()
+            if re.match(r".*:\d+:\d+:", line):  # ruff error pattern
+                errors += 1
+                if "[*]" in line:
+                    fixable += 1
+
+        # Check for summary lines
+        for line in lines:
+            match = re.search(r"Found (\d+) errors?\.", line)
+            if match:
+                errors = max(errors, int(match.group(1)))
+            match = re.search(r"\[\*\] (\d+) fixable with", line)
+            if match:
+                fixable = int(match.group(1))
+
+    elif "mypy" in tool_name.lower():
+        # Count mypy errors
+        for line in lines:
+            if re.match(r".*:\d+:\s+error:", line):
+                errors += 1
+
+        # Check for summary
+        for line in lines:
+            match = re.search(r"Found (\d+) errors? in", line)
+            if match:
+                errors = max(errors, int(match.group(1)))
+
+    elif "pytest" in tool_name.lower() or "test" in tool_name.lower():
+        # Count test failures
+        for line in lines:
+            if "FAILED" in line and "::" in line:
+                errors += 1
+
+        # Check for summary patterns
+        for line in lines:
+            match = re.search(r"(\d+) failed", line)
+            if match:
+                errors = max(errors, int(match.group(1)))
+    else:
+        # Generic counting
+        for line in lines:
+            lower_line = line.lower()
+            if "error" in lower_line or "fail" in lower_line:
+                errors += 1
+            elif "warning" in lower_line or "warn" in lower_line:
+                warnings += 1
+
+    return errors, warnings, fixable
 
 
 def _run_external(
     cmd: List[str],
     name: str,
     pass_desc: str = "",
+    mode: str = "auto",
 ) -> GateResult:
     """
     Run external tools like ruff/mypy/pytest.
@@ -80,23 +157,22 @@ def _run_external(
             text=True,
         )
     except FileNotFoundError:
-        return GateResult(
-            name=name,
-            status="SKIPPED",
-            info="tool not installed",
-            details=(
-                f"{name}: SKIPPED because {cmd[0]!r} was not found on PATH.\n"
-                "What was attempted:\n"
-                f"- We tried to run {cmd!r}\n"
-                "Why it skipped:\n"
-                "- That tool is not installed in this environment.\n"
-                "How to enable:\n"
-                f"- Add {cmd[0]} to your dev requirements / venv.\n"
-            ),
-            returncode=None,
-            stdout=None,
-            stderr=None,
+        result = GateResult(name=name, passed=False, mode=mode)
+        result.status = "SKIPPED"
+        result.info = "tool not installed"
+        result.details = (
+            f"{name}: SKIPPED because {cmd[0]!r} was not found on PATH.\n"
+            "What was attempted:\n"
+            f"- We tried to run {cmd!r}\n"
+            "Why it skipped:\n"
+            "- That tool is not installed in this environment.\n"
+            "How to enable:\n"
+            f"- Add {cmd[0]} to your dev requirements / venv.\n"
         )
+        result.returncode = 0
+        result.stdout = None
+        result.stderr = None
+        return result
 
     out = (proc.stdout or "") + (proc.stderr or "")
 
@@ -109,26 +185,31 @@ def _run_external(
             if m:
                 extra_info = f"{m.group(1)} tests"
 
-        return GateResult(
-            name=name,
-            status="PASS",
-            info=extra_info.strip(),
-            details=out.strip(),
-            returncode=proc.returncode,
-            stdout=proc.stdout,
-            stderr=proc.stderr,
-        )
+        result = GateResult(name=name, passed=True, mode=mode)
+        result.info = extra_info.strip()
+        result.details = out.strip()
+        result.returncode = proc.returncode
+        result.stdout = proc.stdout
+        result.stderr = proc.stderr
+        return result
 
-    # non-zero exit
-    return GateResult(
+    # non-zero exit - analyze the output for error details
+    errors, warnings, fixable = _analyze_output_for_counts(name, out)
+
+    result = GateResult(
         name=name,
-        status="FAIL",
-        info="see details",
-        details=out.strip(),
-        returncode=proc.returncode,
-        stdout=proc.stdout,
-        stderr=proc.stderr,
+        passed=False,
+        errors=errors,
+        warnings=warnings,
+        fixable=fixable,
+        mode=mode,
     )
+    result.info = "see details"
+    result.details = out.strip()
+    result.returncode = proc.returncode
+    result.stdout = proc.stdout
+    result.stderr = proc.stderr
+    return result
 
 
 # -------------------------
@@ -138,12 +219,12 @@ def _run_external(
 
 def check_lint() -> GateResult:
     """Fast lint check (ruff)."""
-    return _run_external(["ruff", "check", "."], name="Lint")
+    return _run_external(["ruff", "check", "."], name="python-lint", mode="auto")
 
 
 def check_types() -> GateResult:
     """Static type check (mypy)."""
-    return _run_external(["mypy", "."], name="Types")
+    return _run_external(["mypy", "."], name="python-type", mode="detect")
 
 
 def check_tests() -> GateResult:
@@ -152,7 +233,7 @@ def check_tests() -> GateResult:
 
     If pytest isn't available -> SKIPPED (not scary).
     """
-    return _run_external(["pytest", "-q"], name="Tests")
+    return _run_external(["pytest", "-q"], name="pytest", mode="detect")
 
 
 def check_sqlite_drift() -> GateResult:
@@ -172,23 +253,22 @@ def check_sqlite_drift() -> GateResult:
     try:
         from firsttry import db_sqlite
     except Exception as exc:
-        return GateResult(
-            name="SQLite Drift",
-            status="SKIPPED",
-            info="probe unavailable",
-            details=(
-                "SQLite Drift: SKIPPED because firsttry.db_sqlite "
-                f"could not be imported ({exc!r}).\n"
-                "What was attempted:\n"
-                "- We try to autogenerate a migration in a temp dir against a "
-                "temp SQLite DB (./.firsttry.db).\n"
-                "Why it skipped:\n"
-                "- The SQLite drift probe module isn't in this project yet.\n"
-                "How to configure:\n"
-                "- Add firsttry/db_sqlite.py with run_sqlite_probe() that "
-                "compares models vs migrations.\n"
-            ),
+        result = GateResult(name="SQLite Drift", passed=False, mode="detect")
+        result.status = "SKIPPED"
+        result.info = "probe unavailable"
+        result.details = (
+            "SQLite Drift: SKIPPED because firsttry.db_sqlite "
+            f"could not be imported ({exc!r}).\n"
+            "What was attempted:\n"
+            "- We try to autogenerate a migration in a temp dir against a "
+            "temp SQLite DB (./.firsttry.db).\n"
+            "Why it skipped:\n"
+            "- The SQLite drift probe module isn't in this project yet.\n"
+            "How to configure:\n"
+            "- Add firsttry/db_sqlite.py with run_sqlite_probe() that "
+            "compares models vs migrations.\n"
         )
+        return result
 
     probe_stdout = io.StringIO()
     try:
@@ -199,31 +279,29 @@ def check_sqlite_drift() -> GateResult:
             # else: import alone counts as PASS
     except Exception as exc:
         out = probe_stdout.getvalue()
-        return GateResult(
-            name="SQLite Drift",
-            status="FAIL",
-            info="schema drift?",
-            details=(
-                "SQLite Drift probe reported an issue.\n"
-                f"{out}\n"
-                f"Exception: {exc!r}\n\n"
-                "What happened:\n"
-                "- We tried to autogenerate an Alembic migration from your "
-                "models.\n"
-                "- The result didn't match what's committed.\n"
-                "How to fix:\n"
-                "- Run `alembic revision --autogenerate`, review, commit.\n"
-                "- OR update models so they match existing migrations.\n"
-            ),
+        result = GateResult(name="SQLite Drift", passed=False, errors=1, mode="detect")
+        result.status = "FAIL"
+        result.info = "schema drift?"
+        result.details = (
+            "SQLite Drift probe reported an issue.\n"
+            f"{out}\n"
+            f"Exception: {exc!r}\n\n"
+            "What happened:\n"
+            "- We tried to autogenerate an Alembic migration from your "
+            "models.\n"
+            "- The result didn't match what's committed.\n"
+            "How to fix:\n"
+            "- Run `alembic revision --autogenerate`, review, commit.\n"
+            "- OR update models so they match existing migrations.\n"
         )
+        return result
 
     out = probe_stdout.getvalue()
-    return GateResult(
-        name="SQLite Drift",
-        status="PASS",
-        info="no drift",
-        details=out.strip(),
-    )
+    result = GateResult(name="SQLite Drift", passed=True, mode="detect")
+    result.status = "PASS"
+    result.info = "no drift"
+    result.details = out.strip()
+    return result
 
 
 def check_pg_drift() -> GateResult:
@@ -511,16 +589,19 @@ def run_gate(which: str) -> Tuple[List[dict[str, object]], bool]:
             # consumers receive structured output instead of a raised error.
             res = GateResult(
                 name=label,
-                status="FAIL",
-                info="exception",
-                details=str(exc),
-                returncode=None,
-                stdout=None,
-                stderr=str(exc),
+                passed=False,
+                errors=1,
+                warnings=0,
+                fixable=0,
+                extra={"exception": str(exc)},
             )
+            # Set legacy fields for compatibility
+            res.info = "exception"
+            res.details = str(exc)
+            res.stderr = str(exc)
 
-        # annotate display label (e.g. "Lint..........") instead of "Lint"
-        res.name = label
+        # Keep semantic name from gate function, not display label
+        # res.name = label  # Don't override - preserve semantic names like "python-lint"
         results.append(res)
         if res.status == "FAIL":
             any_fail = True

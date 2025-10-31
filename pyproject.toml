@@ -3,45 +3,27 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "firsttry"
-version = "0.1.0"
+name = "firsttry-run"
+version = "0.1.6"
 description = "Ship code that passes CI on the first try."
-authors = [ { name = "FirstTry", email = "founder@example.com" } ]
+authors = [{ name = "FirstTry", email = "founder@example.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
 ]
-
-# runtime deps used by the CLI/tests
-dependencies = ["PyYAML"]
+dependencies = [
+  "PyYAML",
+  "ruff>=0.1.0",
+  "black>=22.0.0",
+  "mypy>=1.0.0",
+  "pytest>=7.0.0",
+]
 
 [project.scripts]
 firsttry = "firsttry.cli:main"
-# developer-only entrypoint (internal/testing). Keep default `firsttry` for end users.
-firsttry-dev = "firsttry.cli_v2:main"
-
-[project.optional-dependencies]
-dev = [
-  # quality / tooling
-  "mypy",
-  "ruff",
-  "pytest",
-  "coverage",
-
-  # typing helpers
-  "types-PyYAML",
-
-  # runtime/test libs
-  "PyYAML",
-  "fastapi",
-  "uvicorn",
-  "httpx",
-  "sqlalchemy",
-  "alembic",
-  "click",
-]
+ft = "firsttry.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -49,10 +31,4 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["firsttry*"]
-
-[tool.mypy]
-exclude = [
-  "^tools/",
-  "^my-monorepo/",
-]
 

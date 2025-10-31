@@ -7,30 +7,34 @@ from pathlib import Path
 from .license import ensure_trial_license_if_missing, license_summary_for_humans
 
 
-PRE_COMMIT_HOOK = """#!/bin/sh
-export FIRSTTRY_USE_STUB_RUNNERS=0
-python -m firsttry.cli run --gate pre-commit
+PRE_COMMIT_SCRIPT = """#!/bin/sh
+# FirstTry pre-commit hook
+# tries venv first, then global
+if command -v firsttry >/dev/null 2>&1; then
+  firsttry run --level 2
+else
+  python -m firsttry run --level 2
+fi
 status=$?
 if [ $status -ne 0 ]; then
-    echo ""
-    echo "FirstTry blocked this commit ❌"
-    echo "Fix the issues above, then commit again."
-    exit $status
+  echo "FirstTry: pre-commit failed."
+  exit $status
 fi
-exit 0
 """
 
-PRE_PUSH_HOOK = """#!/bin/sh
-export FIRSTTRY_USE_STUB_RUNNERS=0
-python -m firsttry.cli run --gate pre-push
+PRE_PUSH_SCRIPT = """#!/bin/sh
+# FirstTry pre-push hook
+# tries venv first, then global
+if command -v firsttry >/dev/null 2>&1; then
+  firsttry run --level 3
+else
+  python -m firsttry run --level 3
+fi
 status=$?
 if [ $status -ne 0 ]; then
-    echo ""
-    echo "FirstTry blocked this push ❌"
-    echo "Fix the issues above, then push again."
-    exit $status
+  echo "FirstTry: pre-push failed."
+  exit $status
 fi
-exit 0
 """
 
 
@@ -50,8 +54,8 @@ def install_git_hooks(repo_root: str | Path = ".") -> Tuple[Path, Path]:
     pre_commit_path = hooks_dir / "pre-commit"
     pre_push_path = hooks_dir / "pre-push"
 
-    _write_executable(pre_commit_path, PRE_COMMIT_HOOK)
-    _write_executable(pre_push_path, PRE_PUSH_HOOK)
+    _write_executable(pre_commit_path, PRE_COMMIT_SCRIPT)
+    _write_executable(pre_push_path, PRE_PUSH_SCRIPT)
 
     return pre_commit_path, pre_push_path
 
@@ -95,3 +99,30 @@ def install_pre_push_hook(repo_root: str | Path | None = None) -> Path:
     repo_root = repo_root or "."
     _, pre_push = install_git_hooks(repo_root)
     return pre_push
+
+
+def hooks_installed(repo_root: str | Path = ".") -> bool:
+    """Check if FirstTry git hooks are installed."""
+    repo_root = Path(repo_root)
+    git_dir = repo_root / ".git"
+    if not git_dir.exists():
+        return False
+
+    pre_commit_hook = git_dir / "hooks" / "pre-commit"
+    pre_push_hook = git_dir / "hooks" / "pre-push"
+
+    return pre_commit_hook.exists() and pre_push_hook.exists()
+
+
+def install_all_hooks(repo_root: str | Path = ".") -> bool:
+    """Install all FirstTry git hooks and return True if successful."""
+    repo_root = Path(repo_root)
+    git_dir = repo_root / ".git"
+    if not git_dir.exists():
+        return False
+
+    try:
+        install_git_hooks(repo_root)
+        return True
+    except Exception:
+        return False
