@@ -8,7 +8,6 @@ from .run_profiles import RunProfile, dev_profile
 from .cache import load_tool_cache_entry, save_tool_cache_entry  
 from .cache_utils import collect_input_stats, input_stats_match
 from .cache_models import ToolCacheEntry, InputFileMeta
-from .reporting import write_report_async
 from .detectors import detect_stack
 
 
@@ -88,7 +87,7 @@ def run_profile_for_repo(
     repo_root: Path,
     profile: RunProfile | None = None,
     report_path: Path | None = None,
-) -> List[Dict[str, Any]]:
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Main orchestrator with LAZY bucket build.
     Only builds and runs what's needed when it's needed.
@@ -158,7 +157,8 @@ def run_profile_for_repo(
     }
 
     # 6) DEFER REPORT WRITE - don't block CLI
-    if report_path is not None:
-        write_report_async(report_path, report, enabled=True)
+    # Note: The CLI will handle the durable reporting, so we skip it here
+    # if report_path is not None:
+    #     write_report_async(report_path, report, enabled=True)
 
-    return results
+    return results, report

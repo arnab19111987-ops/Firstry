@@ -1,14 +1,18 @@
 {
   "repo": "/workspaces/Firstry",
   "timing": {
-    "total_ms": 0.0
+    "detect_ms": 0.07,
+    "fast_ms": 0.86,
+    "mutating_ms": 0.0,
+    "slow_ms": 1.29,
+    "total_ms": 2.23
   },
   "checks": [
     {
       "name": "ruff",
       "status": "cached",
       "duration_s": 0.0,
-      "last_duration_s": 0.049610337000103755
+      "last_duration_s": 0.046540039000319666
     },
     {
       "name": "mypy",
@@ -20,7 +24,7 @@
       "name": "pytest",
       "status": "cached",
       "duration_s": 0.0,
-      "last_duration_s": 79.79428430300004
+      "last_duration_s": 47.17224291399998
     }
   ]
 }
