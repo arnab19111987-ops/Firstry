@@ -451,11 +451,16 @@ async def run_fast_pipeline(*, args=None) -> int:
             "details": result_obj.message if result_obj and hasattr(result_obj, "message") else message
         }
 
-    # Build context for tier-aware reporting
+    # Build context for tier-aware reporting using correct key names
+    machine_info = ctx.get("machine", {})
+    cpus = machine_info.get("cpus", "unknown") if isinstance(machine_info, dict) else "unknown"
+    files = repo_profile.get("file_count", "?")
+    tests = repo_profile.get("test_count", "?")
+    
     context = {
-        "machine": ctx.get("cpus", "unknown"),
-        "files": repo_profile.get("total_files", "?"),
-        "tests": repo_profile.get("test_files", "?")
+        "machine": cpus,
+        "files": files,
+        "tests": tests
     }
 
     # Use new tier-aware reporting system
