@@ -113,3 +113,62 @@ def format_cache_summary(results: List[Dict[str, Any]]) -> str:
         summary_parts.append(f"Cache misses: {misses}")
     
     return "  ".join(summary_parts)
+
+
+# Durable reporting for timing data and run results
+import json
+import os
+from pathlib import Path
+import asyncio
+
+REPORT_DIR = Path(".firsttry")
+REPORT_FILE = REPORT_DIR / "last_run.json"
+
+
+def _ensure_dir() -> None:
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def write_report_sync(payload: Dict[str, Any]) -> None:
+    _ensure_dir()
+    # write to tmp first, then move = atomic-ish
+    tmp_path = REPORT_FILE.with_suffix(".json.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(REPORT_FILE)
+
+
+def write_report_sync_to_path(path: Path, payload: Dict[str, Any]) -> None:
+    """Write report to specific path synchronously."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # write to tmp first, then move = atomic-ish
+    tmp_path = path.with_suffix(".json.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(path)
+
+
+async def write_report_async(path: Path, payload: Dict[str, Any], enabled: bool = True) -> None:
+    """
+    Fire-and-forget style, but still durable.
+    If anything goes wrong in async context, fall back to sync.
+    Compatible with old telemetry interface.
+    """
+    if not enabled:
+        write_report_sync_to_path(path, payload)
+        return
+        
+    try:
+        loop = asyncio.get_running_loop()
+        # run blocking write in thread so we don't block main
+        await loop.run_in_executor(None, write_report_sync_to_path, path, payload)
+    except RuntimeError:
+        # no running loop / shutdown → just do sync
+        write_report_sync_to_path(path, payload)
+    except Exception:
+        # last-resort guard
+        write_report_sync_to_path(path, payload)
