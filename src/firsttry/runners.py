@@ -104,3 +104,5 @@ def coverage_gate(threshold: int) -> StepResult:
     return StepResult(
         "coverage_gate", ok, 0.0, stdout, "", ("coverage_gate", str(threshold))
     )
+
+

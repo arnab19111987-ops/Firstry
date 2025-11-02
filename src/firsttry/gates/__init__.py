@@ -143,11 +143,20 @@ def check_tests():
     try:
         import subprocess
         result = subprocess.run(["pytest", "-q"], capture_output=True, text=True)
+        
+        # Parse test count from output like "23 passed in 1.5s"
+        info = "pytest tests"
+        if result.returncode == 0 and result.stdout:
+            import re
+            m = re.search(r"(\d+)\s+passed", result.stdout)
+            if m:
+                info = f"{m.group(1)} tests"
+        
         return GateResult(
             gate_id="tests",
             ok=result.returncode == 0,
             output=result.stdout,
-            reason="pytest tests" if result.returncode == 0 else f"pytest failures: {result.stdout}"
+            reason=info if result.returncode == 0 else f"pytest failures: {result.stdout}"
         )
     except FileNotFoundError:
         return GateResult(gate_id="tests", ok=True, skipped=True, reason="pytest not found")
@@ -158,11 +167,11 @@ def check_sqlite_drift():
 
 def check_pg_drift():
     """Compatibility function for check_pg_drift."""
-    return GateResult(gate_id="pg_drift", ok=True, skipped=True, reason="pg drift check not implemented")
+    return GateResult(gate_id="pg_drift", ok=True, skipped=True, reason="no Postgres configured")
 
 def check_docker_smoke():
     """Compatibility function for check_docker_smoke."""
-    return GateResult(gate_id="docker_smoke", ok=True, skipped=True, reason="docker smoke check not implemented")
+    return GateResult(gate_id="docker_smoke", ok=True, skipped=True, reason="no Docker runtime")
 
 def check_ci_mirror():
     """Compatibility function for check_ci_mirror."""

@@ -1,0 +1,4 @@
+# requirements.txt
+pyyaml>=6.0
+pip-audit>=2.7.3 ; python_version >= "3.10"
+tomli>=2.0.1 ; python_version < "3.11"

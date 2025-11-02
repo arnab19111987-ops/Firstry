@@ -8,16 +8,16 @@ from firsttry import cli as cli_mod
 
 
 def test_argparse_main_version(monkeypatch):
-    # Simulate: python -m firsttry.cli --version
+    # Simulate: python -m firsttry.cli version
     monkeypatch.setattr(
         sys,
         "argv",
-        ["python -m firsttry.cli", "--version"],
+        ["python -m firsttry.cli", "version"],
     )
     buf = io.StringIO()
     monkeypatch.setattr(sys, "stdout", buf)
 
-    rc = cli_mod.argparse_main()
+    rc = cli_mod.main()
     out = buf.getvalue().strip()
 
     assert rc == 0

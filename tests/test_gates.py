@@ -18,12 +18,11 @@ def test_run_pre_push_gate_extends_pre_commit():
     assert "ruff check" in joined
     assert "pytest" in joined
 
-    # includes docker smoke
-    assert "run_docker_smoke" in joined
+    # includes sqlite probe
+    assert "run_sqlite_probe" in joined
 
-    # includes pg drift
-    assert "run_pg_probe" in joined
+    # includes security scans
+    assert "bandit" in joined
 
-    # includes hadolint / actionlint
-    assert "hadolint" in joined
-    assert "actionlint" in joined
+    # includes code complexity
+    assert "radon" in joined

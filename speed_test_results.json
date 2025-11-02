@@ -1,0 +1,201 @@
+{
+  "summary": {
+    "total_tests": 17,
+    "successful_tests": 16,
+    "failed_tests": 1,
+    "total_duration": 630.3819616199999,
+    "average_duration": 36.579,
+    "fastest_duration": 0.122,
+    "slowest_duration": 120.114
+  },
+  "results": [
+    {
+      "command": "python -m firsttry --help",
+      "description": "Help command",
+      "duration_seconds": 0.164,
+      "exit_code": 0,
+      "stdout_lines": 19,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "usage: firsttry [-h]\n                {run,inspect,sync,status,setup,doctor,mirror-ci,version} ...\n\nFirstTry \u2014 local CI engine (run gates / profiles / reports).\n\npositional arguments:\n  {run,inspect,sync,status,setup,doctor,mirror-ci,version}\n    run                 Run checks (fast by default)\n    inspect             Show detected context/profile/plan\n    sync                Sync local firsttry.toml with CI files (export CI \u2192\n                        config)\n    status              Show hooks + l...",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry version",
+      "description": "Version command",
+      "duration_seconds": 0.122,
+      "exit_code": 0,
+      "stdout_lines": 1,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "FirstTry 0.5.0\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry run --help",
+      "description": "Run help",
+      "duration_seconds": 0.124,
+      "exit_code": 0,
+      "stdout_lines": 15,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "usage: firsttry run [-h] [--profile {fast,strict}] [--tier {developer,teams}]\n                    [--source {auto,config,ci,detect}]\n\noptions:\n  -h, --help            show this help message and exit\n  --profile {fast,strict}\n                        Which profile to run (fast, strict)\n  --tier {developer,teams}\n                        Output summary tier (developer|teams). Overrides\n                        FIRSTTRY_TIER env var.\n  --source {auto,config,ci,detect}\n                        Where to ...",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry run --tier developer",
+      "description": "Run (developer tier)",
+      "duration_seconds": 72.876,
+      "exit_code": 0,
+      "stdout_lines": 25,
+      "stderr_lines": 15,
+      "success": true,
+      "stdout": "\u26a1 firsttry: running FAST checks in parallel: mypy, ruff\n\u2192 firsttry: running MUTATING checks serially: black\n\u23f3 firsttry: running SLOW checks in parallel: ci-parity, npm test, pytest\n\ud83d\udd39 FirstTry (Free) \u2014 Fastest Local CI Mirror\n\n--- Context ---\n  Machine: unknown CPUs\n  Repo:    ? files, ? tests\n  Checks:  black, ci-parity, mypy, npm test, pytest, ruff\n\n--- Results ---\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown...",
+      "stderr": "Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7d1f8b41c180>\nTraceback (most recent call last):\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 126, in __del__\n    self.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 104, in close\n    proto.pipe.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/unix_events.py\", line 568, in close\n    self._close(None)\n  File \"/usr/local/python/3.12.1/l..."
+    },
+    {
+      "command": "python -m firsttry run --tier teams",
+      "description": "Run (teams tier)",
+      "duration_seconds": 83.344,
+      "exit_code": 0,
+      "stdout_lines": 22,
+      "stderr_lines": 15,
+      "success": true,
+      "stdout": "\u26a1 firsttry: running FAST checks in parallel: mypy, ruff\n\u2192 firsttry: running MUTATING checks serially: black\n\u23f3 firsttry: running SLOW checks in parallel: ci-parity, npm test, pytest\n\ud83d\udd39 FirstTry (Pro) \u2014 Team Enforcement & CI Parity\n\n--- Context ---\n  Machine: unknown CPUs\n  Repo:    ? files, ? tests\n  Checks:  black, ci-parity, mypy, npm test, pytest, ruff\n  Config:  Default (Enforcing drift: No)\n\n--- Results ---\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: N...",
+      "stderr": "Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x76defb59c180>\nTraceback (most recent call last):\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 126, in __del__\n    self.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 104, in close\n    proto.pipe.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/unix_events.py\", line 568, in close\n    self._close(None)\n  File \"/usr/local/python/3.12.1/l..."
+    },
+    {
+      "command": "python -m firsttry run --profile fast",
+      "description": "Run (fast profile)",
+      "duration_seconds": 94.178,
+      "exit_code": 0,
+      "stdout_lines": 25,
+      "stderr_lines": 15,
+      "success": true,
+      "stdout": "\u26a1 firsttry: running FAST checks in parallel: mypy, ruff\n\u2192 firsttry: running MUTATING checks serially: black\n\u23f3 firsttry: running SLOW checks in parallel: ci-parity, npm test, pytest\n\ud83d\udd39 FirstTry (Free) \u2014 Fastest Local CI Mirror\n\n--- Context ---\n  Machine: unknown CPUs\n  Repo:    ? files, ? tests\n  Checks:  black, ci-parity, mypy, npm test, pytest, ruff\n\n--- Results ---\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown...",
+      "stderr": "Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x73318611c180>\nTraceback (most recent call last):\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 126, in __del__\n    self.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 104, in close\n    proto.pipe.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/unix_events.py\", line 568, in close\n    self._close(None)\n  File \"/usr/local/python/3.12.1/l..."
+    },
+    {
+      "command": "python -m firsttry run --profile strict",
+      "description": "Run (strict profile)",
+      "duration_seconds": 108.494,
+      "exit_code": 0,
+      "stdout_lines": 25,
+      "stderr_lines": 15,
+      "success": true,
+      "stdout": "\u26a1 firsttry: running FAST checks in parallel: mypy, ruff\n\u2192 firsttry: running MUTATING checks serially: black\n\u23f3 firsttry: running SLOW checks in parallel: ci-parity, npm test, pytest\n\ud83d\udd39 FirstTry (Free) \u2014 Fastest Local CI Mirror\n\n--- Context ---\n  Machine: unknown CPUs\n  Repo:    ? files, ? tests\n  Checks:  black, ci-parity, mypy, npm test, pytest, ruff\n\n--- Results ---\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown...",
+      "stderr": "Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7e9788088180>\nTraceback (most recent call last):\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 126, in __del__\n    self.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 104, in close\n    proto.pipe.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/unix_events.py\", line 568, in close\n    self._close(None)\n  File \"/usr/local/python/3.12.1/l..."
+    },
+    {
+      "command": "python -m firsttry run --source detect",
+      "description": "Run (detect source)",
+      "duration_seconds": 63.0,
+      "exit_code": 0,
+      "stdout_lines": 24,
+      "stderr_lines": 15,
+      "success": true,
+      "stdout": "\u2192 firsttry: running OTHER checks in parallel: lint, type, tests, security, deps\n\u23f3 firsttry: running SLOW checks in parallel: ci_parity\n\ud83d\udd39 FirstTry (Free) \u2014 Fastest Local CI Mirror\n\n--- Context ---\n  Machine: unknown CPUs\n  Repo:    ? files, ? tests\n  Checks:  ruff, mypy, pytest, bandit, pip-audit, ci-parity\n\n--- Results ---\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n\n--- Summary ---\n  Result: \u2705 PA...",
+      "stderr": "Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x732bde218180>\nTraceback (most recent call last):\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 126, in __del__\n    self.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 104, in close\n    proto.pipe.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/unix_events.py\", line 568, in close\n    self._close(None)\n  File \"/usr/local/python/3.12.1/l..."
+    },
+    {
+      "command": "python -m firsttry run --source config",
+      "description": "Run (config source)",
+      "duration_seconds": 120.114,
+      "exit_code": -1,
+      "stdout_lines": 0,
+      "stderr_lines": 0,
+      "success": false,
+      "stdout": "",
+      "stderr": "Command timed out after 120 seconds",
+      "timeout": true
+    },
+    {
+      "command": "python -m firsttry run --source ci",
+      "description": "Run (CI source)",
+      "duration_seconds": 63.785,
+      "exit_code": 0,
+      "stdout_lines": 26,
+      "stderr_lines": 30,
+      "success": true,
+      "stdout": "\u2192 firsttry: running OTHER checks in parallel: tests, lint, lint, type, tests\n\ud83d\udd39 FirstTry (Free) \u2014 Fastest Local CI Mirror\n\n--- Context ---\n  Machine: unknown CPUs\n  Repo:    ? files, ? tests\n  Checks:  npm test, ruff, black, mypy, pytest\n\n--- Results ---\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n  \u2705 unknown: No details\n\n--- Summary ---\n  Result: \u2705 P...",
+      "stderr": "Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x739dae2b0180>\nTraceback (most recent call last):\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 126, in __del__\n    self.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/base_subprocess.py\", line 104, in close\n    proto.pipe.close()\n  File \"/usr/local/python/3.12.1/lib/python3.12/asyncio/unix_events.py\", line 568, in close\n    self._close(None)\n  File \"/usr/local/python/3.12.1/l..."
+    },
+    {
+      "command": "python -m firsttry inspect",
+      "description": "Inspect command",
+      "duration_seconds": 3.468,
+      "exit_code": 0,
+      "stdout_lines": 7,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "Tier: developer\nContext: {'repo_root': '/workspaces/Firstry', 'machine': {'os': 'linux', 'cpus': 2}}\nRepo: {'repo_root': '/workspaces/Firstry', 'file_count': 1996, 'test_count': 214, 'languages': ['python']}\nConfig: {'tool': {'firsttry': {'fail_on_drift': True, 'run': {'tools': ['black', 'ci-parity', 'mypy', 'npm test', 'pytest', 'ruff']}, 'tool': {'ruff': {'cmd': 'ruff check .'}, 'black': {'cmd': 'black --check .'}, 'mypy': {'cmd': 'mypy .'}, 'pytest': {'cmd': 'pytest -q'}, 'npm test': {'cmd': ...",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry sync",
+      "description": "Sync command",
+      "duration_seconds": 2.202,
+      "exit_code": 0,
+      "stdout_lines": 2,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "\u2705 Synced 5 CI entries into firsttry.toml. Enabled fail_on_drift = true.\n   Run `firsttry run --source=config` to verify.\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry status",
+      "description": "Status command",
+      "duration_seconds": 1.925,
+      "exit_code": 0,
+      "stdout_lines": 15,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "FirstTry Status\n===============\n\nGit repository: \u2705\nGit hooks: \u2705 installed\nConfiguration: \u2705 .firsttry.yml found\n\nLast run:\n  None\n\nAvailable gates: pre-commit, pre-push, auto\nQuick commands:\n  ft commit  \u2192  firsttry run --gate pre-commit\n  ft push    \u2192  firsttry run --gate pre-push\n  ft auto    \u2192  firsttry run --gate auto\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry setup",
+      "description": "Setup command",
+      "duration_seconds": 1.98,
+      "exit_code": 0,
+      "stdout_lines": 7,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "\ud83d\udd0d Detected project stacks: python, shell\n\ud83d\udce6 Recommended tools for this repo:\n  - pip install black isort ruff mypy pytest bandit\n  - shell: shfmt shellcheck\n\u2705 Created .firsttry.yml (or kept existing).\n\u2705 Git hooks already installed.\n\ud83c\udf89 Setup complete.\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry doctor",
+      "description": "Doctor command",
+      "duration_seconds": 1.81,
+      "exit_code": 0,
+      "stdout_lines": 10,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "\ud83e\ude7a FirstTry Doctor\n==================\n\n- lint: ok (passed)\n- types: ok (passed)\n- tests: ok (passed)\n- docker: ok (passed)\n- ci-mirror: ok (passed)\n\n\ud83d\udcca 5/5 checks passed\n",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry mirror-ci",
+      "description": "Mirror-CI command",
+      "duration_seconds": 2.324,
+      "exit_code": 0,
+      "stdout_lines": 701,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "{\n  \"jobs\": [\n    {\n      \"job_name\": \"ci-gate\",\n      \"workflow_name\": \"ci-gate\",\n      \"steps\": [\n        {\n          \"job\": \"ci-gate\",\n          \"step_name\": \"Install project + dev dependencies\",\n          \"cmd\": \"python -m pip install --upgrade pip\\n\\n# Prefer editable install with dev extras; fall back to a non-editable install\\npython -m pip install -e \\\".[dev]\\\" || python -m pip install \\\".[dev]\\\"\\n\\n# If present, install pinned dev tool versions to avoid surprises from\\n# floating dev-de...",
+      "stderr": ""
+    },
+    {
+      "command": "python -m firsttry mirror-ci --help",
+      "description": "Mirror-CI help",
+      "duration_seconds": 1.933,
+      "exit_code": 0,
+      "stdout_lines": 5,
+      "stderr_lines": 0,
+      "success": true,
+      "stdout": "usage: firsttry mirror-ci [-h] [--root ROOT]\n\noptions:\n  -h, --help   show this help message and exit\n  --root ROOT  Repository root path\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -9,11 +9,11 @@ from .license import ensure_trial_license_if_missing, license_summary_for_humans
 
 PRE_COMMIT_SCRIPT = """#!/bin/sh
 # FirstTry pre-commit hook
-# tries venv first, then global
+# fast profile = quick checks, lint, autofix, repo_sanity
 if command -v firsttry >/dev/null 2>&1; then
-  firsttry run --level 2
+  firsttry run --profile fast
 else
-  python -m firsttry run --level 2
+  python -m firsttry run --profile fast
 fi
 status=$?
 if [ $status -ne 0 ]; then
@@ -24,11 +24,11 @@ fi
 
 PRE_PUSH_SCRIPT = """#!/bin/sh
 # FirstTry pre-push hook
-# tries venv first, then global
+# strict profile = slower, close to CI
 if command -v firsttry >/dev/null 2>&1; then
-  firsttry run --level 3
+  firsttry run --profile strict
 else
-  python -m firsttry run --level 3
+  python -m firsttry run --profile strict
 fi
 status=$?
 if [ $status -ne 0 ]; then

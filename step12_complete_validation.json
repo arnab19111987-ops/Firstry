@@ -1,0 +1,67 @@
+{
+  "cache_test": {
+    "speedup": 0.8361391949639443,
+    "cache_hits": 1,
+    "total_checks": 2
+  },
+  "orchestrator_test": {
+    "total_time": 1.1525593559999834,
+    "active_time": 0.07742205799877411,
+    "check_count": 4,
+    "failed_count": 1,
+    "cached_count": 1
+  },
+  "profile_test": {
+    "dev": {
+      "check_count": 4,
+      "checks": [
+        "ruff",
+        "repo_sanity",
+        "black_check",
+        "mypy"
+      ]
+    },
+    "full": {
+      "check_count": 7,
+      "checks": [
+        "ruff",
+        "repo_sanity",
+        "black",
+        "mypy",
+        "pytest",
+        "npm test",
+        "ci-parity"
+      ]
+    },
+    "strict": {
+      "check_count": 7,
+      "checks": [
+        "ruff",
+        "repo_sanity",
+        "black",
+        "mypy",
+        "pytest",
+        "npm test",
+        "ci-parity"
+      ]
+    }
+  },
+  "benchmark": {
+    "dev_optimized": {
+      "elapsed": 1.1333455289986887,
+      "check_count": 4,
+      "success_rate": 50.0
+    },
+    "subset_fast": {
+      "elapsed": 1.250213576000533,
+      "check_count": 2,
+      "success_rate": 50.0
+    },
+    "minimal_test": {
+      "elapsed": 1.1492374780009413,
+      "check_count": 1,
+      "success_rate": 0.0
+    }
+  },
+  "best_time": 1.1333455289986887
+}

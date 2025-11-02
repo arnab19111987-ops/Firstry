@@ -12,8 +12,8 @@ def test_import_firsttry_as_if_installed(tmp_path, monkeypatch):
     """
 
     repo_root = Path.cwd()
-    src_pkg = repo_root / "firsttry"
-    assert src_pkg.is_dir(), "expected ./firsttry to be the canonical package"
+    src_pkg = repo_root / "src" / "firsttry"
+    assert src_pkg.is_dir(), "expected ./src/firsttry to be the canonical package"
 
     fake_site = tmp_path / "site-packages"
     shutil.copytree(src_pkg, fake_site / "firsttry")

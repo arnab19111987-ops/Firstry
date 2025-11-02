@@ -1,0 +1,20 @@
+[tool.firsttry]
+fail_on_drift = true
+
+[tool.firsttry.run]
+tools = ["black", "ci-parity", "mypy", "npm test", "pytest", "ruff"]
+
+[tool.firsttry.tool.ruff]
+cmd = "ruff check ."
+
+[tool.firsttry.tool.black]
+cmd = "black --check ."
+
+[tool.firsttry.tool.mypy]
+cmd = "mypy ."
+
+[tool.firsttry.tool.pytest]
+cmd = "pytest -q"
+
+[tool.firsttry.tool."npm test"]
+cmd = "npm test"

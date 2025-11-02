@@ -1,21 +1,124 @@
 from __future__ import annotations
-
+import hashlib
 import json
+import os
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict, Any, Iterable, Optional
 
+from .cache_models import ToolCacheEntry, InputFileMeta, CacheStats
+from .cache_utils import collect_input_stats, validate_cache_fast, get_cache_state
+
+# Global cache location for cross-repo caching
+CACHE_DIR = Path(os.path.expanduser("~")) / ".firsttry"
+CACHE_FILE = CACHE_DIR / "cache.json"
+
+# Local cache for legacy compatibility
 CACHE_DIRNAME = ".firsttry"
 CACHE_FILENAME = "cache.json"
 
 
+def _ensure_dir() -> None:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_cache() -> Dict[str, Any]:
+    """Load global cache from home directory"""
+    _ensure_dir()
+    if not CACHE_FILE.exists():
+        return {"repos": {}}
+    try:
+        with CACHE_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"repos": {}}
+
+
+def save_cache(data: Dict[str, Any]) -> None:
+    """Save global cache to home directory"""
+    _ensure_dir()
+    with CACHE_FILE.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+
+def sha256_file(path: Path) -> str:
+    """Compute SHA256 hash of a single file"""
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def sha256_of_paths(paths: Iterable[Path]) -> str:
+    """Compute SHA256 hash of multiple files (sorted by path)"""
+    h = hashlib.sha256()
+    for p in sorted(paths, key=lambda x: str(x)):
+        h.update(str(p).encode("utf-8"))
+        if p.exists() and p.is_file():
+            with p.open("rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    h.update(chunk)
+        elif p.exists() and p.is_dir():
+            # For directories, just hash the path name
+            h.update(f"dir:{p}".encode("utf-8"))
+    return h.hexdigest()
+
+
+def get_repo_cache(repo_root: str) -> Dict[str, Any]:
+    """Get cache data for a specific repository"""
+    data = load_cache()
+    return data["repos"].get(repo_root, {"tools": {}})
+
+
+def update_repo_cache(repo_root: str, repo_data: Dict[str, Any]) -> None:
+    """Update cache data for a specific repository"""
+    data = load_cache()
+    data["repos"][repo_root] = repo_data
+    save_cache(data)
+
+
+def is_tool_cache_valid(
+    repo_root: str,
+    tool_name: str,
+    input_hash: str,
+) -> bool:
+    """Check if tool cache is valid for given inputs"""
+    repo_data = get_repo_cache(repo_root)
+    tool_data = repo_data.get("tools", {}).get(tool_name)
+    if not tool_data:
+        return False
+    return tool_data.get("input_hash") == input_hash and tool_data.get("status") == "ok"
+
+
+def write_tool_cache(
+    repo_root: str,
+    tool_name: str,
+    input_hash: str,
+    status: str,
+    extra: Dict[str, Any] | None = None,
+) -> None:
+    """Write tool result to cache"""
+    repo_data = get_repo_cache(repo_root)
+    tools = repo_data.setdefault("tools", {})
+    payload = {
+        "input_hash": input_hash,
+        "status": status,
+    }
+    if extra:
+        payload.update(extra)
+    tools[tool_name] = payload
+    update_repo_cache(repo_root, repo_data)
+
+
+# Legacy compatibility functions for existing code
 def _cache_file(root: Path) -> Path:
     d = root / CACHE_DIRNAME
     d.mkdir(exist_ok=True)
     return d / CACHE_FILENAME
 
 
-def load_cache(root: Path) -> Dict[str, Any]:
+def load_cache_legacy(root: Path) -> Dict[str, Any]:
     p = _cache_file(root)
     if not p.exists():
         return {}
@@ -26,7 +129,7 @@ def load_cache(root: Path) -> Dict[str, Any]:
         return {}
 
 
-def save_cache(root: Path, data: Dict[str, Any]) -> None:
+def save_cache_legacy(root: Path, data: Dict[str, Any]) -> None:
     p = _cache_file(root)
     data["updated_at"] = time.time()
     p.write_text(json.dumps(data, indent=2))
@@ -54,3 +157,88 @@ def update_gate_cache(cache: dict, gate_id: str, watched_files: list[str]) -> No
         "watched": watched_files,
         "last_ok": True,
     }
+
+
+# Enhanced cache functions using stat-first validation
+
+def load_tool_cache_entry(repo_root: str, tool_name: str) -> Optional[ToolCacheEntry]:
+    """Load enhanced cache entry with stat-first validation support."""
+    repo_data = get_repo_cache(repo_root)
+    tools = repo_data.get("tools", {})
+    tool_data = tools.get(tool_name)
+    
+    if not tool_data:
+        return None
+        
+    try:
+        # Try to load as enhanced cache entry
+        if "input_files" in tool_data:
+            input_files = [InputFileMeta(**f) for f in tool_data["input_files"]]
+            return ToolCacheEntry(
+                tool_name=tool_name,
+                input_files=input_files,
+                input_hash=tool_data["input_hash"],
+                status=tool_data["status"],
+                created_at=tool_data.get("created_at", time.time()),
+                extra=tool_data.get("extra", {}),
+            )
+    except (KeyError, TypeError):
+        pass
+        
+    return None
+
+
+def save_tool_cache_entry(repo_root: str, entry: ToolCacheEntry) -> None:
+    """Save enhanced cache entry with file metadata."""
+    cache = load_cache()
+    repo_data = cache.setdefault("repos", {}).setdefault(repo_root, {})
+    tools = repo_data.setdefault("tools", {})
+    
+    tools[entry.tool_name] = {
+        "input_files": [
+            {
+                "path": f.path,
+                "size": f.size, 
+                "mtime": f.mtime,
+            }
+            for f in entry.input_files
+        ],
+        "input_hash": entry.input_hash,
+        "status": entry.status,
+        "created_at": entry.created_at,
+        "extra": entry.extra,
+    }
+    
+    save_cache(cache)
+
+
+def is_tool_cache_valid_fast(repo_root: str, tool_name: str, input_paths: list[str]) -> tuple[bool, str]:
+    """
+    Fast cache validation using stat-first approach.
+    
+    Returns (is_valid, cache_state) where cache_state is:
+    - "hit": Valid cache, use result
+    - "miss": No cache or files changed  
+    - "policy-rerun": Valid cache but policy says re-run (e.g., failed tools)
+    - "stale": Cache too old
+    """
+    entry = load_tool_cache_entry(repo_root, tool_name)
+    cache_state, use_cache = get_cache_state(entry, input_paths, policy_rerun_failures=True)
+    return use_cache, cache_state
+
+
+def invalidate_tool_cache(repo_root: str, tool_name: str) -> None:
+    """Invalidate cache for a specific tool."""
+    repo_data = get_repo_cache(repo_root)
+    tools = repo_data.get("tools", {})
+    if tool_name in tools:
+        del tools[tool_name]
+        save_cache(load_cache())  # Update the global cache
+
+
+def clear_repo_cache(repo_root: str) -> None:
+    """Clear all cache for a specific repository."""
+    cache_data = load_cache()
+    if repo_root in cache_data.get("repos", {}):
+        del cache_data["repos"][repo_root]
+        save_cache(cache_data)

@@ -9,7 +9,7 @@ def test_mypy_passes():
     This locks in typed, professional-looking surfaces for customers.
     """
     repo_root = Path.cwd()
-    pkg_dir = repo_root / "firsttry"
+    pkg_dir = repo_root / "src" / "firsttry"
     assert pkg_dir.is_dir(), "firsttry package should exist"
 
     res = subprocess.run(

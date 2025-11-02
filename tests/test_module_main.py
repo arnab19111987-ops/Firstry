@@ -6,8 +6,8 @@ from firsttry import __version__
 
 
 def test_module_dunder_main_version(monkeypatch):
-    # Simulate: python -m firsttry --version
-    monkeypatch.setattr(sys, "argv", ["firsttry", "--version"])  # click entry
+    # Simulate: python -m firsttry version
+    monkeypatch.setattr(sys, "argv", ["firsttry", "version"])
     buf = io.StringIO()
     monkeypatch.setattr(sys, "stdout", buf)
 

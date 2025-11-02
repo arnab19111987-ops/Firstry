@@ -1,0 +1,34 @@
+--- a/src/firsttry/cli.py
++++ b/src/firsttry/cli.py
+@@ -61,6 +61,18 @@ def build_parser() -> argparse.ArgumentParser:
+     # sync
+     sub.add_parser("sync", help="Sync local firsttry.toml with CI files (export CI → config)")
+ 
++    # Add missing legacy commands
++    p_status = sub.add_parser("status", help="Show system status")
++    p_setup = sub.add_parser("setup", help="Initialize FirstTry")  
++    p_doctor = sub.add_parser("doctor", help="System diagnostics")
++    p_report = sub.add_parser("report", help="Generate detailed report")
++    p_report.add_argument("--profile", default="strict", help="profile to run")
++    
++    # Import handlers for routing
++    from .cli_enhanced_old import handle_status, handle_setup, handle_doctor
++    p_status.set_defaults(func=handle_status)
++    p_setup.set_defaults(func=handle_setup)
++    p_doctor.set_defaults(func=handle_doctor)
+     sub.add_parser("version", help="Show version")
+ 
+     return p
+@@ -90,6 +102,12 @@ def main(argv: list[str] | None = None) -> int:
+         return cmd_inspect(args=args)
+     elif args.cmd == "sync":
+         return cmd_sync()
++    elif args.cmd in ["status", "setup", "doctor"]:
++        # Route to legacy handlers
++        if hasattr(args, 'func'):
++            return args.func(args)
++    elif args.cmd == "report":
++        return cmd_report(args)
+     elif args.cmd == "version":
+         print(f"FirstTry {__version__}")
+         return 0

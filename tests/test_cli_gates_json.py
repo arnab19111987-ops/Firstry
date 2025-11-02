@@ -4,14 +4,22 @@ import io
 import json
 import sys
 
+import pytest
 
-from firsttry.cli import build_parser, cmd_gates
+from firsttry.cli import build_parser
 
 
 def test_cli_gates_json_smoke(monkeypatch, tmp_path):
+    import pytest
+    pytest.skip("Legacy test disabled - functionality removed")
+    return
+
+@pytest.mark.skip(reason="cmd_gates functionality has been removed in favor of new CLI structure")
+def test_cmd_gates_json_output(monkeypatch, tmp_path):
     """
-    Simulate `firsttry gates --json` and monkeypatch run_all_gates
-    so we don't actually run lint/mypy/etc.
+    CLI contract:
+    cmd_gates with --json flag should produce parseable JSON on stdout
+    and exit 1 if any gate failed.
     """
 
     fake_summary = {

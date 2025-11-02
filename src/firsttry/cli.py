@@ -1,268 +1,527 @@
+# src/firsttry/cli.py
+from __future__ import annotations
+
 import argparse
+import asyncio
 import os
 import sys
-from .orchestrator import run_unified, run_setup, show_status
-from .hooks import install_git_hooks
-from .license_trial import init_trial, trial_status
 
-LEVEL_TO_CHECKS = {
-    "1": [
-        "lint_basic",
-        "autofix",
-        "repo_sanity",
-    ],
-    "2": [
-        "lint_basic",
-        "autofix",
-        "repo_sanity",
-        "type_check_fast",
-        "tests_fast",
-        "env_deps_check",
-    ],
-    "3": [
-        "lint_basic",
-        "autofix",
-        "repo_sanity",
-        "type_check_fast",
-        "tests_fast",
-        "env_deps_check",
-        "duplication_fast",
-        "security_light",
-        "coverage_warn",
-        "conventions",
-    ],
-    "4": [
-        "lint_basic",
-        "autofix",
-        "repo_sanity",
-        "type_check_strict",
-        "tests_full",
-        "env_deps_check",
-        "duplication_full",
-        "security_full",
-        "coverage_enforce",
-        "migrations_drift",
-        "deps_license",
-    ],
-}
+from . import __version__
+from .license_guard import get_tier
+from .context_builders import build_context, build_repo_profile
+from .config_loader import load_config, plan_from_config, apply_overrides_to_plan
+from .config_cache import plan_from_config_with_timeout
+from .ci_parser import resolve_ci_plan
+from .agent_manager import SmartAgentManager
+from .repo_rules import plan_checks_for_repo
+from .checks_orchestrator import run_checks_with_allocation_and_plan
+from .sync import sync_with_ci
+
+# add these imports for old enhanced handlers
+try:
+    from .cli_enhanced_old import (
+        handle_status,
+        handle_setup,
+        handle_doctor,
+        cmd_mirror_ci,   # <-- ADD THIS (note: cmd_ not handle_)
+        # handle_report,  # <- leave commented: audit says not implemented
+    )
+except ImportError:
+    # in case someone vendors this without the old file
+    handle_status = handle_setup = handle_doctor = cmd_mirror_ci = None
 
 
-def build_parser():
-    p = argparse.ArgumentParser(prog="firsttry", description="FirstTry — Local CI that levels up with you")
+def _normalize_profile(raw: str | None) -> str:
+    """
+    Old hooks used:
+        firsttry run --level 2
+        firsttry run --level 3
+    New CLI uses:
+        firsttry run --profile fast
+        firsttry run --profile strict
+
+    This helper makes old + new calls land on the same code path.
+    """
+    if raw is None:
+        return "fast"  # default to the fast path
+    # accept numeric "levels" from old hooks
+    if raw in ("1", "2"):
+        return "fast"
+    if raw in ("3", "4"):
+        return "strict"
+    # otherwise trust whatever user passed (fast / strict / tests / teams…)
+    return raw
+
+
+def _resolve_mode_to_flags(args):
+    """
+    Map simplified modes to existing --source/--tier/--profile flags.
+    
+    This allows clean CLI like:
+        firsttry run            → auto, fast-enough (detect + developer + dev)
+        firsttry run fast       → only fast/local checks (detect + developer + fast)
+        firsttry run full       → everything for this repo (detect + teams + strict)
+        firsttry run ci         → "do what CI does" (ci + developer + strict)
+        firsttry run config     → "do what I configured" (config + developer + strict)
+        firsttry run teams      → team/heavy version (detect + teams + strict)
+    
+    While preserving backward compatibility with explicit flags.
+    """
+    # Handle shell aliases
+    ALIASES = {
+        "q": "fast",      # firsttry run q
+        "c": "ci",        # firsttry run c  
+        "t": "teams",     # firsttry run t
+    }
+    mode = getattr(args, "mode", "auto")
+    mode = ALIASES.get(mode, mode)
+    
+    # Explicit flags always win (for backward compatibility)
+    if not hasattr(args, 'source') or args.source is None:
+        # Infer source from mode
+        if mode in ("auto", "fast", "full", "teams"):
+            args.source = "detect"
+        elif mode == "ci":
+            args.source = "ci"
+        elif mode == "config":
+            args.source = "config"
+        else:
+            args.source = "detect"  # fallback
+    
+    if not hasattr(args, 'tier') or args.tier is None:
+        # Infer tier from mode
+        if mode in ("auto", "fast", "ci", "config"):
+            args.tier = "developer"
+        elif mode in ("teams", "full"):
+            args.tier = "teams"
+        else:
+            args.tier = "developer"  # fallback
+    
+    if not hasattr(args, 'profile') or args.profile is None:
+        # Infer profile from mode
+        if mode in ("auto", "fast"):
+            args.profile = "fast"
+        elif mode in ("full", "ci", "config", "teams"):
+            args.profile = "strict"
+        else:
+            args.profile = "fast"  # fallback
+    
+    return args
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="firsttry",
+        description="FirstTry — local CI engine (run gates / profiles / reports).",
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    # run
-    p_run = sub.add_parser("run", help="Run checks (progressive levels of strictness)")
+    # --- run ---------------------------------------------------------------
+    p_run = sub.add_parser("run", help="Run FirstTry checks on this repo")
+
+    # NEW: Simple positional mode - one command, one intent
     p_run.add_argument(
-        "--level",
-        choices=["1", "2", "3", "4"],
-        default="2",
-        help="1=autofix basics, 2=types+tests, 3=team hygiene, 4=CI-grade",
+        "mode",
+        nargs="?",
+        choices=["auto", "fast", "full", "ci", "config", "teams", "q", "c", "t"],
+        default="auto",
+        help=(
+            "Run mode: "
+            "auto (default, smart & fast enough), "
+            "fast (sub-30s, local only), "
+            "full (everything for this repo), "
+            "ci (do what CI does), "
+            "config (use your firsttry.toml), "
+            "teams (team/heavy version). "
+            "Aliases: q=fast, c=ci, t=teams"
+        ),
     )
 
-    # setup / activate / status
-    sub.add_parser("activate", help="Activate your FirstTry license")
-    sub.add_parser("status", help="Show current FirstTry status")
-    sub.add_parser("install-hooks", help="Install Git hooks for auto-run")
+    # ADVANCED: Keep old flags for backward compatibility but hide them
+    p_run.add_argument(
+        "--level",
+        type=str,
+        dest="profile",              # this is the trick: store in the SAME attr
+        help=argparse.SUPPRESS,      # don't show in --help
+    )
+    p_run.add_argument(
+        "--profile",
+        type=str,
+        choices=["fast", "dev", "full", "strict"],
+        help=argparse.SUPPRESS,      # Hidden: use mode instead
+    )
+    p_run.add_argument(
+        "--tier",
+        choices=["developer", "teams"],
+        help=argparse.SUPPRESS,      # Hidden: use mode instead
+    )
+    p_run.add_argument(
+        "--source",
+        choices=["auto", "config", "ci", "detect"],
+        help=argparse.SUPPRESS,      # Hidden: use mode instead
+    )
+    p_run.add_argument(
+        "--changed-only",
+        action="store_true",
+        help="Only run checks relevant to changed files (faster for incremental development)",
+    )
+    p_run.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable result caching and run all checks fresh",
+    )
+    p_run.add_argument(
+        "--cache-only",
+        action="store_true",
+        help="Only run checks that have cached results (for debugging)",
+    )
+    p_run.add_argument(
+        "--run-npm-anyway",
+        action="store_true",
+        help="Force run npm tests even if no JS/TS files changed",
+    )
+    p_run.add_argument(
+        "--debug-phases",
+        action="store_true",
+        help="Show detailed phase execution (FAST/MUTATING/SLOW buckets)",
+    )
+
+    # --- inspect -----------------------------------------------------------
+    p_insp = sub.add_parser("inspect", help="Show detected context/profile/plan")
+    p_insp.add_argument(
+        "--source",
+        choices=["auto", "config", "ci", "detect"],
+        default="auto",
+        help="Same source logic as in `run`.",
+    )
+
+    # --- sync --------------------------------------------------------------
+    sub.add_parser("sync", help="Sync local firsttry.toml with CI files (export CI → config)")
+
+    # --- status ------------------------------------------------------------
+    if handle_status is not None:
+        p_status = sub.add_parser("status", help="Show hooks + last run status")
+
+    # --- setup -------------------------------------------------------------
+    if handle_setup is not None:
+        p_setup = sub.add_parser("setup", help="Detect project and install hooks")
+
+    # --- doctor ------------------------------------------------------------
+    if handle_doctor is not None:
+        p_doctor = sub.add_parser("doctor", help="Diagnose env and dependencies")
+
+    # --- mirror-ci ---------------------------------------------------------
+    if cmd_mirror_ci is not None:
+        p_mirror = sub.add_parser(
+            "mirror-ci",
+            help="Run the CI-parity pipeline locally (same steps as CI)",
+        )
+        p_mirror.add_argument("--root", help="Repository root path", default=".")
+
+    # --- version -----------------------------------------------------------
+    sub.add_parser("version", help="Show version")
 
     return p
 
 
-def handle_run(args, trial_state, meta, paid_key):
-    # Level 1 is ALWAYS free
-    level = getattr(args, "level", "2")
-
-    # If user is trying Level 2+ BUT trial is over and no paid license
-    if level != "1" and not paid_key:
-        if trial_state == "trial_active":
-            print(f"⏳ Trial active — {meta} day(s) left.")
-        elif trial_state == "grace_active":
-            print(f"🎁 Trial ended — {meta} bonus run(s) left.")
-        else:
-            print("🚫 Your trial and bonus runs are over.")
-            print("💡 Activate FirstTry to keep using Level 2+.")
-            print("   Run: firsttry activate  (or set FIRSTTRY_LICENSE_KEY)")
-            sys.exit(4)
-
-    # proceed to run your current level logic
-    selected = LEVEL_TO_CHECKS[level]
-    print(f"🔹 Running FirstTry Level {level} — {len(selected)} checks")
-    print("   (" + ", ".join(selected) + ")")
-
-    summary = run_unified(selected)
-
-    print(f"\n📋 Report for Level {level}")
-    for item in summary["details"]:
-        status_icon = "✅" if item["status"] == "passed" else ("⚠️" if item["status"] == "skipped" else "❌")
-        extra = f" — {item['errors']} issue(s)" if item["errors"] else ""
-        print(f" {status_icon} {item['name']}{extra}")
-
-    print(
-        f"\n✅ {summary['passed']} passed · ❌ {summary['failed']} failed · ⏭ {summary['skipped']} skipped "
-        f"· total {summary['total']}"
-    )
-
-    if summary["failed"] == 0:
-        print(f"🥳 Level {level} passed cleanly!")
-        # upsell
-        if level != "4":
-            nxt = str(int(level) + 1)
-            print(f"💡 Try `firsttry run --level {nxt}` for stricter tests.")
-    else:
-        print(f"❌ Level {level} failed. Fix above issues before pushing.")
-
-
-def main():
+def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    # 1) check if user already has paid license (env)
-    paid_key = os.environ.get("FIRSTTRY_LICENSE_KEY")
-
-    # 2) load trial state
-    status, meta = trial_status()
-
-    # 3) if no trial and no paid license → ask once
-    if status == "no_trial" and not paid_key:
-        print("🗝️  FirstTry needs a trial license key to start your 3-day trial.")
-        print("    Get one from: https://www.firsttry.run/trial")
-        key = input("    Enter license key: ").strip()
-        if not key:
-            print("❌ No license key provided. Exiting.")
-            sys.exit(3)
-        init_trial(key)
-        status, meta = trial_status()
-
-    # now route by command
     if args.cmd == "run":
-        handle_run(args, status, meta, paid_key)
+        # NEW: Handle simplified mode system
+        args = _resolve_mode_to_flags(args)
+        
+        # normalize old --level and new --profile into one value
+        profile = _normalize_profile(getattr(args, "profile", None))
+        # Update args.profile with normalized value for downstream functions
+        args.profile = profile
+        return _run_async_cli(run_fast_pipeline(args=args))
 
-    elif args.cmd == "activate":
-        run_setup()
+    elif args.cmd == "inspect":
+        return cmd_inspect(args=args)
+        
+    elif args.cmd == "sync":
+        return cmd_sync()
+
     elif args.cmd == "status":
-        show_status()
-    elif args.cmd == "install-hooks":
-        try:
-            install_git_hooks()
-            print("✅ Git hooks installed successfully!")
-            print("   • pre-commit: Level 2 (types + tests)")
-            print("   • pre-push: Level 3 (team hygiene)")
-        except Exception as e:
-            print(f"❌ Failed to install git hooks: {e}")
+        if handle_status is None:
+            print("status not available in this build")
+            return 1
+        return handle_status(args)
+
+    elif args.cmd == "setup":
+        if handle_setup is None:
+            print("setup not available in this build")
+            return 1
+        return handle_setup(args)
+
+    elif args.cmd == "doctor":
+        if handle_doctor is None:
+            print("doctor not available in this build")
+            return 1
+        return handle_doctor(args)
+
+    elif args.cmd == "mirror-ci":
+        if cmd_mirror_ci is None:
+            print("mirror-ci not available in this build")
+            return 1
+        return cmd_mirror_ci(args)
+
+    elif args.cmd == "version":
+        print(f"FirstTry {__version__}")
+        return 0
+
     else:
         parser.print_help()
+        return 1
 
 
-# Compatibility functions for old test suite
-def cmd_gates(args=None):
-    """Legacy gates command for test compatibility."""
-    return {"ok": True, "gates": ["lint_basic", "autofix", "repo_sanity"]}
+def _run_async_cli(coro) -> int:
+    try:
+        return asyncio.run(coro)
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        loop.create_task(coro)
+        return 0
 
-def cmd_mirror_ci():
-    """Compatibility function for mirror CI command."""
-    print("CI mirroring not implemented in this version")
-    return []
 
-def install_pre_commit_hook():
-    """Compatibility function for installing pre-commit hooks."""
-    from . import hooks
-    return hooks.install_git_hooks()
+def cmd_sync() -> int:
+    ok, msg = sync_with_ci(".")
+    if ok:
+        print(f"✅ {msg}")
+        print("   Run `firsttry run --source=config` to verify.")
+        return 0
+    else:
+        print(f"⚠️  {msg}")
+        return 2
 
-def assert_license():
-    """Compatibility function for license checking."""
-    # Mock implementation - always return True for now
-    return (True, ["basic"], "cached")
 
-# Compatibility stub - some tests expect this module
-class runners:
-    @staticmethod
-    def run_ruff(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub ruff called")
-        return types.SimpleNamespace(ok=True, name="ruff", duration_s=0.01, stdout="", stderr="", cmd=("ruff",))
+def cmd_inspect(*, args=None) -> int:
+    ctx = build_context()
+    repo = build_repo_profile()
+    cfg = load_config()
+    ci_plan = None
+    source = getattr(args, "source", "auto") if args else "auto"
+
+    # ---- plan selection ----
+    if source == "config":
+        plan = plan_from_config_with_timeout(cfg, timeout_seconds=2.5)
+        if plan is None:
+            print("firsttry: no config plan found (firsttry.toml or [tool.firsttry]).")
+            return 2
+    elif source == "ci":
+        ci_plan = resolve_ci_plan(ctx["repo_root"])
+        if ci_plan is None:
+            print("firsttry: no CI files found to build a CI-based plan.")
+            return 2
+        plan = ci_plan
+    elif source == "detect":
+        plan = plan_checks_for_repo(repo)
+    else:  # auto
+        plan = plan_from_config_with_timeout(cfg, timeout_seconds=2.5)
+        if plan is None:
+            ci_plan = resolve_ci_plan(ctx["repo_root"])
+            if ci_plan is not None:
+                plan = ci_plan
+            else:
+                plan = plan_checks_for_repo(repo)
+
+    plan = apply_overrides_to_plan(plan, cfg)
+
+    mgr = SmartAgentManager.from_context(ctx, repo)
+    alloc = mgr.allocate_for_plan(plan)
+    tier = get_tier()
+    print("Tier:", tier)
+    print("Context:", ctx)
+    print("Repo:", repo)
+    print("Config:", cfg)
+    print("Source:", source)
+    print("Plan:", plan)
+    print("Allocation:", alloc)
+    return 0
+
+
+async def run_fast_pipeline(*, args=None) -> int:
+    # Get tier info at start - check args first, then environment
+    tier = getattr(args, "tier", None) if args else None
+    if not tier:
+        tier = get_tier()
     
-    @staticmethod 
-    def run_mypy(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub mypy called")
-        return types.SimpleNamespace(ok=True, name="mypy", duration_s=0.01, stdout="", stderr="", cmd=("mypy",))
-    
-    @staticmethod
-    def run_pytest(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub pytest called")
-        return types.SimpleNamespace(ok=True, name="pytest", duration_s=0.01, stdout="", stderr="", cmd=("pytest",))
-    
-    @staticmethod
-    def run_black_check(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub black-check called")
-        return types.SimpleNamespace(ok=True, name="black", duration_s=0.01, stdout="", stderr="", cmd=("black",))
-    
-    @staticmethod
-    def run_coverage_xml(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub coverage-xml called")
-        return types.SimpleNamespace(ok=True, name="coverage", duration_s=0.01, stdout="", stderr="", cmd=("coverage",))
-    
-    @staticmethod
-    def coverage_gate(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub coverage-gate called")
-        return types.SimpleNamespace(ok=True, name="coverage_gate", duration_s=0.01, stdout="", stderr="", cmd=("coverage",))
-    
-    @staticmethod
-    def run_pytest_kexpr(*args, **kwargs):
-        import types
-        import logging
-        logger = logging.getLogger("firsttry.cli")
-        logger.debug("runners.stub pytest-kexpr called")
-        return types.SimpleNamespace(ok=True, name="pytest", duration_s=0.01, stdout="", stderr="", cmd=("pytest",))
+    ctx = build_context()
+    repo_profile = build_repo_profile()
+    cfg = load_config()
 
-# Additional compatibility functions expected by tests
-def _load_real_runners_or_stub():
-    """Load real runners or stub runners for tests."""
+    # make repo profile available to runners
+    ctx["repo_profile"] = repo_profile
+
+    source = getattr(args, "source", "auto") if args else "auto"
+    plan = None
+    ci_plan = None
+
+    # 1) explicit source
+    if source == "config":
+        plan = plan_from_config_with_timeout(cfg, timeout_seconds=2.5)
+        if plan is None:
+            print("firsttry: --source=config but no firsttry.toml / [tool.firsttry] found.")
+            return 2
+    elif source == "ci":
+        ci_plan = resolve_ci_plan(ctx["repo_root"])
+        if ci_plan is None:
+            print("firsttry: --source=ci but no CI/CD files found.")
+            return 2
+        plan = ci_plan
+    elif source == "detect":
+        plan = plan_checks_for_repo(repo_profile)
+    else:
+        # 2) auto mode → config → ci → detect
+        plan = plan_from_config_with_timeout(cfg, timeout_seconds=2.5)
+        if plan is None:
+            ci_plan = resolve_ci_plan(ctx["repo_root"])
+            if ci_plan is not None:
+                plan = ci_plan
+            else:
+                plan = plan_checks_for_repo(repo_profile)
+
+    # 3) apply overrides (works for all sources)
+    plan = apply_overrides_to_plan(plan, cfg)
+    
+    # 4) apply change-based filtering if requested
+    changed_only = getattr(args, "changed_only", False) if args else False
+    if changed_only:
+        from .change_detector import filter_plan_by_changes
+        plan = filter_plan_by_changes(plan, ctx["repo_root"], changed_only=True)
+
+    # ensure we have ci_plan in ctx even if source=detect
+    if ci_plan is None:
+        ci_plan = resolve_ci_plan(ctx["repo_root"]) or []
+    ctx["ci_plan"] = ci_plan
+    ctx["config"] = cfg
+
+    # local tools & cmds (for parity)
+    ctx["local_tools"] = [p["tool"] for p in plan]
+    ctx["local_cmds"] = {p["tool"]: p.get("cmd") for p in plan if p.get("cmd")}
+
+    mgr = SmartAgentManager.from_context(ctx, repo_profile)
+    allocation = mgr.allocate_for_plan(plan)
+
+    # Check if debug phases flag is set
+    show_phases = getattr(args, "debug_phases", False) if args else False
+    
+    result = await run_checks_with_allocation_and_plan(
+        allocation,
+        plan,
+        ctx,
+        tier=tier,
+        config=cfg,
+        show_phases=show_phases,
+    )
+
+    # Transform check results for SummaryPrinter format
+    summary_results = []
+    for chk in result.get("checks", []):
+        status = "ok" if chk.get("ok", False) else "fail"
+        summary_results.append({
+            "status": status,
+            "name": chk.get("name", "unknown"),
+            "detail": chk.get("message", "").splitlines()[0] if chk.get("message") else "No details",
+            "suggestion": chk.get("suggestion"),  # Pro tier feature
+            "config_override": chk.get("config_override", False)
+        })
+
+    # Build metadata for SummaryPrinter
+    meta = {
+        "machine": {"cpus": ctx.get("cpus", "unknown")},
+        "repo": {
+            "files": repo_profile.get("total_files", "?"),
+            "tests": repo_profile.get("test_files", "?")
+        },
+        "planned_checks": [p["tool"] for p in plan],
+        "config": cfg
+    }
+
+    # Use SummaryPrinter for output
+    from .summary import print_run_summary
+    
+    # Map tiers: developer->free, teams->pro, enterprise->pro
+    display_tier = "free" if tier == "developer" else "pro"
+    return print_run_summary(summary_results, meta, display_tier)
+
+
+# Compatibility imports and functions for tests
+# Import runners.py module directly (not the runners/ package)
+try:
+    import importlib
+    # Force import of runners.py module
+    runners = importlib.import_module('.runners', package='firsttry')  # type: ignore
+except ImportError:
+    # Create a stub runners module if import fails
+    import types
+    runners = types.ModuleType('runners')  # type: ignore
+    # Add stub functions that tests expect
+    def stub_runner(*args, **kwargs):  # type: ignore
+        from .runners import StepResult  # type: ignore
+        return StepResult(name="stub", ok=True, duration_s=0, stdout="", stderr="", cmd=())  # type: ignore
+    
+    runners.run_ruff = stub_runner  # type: ignore
+    runners.run_black_check = stub_runner   # type: ignore
+    runners.run_mypy = stub_runner  # type: ignore
+    runners.run_pytest_kexpr = stub_runner  # type: ignore
+    runners.run_coverage_xml = stub_runner  # type: ignore
+    runners.coverage_gate = stub_runner  # type: ignore
+    runners._exec = stub_runner  # type: ignore
+    runners.parse_cobertura_line_rate = lambda x: 0.0  # type: ignore
+
+# Compatibility functions for CLI tests
+def _load_real_runners_or_stub():  # type: ignore
+    """Legacy function expected by tests."""
     return runners
 
-def _run_gate_via_runners(gate_name: str):
-    """Run gate via runners - compatibility function."""
+def install_git_hooks():  # type: ignore
+    """Stub function for git hooks installation."""
     try:
-        # Run appropriate gates based on gate_name
-        if gate_name == "pre-commit":
-            # Run pre-commit checks through runners
-            results = []
-            results.append(runners.run_ruff([]))
-            results.append(runners.run_black_check([]))
-            results.append(runners.run_mypy([]))
-            results.append(runners.run_pytest_kexpr(""))
-            results.append(runners.coverage_gate(80))  # coverage threshold
-            
-            # Check if any failed
-            failed = [r for r in results if not getattr(r, 'ok', True)]
-            if failed:
-                return f"pre-commit BLOCKED: {len(failed)} checks failed", 1
-            else:
-                return "pre-commit: all checks passed", 0
-        else:
-            return f"{gate_name} gate passed", 0
-    except Exception as e:
-        return f"{gate_name} gate error: {e}", 1
+        from .hooks import install_git_hooks_impl  # type: ignore
+        return install_git_hooks_impl()  # type: ignore
+    except ImportError:
+        print("Git hooks installation not available")
+        return False
 
-def get_changed_files():
-    """Get list of changed files - compatibility function."""
-    return ["src/firsttry/cli.py"]  # Mock changed files
+def cmd_gates(args=None):  # type: ignore
+    """Stub function for gates command."""
+    try:
+        from .gates import run_all_gates  # type: ignore
+        from pathlib import Path  
+        results = run_all_gates(Path("."))  # type: ignore
+        
+        # Handle both dict format (from mocked tests) and GateResult objects
+        if isinstance(results, dict) and "results" in results:
+            # Test mock format: {"results": [...]}
+            for result in results["results"]:
+                gate_name = result.get("gate", "unknown")
+                status = result.get("status", "UNKNOWN")
+                print(f"{gate_name}: {status}")
+        elif hasattr(results, '__iter__'):
+            # GateResult objects format
+            for result in results:
+                if hasattr(result, 'gate_id') and hasattr(result, 'status'):
+                    print(f"{result.gate_id}: {result.status}")
+                else:
+                    print(f"unknown gate: {result}")
+        else:
+            print(f"Unexpected results format: {type(results)}")
+    except ImportError:
+        print("Gates command not available")
+
+def assert_license():  # type: ignore
+    """Stub function for license assertion."""
+    try:
+        from .license_guard import get_tier  # type: ignore
+        tier = get_tier()  # type: ignore
+        return tier not in ("NONE", "INVALID")
+    except ImportError:
+        return True
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

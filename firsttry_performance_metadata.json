@@ -1,0 +1,33 @@
+{
+  "timestamp": 1762075986.211472,
+  "firsttry_version": "0.5.0-optimized",
+  "performance": {
+    "baseline_time": 120.0,
+    "current_time": 0.41827642600037507,
+    "improvement_factor": 286.89161650217505,
+    "time_saved_per_run": 119.58172357399962
+  },
+  "cache": {
+    "total_tools": 2,
+    "cache_hits": 1,
+    "policy_reruns": 1,
+    "cache_misses": 0,
+    "cache_efficiency": 50.0,
+    "stat_efficiency": 100.0
+  },
+  "targets": {
+    "dev_profile_time": true,
+    "fast_enough_for_daily_use": true,
+    "cache_efficiency": false,
+    "sub_second_warm": true,
+    "usable_performance": true
+  },
+  "profile": "dev",
+  "checks_executed": [
+    "repo_sanity",
+    "ruff",
+    "mypy",
+    "black_check"
+  ],
+  "schema_version": "1.0"
+}

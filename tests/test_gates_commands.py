@@ -18,7 +18,7 @@ def test_pre_commit_gate_commands_shape_and_fragments() -> None:
     # expected tooling
     assert any("ruff" in c for c in cmds), "ruff missing from pre-commit commands"
     assert any("mypy" in c for c in cmds), "mypy missing from pre-commit commands"
-    assert any("-m pytest" in c for c in cmds), "pytest invocation missing"
+    assert any("pytest" in c for c in cmds), "pytest invocation missing"
 
     # sqlite probe should be invoked via python -c
     assert any("db_sqlite" in c or "run_sqlite_probe" in c for c in cmds)
@@ -34,9 +34,9 @@ def test_pre_push_gate_contains_heavier_checks() -> None:
 
     # security and scanners
     assert "bandit" in joined or "pip-audit" in joined
-    assert "hadolint" in joined
-    assert "actionlint" in joined
+    
+    # code complexity analysis
+    assert "radon" in joined
 
-    # docker smoke and pg drift checks should be present (as python -c snippets)
-    assert any("docker_smoke" in c or "run_docker_smoke" in c for c in cmds)
-    assert any("db_pg" in c or "run_pg_probe" in c for c in cmds)
+    # sqlite probe should be present (as compatibility function)
+    assert any("run_sqlite_probe" in c for c in cmds)

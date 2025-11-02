@@ -1,5 +1,6 @@
 # firsttry/orchestrator.py
 from pathlib import Path
+from typing import Any
 from .licensing import ensure_license_interactive
 from .planner import build_plan  # new/pipeline engine
 from .executor import execute_plan  # old/stable engine
@@ -134,9 +135,9 @@ GATE_MAP = {
 }
 
 
-def run_unified_gates(gates: list[str]):
+def run_unified_gates(gates: list[str]) -> dict[str, Any]:
     """Run each gate sequentially and return detailed summary."""
-    summary = {
+    summary: dict[str, Any] = {
         "total": len(gates),
         "passed": 0,
         "failed": 0,

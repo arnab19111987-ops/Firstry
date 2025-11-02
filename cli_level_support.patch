@@ -1,0 +1,32 @@
+--- a/src/firsttry/cli.py
++++ b/src/firsttry/cli.py
+@@ -25,6 +25,12 @@ def build_parser() -> argparse.ArgumentParser:
+ 
+     p_run = sub.add_parser("run", help="Run repo-aware multi-agent checks")
+     p_run.add_argument(
++        "--level",
++        type=int,
++        choices=[1, 2, 3, 4],
++        help="Run level (1=basic, 2=pre-commit, 3=pre-push, 4=release) - maps to profiles",
++    )
++    p_run.add_argument(
+         "--profile",
+         choices=["fast", "strict"],
+         default="fast",
+@@ -70,6 +76,16 @@ def main(argv: list[str] | None = None) -> int:
+     parser = build_parser()
+     args = parser.parse_args(argv)
+ 
++    # Map --level to --profile for backward compatibility
++    if args.cmd == "run" and hasattr(args, 'level') and args.level:
++        if args.level in [1, 2]:
++            args.profile = "fast"
++        elif args.level in [3, 4]:
++            args.profile = "strict"
++        # Also call gate_guard for license enforcement
++        from .gate_guard import allow_or_block_for_level
++        allow_or_block_for_level(args.level, ".")
++
+     if args.cmd == "run":
+         return _run_async_cli(run_fast_pipeline(args=args))
+     elif args.cmd == "inspect":
