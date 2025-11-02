@@ -1,15 +1,63 @@
 from __future__ import annotations
-from typing import List
 
-# if you want to fetch "all checks" for full/strict
-try:
-    from .check_registry import all_checks
-except ImportError:
-    def all_checks() -> list[str]:
-        # fallback if check_registry not present yet
-        return ["ruff", "repo_sanity", "black_check", "mypy", "pytest", "npm_test", "ci_parity"]
+from pathlib import Path
+from typing import List, Callable, Any, Dict
+
+from .tools.ruff_tool import RuffTool
+from .tools.mypy_tool import MypyTool
+from .tools.pytest_tool import PytestTool
+from .tools.npm_test_tool import NpmTestTool
 
 
+ToolFactory = Callable[[Path], Any]
+
+
+class RunProfile:
+    def __init__(
+        self,
+        name: str,
+        fast_tools: List[ToolFactory],
+        mutating_tools: List[ToolFactory] | None = None,
+        slow_tools: List[ToolFactory] | None = None,
+    ):
+        self.name = name
+        self._fast_tools = fast_tools
+        self._mutating_tools = mutating_tools or []
+        self._slow_tools = slow_tools or []
+
+    def fast(self, repo_root: Path):
+        return [factory(repo_root) for factory in self._fast_tools]
+
+    def mutating(self, repo_root: Path):
+        return [factory(repo_root) for factory in self._mutating_tools]
+
+    def slow(self, repo_root: Path):
+        return [factory(repo_root) for factory in self._slow_tools]
+
+    @property
+    def has_mutating(self) -> bool:
+        return bool(self._mutating_tools)
+
+    @property
+    def has_slow(self) -> bool:
+        return bool(self._slow_tools)
+
+
+def dev_profile() -> RunProfile:
+    return RunProfile(
+        name="dev",
+        fast_tools=[lambda root: RuffTool(root),],
+        mutating_tools=[
+            # put black here if you have one
+        ],
+        slow_tools=[
+            lambda root: MypyTool(root),
+            lambda root: PytestTool(root),
+        ],
+    )
+
+
+# Legacy compatibility function
 def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
     """
     Map CLI profile to the actual checks we want to run.
@@ -31,7 +79,8 @@ def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
         return ["ruff", "repo_sanity", "black_check", "mypy"]
 
     if profile in ("full", "strict"):
-        return all_checks()
+        # Legacy fallback - provide comprehensive check list
+        return ["ruff", "repo_sanity", "black_check", "mypy", "pytest", "npm_test", "ci_parity"]
 
     # default/fallback
     return ["ruff", "repo_sanity"]
