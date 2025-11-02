@@ -430,14 +430,25 @@ async def run_fast_pipeline(*, args=None) -> int:
     # Transform check results to tier-aware format
     tier_results = {}
     for chk in result.get("checks", []):
-        name = chk.get("name", "unknown")
+        # The actual tool name is in the 'tool' field
+        name = chk.get("tool", "unknown")
         passed = chk.get("ok", False)
-        message = chk.get("message", "").splitlines()[0] if chk.get("message") else "No details"
+        
+        # Get message from the nested result object
+        result_obj = chk.get("result")
+        if result_obj and hasattr(result_obj, "message") and result_obj.message:
+            # Use the actual result message, but clean up generic error messages
+            if result_obj.message.startswith("/bin/sh: 1:") and "not found" in result_obj.message:
+                message = "Tool not available" if not passed else "No issues found"
+            else:
+                message = result_obj.message.splitlines()[0]
+        else:
+            message = "No issues found" if passed else "Failed"
         
         tier_results[name] = {
             "passed": passed,
-            "summary": f"{'Passed' if passed else 'Failed'}: {message}",
-            "details": chk.get("message", message)
+            "summary": message,
+            "details": result_obj.message if result_obj and hasattr(result_obj, "message") else message
         }
 
     # Build context for tier-aware reporting
