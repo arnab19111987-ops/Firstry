@@ -1,11 +1,11 @@
 {
   "repo": "/workspaces/Firstry",
   "timing": {
-    "detect_ms": 0.07,
-    "fast_ms": 0.86,
+    "detect_ms": 0.12,
+    "fast_ms": 1.53,
     "mutating_ms": 0.0,
-    "slow_ms": 1.29,
-    "total_ms": 2.23
+    "slow_ms": 2.37,
+    "total_ms": 4.04
   },
   "checks": [
     {
