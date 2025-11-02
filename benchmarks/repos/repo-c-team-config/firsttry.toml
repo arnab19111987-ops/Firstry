@@ -1,0 +1,23 @@
+[project]
+tier = "teams"
+profiles = ["strict", "fast"]
+
+[tools.ruff]
+enabled = true
+line_length = 100
+
+[tools.mypy]
+enabled = true
+strict = true
+
+[tools.pytest]
+enabled = true
+min_coverage = 80
+
+[tools.bandit]
+enabled = true
+skip_tests = true
+
+[ci]
+source = "detect"
+on_fail = "continue"

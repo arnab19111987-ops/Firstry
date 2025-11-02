@@ -1,0 +1,148 @@
+{
+  "free-lite": {
+    "manual_cold": [
+      {
+        "command": "ruff check .",
+        "runs": [
+          0.05848918199990294,
+          0.04682606399910583,
+          0.03797530000156257
+        ],
+        "avg_time": 0.04776351533352378,
+        "cache_state": "cold",
+        "tool_type": "manual"
+      }
+    ],
+    "manual_warm": [
+      {
+        "command": "ruff check .",
+        "runs": [
+          0.04155864700078382,
+          0.03637948100003996,
+          0.034090694000042276
+        ],
+        "avg_time": 0.03734294066695535,
+        "cache_state": "warm",
+        "tool_type": "manual"
+      }
+    ],
+    "firsttry_cold": {
+      "command": "firsttry run free-lite",
+      "runs": [
+        0.35047870199923636,
+        0.3151447679992998,
+        0.4547818879982515
+      ],
+      "avg_time": 0.37346845266559586,
+      "cache_state": "cold",
+      "tool_type": "firsttry"
+    },
+    "firsttry_warm": {
+      "command": "firsttry run free-lite",
+      "runs": [
+        0.5154279109992785,
+        0.41699109000001044,
+        0.34443089599881205
+      ],
+      "avg_time": 0.42561663233270036,
+      "cache_state": "warm",
+      "tool_type": "firsttry"
+    },
+    "commands_count": 1
+  },
+  "free-strict": {
+    "manual_cold": [
+      {
+        "command": "ruff check .",
+        "runs": [
+          0.032653320999088464,
+          0.03423663399917132,
+          0.033655489000011585
+        ],
+        "avg_time": 0.03351514799942379,
+        "cache_state": "cold",
+        "tool_type": "manual"
+      },
+      {
+        "command": "mypy .",
+        "runs": [
+          19.32740566299981,
+          3.2546099790015433,
+          3.111526970000341
+        ],
+        "avg_time": 8.564514204000565,
+        "cache_state": "cold",
+        "tool_type": "manual"
+      },
+      {
+        "command": "pytest -x --tb=no -q tests/test_import_installable_package.py",
+        "runs": [
+          0.6628197840000212,
+          0.4860935930009873,
+          0.40938011099933647
+        ],
+        "avg_time": 0.5194311626667817,
+        "cache_state": "cold",
+        "tool_type": "manual"
+      }
+    ],
+    "manual_warm": [
+      {
+        "command": "ruff check .",
+        "runs": [
+          0.03192385900001682,
+          0.033769495001251926,
+          0.03404150200003642
+        ],
+        "avg_time": 0.033244952000435056,
+        "cache_state": "warm",
+        "tool_type": "manual"
+      },
+      {
+        "command": "mypy .",
+        "runs": [
+          18.873080850000406,
+          3.341186359999483,
+          3.1516940989986324
+        ],
+        "avg_time": 8.45532043633284,
+        "cache_state": "warm",
+        "tool_type": "manual"
+      },
+      {
+        "command": "pytest -x --tb=no -q tests/test_import_installable_package.py",
+        "runs": [
+          0.429983859999993,
+          0.4187722950009629,
+          0.43580604099952325
+        ],
+        "avg_time": 0.42818739866682637,
+        "cache_state": "warm",
+        "tool_type": "manual"
+      }
+    ],
+    "firsttry_cold": {
+      "command": "firsttry run free-strict",
+      "runs": [
+        0.37165342300068005,
+        0.3183248109999113,
+        0.43804456900033983
+      ],
+      "avg_time": 0.3760076010003104,
+      "cache_state": "cold",
+      "tool_type": "firsttry"
+    },
+    "firsttry_warm": {
+      "command": "firsttry run free-strict",
+      "runs": [
+        0.3402473109999846,
+        0.3228692400007276,
+        0.32437559200116084
+      ],
+      "avg_time": 0.329164047667291,
+      "cache_state": "warm",
+      "tool_type": "firsttry"
+    },
+    "commands_count": 3
+  }
+}

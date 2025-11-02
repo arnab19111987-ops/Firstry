@@ -86,6 +86,22 @@ def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
     return ["ruff", "repo_sanity"]
 
 
+# New 4-tier profile system
+from .license_guard import get_tier
+
+PROFILES_BY_TIER = {
+    "free-lite": "dev_fast",
+    "free-strict": "dev_strict", 
+    "pro": "team_strict",
+    "promax": "enterprise",
+}
+
+
+def get_profile_for_current_tier() -> str:
+    tier = get_tier()
+    return PROFILES_BY_TIER.get(tier, "dev_fast")
+
+
 def get_pytest_mode_for_profile(profile: str) -> str:
     """Get the pytest mode for a given profile"""
     mode_map = {

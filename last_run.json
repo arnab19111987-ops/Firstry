@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "repo": "/workspaces/Firstry",
+  "run_at": "2025-11-02T12:22:47.582933+00:00",
+  "timing": {
+    "detect_ms": 0.08,
+    "fast_ms": 0.86,
+    "mutating_ms": 0.0,
+    "slow_ms": 1.29,
+    "total_ms": 2.25
+  },
+  "checks": [
+    {
+      "name": "ruff",
+      "status": "cached",
+      "duration_s": 0.0,
+      "last_duration_s": 0.046540039000319666
+    },
+    {
+      "name": "mypy",
+      "status": "cached",
+      "duration_s": 0.0,
+      "last_duration_s": 6.959298191000016
+    },
+    {
+      "name": "pytest",
+      "status": "cached",
+      "duration_s": 0.0,
+      "last_duration_s": 47.17224291399998
+    }
+  ]
+}

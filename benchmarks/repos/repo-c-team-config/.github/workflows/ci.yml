@@ -1,0 +1,31 @@
+name: Team CI
+
+on: [push, pull_request]
+
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+    - run: pip install ruff mypy pytest bandit
+    - run: ruff check python/
+    - run: mypy python/
+    - run: pytest python/tests/
+    - run: bandit -r python/
+
+  node-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+    - run: npm ci
+      working-directory: frontend/
+    - run: npm run lint
+      working-directory: frontend/
+    - run: npm test
+      working-directory: frontend/

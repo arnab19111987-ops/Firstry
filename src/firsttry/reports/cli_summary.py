@@ -4,18 +4,19 @@ Non-interactive tier-aware summary for CLI integration.
 """
 from __future__ import annotations
 from typing import Dict, Any
-from .tier_map import TIER_CHECKS, LOCK_MESSAGE
+from .tier_map import TIER_CHECKS, LOCKED_MESSAGE, get_checks_for_tier, get_tier_meta
 from .ui import c
 from ..license_guard import get_tier
 
 
-def render_cli_summary(results: Dict[str, Any], context: Dict[str, Any], interactive: bool = False) -> int:
+def render_cli_summary(results: Dict[str, Any], context: Dict[str, Any], interactive: bool = False, tier: str | None = None) -> int:
     """
     Render tier-aware summary for CLI.
     Returns exit code: 0 for success, 1 for failure.
     """
-    tier = (get_tier() or "free").lower()
-    allowed_checks = TIER_CHECKS.get(tier, TIER_CHECKS["free"])
+    if tier is None:
+        tier = get_tier() or "free-lite"
+    allowed_checks = get_checks_for_tier(tier)
 
     print()
     print(c(f"🔹 FirstTry ({tier.capitalize()}) — Local CI", "bold"))
@@ -34,7 +35,7 @@ def render_cli_summary(results: Dict[str, Any], context: Dict[str, Any], interac
             mark = c("✅", "green") if passed else c("❌", "red")
             print(f"  {mark} {c(check_name, 'bold')}: {details}")
         else:
-            print(f"  {c(check_name, 'yellow')}: {LOCK_MESSAGE}")
+            print(f"  {c(check_name, 'yellow')}: {LOCKED_MESSAGE}")
 
     # overall
     print()

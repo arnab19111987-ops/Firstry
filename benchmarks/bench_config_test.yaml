@@ -1,0 +1,32 @@
+version: 1
+env:
+  python: "3.12"
+  firsttry_min_version: "0.5.0"
+
+repos:
+  - id: repo-a
+    path: benchmarks/repos/repo-a-no-config
+    description: "Small repo (200-500 files), no configuration"
+    commands:
+      - name: version
+        cmd: "firsttry version"
+        question: "startup-cost"
+      - name: help
+        cmd: "firsttry --help"
+        question: "startup-cost"
+      - name: detect_cold
+        cmd: "firsttry run --source detect"
+        cache: "cold"
+        question: "cold-run"
+
+# Performance targets for pass/fail validation
+targets:
+  startup_max_sec: 0.5
+  startup_warn_sec: 1.0
+  cold_small_max_sec: 30
+  cold_small_warn_sec: 45
+  cold_large_max_sec: 60
+  warm_speedup_min_percent: 30
+  changed_only_max_sec: 30
+  strict_max_sec: 90
+  strict_fail_sec: 120

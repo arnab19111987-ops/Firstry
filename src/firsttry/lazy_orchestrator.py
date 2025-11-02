@@ -54,16 +54,17 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
     # Update meta with timing
     meta["elapsed"] = duration_s
 
-    # Save to cache
-    entry = ToolCacheEntry(
-        tool_name=tool.name,
-        input_files=current_stats,
-        input_hash="",  # We use stat-first, hash not needed
-        status=status,
-        created_at=time.time(),
-        extra=meta
-    )
-    save_tool_cache_entry(str(repo_root), entry)
+    # Save to cache (only if we have valid stats)
+    if current_stats is not None:
+        entry = ToolCacheEntry(
+            tool_name=tool.name,
+            input_files=current_stats,
+            input_hash="",  # We use stat-first, hash not needed
+            status=status,
+            created_at=time.time(),
+            extra=meta
+        )
+        save_tool_cache_entry(str(repo_root), entry)
 
     return {
         "name": tool.name,

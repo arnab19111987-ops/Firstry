@@ -55,31 +55,67 @@ def _normalize_profile(raw: str | None) -> str:
 
 def _resolve_mode_to_flags(args):
     """
-    Map simplified modes to existing --source/--tier/--profile flags.
+    Map simplified modes to new 4-tier system.
     
     This allows clean CLI like:
-        firsttry run            → auto, fast-enough (detect + developer + dev)
-        firsttry run fast       → only fast/local checks (detect + developer + fast)
-        firsttry run full       → everything for this repo (detect + teams + strict)
-        firsttry run ci         → "do what CI does" (ci + developer + strict)
-        firsttry run config     → "do what I configured" (config + developer + strict)
-        firsttry run teams      → team/heavy version (detect + teams + strict)
+        firsttry run            → free-lite (fastest, just ruff)
+        firsttry run fast       → free-lite (fastest, just ruff)
+        firsttry run ci         → free-strict (ruff + mypy + pytest)
+        firsttry run strict     → free-strict (ruff + mypy + pytest) 
+        firsttry run pro        → pro (paid, full team features)
+        firsttry run full       → pro (paid, full team features)
+        firsttry run teams      → pro (paid, full team features)
+        firsttry run promax     → promax (paid, enterprise features)
+        firsttry run enterprise → promax (paid, enterprise features)
     
     While preserving backward compatibility with explicit flags.
     """
     # Handle shell aliases
     ALIASES = {
-        "q": "fast",      # firsttry run q
-        "c": "ci",        # firsttry run c  
-        "t": "teams",     # firsttry run t
+        "q": "fast",          # firsttry run q
+        "c": "ci",            # firsttry run c  
+        "t": "teams",         # firsttry run t
+        "p": "pro",           # firsttry run p
+        "e": "enterprise",    # firsttry run e
     }
+    
+    # New 4-tier mode mapping
+    MODE_TO_TIER = {
+        # ------------------------------------------------------------------
+        # FREE FOREVER
+        # ------------------------------------------------------------------
+        None: "free-lite",           # plain `firsttry run`
+        "run": "free-lite",
+        "fast": "free-lite",
+        "auto": "free-lite",
+
+        # stricter free
+        "ci": "free-strict",
+        "strict": "free-strict",
+        "config": "free-strict",
+
+        # ------------------------------------------------------------------
+        # PAID / LOCKED
+        # ------------------------------------------------------------------
+        "pro": "pro",
+        "teams": "pro",
+        "full": "pro",
+
+        "promax": "promax",
+        "enterprise": "promax",
+    }
+    
     mode = getattr(args, "mode", "auto")
     mode = ALIASES.get(mode, mode)
     
     # Explicit flags always win (for backward compatibility)
+    if not hasattr(args, 'tier') or args.tier is None:
+        # Map mode directly to new tier system
+        args.tier = MODE_TO_TIER.get(mode, "free-lite")
+    
     if not hasattr(args, 'source') or args.source is None:
         # Infer source from mode
-        if mode in ("auto", "fast", "full", "teams"):
+        if mode in ("auto", "fast", "full", "teams", "pro", "promax", "enterprise"):
             args.source = "detect"
         elif mode == "ci":
             args.source = "ci"
@@ -88,20 +124,11 @@ def _resolve_mode_to_flags(args):
         else:
             args.source = "detect"  # fallback
     
-    if not hasattr(args, 'tier') or args.tier is None:
-        # Infer tier from mode
-        if mode in ("auto", "fast", "ci", "config"):
-            args.tier = "developer"
-        elif mode in ("teams", "full"):
-            args.tier = "teams"
-        else:
-            args.tier = "developer"  # fallback
-    
     if not hasattr(args, 'profile') or args.profile is None:
         # Infer profile from mode
         if mode in ("auto", "fast"):
             args.profile = "fast"
-        elif mode in ("full", "ci", "config", "teams"):
+        elif mode in ("full", "ci", "config", "teams", "pro", "promax", "enterprise", "strict"):
             args.profile = "strict"
         else:
             args.profile = "fast"  # fallback
@@ -123,17 +150,21 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument(
         "mode",
         nargs="?",
-        choices=["auto", "fast", "full", "ci", "config", "teams", "q", "c", "t"],
+        choices=["auto", "fast", "strict", "ci", "config", "pro", "teams", "full", "promax", "enterprise", "q", "c", "t", "p", "e"],
         default="auto",
         help=(
             "Run mode: "
-            "auto (default, smart & fast enough), "
-            "fast (sub-30s, local only), "
-            "full (everything for this repo), "
-            "ci (do what CI does), "
-            "config (use your firsttry.toml), "
-            "teams (team/heavy version). "
-            "Aliases: q=fast, c=ci, t=teams"
+            "auto (default, free-lite, just ruff), "
+            "fast (free-lite, just ruff), "
+            "strict (free-strict, ruff+mypy+pytest), "
+            "ci (free-strict, ruff+mypy+pytest), "
+            "config (free-strict, use your firsttry.toml), "
+            "pro (Pro tier, requires license), "
+            "teams (Pro tier, requires license), "
+            "full (Pro tier, requires license), "
+            "promax (ProMax tier, requires license), "
+            "enterprise (ProMax tier, requires license). "
+            "Aliases: q=fast, c=ci, t=teams, p=pro, e=enterprise"
         ),
     )
 
@@ -191,6 +222,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show interactive menu after summary for detailed reports",
     )
 
+    # --- lint (ultra-light ruff alias) ------------------------------------
+    p_lint = sub.add_parser("lint", help="Ultra-fast linting with ruff (minimal overhead)")
+    p_lint.add_argument(
+        "--fix",
+        action="store_true",
+        help="Automatically fix issues where possible",
+    )
+
     # --- inspect -----------------------------------------------------------
     p_insp = sub.add_parser("inspect", help="Show detected context/profile/plan")
     p_insp.add_argument(
@@ -239,11 +278,28 @@ def main(argv: list[str] | None = None) -> int:
         # NEW: Handle simplified mode system
         args = _resolve_mode_to_flags(args)
         
+        # Set tier in environment for license enforcement (if not already set)
+        import os
+        if hasattr(args, 'tier') and args.tier and "FIRSTTRY_TIER" not in os.environ:
+            os.environ["FIRSTTRY_TIER"] = args.tier
+        
+        # HARD LOCK for paid tiers - enforce license before proceeding
+        from . import license_guard
+        try:
+            license_guard.ensure_license_for_current_tier()
+        except license_guard.LicenseError as e:
+            print(f"❌ {e}")
+            print("💡 Get a license at https://firsttry.com/pricing")
+            return 1
+        
         # normalize old --level and new --profile into one value
         profile = _normalize_profile(getattr(args, "profile", None))
         # Update args.profile with normalized value for downstream functions
         args.profile = profile
         return _run_async_cli(run_fast_pipeline(args=args))
+
+    elif args.cmd == "lint":
+        return cmd_lint(args=args)
 
     elif args.cmd == "inspect":
         return cmd_inspect(args=args)
@@ -291,6 +347,35 @@ def _run_async_cli(coro) -> int:
         loop = asyncio.get_event_loop()
         loop.create_task(coro)
         return 0
+
+
+def cmd_lint(*, args=None) -> int:
+    """Ultra-light lint command - calls ruff directly with minimal overhead"""
+    from .tools.ruff_tool import RuffTool
+    from pathlib import Path
+    
+    # Get current directory
+    repo_root = Path.cwd()
+    
+    # Create ruff tool with --fix if requested
+    extra_args = ["--fix"] if args and getattr(args, "fix", False) else []
+    tool = RuffTool(repo_root, extra_args=extra_args)
+    
+    # Run ruff directly
+    status, details = tool.run()
+    
+    if status == "ok":
+        print("✅ No linting issues found")
+        return 0
+    else:
+        # Print ruff output directly
+        stdout = details.get("stdout", "")
+        stderr = details.get("stderr", "")
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(stderr)
+        return 1
 
 
 def cmd_sync() -> int:
@@ -350,10 +435,8 @@ def cmd_inspect(*, args=None) -> int:
 
 
 async def run_fast_pipeline(*, args=None) -> int:
-    # Get tier info at start - check args first, then environment
-    tier = getattr(args, "tier", None) if args else None
-    if not tier:
-        tier = get_tier()
+    # Get tier info at start - always use environment (set from args in main)
+    tier = get_tier()
     
     ctx = build_context()
     repo_profile = build_repo_profile()
@@ -405,6 +488,32 @@ async def run_fast_pipeline(*, args=None) -> int:
     ctx["ci_plan"] = ci_plan
     ctx["config"] = cfg
 
+    # OPTIMIZATION: Skip orchestration for single-tool scenarios (e.g., free-lite with just ruff)
+    from .reports.tier_map import get_checks_for_tier
+    allowed_checks = get_checks_for_tier(tier)
+    active_tools = [p["tool"] for p in plan if p["tool"] in allowed_checks]
+    
+    # If only one tool is active, run it directly to avoid orchestration overhead
+    if len(active_tools) == 1 and not getattr(args, "interactive", False) and not getattr(args, "report", False):
+        single_tool = active_tools[0]
+        print(f"🚀 Running {single_tool} directly (single-tool optimization)")
+        
+        # Import and run the tool directly
+        if single_tool == "ruff":
+            from .tools.ruff_tool import RuffTool
+            tool = RuffTool(ctx["repo_root"])
+            status, details = tool.run()
+            
+            if status == "ok":
+                print(f"✅ {single_tool}: No issues found")
+                return 0
+            else:
+                print(f"❌ {single_tool}: Issues found")
+                print(details.get("stdout", ""))
+                return 1
+        # Add other single tools as needed
+        # For now, fall back to orchestration for other tools
+    
     # local tools & cmds (for parity)
     ctx["local_tools"] = [p["tool"] for p in plan]
     ctx["local_cmds"] = {p["tool"]: p.get("cmd") for p in plan if p.get("cmd")}
@@ -424,7 +533,26 @@ async def run_fast_pipeline(*, args=None) -> int:
         show_phases=show_phases,
     )
 
-    # Convert orchestrator results to tier-aware format
+    # Lazy import reporting only when needed
+    interactive = getattr(args, "interactive", False) if args else False
+    show_report = getattr(args, "report", False) if args else False
+    
+    # Skip expensive imports if no reporting needed
+    if not interactive and not show_report:
+        # For non-interactive, non-report runs, just print basic status
+        from .reports.tier_map import get_checks_for_tier
+        allowed_checks = get_checks_for_tier(tier)
+        
+        total_checks = len([c for c in result.get("checks", []) if c.get("tool") in allowed_checks])
+        passed_checks = len([c for c in result.get("checks", []) if c.get("ok", False) and c.get("tool") in allowed_checks])
+        
+        if passed_checks == total_checks:
+            print(f"✅ All {total_checks} checks passed")
+        else:
+            print(f"❌ {passed_checks}/{total_checks} checks passed")
+        return 0 if passed_checks == total_checks else 1
+    
+    # Only import heavy reporting modules when actually needed
     from .reports.cli_summary import render_cli_summary
     
     # Transform check results to tier-aware format
@@ -465,7 +593,7 @@ async def run_fast_pipeline(*, args=None) -> int:
 
     # Use new tier-aware reporting system
     interactive = getattr(args, "interactive", False) if args else False
-    return render_cli_summary(tier_results, context, interactive=interactive)
+    return render_cli_summary(tier_results, context, interactive=interactive, tier=tier)
 
 
 # Compatibility imports and functions for tests

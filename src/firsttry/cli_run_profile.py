@@ -26,9 +26,13 @@ def main():
     # First get the raw results without writing the report
     results, report = run_profile_for_repo(repo_root, profile=None, report_path=report_path)
     
-    # Build comprehensive report payload from orchestrator report
+    # Build comprehensive report payload from orchestrator report with locked schema
+    from datetime import datetime, timezone
+    
     payload = {
+        "schema_version": 1,
         "repo": report.get("repo", str(repo_root)),
+        "run_at": datetime.now(timezone.utc).isoformat(),
         "timing": report.get("timing", {"total_ms": 0.0}),
         "checks": []
     }
@@ -67,7 +71,9 @@ def main():
             asyncio.run(write_report_async(report_path, payload))
     except Exception as e:
         print(f"[firsttry] warning: failed to write timing report: {e}")
-        print(json.dumps(payload.get("timing", {}), indent=2))
+        # Always show timing so CI/CD / humans can scrape it
+        if "timing" in payload:
+            print(json.dumps(payload["timing"], indent=2))
     
     # Print quick summary
     print(f"Ran {len(results)} tools")

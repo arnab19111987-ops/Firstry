@@ -1,0 +1,111 @@
+version: 1
+env:
+  python: "3.12"
+  firsttry_min_version: "0.5.0"
+
+repos:
+  - id: repo-a
+    path: benchmarks/repos/repo-a-no-config
+    description: "Small repo (200-500 files), no configuration"
+    commands:
+      - name: version
+        cmd: "firsttry version"
+        question: "startup-cost"
+      - name: help
+        cmd: "firsttry --help"
+        question: "startup-cost"
+      - name: detect_cold
+        cmd: "firsttry run --source detect"
+        cache: "cold"
+        question: "cold-run"
+      - name: detect_warm
+        cmd: "firsttry run --source detect"
+        cache: "warm"
+        question: "warm-run"
+      - name: fast_cold
+        cmd: "firsttry run --profile fast"
+        cache: "cold"
+        question: "profile-cost"
+      - name: strict_cold
+        cmd: "firsttry run --profile strict"
+        cache: "cold"
+        question: "profile-cost"
+      - name: changed_only
+        cmd: "firsttry run --profile fast --changed-only"
+        cache: "warm"
+        question: "warm-run"
+
+  - id: repo-b
+    path: benchmarks/repos/repo-b-ci-only
+    description: "Has CI workflows, tests + linter config"
+    commands:
+      - name: detect_cold
+        cmd: "firsttry run --source detect"
+        cache: "cold"
+        question: "cold-run"
+      - name: ci_cold
+        cmd: "firsttry run --source ci"
+        cache: "cold"
+        question: "ci-parity-cost"
+      - name: ci_warm
+        cmd: "firsttry run --source ci"
+        cache: "warm"
+        question: "ci-parity-cost"
+      - name: ci_parity_test
+        cmd: "firsttry run --source ci --ci-expect-fail lint"
+        cache: "cold"
+        question: "ci-parity-cost"
+
+  - id: repo-c
+    path: benchmarks/repos/repo-c-team-config
+    description: "Has CI + firsttry.toml, multiple stacks"
+    commands:
+      - name: detect_cold
+        cmd: "firsttry run --source detect"
+        cache: "cold"
+        question: "cold-run"
+      - name: tier_developer
+        cmd: "firsttry run --tier developer"
+        cache: "cold"
+        question: "profile-cost"
+      - name: tier_teams
+        cmd: "firsttry run --tier teams"
+        cache: "cold"
+        question: "profile-cost"
+      - name: changed_only
+        cmd: "firsttry run --profile fast --changed-only"
+        cache: "warm"
+        question: "warm-run"
+
+  - id: repo-d
+    path: benchmarks/repos/repo-d-monorepo
+    description: "Large repo (10k+ files) for stress testing"
+    commands:
+      - name: detect_cold
+        cmd: "firsttry run --source detect"
+        cache: "cold"
+        question: "cold-run"
+      - name: detect_warm
+        cmd: "firsttry run --source detect"
+        cache: "warm"
+        question: "warm-run"
+      - name: changed_only
+        cmd: "firsttry run --profile fast --changed-only"
+        cache: "warm"
+        question: "warm-run"
+      - name: fast_vs_strict
+        cmd: "firsttry run --profile strict"
+        cache: "cold"
+        question: "profile-cost"
+
+# Performance targets for pass/fail validation
+targets:
+  startup_max_sec: 0.5
+  startup_warn_sec: 1.0
+  cold_small_max_sec: 30
+  cold_small_warn_sec: 45
+  cold_large_max_sec: 60
+  warm_speedup_min_percent: 30
+  changed_only_max_sec: 30
+  strict_max_sec: 90
+  strict_fail_sec: 120

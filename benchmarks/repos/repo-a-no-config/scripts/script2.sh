@@ -1,0 +1,1 @@
+echo script 2

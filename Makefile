@@ -30,3 +30,11 @@ check:
 	mypy .
 	coverage run -m pytest -q
 	coverage report --fail-under=80
+
+# Benchmark targets
+.PHONY: bench bench-short
+bench:  ## run full benchmark suite
+	python benchmarks/bench_runner.py
+
+bench-short:  ## run shortened benchmark (future feature)
+	python benchmarks/bench_runner.py --short

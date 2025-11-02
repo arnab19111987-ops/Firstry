@@ -1,11 +1,13 @@
 {
+  "schema_version": 1,
   "repo": "/workspaces/Firstry",
+  "run_at": "2025-11-02T12:19:50.137143+00:00",
   "timing": {
-    "detect_ms": 0.12,
-    "fast_ms": 1.53,
+    "detect_ms": 304.02,
+    "fast_ms": 0.92,
     "mutating_ms": 0.0,
-    "slow_ms": 2.37,
-    "total_ms": 4.04
+    "slow_ms": 1.32,
+    "total_ms": 306.29
   },
   "checks": [
     {
