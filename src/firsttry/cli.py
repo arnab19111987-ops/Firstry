@@ -185,6 +185,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Show detailed phase execution (FAST/MUTATING/SLOW buckets)",
     )
+    p_run.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Show interactive menu after summary for detailed reports",
+    )
 
     # --- inspect -----------------------------------------------------------
     p_insp = sub.add_parser("inspect", help="Show detected context/profile/plan")
@@ -419,35 +424,32 @@ async def run_fast_pipeline(*, args=None) -> int:
         show_phases=show_phases,
     )
 
-    # Transform check results for SummaryPrinter format
-    summary_results = []
+    # Convert orchestrator results to tier-aware format
+    from .reports.cli_summary import render_cli_summary
+    
+    # Transform check results to tier-aware format
+    tier_results = {}
     for chk in result.get("checks", []):
-        status = "ok" if chk.get("ok", False) else "fail"
-        summary_results.append({
-            "status": status,
-            "name": chk.get("name", "unknown"),
-            "detail": chk.get("message", "").splitlines()[0] if chk.get("message") else "No details",
-            "suggestion": chk.get("suggestion"),  # Pro tier feature
-            "config_override": chk.get("config_override", False)
-        })
+        name = chk.get("name", "unknown")
+        passed = chk.get("ok", False)
+        message = chk.get("message", "").splitlines()[0] if chk.get("message") else "No details"
+        
+        tier_results[name] = {
+            "passed": passed,
+            "summary": f"{'Passed' if passed else 'Failed'}: {message}",
+            "details": chk.get("message", message)
+        }
 
-    # Build metadata for SummaryPrinter
-    meta = {
-        "machine": {"cpus": ctx.get("cpus", "unknown")},
-        "repo": {
-            "files": repo_profile.get("total_files", "?"),
-            "tests": repo_profile.get("test_files", "?")
-        },
-        "planned_checks": [p["tool"] for p in plan],
-        "config": cfg
+    # Build context for tier-aware reporting
+    context = {
+        "machine": ctx.get("cpus", "unknown"),
+        "files": repo_profile.get("total_files", "?"),
+        "tests": repo_profile.get("test_files", "?")
     }
 
-    # Use SummaryPrinter for output
-    from .summary import print_run_summary
-    
-    # Map tiers: developer->free, teams->pro, enterprise->pro
-    display_tier = "free" if tier == "developer" else "pro"
-    return print_run_summary(summary_results, meta, display_tier)
+    # Use new tier-aware reporting system
+    interactive = getattr(args, "interactive", False) if args else False
+    return render_cli_summary(tier_results, context, interactive=interactive)
 
 
 # Compatibility imports and functions for tests
