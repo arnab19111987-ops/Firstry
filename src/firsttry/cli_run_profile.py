@@ -26,7 +26,16 @@ def main():
     for result in results:
         status_emoji = "✅" if result["status"] == "ok" else "❌"
         cache_info = " (cached)" if result.get("from_cache") else ""
-        print(f"{status_emoji} {result['name']}{cache_info}")
+        
+        # Show timing information
+        duration = result.get("duration_s", result.get("elapsed", 0.0))
+        last_duration = result.get("last_duration_s")
+        timing_info = f" ({duration:.3f}s"
+        if last_duration is not None and result.get("from_cache"):
+            timing_info += f", was {last_duration:.1f}s"
+        timing_info += ")"
+        
+        print(f"{status_emoji} {result['name']}{cache_info}{timing_info}")
 
 
 if __name__ == "__main__":

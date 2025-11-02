@@ -15,6 +15,7 @@ from .detectors import detect_stack
 def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
     """
     Uses stat-first cache and replays failed results for demo visibility.
+    Fixed to show 0.0s for cached tools and preserve old durations for analytics.
     """
     input_paths = tool.input_paths()
     current_stats = collect_input_stats(input_paths)
@@ -22,6 +23,9 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
 
     # FAST PATH: stats match => we can reuse
     if cache_entry and input_stats_match(cache_entry.input_files, current_stats):
+        # Get the last real duration for analytics
+        last_duration = cache_entry.extra.get("elapsed", 0.0)
+        
         # replay failed => visible fast run
         if cache_entry.status == "fail":
             return {
@@ -30,7 +34,8 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
                 "from_cache": True,
                 "cache_state": "hit-policy",
                 "meta": cache_entry.extra,
-                "elapsed": cache_entry.extra.get("elapsed", 0.0)
+                "duration_s": 0.0,  # cached -> always 0
+                "last_duration_s": last_duration  # preserve for analytics
             }
         return {
             "name": tool.name,
@@ -38,16 +43,17 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
             "from_cache": True,
             "cache_state": "hit",
             "meta": cache_entry.extra,
-            "elapsed": cache_entry.extra.get("elapsed", 0.0)
+            "duration_s": 0.0,  # cached -> always 0
+            "last_duration_s": last_duration  # preserve for analytics
         }
 
     # SLOW PATH: something changed -> run the tool
     start_time = time.monotonic()
     status, meta = tool.run()
-    elapsed = time.monotonic() - start_time
+    duration_s = time.monotonic() - start_time
     
     # Update meta with timing
-    meta["elapsed"] = elapsed
+    meta["elapsed"] = duration_s
 
     # Save to cache
     entry = ToolCacheEntry(
@@ -66,7 +72,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
         "from_cache": False,
         "cache_state": "miss",
         "meta": meta,
-        "elapsed": elapsed
+        "duration_s": duration_s
     }
 
 
@@ -99,8 +105,8 @@ def run_profile_for_repo(
         profile = dev_profile()  # default
 
     # 3) FAST ONLY - build and run immediately
-    t_fast_start = time.monotonic()
     fast_tools = profile.fast(repo_root)
+    t_fast_start = time.monotonic()
     fast_results = _run_tools(repo_root, fast_tools)
     t_fast_end = time.monotonic()
 
@@ -108,22 +114,26 @@ def run_profile_for_repo(
     results.extend(fast_results)
 
     # 4) decide if we need MUTATING - lazy build
-    t_mutating_start = time.monotonic()
     mutating_results = []
+    t_mutating_start = time.monotonic()
+    t_mutating_end = t_mutating_start  # default if no mutating
     if profile.has_mutating:
         mutating_tools = profile.mutating(repo_root)
+        t_mutating_start = time.monotonic()
         mutating_results = _run_tools(repo_root, mutating_tools)
+        t_mutating_end = time.monotonic()
         results.extend(mutating_results)
-    t_mutating_end = time.monotonic()
 
     # 5) decide if we need SLOW - lazy build
-    t_slow_start = time.monotonic()
     slow_results = []
+    t_slow_start = time.monotonic()
+    t_slow_end = t_slow_start  # default if no slow
     if profile.has_slow:
         slow_tools = profile.slow(repo_root)
+        t_slow_start = time.monotonic()
         slow_results = _run_tools(repo_root, slow_tools)
+        t_slow_end = time.monotonic()
         results.extend(slow_results)
-    t_slow_end = time.monotonic()
 
     total_time = time.monotonic() - start_time
 
