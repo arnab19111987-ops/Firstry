@@ -96,6 +96,7 @@ class GateResult:
             'gate_id': self.gate_id,
             'ok': self.ok,
             'output': self.output,
+            'details': self.output,  # Include details as alias for output (test compatibility)
             'stdout': self.output,  # Provide stdout as alias for output
             'stderr': '',  # Most gates don't separate stderr, default to empty
             'status': self.status,  # Include status field

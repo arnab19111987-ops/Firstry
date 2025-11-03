@@ -27,7 +27,6 @@ RUNNERS: Dict[str, BaseRunner] = {
 
 # Import legacy runner functions for test compatibility from ../runners.py module
 try:
-    import sys
     import importlib.util
     from pathlib import Path
     

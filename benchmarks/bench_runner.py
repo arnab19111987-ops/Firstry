@@ -408,7 +408,7 @@ class BenchmarkRunner:
         # Answer the 5 key questions
         summary = results.get("summary", {})
         
-        print(f"\n📊 THE 5 KEY QUESTIONS ANSWERED:")
+        print("\n📊 THE 5 KEY QUESTIONS ANSWERED:")
         print("-" * 40)
         
         if "startup_cost" in summary:

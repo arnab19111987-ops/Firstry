@@ -5,7 +5,6 @@ from pathlib import Path
 import json
 import subprocess
 import sys
-import pytest
 
 from firsttry.reporting import print_summary
 from firsttry.gates.base import GateResult

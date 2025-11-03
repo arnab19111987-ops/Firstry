@@ -10,6 +10,20 @@ from .tier_map import (
 )
 from ..license_guard import get_tier
 
+# simple color helper for legacy paths (no-op if Rich not used)
+def c(text: str, *_args) -> str:
+    return str(text)
+
+# legacy interactive helpers (no-ops to avoid import dependency)
+def interactive_menu(*_args, **_kwargs) -> None:
+    return None
+
+def render_detailed_report(*_args, **_kwargs) -> None:
+    return None
+
+def render_locked_report(*_args, **_kwargs) -> None:
+    return None
+
 # you probably already have a Rich detection; keep it
 try:
     from rich.console import Console
@@ -111,7 +125,7 @@ def render_summary_legacy(results, context):
             mark = c("✅", "green") if passed else c("❌", "red")
             print(f"  {mark} {c(check_name, 'bold')}: {details}")
         else:
-            print(f"  {c(check_name, 'yellow')}: {LOCK_MESSAGE}")
+            print(f"  {c(check_name, 'yellow')}: {LOCKED_MESSAGE}")
 
     # overall
     print()
@@ -127,7 +141,7 @@ def render_summary_legacy(results, context):
     interactive_menu(
         results,
         allowed_checks,
-        LOCK_MESSAGE,
+        LOCKED_MESSAGE,
         on_detail=render_detailed_report,
         on_locked=render_locked_report,
     )

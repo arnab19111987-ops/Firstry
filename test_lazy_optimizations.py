@@ -10,7 +10,6 @@ This demonstrates:
 5. Deferred reporting (async JSON writing)
 """
 
-import asyncio
 import sys
 import time
 from pathlib import Path
@@ -114,7 +113,7 @@ def main():
     else:
         print("⚠️  Expected more improvement from caching")
     
-    print(f"\n📊 Performance Summary:")
+    print("\n📊 Performance Summary:")
     print(f"  • First run: {first_run_time:.3f}s")
     print(f"  • Second run: {second_run_time:.3f}s")
     print(f"  • Improvement: {(1 - second_run_time/first_run_time)*100:.1f}%")

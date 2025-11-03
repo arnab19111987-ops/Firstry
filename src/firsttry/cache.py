@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 from typing import Dict, Any, Iterable, Optional
 
-from .cache_models import ToolCacheEntry, InputFileMeta, CacheStats
-from .cache_utils import collect_input_stats, validate_cache_fast, get_cache_state
+from .cache_models import ToolCacheEntry, InputFileMeta
+from .cache_utils import get_cache_state
 
 # Global cache location for cross-repo caching
 CACHE_DIR = Path(os.path.expanduser("~")) / ".firsttry"
@@ -68,6 +68,8 @@ def sha256_of_paths(paths: Iterable[Path]) -> str:
 def get_repo_cache(repo_root: str) -> Dict[str, Any]:
     """Get cache data for a specific repository"""
     data = load_cache()
+    if "repos" not in data:
+        data["repos"] = {}
     return data["repos"].get(repo_root, {"tools": {}})
 
 

@@ -10,6 +10,14 @@ omit =
     tools/firsttry/firsttry/*
     firsttry/runners.py
     firsttry/__main__.py
+    # Legacy/compatibility modules
+    src/firsttry/legacy_*.py
+    # VSCode extension scaffolding
+    src/firsttry/vscode_*.py
+    # Docker smoke tests (often not run in CI)
+    src/firsttry/docker_*.py
+    # Database modules (optional dependencies)
+    src/firsttry/db_*.py
 
 [report]
 exclude_lines =

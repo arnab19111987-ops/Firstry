@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Callable, Any, Dict
+from typing import List, Callable, Any
 
 from .tools.ruff_tool import RuffTool
 from .tools.mypy_tool import MypyTool
 from .tools.pytest_tool import PytestTool
-from .tools.npm_test_tool import NpmTestTool
+from .license_guard import get_tier
 
 
 ToolFactory = Callable[[Path], Any]
@@ -87,7 +87,6 @@ def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
 
 
 # New 4-tier profile system
-from .license_guard import get_tier
 
 PROFILES_BY_TIER = {
     "free-lite": "dev_fast",

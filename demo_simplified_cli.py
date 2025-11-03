@@ -5,7 +5,6 @@ Shows the new clean CLI interface with hidden complexity
 """
 
 import subprocess
-import sys
 from pathlib import Path
 
 def run_command(cmd, description):

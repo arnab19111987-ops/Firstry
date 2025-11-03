@@ -12,7 +12,6 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from firsttry.run_profiles import select_checks, get_pytest_mode_for_profile
 from firsttry.cached_orchestrator import run_checks_for_profile
-from firsttry import progress
 
 
 async def demo_step7_smart_pytest():
@@ -61,7 +60,7 @@ async def demo_step7_smart_pytest():
             if "pytest" in results:
                 pytest_result = results["pytest"]
                 if pytest_result.get("cached"):
-                    print(f"   🧪 Pytest: cached result")
+                    print("   🧪 Pytest: cached result")
                 elif pytest_result.get("test_files"):
                     test_count = len(pytest_result["test_files"])
                     duration = pytest_result.get("duration", 0)
@@ -74,12 +73,12 @@ async def demo_step7_smart_pytest():
         
         print("=" * 50)
     
-    print(f"\n🎉 Step 7 Demo Complete!")
-    print(f"Smart pytest system successfully integrated with:")
-    print(f"  • Profile-based pytest modes (smoke/smart/full)")
-    print(f"  • Change-based test targeting")
-    print(f"  • Failed test prioritization")
-    print(f"  • Cache-aware test execution")
+    print("\n🎉 Step 7 Demo Complete!")
+    print("Smart pytest system successfully integrated with:")
+    print("  • Profile-based pytest modes (smoke/smart/full)")
+    print("  • Change-based test targeting")
+    print("  • Failed test prioritization")
+    print("  • Cache-aware test execution")
 
 
 if __name__ == "__main__":

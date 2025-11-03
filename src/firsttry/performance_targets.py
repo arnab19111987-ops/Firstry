@@ -78,7 +78,7 @@ def format_performance_report(results: Dict[str, Any], validation: Dict[str, boo
     cache_stats = results.get("cache_test", {})
     
     lines.extend([
-        f"📊 CURRENT PERFORMANCE:",
+        "📊 CURRENT PERFORMANCE:",
         f"  • Execution time: {orchestrator_time:.2f}s",
         f"  • vs 120s baseline: {120/orchestrator_time:.0f}x faster",
         f"  • Cache efficiency: {cache_stats.get('cache_hits', 0)}/{cache_stats.get('total_checks', 1)} tools",
@@ -86,8 +86,8 @@ def format_performance_report(results: Dict[str, Any], validation: Dict[str, boo
     
     # Target validation
     lines.extend([
-        f"",
-        f"🎯 TARGET VALIDATION:",
+        "",
+        "🎯 TARGET VALIDATION:",
     ])
     
     target_descriptions = {
@@ -108,31 +108,31 @@ def format_performance_report(results: Dict[str, Any], validation: Dict[str, boo
     total_targets = len(validation)
     
     lines.extend([
-        f"",
-        f"🏁 OVERALL RESULT:",
+        "",
+        "🏁 OVERALL RESULT:",
         f"  • Targets met: {achieved_count}/{total_targets}",
     ])
     
     if achieved_count >= total_targets * 0.8:  # 80% threshold
         lines.extend([
-            f"  • Status: ✅ EXCELLENT PERFORMANCE",
-            f"  • Ready for production deployment",
+            "  • Status: ✅ EXCELLENT PERFORMANCE",
+            "  • Ready for production deployment",
         ])
     elif achieved_count >= total_targets * 0.6:  # 60% threshold  
         lines.extend([
-            f"  • Status: ⚠️  GOOD PERFORMANCE",
-            f"  • Minor optimizations recommended",
+            "  • Status: ⚠️  GOOD PERFORMANCE",
+            "  • Minor optimizations recommended",
         ])
     else:
         lines.extend([
-            f"  • Status: 🔧 NEEDS IMPROVEMENT", 
-            f"  • Significant optimizations needed",
+            "  • Status: 🔧 NEEDS IMPROVEMENT", 
+            "  • Significant optimizations needed",
         ])
     
     lines.extend([
-        f"",
-        f"💡 CONTEXT:",
-        f"  • Original FirstTry: ~120s+ execution",
+        "",
+        "💡 CONTEXT:",
+        "  • Original FirstTry: ~120s+ execution",
         f"  • Current FirstTry: {orchestrator_time:.1f}s execution", 
         f"  • Performance improvement: {120/orchestrator_time:.0f}x faster",
         f"  • This is a {120-orchestrator_time:.0f}s time saving per run",

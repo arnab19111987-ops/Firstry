@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from firsttry.run_profiles import select_checks, get_profile_description
 from firsttry.cached_orchestrator import run_checks_for_profile
-from firsttry import progress
 
 
 async def demo_cached_runs():
@@ -33,7 +32,7 @@ async def demo_cached_runs():
         checks = select_checks(profile)
         print(f"   Checks: {', '.join(checks)}")
         
-        print(f"\n--- First run (cache miss) ---")
+        print("\n--- First run (cache miss) ---")
         results1 = await run_checks_for_profile(
             repo_root=repo_root,
             checks=checks,
@@ -41,7 +40,7 @@ async def demo_cached_runs():
             profile=profile
         )
         
-        print(f"\n--- Second run (cache hit) ---")
+        print("\n--- Second run (cache hit) ---")
         results2 = await run_checks_for_profile(
             repo_root=repo_root,
             checks=checks,

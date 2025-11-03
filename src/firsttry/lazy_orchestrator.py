@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple
 from .run_profiles import RunProfile, dev_profile
 from .cache import load_tool_cache_entry, save_tool_cache_entry  
 from .cache_utils import collect_input_stats, input_stats_match
-from .cache_models import ToolCacheEntry, InputFileMeta
+from .cache_models import ToolCacheEntry
 from .detectors import detect_stack
 
 

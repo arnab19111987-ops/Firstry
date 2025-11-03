@@ -23,7 +23,7 @@ dependencies = [
 
 [project.scripts]
 firsttry = "firsttry.cli:main"
-ft = "firsttry.cli:main"
+ft = "firsttry.cli_aliases:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -31,4 +31,34 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["firsttry*"]
+
+
+[tool.ruff]
+# Only lint our Python source and tests; skip vendored, coverage, docs, and benchmarks
+extend-exclude = [
+  ".venv",
+  ".venv-build",
+  "htmlcov",
+  "docs",
+  "dashboard",
+  "benchmarks",
+  "firsttry.egg-info",
+  "**/*.egg-info",
+  # Exclude demo/performance scripts from strict linting
+  "step12_*.py",
+  "validation_*.py",
+  "test_cache_performance.py",
+  "test_improvements.py",
+  "demo_*.py",
+  "performance_benchmark.py",
+]
+target-version = "py310"
+line-length = 200
+
+[tool.ruff.lint]
+select = ["E", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may use dynamic names and type comparisons in legacy cases
+"tests/**" = ["F821", "E721", "F841"]
 

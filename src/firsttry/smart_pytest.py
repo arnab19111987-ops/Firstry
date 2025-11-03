@@ -1,10 +1,9 @@
 from __future__ import annotations
 import json
-import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, List, Set, Any
 
 from . import cache as ft_cache
 from .parallel_pytest import run_parallel_pytest, analyze_test_suite

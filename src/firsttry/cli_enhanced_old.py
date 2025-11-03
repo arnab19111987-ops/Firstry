@@ -554,16 +554,68 @@ def handle_status(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Handle the doctor command."""
     try:
-        from .doctor import run_doctor_report
-        from .summary import render_human
+        from .doctor import run_doctor_report, render_human
 
         report = run_doctor_report()
         human_output = render_human(report)
         print(human_output)
         
-        # Return appropriate exit code based on score
-        score = report.get("score", 0)
-        return 0 if score >= 70 else 1
+        # Handle additional --check flags if present
+        checks = getattr(args, "checks", None) or []
+        check_failures = []
+        
+        for check_type in checks:
+            if check_type == "report-json":
+                from pathlib import Path
+                report_path = Path(".firsttry/report.json")
+                if not report_path.exists():
+                    print("\n❌ Check failed: report-json")
+                    print("   .firsttry/report.json does not exist")
+                    print("   Hint: Run with --report-json to generate it")
+                    check_failures.append("report-json")
+                else:
+                    import json
+                    try:
+                        data = json.loads(report_path.read_text())
+                        schema_ver = data.get("schema_version", 0)
+                        check_count = len(data.get("checks", []))
+                        print("\n✅ Check passed: report-json")
+                        print(f"   Schema version: {schema_ver}")
+                        print(f"   Checks: {check_count}")
+                    except Exception as e:
+                        print("\n❌ Check failed: report-json")
+                        print(f"   Invalid JSON: {e}")
+                        check_failures.append("report-json")
+            
+            elif check_type == "telemetry":
+                from pathlib import Path
+                status_path = Path(".firsttry/telemetry_status.json")
+                if not status_path.exists():
+                    print("\n⚠️  Check notice: telemetry")
+                    print("   No telemetry submissions yet")
+                    print("   Hint: Run with --send-telemetry to opt in")
+                else:
+                    import json
+                    try:
+                        data = json.loads(status_path.read_text())
+                        ok = data.get("ok", False)
+                        msg = data.get("message", "")
+                        if ok:
+                            print("\n✅ Check passed: telemetry")
+                            print(f"   Last submission: {msg}")
+                        else:
+                            print("\n⚠️  Check notice: telemetry")
+                            print(f"   Last submission failed: {msg}")
+                    except Exception as e:
+                        print("\n❌ Check failed: telemetry")
+                        print(f"   Invalid status file: {e}")
+                        check_failures.append("telemetry")
+        
+        # Return appropriate exit code based on score and check failures
+        passed = all(r.status == "ok" for r in report.results)
+        if check_failures:
+            return 1
+        return 0 if passed else 1
     except ImportError:
         print("🩺 FirstTry Doctor")
         print("==================")

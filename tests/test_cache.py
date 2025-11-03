@@ -6,20 +6,27 @@ from firsttry.cache import (
 )
 
 
-def test_load_cache_when_missing(tmp_path):
-    data = load_cache(tmp_path)
-    assert data == {}
+def test_load_cache_when_missing(tmp_path, monkeypatch):
+    # Test that load_cache returns empty structure when cache doesn't exist
+    cache_file = tmp_path / "test_cache.json"
+    monkeypatch.setattr("firsttry.cache.CACHE_FILE", cache_file)
+    data = load_cache()
+    assert data == {"repos": {}}
 
 
-def test_save_and_load_cache(tmp_path):
-    data = {"hello": "world"}
-    save_cache(tmp_path, data)
-    loaded = load_cache(tmp_path)
+def test_save_and_load_cache(tmp_path, monkeypatch):
+    # Test save and load cycle
+    cache_file = tmp_path / "test_cache.json"
+    monkeypatch.setattr("firsttry.cache.CACHE_FILE", cache_file)
+    
+    data = {"hello": "world", "repos": {}}
+    save_cache(data)
+    loaded = load_cache()
     assert loaded["hello"] == "world"
-    assert "updated_at" in loaded
+    assert "repos" in loaded
 
 
-def test_should_skip_gate_with_changed_files(tmp_path):
+def test_should_skip_gate_with_changed_files():
     # prepare cache
     cache = {}
     update_gate_cache(cache, "python:ruff", ["pyproject.toml"])

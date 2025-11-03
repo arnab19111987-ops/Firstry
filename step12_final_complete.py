@@ -9,7 +9,6 @@ import sys
 import time
 import json
 from pathlib import Path
-from typing import Dict, Any
 
 # Add src to path  
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -92,7 +91,7 @@ async def validate_final_performance():
     
     print(f"  ✅ Cold run: {cold_time:.2f}s")
     print(f"  ✅ Warm run: {warm_time:.2f}s")
-    print(f"  📊 Cache analysis:")
+    print("  📊 Cache analysis:")
     print(f"     • Hits: {cache_hits} (files unchanged)")
     if policy_reruns > 0:
         print(f"     • Policy re-runs: {policy_reruns} (failed tools re-ran)")
@@ -100,7 +99,7 @@ async def validate_final_performance():
     print(f"     • Cache efficiency: {cache_stats.cache_efficiency:.1f}%")
     
     # Test 2: Realistic performance validation  
-    print(f"\n🧪 Test 2: Realistic Performance Targets")
+    print("\n🧪 Test 2: Realistic Performance Targets")
     print("-" * 40)
     
     # Test dev profile performance
@@ -124,38 +123,38 @@ async def validate_final_performance():
     print(f"  ⚡ vs 120s baseline: {120/dev_time:.0f}x faster")
     
     # Test 3: Performance target validation
-    print(f"\n🧪 Test 3: Target Validation")
+    print("\n🧪 Test 3: Target Validation")
     print("-" * 40)
     
     targets = PerformanceTargets()
     validation = validate_performance_results(results, targets)
     
-    print(f"  Performance targets:")
+    print("  Performance targets:")
     print(f"    • Dev profile (≤{targets.dev_profile_max:.1f}s): {'✅' if validation.get('dev_profile_time') else '❌'}")
     print(f"    • Daily use (≤{targets.subsequent_run_max:.1f}s): {'✅' if validation.get('fast_enough_for_daily_use') else '❌'}")
     print(f"    • Cache efficiency (≥{targets.min_cache_efficiency:.0f}%): {'✅' if validation.get('cache_efficiency') else '❌'}")
     print(f"    • Sub-second warm: {'✅' if validation.get('sub_second_warm') else '❌'}")
     
     # Final comprehensive report
-    print(f"\n🏆 FINAL COMPREHENSIVE REPORT")
+    print("\n🏆 FINAL COMPREHENSIVE REPORT")
     print("=" * 60)
     
     performance_report = format_performance_report(results, validation)
     print(performance_report)
     
-    print(f"\n📊 HONEST CACHE METRICS")
+    print("\n📊 HONEST CACHE METRICS")
     print("-" * 40)
     cache_report = format_cache_report(cache_stats)
     print(cache_report)
     
-    print(f"\n🎯 WHY THESE TARGETS ARE REALISTIC")
+    print("\n🎯 WHY THESE TARGETS ARE REALISTIC")
     print("-" * 40)
-    print(f"  • Your 1.2s execution is EXCELLENT for Python CLI + FS I/O")
-    print(f"  • 100x improvement (120s → 1.2s) massively exceeds goals")
-    print(f"  • \"2x speedup\" on 1s baseline is physics-unfriendly target")
-    print(f"  • Real KPI: 'Does it make development faster?' YES!")
-    print(f"  • Cache hit rate affected by policy (re-run failed tools)")
-    print(f"  • This is normal DX behavior, not a cache bug")
+    print("  • Your 1.2s execution is EXCELLENT for Python CLI + FS I/O")
+    print("  • 100x improvement (120s → 1.2s) massively exceeds goals")
+    print("  • \"2x speedup\" on 1s baseline is physics-unfriendly target")
+    print("  • Real KPI: 'Does it make development faster?' YES!")
+    print("  • Cache hit rate affected by policy (re-run failed tools)")
+    print("  • This is normal DX behavior, not a cache bug")
     
     # Create stable JSON for other projects
     final_metadata = {
@@ -179,20 +178,20 @@ async def validate_final_performance():
     with open(metadata_file, "w") as f:
         json.dump(final_metadata, f, indent=2)
     
-    print(f"\n💾 METADATA FOR OTHER PROJECTS")
+    print("\n💾 METADATA FOR OTHER PROJECTS")
     print(f"  📄 Stable JSON schema: {metadata_file}")
-    print(f"  🔗 Can be consumed by AIOS, Founder-OS, etc.")
+    print("  🔗 Can be consumed by AIOS, Founder-OS, etc.")
     
     # Overall success assessment
     achieved_count = sum(validation.values())
     total_targets = len(validation)
     
     if achieved_count >= total_targets * 0.8:
-        print(f"\n🎉 STEP 12 COMPLETE - EXCELLENT PERFORMANCE!")
-        print(f"   All major targets achieved with realistic assessment")
+        print("\n🎉 STEP 12 COMPLETE - EXCELLENT PERFORMANCE!")
+        print("   All major targets achieved with realistic assessment")
         return True
     else:
-        print(f"\n🔧 Step 12 needs minor refinement")
+        print("\n🔧 Step 12 needs minor refinement")
         return False
 
 

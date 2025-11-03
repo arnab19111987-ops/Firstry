@@ -1,15 +1,11 @@
 from __future__ import annotations
-import asyncio
 import json
 import time
 import statistics
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
-import tempfile
-import shutil
-import subprocess
 
 from .cached_orchestrator import run_checks_for_profile
 from .run_profiles import select_checks
@@ -222,7 +218,7 @@ class PerformanceBenchmark:
         
         # Overall statistics
         if self.metrics_history:
-            print(f"\n🏆 Performance Improvements:")
+            print("\n🏆 Performance Improvements:")
             for metrics in self.metrics_history:
                 print(f"   • {metrics.scenario}:")
                 print(f"     - {metrics.improvement_factor:.1f}x faster")
@@ -304,7 +300,7 @@ async def run_comprehensive_benchmark(repo_root: str) -> PerformanceBenchmark:
         print(f"   ✅ Average: {avg_duration:.2f}s")
     
     # Calculate improvement metrics
-    print(f"\n📊 Calculating Performance Improvements...")
+    print("\n📊 Calculating Performance Improvements...")
     
     # Compare optimized vs baseline
     if "Full Suite (Baseline)" in results_by_scenario and "Full Suite (Optimized)" in results_by_scenario:

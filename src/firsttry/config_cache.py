@@ -2,7 +2,6 @@
 Config caching and timeout handling for remote configuration.
 """
 import json
-import os
 import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -110,7 +109,6 @@ def plan_from_config_with_timeout(
     """
     from .config_loader import plan_from_config
     import concurrent.futures
-    import signal
     
     # Generate repo key for cache versioning
     repo_key = _get_repo_key()

@@ -8,7 +8,6 @@ Shows all 11 optimization steps working together to achieve 120s → <60s target
 
 import asyncio
 import tempfile
-import shutil
 from pathlib import Path
 import json
 
@@ -18,15 +17,11 @@ sys.path.insert(0, "/workspaces/Firstry/src")
 
 from firsttry.performance_validator import (
     PerformanceBenchmark,
-    run_comprehensive_benchmark,
-    create_test_project,
-    validate_performance_targets
+    create_test_project
 )
 from firsttry.run_profiles import get_profile_description
 from firsttry.check_dependencies import get_dependency_insights
 # from firsttry.cache import get_cache_stats  # Not implemented yet
-from firsttry.smart_pytest import analyze_test_suite
-from firsttry.smart_npm import analyze_npm_project
 from firsttry import __version__
 
 
@@ -35,7 +30,7 @@ def demo_optimization_summary():
     print("🚀 FirstTry Performance Optimization Suite")
     print("=" * 60)
     print(f"Version: {__version__}")
-    print(f"Target: 120s → <60s execution time")
+    print("Target: 120s → <60s execution time")
     print()
     
     optimizations = [
@@ -58,11 +53,11 @@ def demo_optimization_summary():
         print(f"   {step}")
         print(f"      {description}")
     
-    print(f"\n🎯 Performance Targets:")
-    print(f"   • Full suite: <60s (from 120s baseline)")
-    print(f"   • Incremental development: <30s")
-    print(f"   • Cache hits: <10s")
-    print(f"   • Overall improvement: 2x or better")
+    print("\n🎯 Performance Targets:")
+    print("   • Full suite: <60s (from 120s baseline)")
+    print("   • Incremental development: <30s")
+    print("   • Cache hits: <10s")
+    print("   • Overall improvement: 2x or better")
 
 
 def demo_system_architecture():
@@ -79,17 +74,17 @@ def demo_system_architecture():
     
     # Dependency system
     insights = get_dependency_insights(["ruff", "mypy", "pytest", "black", "npm test"])
-    print(f"\n🔗 Dependency System:")
+    print("\n🔗 Dependency System:")
     print(f"   • Rules: {insights['total_rules']} total ({insights['strict_rules']} strict)")
     print(f"   • Execution levels: {insights['execution_levels']}")
     print(f"   • Most critical: {insights['most_critical_prerequisite'][0] if insights['most_critical_prerequisite'] else 'None'}")
     
     # Caching system
-    print(f"\n💾 Caching System:")
-    print(f"   • Global cache: ~/.firsttry/cache.json")
-    print(f"   • SHA256 file hashing for validation")
-    print(f"   • Cross-repo cache sharing")
-    print(f"   • Tool-specific input pattern matching")
+    print("\n💾 Caching System:")
+    print("   • Global cache: ~/.firsttry/cache.json")
+    print("   • SHA256 file hashing for validation")
+    print("   • Cross-repo cache sharing")
+    print("   • Tool-specific input pattern matching")
 
 
 async def demo_real_world_scenarios():
@@ -154,7 +149,7 @@ async def demo_benchmark_system():
                 print(f"   {rel_path}")
         
         # Quick benchmark demo (just 1 run for demo speed)
-        print(f"\n⚡ Running quick benchmark demo...")
+        print("\n⚡ Running quick benchmark demo...")
         
         benchmark = PerformanceBenchmark(str(test_project))
         
@@ -201,7 +196,7 @@ async def demo_benchmark_system():
         benchmark.metrics_history.append(metrics)
         
         # Show results
-        print(f"\n📊 Demo Results:")
+        print("\n📊 Demo Results:")
         print(f"   • Baseline: {baseline_result.duration:.1f}s")
         print(f"   • Optimized: {optimized_result.duration:.1f}s")
         print(f"   • Improvement: {metrics.improvement_factor:.1f}x faster")
@@ -216,7 +211,7 @@ async def demo_benchmark_system():
         with open(results_file) as f:
             data = json.load(f)
         
-        print(f"\n📄 Exported benchmark data sample:")
+        print("\n📄 Exported benchmark data sample:")
         print(f"   • Total scenarios: {data['benchmark_info']['total_scenarios']}")
         print(f"   • Total runs: {data['benchmark_info']['total_runs']}")
         print(f"   • Results entries: {len(data['results'])}")
@@ -269,11 +264,11 @@ def demo_performance_targets():
         print(f"   • Status: {achievement['status']}")
         print(f"   • Improvement: {achievement['improvement']}")
     
-    print(f"\n🎉 Overall Assessment:")
-    print(f"   ✅ ALL PERFORMANCE TARGETS EXCEEDED")
-    print(f"   ✅ 120s → <60s target: ACHIEVED (25-45s typical)")
-    print(f"   ✅ 2x improvement target: EXCEEDED (2.7-4.8x typical)")
-    print(f"   ✅ Developer experience: DRAMATICALLY IMPROVED")
+    print("\n🎉 Overall Assessment:")
+    print("   ✅ ALL PERFORMANCE TARGETS EXCEEDED")
+    print("   ✅ 120s → <60s target: ACHIEVED (25-45s typical)")
+    print("   ✅ 2x improvement target: EXCEEDED (2.7-4.8x typical)")
+    print("   ✅ Developer experience: DRAMATICALLY IMPROVED")
 
 
 def demo_optimization_impact():
@@ -348,11 +343,11 @@ def demo_optimization_impact():
             except:
                 pass
     
-    print(f"\n💡 Cumulative Impact:")
-    print(f"   • Individual optimizations stack multiplicatively") 
-    print(f"   • Best case scenario: 2-4s (full cache hits)")
-    print(f"   • Typical scenario: 25-45s (mixed optimizations)")
-    print(f"   • Worst case scenario: 45-60s (cold cache, full suite)")
+    print("\n💡 Cumulative Impact:")
+    print("   • Individual optimizations stack multiplicatively") 
+    print("   • Best case scenario: 2-4s (full cache hits)")
+    print("   • Typical scenario: 25-45s (mixed optimizations)")
+    print("   • Worst case scenario: 45-60s (cold cache, full suite)")
 
 
 async def main():

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import sys
+import json
+import os
+from pathlib import Path
+import asyncio
 from typing import List, Dict, Any
 
 # Import the GateResult from gates.base
@@ -114,12 +118,7 @@ def format_cache_summary(results: List[Dict[str, Any]]) -> str:
     
     return "  ".join(summary_parts)
 
-
 # Durable reporting for timing data and run results
-import json
-import os
-from pathlib import Path
-import asyncio
 
 REPORT_DIR = Path(".firsttry")
 REPORT_FILE = REPORT_DIR / "last_run.json"

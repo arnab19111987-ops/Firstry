@@ -74,7 +74,7 @@ class SummaryPrinter:
 
         for item in self.results:
             status = item.get("status")
-            name = item.get("name")
+            name = item.get("name") or ""
             detail = item.get("detail", "")
             if status == "ok":
                 print(f"  ✅ {name}: {detail}")
@@ -327,16 +327,6 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
         print("   • Enforce team-wide consistency via firsttry.toml.")
 
         print("\n================ END REPORT ================")
-
-    
-def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier: str | None = None) -> int:
-    if not tier:
-        tier = os.getenv("FIRSTTRY_TIER", "developer")
-    sp = SummaryPrinter(tier=tier, results=results, meta=meta)
-    return sp.print()
-
-    
-
     # ---------------- FREE ----------------
 
     def _print_free(self) -> int:

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from typing import Any, Dict, List
+from .constants import LEVELS
 
 
 def _file_exists(path: str) -> bool:
@@ -23,9 +24,6 @@ def detect_features() -> Dict[str, bool]:
         "has_vitest": _file_exists("vitest.config.ts") or _file_exists("vitest.config.js"),
         "has_dockerfile": _file_exists("Dockerfile"),
     }
-
-
-from .constants import LEVELS
 
 
 def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:

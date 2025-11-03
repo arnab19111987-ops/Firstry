@@ -1,5 +1,4 @@
 import sys
-import time
 
 def step(msg: str) -> None:
     """Print a major step message"""
@@ -39,5 +38,5 @@ def bucket_header(bucket: str, count: int) -> None:
 
 def summary_header() -> None:
     """Print summary section header"""
-    sys.stdout.write(f"\n── Summary ──\n")
+    sys.stdout.write("\n── Summary ──\n")
     sys.stdout.flush()

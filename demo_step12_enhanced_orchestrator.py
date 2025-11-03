@@ -6,7 +6,6 @@ Step 12 of FirstTry performance optimization
 
 import asyncio
 import sys
-import os
 from pathlib import Path
 
 # Add src to path  
@@ -52,7 +51,7 @@ async def demo_enhanced_orchestrator():
                 total_time += elapsed
                 print(f"  • {check}: {status} ({elapsed:.2f}s)")
         
-        print(f"\n📊 Performance Summary:")
+        print("\n📊 Performance Summary:")
         print(f"  • Total execution time: {total_time:.2f}s")
         print(f"  • Cached hits: {cached_count}/{len(results)}")
         print(f"  • Cache efficiency: {cached_count/len(results)*100:.1f}%")

@@ -76,7 +76,6 @@ def detect_stack(repo_root: Path) -> Dict[str, Any]:
     payload = _real_detect_stack(repo_root)
     save_detect_cache(repo_root, payload)
     return payload
-    return langs
 
 
 def detect_pkg_manager(root: Path) -> str:

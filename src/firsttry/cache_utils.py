@@ -6,7 +6,6 @@ Avoids expensive file hashing when possible by checking file metadata first.
 
 import os
 from typing import List, Optional
-from pathlib import Path
 
 from .cache_models import InputFileMeta, ToolCacheEntry, CacheStats
 
@@ -124,7 +123,7 @@ def update_cache_stats(stats: CacheStats, cache_state: str, used_hashing: bool =
 def format_cache_report(stats: CacheStats) -> str:
     """Generate human-readable cache performance report."""
     lines = [
-        f"📊 Cache Performance:",
+        "📊 Cache Performance:",
         f"  • Cache hits: {stats.cache_hits}/{stats.total_tools} ({stats.cache_efficiency:.1f}%)",
     ]
     

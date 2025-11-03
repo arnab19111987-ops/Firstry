@@ -11,7 +11,6 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from firsttry.run_profiles import select_checks
 from firsttry.cached_orchestrator import run_checks_for_profile
 
 
@@ -57,7 +56,7 @@ async def test_cache_performance():
     )
     third_time = time.time() - start
     
-    print(f"\n📊 Performance Results:")
+    print("\n📊 Performance Results:")
     print(f"  First run (cache miss): {first_time:.3f}s")
     print(f"  Second run (cache hit): {second_time:.3f}s")
     print(f"  Third run (no cache):   {third_time:.3f}s")

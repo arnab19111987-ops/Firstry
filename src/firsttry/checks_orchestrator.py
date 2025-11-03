@@ -2,10 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-import time
-import os
-from concurrent.futures import ProcessPoolExecutor, TimeoutError as FutureTimeoutError
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from .profiler import get_profiler
 
@@ -160,18 +157,18 @@ async def _run_bucket_with_timeout(
         
         # create up to N tasks for this family
         for i in range(max(1, workers)):
-            # Wrap with timeout
-            async def run_with_timeout():
+            # Wrap with timeout - capture all loop variables to avoid closure bug
+            async def run_with_timeout(captured_item=item, captured_family=family, captured_tool=tool, captured_runner=runner, worker_id=i):
                 try:
                     return await asyncio.wait_for(
-                        _timed_runner_execution(runner, i, ctx, item),
+                        _timed_runner_execution(captured_runner, worker_id, ctx, captured_item),
                         timeout=timeout_seconds
                     )
                 except asyncio.TimeoutError:
                     return {
                         "ok": False,
-                        "family": family,
-                        "tool": tool,
+                        "family": captured_family,
+                        "tool": captured_tool,
                         "error": f"Timed out after {timeout_seconds}s",
                     }
             

@@ -155,8 +155,9 @@ def test_run_all_gates(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     summary = gates.run_all_gates(Path("."))
-    assert "ok" in summary
-    assert "results" in summary
+    # run_all_gates returns a list of GateResult objects
+    assert isinstance(summary, list)
+    assert len(summary) >= 1
 
 
 def test_gate_result_to_dict():

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, List, Set, Any, Optional, Tuple
 from dataclasses import dataclass
 
 from .check_registry import CHECK_REGISTRY
@@ -52,7 +52,7 @@ DEPENDENCY_RULES: List[DependencyRule] = [
 
 def get_dependency_graph() -> Dict[str, List[str]]:
     """Build a dependency graph from rules"""
-    graph = {}
+    graph: Dict[str, List[str]] = {}
     for rule in DEPENDENCY_RULES:
         if rule.dependent not in graph:
             graph[rule.dependent] = []
@@ -144,7 +144,7 @@ def get_execution_order(checks: List[str]) -> List[List[str]]:
         execution_levels.append(independent_checks)
     
     # Group dependent checks by their prerequisites
-    prerequisite_groups = {}
+    prerequisite_groups: Dict[Tuple[str, ...], List[str]] = {}
     for check in checks:
         if check in dependent_checks:
             prerequisites = graph[check]
@@ -221,7 +221,7 @@ def get_dependency_insights(checks: List[str]) -> Dict[str, Any]:
     strict_dependencies = len([r for r in DEPENDENCY_RULES if r.strict])
     
     # Find most critical prerequisites (most depended upon)
-    prerequisite_counts = {}
+    prerequisite_counts: Dict[str, int] = {}
     for rule in DEPENDENCY_RULES:
         prereq = rule.prerequisite
         prerequisite_counts[prereq] = prerequisite_counts.get(prereq, 0) + 1

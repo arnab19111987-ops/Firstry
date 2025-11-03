@@ -86,7 +86,7 @@ def _validate_license_max_security(license_key: str, tier: str) -> None:
     but if validation exists and fails → raise.
     """
     try:
-        from . import license_cache  # type: ignore
+        from . import license_cache
     except Exception:
         # if license_cache isn't there, we still allow free tiers but **not** paid ones
         raise LicenseError(

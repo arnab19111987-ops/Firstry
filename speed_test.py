@@ -7,9 +7,7 @@ Measures execution time for all FirstTry commands and options.
 import subprocess
 import time
 import json
-import sys
-from typing import Dict, List, Tuple, Any
-from pathlib import Path
+from typing import Dict, List, Any
 
 def run_command_with_timing(cmd: List[str], description: str, timeout: int = 60) -> Dict[str, Any]:
     """Run a command and measure its execution time."""
@@ -129,7 +127,7 @@ def main():
     failed_tests = [r for r in results if not r["success"]]
     durations = [r["duration_seconds"] for r in results]
     
-    print(f"\n📊 SUMMARY STATISTICS:")
+    print("\n📊 SUMMARY STATISTICS:")
     print(f"  Total Tests:       {len(results)}")
     print(f"  Successful:        {len(successful_tests)} ({len(successful_tests)/len(results)*100:.1f}%)")
     print(f"  Failed:            {len(failed_tests)} ({len(failed_tests)/len(results)*100:.1f}%)")
@@ -139,7 +137,7 @@ def main():
     print(f"  Slowest Command:   {max(durations):.3f}s")
     
     # Performance breakdown
-    print(f"\n⚡ PERFORMANCE BREAKDOWN:")
+    print("\n⚡ PERFORMANCE BREAKDOWN:")
     sorted_results = sorted(results, key=lambda x: x["duration_seconds"])
     
     for result in sorted_results:
@@ -151,7 +149,7 @@ def main():
     help_commands = [r for r in results if "--help" in r["command"]]
     other_commands = [r for r in results if r not in run_commands and r not in help_commands]
     
-    print(f"\n📈 CATEGORY ANALYSIS:")
+    print("\n📈 CATEGORY ANALYSIS:")
     if run_commands:
         run_avg = sum(r["duration_seconds"] for r in run_commands) / len(run_commands)
         print(f"  Run Commands:      {len(run_commands)} tests, avg {run_avg:.3f}s")
@@ -167,7 +165,7 @@ def main():
     # Bucketed execution analysis
     bucketed_commands = [r for r in results if "run" in r["command"] and "tier" in r["command"]]
     if bucketed_commands:
-        print(f"\n🪣 BUCKETED EXECUTION ANALYSIS:")
+        print("\n🪣 BUCKETED EXECUTION ANALYSIS:")
         for result in bucketed_commands:
             phases = []
             if "⚡ firsttry: running FAST" in result["stdout"]:
@@ -182,12 +180,12 @@ def main():
     
     # Failure analysis
     if failed_tests:
-        print(f"\n❌ FAILURE ANALYSIS:")
+        print("\n❌ FAILURE ANALYSIS:")
         for result in failed_tests:
             print(f"  • {result['description']}: {result['stderr'][:100]}...")
     
     # Performance recommendations
-    print(f"\n💡 PERFORMANCE INSIGHTS:")
+    print("\n💡 PERFORMANCE INSIGHTS:")
     
     fastest = min(results, key=lambda x: x["duration_seconds"])
     slowest = max(results, key=lambda x: x["duration_seconds"])
@@ -200,18 +198,18 @@ def main():
         if max(run_durations) > 10:
             print(f"  • Long-running commands detected (>{10}s). Consider optimizing check execution.")
         if len([d for d in run_durations if d < 1]) > 0:
-            print(f"  • Fast commands detected (<1s). Good responsiveness for quick feedback.")
+            print("  • Fast commands detected (<1s). Good responsiveness for quick feedback.")
     
-    print(f"\n📋 DETAILED RESULTS:")
+    print("\n📋 DETAILED RESULTS:")
     for result in results:
         print(f"\n  Command: {result['command']}")
         print(f"  Duration: {result['duration_seconds']}s")
         print(f"  Exit Code: {result['exit_code']}")
         print(f"  Success: {result['success']}")
         if result.get('timeout'):
-            print(f"  Status: TIMEOUT")
+            print("  Status: TIMEOUT")
         elif result.get('exception'):
-            print(f"  Status: EXCEPTION")
+            print("  Status: EXCEPTION")
         if result['stderr'] and not result['success']:
             print(f"  Error: {result['stderr'][:200]}...")
     
@@ -230,7 +228,7 @@ def main():
             'results': results
         }, f, indent=2)
     
-    print(f"\n📁 Detailed results saved to: speed_test_results.json")
+    print("\n📁 Detailed results saved to: speed_test_results.json")
     print("=" * 60)
 
 if __name__ == "__main__":

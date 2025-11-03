@@ -3,7 +3,7 @@ Performance profiler for FirstTry checks.
 Tracks timing and exit codes for all check executions.
 """
 import time
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -61,7 +61,7 @@ class CheckProfiler:
         fast_families = {"ruff", "mypy", "black"}
         slow_families = {"pytest", "npm test", "ci-parity"}
         
-        buckets = {
+        buckets: Dict[str, List[Any]] = {
             "fast": [],
             "slow": [],
             "other": []

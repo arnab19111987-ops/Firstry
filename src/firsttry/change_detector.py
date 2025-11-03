@@ -3,9 +3,8 @@ Change detection for optimizing FirstTry runs.
 Maps file changes to relevant checks to skip unnecessary work.
 """
 import subprocess
-import os
 from pathlib import Path
-from typing import List, Set, Dict, Optional
+from typing import List, Set, Dict
 
 
 def get_changed_files(repo_root: str = ".") -> List[str]:
@@ -51,7 +50,7 @@ def categorize_changed_files(changed_files: List[str]) -> Dict[str, List[str]]:
     """
     Categorize changed files by type.
     """
-    categories = {
+    categories: Dict[str, List[str]] = {
         "python": [],
         "javascript": [],
         "docs": [],

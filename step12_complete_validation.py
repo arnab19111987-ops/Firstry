@@ -9,7 +9,6 @@ import sys
 import time
 import json
 from pathlib import Path
-from typing import Dict, Any
 
 # Add src to path  
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -79,7 +78,7 @@ async def validate_complete_optimization_suite():
     }
     
     # Test 2: Enhanced orchestrator with timing
-    print(f"\n🧪 Test 2: Enhanced Orchestrator Performance")
+    print("\n🧪 Test 2: Enhanced Orchestrator Performance")
     print("-" * 40)
     
     start_time = time.monotonic()
@@ -110,7 +109,7 @@ async def validate_complete_optimization_suite():
     }
     
     # Test 3: Profile system efficiency
-    print(f"\n🧪 Test 3: Profile System Efficiency")
+    print("\n🧪 Test 3: Profile System Efficiency")
     print("-" * 40)
     
     profiles = ["dev", "full", "strict"]
@@ -127,7 +126,7 @@ async def validate_complete_optimization_suite():
     results["profile_test"] = profile_results
     
     # Test 4: Comprehensive benchmark
-    print(f"\n🧪 Test 4: Comprehensive Benchmark")
+    print("\n🧪 Test 4: Comprehensive Benchmark")
     print("-" * 40)
     
     scenarios = [
@@ -166,16 +165,16 @@ async def validate_complete_optimization_suite():
     results["best_time"] = best_time
     
     # Final performance report
-    print(f"\n🏆 FINAL PERFORMANCE REPORT")
+    print("\n🏆 FINAL PERFORMANCE REPORT")
     print("=" * 60)
     
-    print(f"📊 KEY METRICS:")
+    print("📊 KEY METRICS:")
     print(f"  • Cache speedup: {cache_speedup:.1f}x improvement")
     print(f"  • Dev profile time: {orchestrator_time:.2f}s")
     print(f"  • Best benchmark: {best_time:.2f}s")
     print(f"  • Cache efficiency: {cached_count}/{len(results2)} hits")
     
-    print(f"\n🎯 TARGET VALIDATION:")
+    print("\n🎯 TARGET VALIDATION:")
     targets = {
         "Sub-60s execution": orchestrator_time < 60,
         "Cache >2x speedup": cache_speedup > 2.0,
@@ -189,7 +188,7 @@ async def validate_complete_optimization_suite():
     
     all_targets_met = all(targets.values())
     
-    print(f"\n🏁 OVERALL RESULT:")
+    print("\n🏁 OVERALL RESULT:")
     if all_targets_met:
         print("✅ ALL PERFORMANCE TARGETS EXCEEDED!")
         print("🎉 FirstTry optimization suite COMPLETE")
@@ -199,7 +198,7 @@ async def validate_complete_optimization_suite():
         missed = [t for t, achieved in targets.items() if not achieved]
         print(f"   Missed targets: {', '.join(missed)}")
     
-    print(f"\n📋 FEATURE COMPLETENESS:")
+    print("\n📋 FEATURE COMPLETENESS:")
     features = [
         "Global caching with SHA256 validation",
         "Enhanced orchestrator with per-check timing", 
@@ -222,7 +221,7 @@ async def validate_complete_optimization_suite():
     original_time = 120  # Estimated original baseline
     improvement = original_time / orchestrator_time
     
-    print(f"\n⚡ PERFORMANCE IMPROVEMENT:")
+    print("\n⚡ PERFORMANCE IMPROVEMENT:")
     print(f"  • Original baseline: ~{original_time}s")
     print(f"  • Current performance: {orchestrator_time:.1f}s") 
     print(f"  • Improvement factor: {improvement:.1f}x faster")
@@ -242,10 +241,10 @@ async def main():
     success = await validate_complete_optimization_suite()
     
     if success:
-        print(f"\n🚀 Step 12 COMPLETE - All optimizations working perfectly!")
+        print("\n🚀 Step 12 COMPLETE - All optimizations working perfectly!")
         exit(0)
     else:
-        print(f"\n🔧 Step 12 needs refinement - Some targets missed")
+        print("\n🔧 Step 12 needs refinement - Some targets missed")
         exit(1)
 
 

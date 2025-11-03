@@ -4,7 +4,7 @@ Non-interactive tier-aware summary for CLI integration.
 """
 from __future__ import annotations
 from typing import Dict, Any
-from .tier_map import TIER_CHECKS, LOCKED_MESSAGE, get_checks_for_tier, get_tier_meta
+from .tier_map import LOCKED_MESSAGE, get_checks_for_tier
 from .ui import c
 from ..license_guard import get_tier
 

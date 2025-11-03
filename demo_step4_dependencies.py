@@ -8,7 +8,6 @@ implementing fail-fast logic to save significant execution time.
 
 import asyncio
 import tempfile
-import shutil
 from pathlib import Path
 
 # Import FirstTry modules
@@ -38,7 +37,7 @@ def demo_dependency_rules():
         print(f"  {i}. {rule.dependent} ← {rule.prerequisite} ({strictness})")
         print(f"     Reason: {rule.reason}")
     
-    print(f"\n📊 Rules Summary:")
+    print("\n📊 Rules Summary:")
     print(f"   • Total Rules: {len(DEPENDENCY_RULES)}")
     print(f"   • Strict Rules: {len([r for r in DEPENDENCY_RULES if r.strict])}")
     print(f"   • Flexible Rules: {len([r for r in DEPENDENCY_RULES if not r.strict])}")
@@ -63,7 +62,7 @@ def demo_dependency_graph():
     
     if prerequisite_counts:
         most_critical = max(prerequisite_counts.items(), key=lambda x: x[1])
-        print(f"\n🎯 Most Critical Prerequisite:")
+        print("\n🎯 Most Critical Prerequisite:")
         print(f"   '{most_critical[0]}' blocks {most_critical[1]} other checks")
 
 
@@ -80,10 +79,10 @@ def demo_execution_order():
         parallelism = "parallel" if len(checks) > 1 else "serial"
         print(f"  Level {level}: {', '.join(checks)} ({parallelism})")
     
-    print(f"\n💡 Benefits:")
-    print(f"   • Prerequisites run first automatically")
-    print(f"   • Independent checks can run in parallel")
-    print(f"   • Failed prerequisites block dependent checks")
+    print("\n💡 Benefits:")
+    print("   • Prerequisites run first automatically")
+    print("   • Independent checks can run in parallel")
+    print("   • Failed prerequisites block dependent checks")
 
 
 def demo_skip_logic():
@@ -138,7 +137,7 @@ def demo_skip_logic():
                 strictness = " (STRICT)" if skip['strict'] else ""
                 print(f"     ❌ {skip['check']} ← blocked by {skip['blocked_by']}{strictness}")
         else:
-            print(f"   ✅ All checks would run")
+            print("   ✅ All checks would run")
 
 
 def demo_impact_analysis():
@@ -160,16 +159,16 @@ def demo_impact_analysis():
         print(f"   • Efficiency gain: {analysis['efficiency_gain']}")
         
         if analysis['skipped_details']:
-            print(f"   • Skipped details:")
+            print("   • Skipped details:")
             for check, details in analysis['skipped_details'].items():
                 print(f"     - {check}: {details['reason']}")
     
     # Calculate time savings (estimated)
-    print(f"\n⏱️ Time Savings Estimation:")
-    print(f"   • Ruff failure scenario:")
-    print(f"     - Dev profile: Skip mypy (~30s saved)")
-    print(f"     - Strict profile: Skip mypy, pytest, npm test, ci-parity (~90s saved)")
-    print(f"   • Impact: 30-90s time savings when basic linting fails")
+    print("\n⏱️ Time Savings Estimation:")
+    print("   • Ruff failure scenario:")
+    print("     - Dev profile: Skip mypy (~30s saved)")
+    print("     - Strict profile: Skip mypy, pytest, npm test, ci-parity (~90s saved)")
+    print("   • Impact: 30-90s time savings when basic linting fails")
 
 
 def demo_validation():
@@ -242,7 +241,7 @@ select = ["E", "F", "W"]
                     print(f"   ❓ {check}: {status}")
             
             # Show what would happen in strict mode
-            print(f"\n🔄 Same scenario in STRICT profile:")
+            print("\n🔄 Same scenario in STRICT profile:")
             result_strict = await run_checks_for_profile(
                 repo_root=str(repo_dir),
                 checks=checks,
@@ -275,7 +274,7 @@ def demo_insights():
     all_checks = ["ruff", "black", "mypy", "pytest", "npm test", "ci-parity"]
     insights = get_dependency_insights(all_checks)
     
-    print(f"📊 System Overview:")
+    print("📊 System Overview:")
     print(f"   • Total dependency rules: {insights['total_rules']}")
     print(f"   • Strict rules: {insights['strict_rules']}")
     print(f"   • Flexible rules: {insights['flexible_rules']}")
@@ -289,7 +288,7 @@ def demo_insights():
     if insights['validation_errors']:
         print(f"   ⚠️  Validation errors: {len(insights['validation_errors'])}")
     else:
-        print(f"   ✅ Configuration is valid")
+        print("   ✅ Configuration is valid")
 
 
 async def main():

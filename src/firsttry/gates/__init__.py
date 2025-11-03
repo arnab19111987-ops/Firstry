@@ -2,6 +2,9 @@
 
 from typing import List, Any, Dict
 from .base import GateResult
+from .utils import _safe_gate
+import subprocess
+
 
 # Compatibility functions for old test suite
 def run_pre_commit_gate():
@@ -112,37 +115,24 @@ def print_verbose(message: Any):
 # Individual check functions that tests expect
 def check_lint():
     """Compatibility function for check_lint."""
-    try:
-        import subprocess
-        result = subprocess.run(["ruff", "check", "."], capture_output=True, text=True)
-        return GateResult(
-            gate_id="lint",
-            ok=result.returncode == 0,
-            output=result.stdout,
-            reason="ruff linting" if result.returncode == 0 else f"ruff errors: {result.stdout}"
-        )
-    except FileNotFoundError:
-        return GateResult(gate_id="lint", ok=True, skipped=True, reason="ruff not found", output="ruff not found")
+    return _safe_gate("lint", ["ruff", "check", "."])
 
 def check_types():
     """Compatibility function for check_types."""
-    try:
-        import subprocess
-        result = subprocess.run(["mypy", "--ignore-missing-imports", "."], capture_output=True, text=True)
-        return GateResult(
-            gate_id="types", 
-            ok=result.returncode == 0,
-            output=result.stdout,
-            reason="mypy type checking" if result.returncode == 0 else f"mypy errors: {result.stdout}"
-        )
-    except FileNotFoundError:
-        return GateResult(gate_id="types", ok=True, skipped=True, reason="mypy not found")
+    return _safe_gate("types", ["mypy", "--ignore-missing-imports", "."])
 
+# NOTE:
+# This gate intentionally does NOT use _safe_gate(), because tests expect
+# us to parse pytest output and return test counts in res.info/details.
+# Do NOT "simplify" this to _safe_gate() unless you also port the parser.
 def check_tests():
     """Compatibility function for check_tests."""
     try:
-        import subprocess
-        result = subprocess.run(["pytest", "-q"], capture_output=True, text=True)
+        try:
+            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True, check=False)
+        except TypeError:
+            # Monkeypatch doesn't accept check parameter
+            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True)
         
         # Parse test count from output like "23 passed in 1.5s"
         info = "pytest tests"
@@ -159,7 +149,9 @@ def check_tests():
             reason=info if result.returncode == 0 else f"pytest failures: {result.stdout}"
         )
     except FileNotFoundError:
-        return GateResult(gate_id="tests", ok=True, skipped=True, reason="pytest not found")
+        return GateResult(gate_id="tests", ok=True, skipped=True, reason="pytest not found", output="pytest not found")
+    except Exception as e:
+        return GateResult(gate_id="tests", ok=False, output=str(e), reason=f"Error running tests: {e}")
 
 def check_sqlite_drift():
     """Compatibility function for check_sqlite_drift."""

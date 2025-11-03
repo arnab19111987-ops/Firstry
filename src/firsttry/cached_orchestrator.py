@@ -3,7 +3,6 @@ import asyncio
 import os
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
-import glob as stdlib_glob
 
 from .check_registry import CHECK_REGISTRY, get_check_inputs
 from . import cache as ft_cache
@@ -13,7 +12,6 @@ from .smart_npm import run_smart_npm_test
 from .run_profiles import get_pytest_mode_for_profile
 from .check_dependencies import should_skip_due_to_dependencies
 from .cache_utils import collect_input_stats, input_stats_match
-from .cache_models import ToolCacheEntry, InputFileMeta
 
 
 MAX_WORKERS = min(4, os.cpu_count() or 2)
@@ -389,7 +387,7 @@ async def run_checks_for_profile(
     slow_ms = (t_slow_end - t_mutating_start) * 1000 if 't_mutating_start' in locals() else 0
     report_ms = (time.monotonic() - t_report_start) * 1000
     
-    progress.step(f"🔍 Phase Timing Analysis:")
+    progress.step("🔍 Phase Timing Analysis:")
     progress.step(f"  • detect/setup: {detect_ms + setup_ms:.0f}ms")
     progress.step(f"  • bucketing: {bucketing_ms:.0f}ms") 
     progress.step(f"  • fast phase: {fast_ms:.0f}ms")

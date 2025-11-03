@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 import sys
+from typing import Callable, Optional
 
 from . import __version__
 from .license_guard import get_tier
 from .context_builders import build_context, build_repo_profile
-from .config_loader import load_config, plan_from_config, apply_overrides_to_plan
+from .config_loader import load_config, apply_overrides_to_plan
 from .config_cache import plan_from_config_with_timeout
 from .ci_parser import resolve_ci_plan
 from .agent_manager import SmartAgentManager
@@ -28,7 +28,10 @@ try:
     )
 except ImportError:
     # in case someone vendors this without the old file
-    handle_status = handle_setup = handle_doctor = cmd_mirror_ci = None
+    handle_status: Optional[Callable[[argparse.Namespace], int]] = None
+    handle_setup: Optional[Callable[[argparse.Namespace], int]] = None
+    handle_doctor: Optional[Callable[[argparse.Namespace], int]] = None
+    cmd_mirror_ci: Optional[Callable[[argparse.Namespace], int]] = None
 
 
 def _normalize_profile(raw: str | None) -> str:
@@ -179,17 +182,22 @@ def build_parser() -> argparse.ArgumentParser:
         "--profile",
         type=str,
         choices=["fast", "dev", "full", "strict"],
-        help=argparse.SUPPRESS,      # Hidden: use mode instead
+        help="Execution profile (defaults inferred from mode).",
     )
     p_run.add_argument(
         "--tier",
-        choices=["developer", "teams"],
-        help=argparse.SUPPRESS,      # Hidden: use mode instead
+        choices=[
+            # New 4-tier system
+            "free-lite", "free-strict", "pro", "promax",
+            # Legacy synonyms
+            "free", "developer", "teams", "enterprise",
+        ],
+        help="License tier (e.g., free-lite, free-strict, pro, promax).",
     )
     p_run.add_argument(
         "--source",
         choices=["auto", "config", "ci", "detect"],
-        help=argparse.SUPPRESS,      # Hidden: use mode instead
+        help="Plan source (auto|config|ci|detect).",
     )
     p_run.add_argument(
         "--changed-only",
@@ -221,6 +229,36 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Show interactive menu after summary for detailed reports",
     )
+    p_run.add_argument(
+        "--report-json",
+        dest="report_json",
+        metavar="PATH",
+        help="Write a JSON report to the given path (e.g., .firsttry/report.json)",
+    )
+    p_run.add_argument(
+        "--show-report",
+        dest="report",
+        action="store_true",
+        help="Show detailed report output in the console",
+    )
+    p_run.add_argument(
+        "--send-telemetry",
+        dest="send_telemetry",
+        action="store_true",
+        help="Send anonymized run metrics (tier, profile, timing, statuses)",
+    )
+    p_run.add_argument(
+        "--report-schema",
+        choices=["1", "2"],
+        default="2",
+        help="JSON report schema version: 1 (flat, legacy) or 2 (tier-aware with timing buckets). Default: 2",
+    )
+    p_run.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Build plan, apply tier lockout, emit JSON preview without executing tools",
+    )
 
     # --- lint (ultra-light ruff alias) ------------------------------------
     p_lint = sub.add_parser("lint", help="Ultra-fast linting with ruff (minimal overhead)")
@@ -231,12 +269,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # --- inspect -----------------------------------------------------------
-    p_insp = sub.add_parser("inspect", help="Show detected context/profile/plan")
+    p_insp = sub.add_parser("inspect", help="Show detected context/profile/plan or view reports")
+    p_insp.add_argument(
+        "topic",
+        nargs="?",
+        choices=["report", "dashboard"],
+        help="Optional: inspect a report/dashboard JSON. Defaults to planning view.",
+    )
     p_insp.add_argument(
         "--source",
         choices=["auto", "config", "ci", "detect"],
         default="auto",
         help="Same source logic as in `run`.",
+    )
+    p_insp.add_argument(
+        "--json",
+        dest="json_path",
+        help="Path to report JSON (default .firsttry/report.json)",
+    )
+    p_insp.add_argument(
+        "--filter",
+        dest="filter_expr",
+        help="Filter expression for checks (e.g., locked=true)",
+    )
+    p_insp.add_argument(
+        "--export",
+        dest="export_path",
+        metavar="PATH",
+        help="Export/copy report JSON to specified path for CI artifacts",
     )
 
     # --- sync --------------------------------------------------------------
@@ -244,15 +304,29 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- status ------------------------------------------------------------
     if handle_status is not None:
-        p_status = sub.add_parser("status", help="Show hooks + last run status")
+        p_status = sub.add_parser("status", help="Show hooks + last run status or telemetry")
+        p_status.add_argument(
+            "topic",
+            nargs="?",
+            choices=["telemetry"],
+            help="Optional: view telemetry status",
+        )
 
     # --- setup -------------------------------------------------------------
     if handle_setup is not None:
-        p_setup = sub.add_parser("setup", help="Detect project and install hooks")
+        # Parser created for side effects (subcommand registration); no local var needed
+        sub.add_parser("setup", help="Detect project and install hooks")
 
     # --- doctor ------------------------------------------------------------
     if handle_doctor is not None:
         p_doctor = sub.add_parser("doctor", help="Diagnose env and dependencies")
+        p_doctor.add_argument(
+            "--check",
+            action="append",
+            dest="checks",
+            choices=["report-json", "telemetry"],
+            help="Additional validation checks (report-json, telemetry). Can be used multiple times.",
+        )
 
     # --- mirror-ci ---------------------------------------------------------
     if cmd_mirror_ci is not None:
@@ -311,6 +385,9 @@ def main(argv: list[str] | None = None) -> int:
         if handle_status is None:
             print("status not available in this build")
             return 1
+        # Check if telemetry status was requested
+        if hasattr(args, 'topic') and args.topic == "telemetry":
+            return cmd_status_telemetry()
         return handle_status(args)
 
     elif args.cmd == "setup":
@@ -389,7 +466,109 @@ def cmd_sync() -> int:
         return 2
 
 
+def cmd_status_telemetry() -> int:
+    """Display telemetry status from .firsttry/telemetry_status.json"""
+    from pathlib import Path
+    import json
+    from datetime import datetime
+    
+    status_file = Path(".firsttry/telemetry_status.json")
+    
+    if not status_file.exists():
+        print("Telemetry status")
+        print("  note: no telemetry submissions yet")
+        print("  hint: run with --send-telemetry to opt in")
+        return 0
+    
+    try:
+        data = json.loads(status_file.read_text())
+        
+        print("Telemetry status")
+        
+        # Show endpoint
+        from .telemetry import TELEMETRY_URL
+        print(f"  last_endpoint: {TELEMETRY_URL}")
+        
+        # Status
+        ok = data.get("ok", False)
+        message = data.get("message", "")
+        if ok:
+            print(f"  last_status: ✅ success ({message})")
+        else:
+            print(f"  last_status: ❌ failed ({message})")
+        
+        # Timestamp
+        ts = data.get("ts")
+        if ts:
+            dt = datetime.fromtimestamp(ts)
+            print(f"  last_sent_at: {dt.isoformat()}")
+        
+        print("  note: opt-in only (run with --send-telemetry)")
+        
+        return 0
+    except Exception as e:
+        print(f"Error reading telemetry status: {e}")
+        return 1
+
+
 def cmd_inspect(*, args=None) -> int:
+    # Report inspection mode
+    if args and getattr(args, "topic", None) == "report":
+        from pathlib import Path
+        import json
+        path = Path(getattr(args, "json_path", ".firsttry/report.json") or ".firsttry/report.json")
+        if not path.exists():
+            print(f"firsttry: report not found at {path}")
+            return 2
+        data = json.loads(path.read_text())
+        
+        # Handle export if requested
+        export_path = getattr(args, "export_path", None)
+        if export_path:
+            from pathlib import Path as ExportPath
+            dest = ExportPath(export_path)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(json.dumps(data, indent=2))
+            print(f"Exported report to {dest}")
+            return 0
+        
+        flt = getattr(args, "filter_expr", None)
+        if flt:
+            key, _, val = flt.partition("=")
+            key = key.strip()
+            val = val.strip().lower()
+            def match(entry):
+                v = entry.get(key)
+                if isinstance(v, bool):
+                    return (val in ("1","true","yes")) == v
+                return str(v).lower() == val
+            checks = [c for c in data.get("checks", []) if match(c)]
+            print(json.dumps(checks, indent=2))
+        else:
+            print(json.dumps(data, indent=2))
+        return 0
+
+    if args and getattr(args, "topic", None) == "dashboard":
+        from pathlib import Path
+        import json
+        src = Path(getattr(args, "json_path", ".firsttry/report.json") or ".firsttry/report.json")
+        if not src.exists():
+            print(f"firsttry: dashboard source not found at {src}")
+            return 2
+        data = json.loads(src.read_text())
+        print("Dashboard Summary")
+        print("Repo:", data.get("repo"))
+        print("Tier:", data.get("tier"))
+        print("Profile:", data.get("profile"))
+        t = data.get("timing", {})
+        print("Timing (ms): fast={fast_ms} mutating={mutating_ms} slow={slow_ms} total={total_ms}".format(**{k: t.get(k, 0) for k in ("fast_ms","mutating_ms","slow_ms","total_ms")}))
+        print("Checks:")
+        for c in data.get("checks", []):
+            lock = " 🔒" if c.get("locked") else ""
+            print(f" - {c.get('id')}: {c.get('status')}{lock}")
+        return 0
+
+    # Default planning/summary inspect
     ctx = build_context()
     repo = build_repo_profile()
     cfg = load_config()
@@ -494,7 +673,15 @@ async def run_fast_pipeline(*, args=None) -> int:
     active_tools = [p["tool"] for p in plan if p["tool"] in allowed_checks]
     
     # If only one tool is active, run it directly to avoid orchestration overhead
-    if len(active_tools) == 1 and not getattr(args, "interactive", False) and not getattr(args, "report", False):
+    # UNLESS: dry-run mode is active (need to preview without execution)
+    dry_run = getattr(args, "dry_run", False) if args else False
+    if (
+        len(active_tools) == 1
+        and not getattr(args, "interactive", False)
+        and not getattr(args, "report", False)
+        and not getattr(args, "report_json", None)
+        and not dry_run
+    ):
         single_tool = active_tools[0]
         print(f"🚀 Running {single_tool} directly (single-tool optimization)")
         
@@ -518,6 +705,83 @@ async def run_fast_pipeline(*, args=None) -> int:
     ctx["local_tools"] = [p["tool"] for p in plan]
     ctx["local_cmds"] = {p["tool"]: p.get("cmd") for p in plan if p.get("cmd")}
 
+    # DRY-RUN MODE: Build plan preview with tier lockout without executing
+    dry_run = getattr(args, "dry_run", False) if args else False
+    if dry_run:
+        from datetime import datetime, timezone
+        from pathlib import Path
+        from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
+        from .reports.tier_map import get_checks_for_tier
+        
+        allowed = set(get_checks_for_tier(tier)) if tier else set()
+        schema_ver = int(getattr(args, "report_schema", "2"))
+        
+        if schema_ver == 1:
+            payload = {
+                "schema_version": 1,
+                "repo": str(ctx.get("repo_root", ".")),
+                "tier": tier,
+                "profile": getattr(args, "profile", "fast"),
+                "run_at": datetime.now(timezone.utc).isoformat(),
+                "timing": {"total_ms": 0},
+                "checks": [],
+                "dry_run": True,
+            }
+        else:
+            payload = {
+                "schema_version": 2,
+                "repo": str(ctx.get("repo_root", ".")),
+                "tier": tier,
+                "profile": getattr(args, "profile", "fast"),
+                "run_at": datetime.now(timezone.utc).isoformat(),
+                "timing": {
+                    "fast_ms": 0,
+                    "mutating_ms": 0,
+                    "slow_ms": 0,
+                    "total_ms": 0,
+                },
+                "checks": [],
+                "dry_run": True,
+            }
+        
+        # Add all planned checks with lockout status
+        for p in plan:
+            name = p.get("tool", "unknown")
+            locked = (name not in allowed) if allowed else False
+            
+            if schema_ver == 1:
+                entry = {
+                    "id": name,
+                    "status": "dry-run",
+                    "duration_s": 0.0,
+                }
+            else:
+                status = "skipped" if locked else "dry-run"
+                entry = {"id": name, "status": status, "duration_s": 0.0}
+                if locked:
+                    entry["locked"] = True
+                    entry["reason"] = "Available in Pro tier"
+            
+            payload["checks"].append(entry)
+        
+        # Print preview
+        import json
+        print("🔍 DRY-RUN MODE: Plan preview (no tools executed)")
+        print(json.dumps(payload, indent=2))
+        
+        # Write to report-json if requested
+        report_json_path = getattr(args, "report_json", None)
+        if report_json_path:
+            from .reporting import write_report_async
+            path = Path(report_json_path)
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(write_report_async(path, payload))
+            except RuntimeError:
+                await write_report_async(path, payload)
+        
+        return 0
+
     mgr = SmartAgentManager.from_context(ctx, repo_profile)
     allocation = mgr.allocate_for_plan(plan)
 
@@ -532,6 +796,113 @@ async def run_fast_pipeline(*, args=None) -> int:
         config=cfg,
         show_phases=show_phases,
     )
+
+    # Build and write JSON report if requested
+    report_json_path = getattr(args, "report_json", None) if args else None
+    if report_json_path:
+        try:
+            from datetime import datetime, timezone
+            from pathlib import Path
+            from .reporting import write_report_async
+            from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
+            from .reports.tier_map import get_checks_for_tier
+
+            allowed = set(get_checks_for_tier(tier)) if tier else set()
+            
+            # Get schema version (default 2 for tier-aware with timing buckets)
+            schema_ver = int(getattr(args, "report_schema", "2"))
+
+            if schema_ver == 1:
+                # Legacy flat schema for backward compatibility
+                payload = {
+                    "schema_version": 1,
+                    "repo": str(ctx.get("repo_root", ".")),
+                    "tier": tier,
+                    "profile": getattr(args, "profile", "fast"),
+                    "run_at": datetime.now(timezone.utc).isoformat(),
+                    "timing": {
+                        "total_ms": 0,
+                    },
+                    "checks": [],
+                }
+            else:
+                # Schema v2 with timing buckets and tier-locking
+                payload = {
+                    "schema_version": 2,
+                    "repo": str(ctx.get("repo_root", ".")),
+                    "tier": tier,
+                    "profile": getattr(args, "profile", "fast"),
+                    "run_at": datetime.now(timezone.utc).isoformat(),
+                    "timing": {
+                        "fast_ms": 0,
+                        "mutating_ms": 0,
+                        "slow_ms": 0,
+                        "total_ms": 0,
+                    },
+                    "checks": [],
+                }
+
+            total_s = 0.0
+            for chk in result.get("checks", []):
+                family = chk.get("family") or chk.get("tool") or chk.get("name", "unknown")
+                name = chk.get("tool") or family
+                ok = chk.get("ok", False)
+                duration_s = chk.get("duration") or 0.0
+
+                if schema_ver == 1:
+                    # Legacy schema: simple status without locking info
+                    entry = {
+                        "id": name,
+                        "status": "ok" if ok else "fail",
+                    }
+                    if isinstance(duration_s, (int, float)):
+                        entry["duration_s"] = float(duration_s)
+                else:
+                    # Schema v2: tier-aware with locked checks
+                    locked = (name not in allowed) if allowed else False
+                    status = "skipped" if locked else ("ok" if ok else "fail")
+
+                    entry = {"id": name, "status": status}
+                    if locked:
+                        entry["locked"] = True
+                        entry["reason"] = "Available in Pro tier"
+                    if isinstance(duration_s, (int, float)):
+                        entry["duration_s"] = float(duration_s)
+
+                # Accumulate timing (schema v2 has buckets, v1 has only total)
+                if isinstance(duration_s, (int, float)):
+                    total_s += float(duration_s)
+                    if schema_ver == 2:
+                        if family in MUTATING_FAMILIES:
+                            payload["timing"]["mutating_ms"] += int(duration_s * 1000)
+                        elif family in SLOW_FAMILIES:
+                            payload["timing"]["slow_ms"] += int(duration_s * 1000)
+                        elif family in FAST_FAMILIES:
+                            payload["timing"]["fast_ms"] += int(duration_s * 1000)
+                        else:
+                            payload["timing"]["fast_ms"] += int(duration_s * 1000)
+
+                payload["checks"].append(entry)
+
+            payload["timing"]["total_ms"] = int(total_s * 1000)
+
+            # write the report (async if possible)
+            path = Path(report_json_path)
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(write_report_async(path, payload))
+            except RuntimeError:
+                await write_report_async(path, payload)
+
+            # Optional telemetry
+            if getattr(args, "send_telemetry", False):
+                try:
+                    from .telemetry import send_report
+                    send_report(payload)
+                except Exception as te:
+                    print(f"[firsttry] telemetry send failed: {te}")
+        except Exception as e:
+            print(f"[firsttry] warning: failed to write JSON report: {e}")
 
     # Lazy import reporting only when needed
     interactive = getattr(args, "interactive", False) if args else False
@@ -601,15 +972,15 @@ async def run_fast_pipeline(*, args=None) -> int:
 try:
     import importlib
     # Force import of runners.py module
-    runners = importlib.import_module('.runners', package='firsttry')  # type: ignore
+    runners = importlib.import_module('.runners', package='firsttry')
 except ImportError:
     # Create a stub runners module if import fails
     import types
-    runners = types.ModuleType('runners')  # type: ignore
+    runners = types.ModuleType('runners')
     # Add stub functions that tests expect
-    def stub_runner(*args, **kwargs):  # type: ignore
-        from .runners import StepResult  # type: ignore
-        return StepResult(name="stub", ok=True, duration_s=0, stdout="", stderr="", cmd=())  # type: ignore
+    def stub_runner(*args, **kwargs):
+        from .runners import StepResult
+        return StepResult(name="stub", ok=True, duration_s=0, stdout="", stderr="", cmd=())
     
     runners.run_ruff = stub_runner  # type: ignore
     runners.run_black_check = stub_runner   # type: ignore

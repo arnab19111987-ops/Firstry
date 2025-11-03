@@ -13,4 +13,5 @@ def test_node_npm_gate_skips_when_not_installed(monkeypatch, tmp_path):
     res = gate.run(tmp_path)
     assert res.ok is True
     assert res.skipped is True
-    assert "not installed" in res.reason
+    # Since no package.json exists, it skips with this message
+    assert "No package.json found" in res.reason

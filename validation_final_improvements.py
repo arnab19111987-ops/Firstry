@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from firsttry.cached_orchestrator import run_checks_for_profile
 from firsttry.run_profiles import select_checks
 from firsttry.reporting import normalize_cache_state, format_cache_summary
-from firsttry.performance_targets import PerformanceTargets, validate_performance_results
+from firsttry.performance_targets import PerformanceTargets
 from firsttry import cache as ft_cache
 
 
@@ -66,7 +66,7 @@ async def test_honest_performance_claims():
         print(f"⚠️  Warm performance: {warm_duration:.2f}s > {targets.dev_profile_max}s target")
     
     print(f"📝 Honest claim: 'On reference dev repo, warm runs complete in {warm_duration:.1f}s'")
-    print(f"📝 For larger repos: 'Warm path stays under ~1-1.5s thanks to stat-first cache'")
+    print("📝 For larger repos: 'Warm path stays under ~1-1.5s thanks to stat-first cache'")
     
     return {"first_duration": first_duration, "warm_duration": warm_duration, "checks_run": len(checks)}
 
@@ -103,7 +103,7 @@ def test_cache_normalization():
     policy_reruns = len([r for r in normalized if r.get("cache_bucket") == "hit-policy"])
     misses = len([r for r in normalized if r.get("cache_bucket") == "miss"])
     
-    print(f"📊 Validation:")
+    print("📊 Validation:")
     print(f"  • Structural hits: {hits}")
     print(f"  • Policy re-runs: {policy_reruns}")
     print(f"  • Cache misses: {misses}")
@@ -235,7 +235,7 @@ async def main():
     print(f"✅ Performance: Warm runs in {perf_results['warm_duration']:.2f}s")
     print(f"✅ Cache Reporting: {cache_results['hits']} hits, {cache_results['policy_reruns']} policy re-runs")
     print(f"✅ Stat-First: {stat_results['speedup']:.1f}x cache speedup")
-    print(f"✅ Invalidation: Logic implemented for mutating checks")
+    print("✅ Invalidation: Logic implemented for mutating checks")
     
     # Create final report
     report = {
@@ -257,7 +257,7 @@ async def main():
     with open("validation_results_final.json", "w") as f:  
         json.dump(report, f, indent=2)
     
-    print(f"\n📄 Full report saved to: validation_results_final.json")
+    print("\n📄 Full report saved to: validation_results_final.json")
     print("\n🎉 All user feedback improvements validated and ready for production!")
 
 

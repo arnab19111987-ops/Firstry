@@ -45,7 +45,7 @@ async def demo_smart_pytest():
     print(f"🎯 Target tests for changes {changed_files}: {target_tests}")
     
     # Build different command examples
-    print(f"\n🔧 Command Examples:")
+    print("\n🔧 Command Examples:")
     
     smoke_cmd = build_pytest_command(repo_root, mode="smoke")
     print(f"  Smoke: {' '.join(smoke_cmd)}")
@@ -60,7 +60,7 @@ async def demo_smart_pytest():
     print(f"  Full: {' '.join(full_cmd)}")
     
     # Test smart pytest execution
-    print(f"\n🚀 Running smart pytest...")
+    print("\n🚀 Running smart pytest...")
     try:
         result = await run_smart_pytest(
             repo_root=repo_root,
@@ -71,7 +71,7 @@ async def demo_smart_pytest():
         
         print(f"📊 Result: {result['status']}")
         if result.get('cached'):
-            print(f"⚡ Used cached result")
+            print("⚡ Used cached result")
         else:
             print(f"⏱️  Duration: {result.get('duration', 0):.2f}s")
             print(f"🧪 Test files: {result.get('test_files', 'all')}")
@@ -79,7 +79,7 @@ async def demo_smart_pytest():
         if result.get('output'):
             # Show first few lines of output
             output_lines = result['output'].split('\n')[:5]
-            print(f"📝 Output preview:")
+            print("📝 Output preview:")
             for line in output_lines:
                 if line.strip():
                     print(f"    {line}")

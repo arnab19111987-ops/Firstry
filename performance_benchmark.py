@@ -9,11 +9,9 @@ Author: Engineering Performance Auditor
 Date: November 2, 2025
 """
 
-import asyncio
 import json
 import subprocess
 import time
-import os
 import shutil
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
@@ -189,14 +187,14 @@ class PerformanceBenchmark:
             tier_results = {}
             
             # Test cold runs (cleared cache)
-            print(f"❄️  Cold runs (cache cleared):")
+            print("❄️  Cold runs (cache cleared):")
             manual_results_cold = self.benchmark_manual_commands(
                 self.tier_commands[tier], "cold"
             )
             firsttry_result_cold = self.benchmark_firsttry_command(tier, "cold")
             
             # Test warm runs (with cache)
-            print(f"🔥 Warm runs (with cache):")
+            print("🔥 Warm runs (with cache):")
             manual_results_warm = self.benchmark_manual_commands(
                 self.tier_commands[tier], "warm"
             )
@@ -243,7 +241,7 @@ This report compares FirstTry's execution time against real-world developer comm
             manual_cold_total = sum(r.avg_time for r in manual_cold)
             manual_warm_total = sum(r.avg_time for r in manual_warm)
             
-            report += f"### Performance Comparison Table\n\n"
+            report += "### Performance Comparison Table\n\n"
             report += "| Tool | Command | Avg Time (s) | Cache | Relative Speed vs FirstTry |\n"
             report += "|------|---------|-------------|-------|---------------------------|\n"
             
@@ -278,13 +276,13 @@ This report compares FirstTry's execution time against real-world developer comm
             
             # Cache effectiveness
             cache_improvement = ((firsttry_cold.avg_time - firsttry_warm.avg_time) / firsttry_cold.avg_time) * 100
-            report += f"**Cache Effectiveness:**\n"
+            report += "**Cache Effectiveness:**\n"
             report += f"- Cold run: {firsttry_cold.avg_time:.2f}s\n"
             report += f"- Warm run: {firsttry_warm.avg_time:.2f}s\n"
             report += f"- Cache speedup: {cache_improvement:.1f}% improvement\n\n"
             
             # Individual tool analysis
-            report += f"**Individual Tool Performance:**\n"
+            report += "**Individual Tool Performance:**\n"
             for manual_result in manual_cold:
                 cmd_name = manual_result.command.split()[0]
                 overhead = firsttry_cold.avg_time - manual_result.avg_time

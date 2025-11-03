@@ -31,6 +31,15 @@ check:
 	coverage run -m pytest -q
 	coverage report --fail-under=80
 
+.PHONY: coverage-check
+coverage-check:  ## run tests with coverage and check floor
+	pytest tests \
+		--cov=src/firsttry \
+		--cov-report=term \
+		--cov-report=json:coverage.json \
+		-q
+	@./scripts/check_coverage_floor.sh
+
 # Benchmark targets
 .PHONY: bench bench-short
 bench:  ## run full benchmark suite

@@ -7,7 +7,6 @@ with manual override --run-npm-anyway for edge cases.
 """
 
 import asyncio
-import os
 import tempfile
 import shutil
 from pathlib import Path
@@ -18,8 +17,6 @@ import sys
 sys.path.insert(0, "/workspaces/Firstry/src")
 
 from firsttry.smart_npm import (
-    detect_js_project_type,
-    get_js_related_files, 
     should_skip_npm_tests,
     run_smart_npm_test,
     analyze_npm_project
@@ -246,7 +243,7 @@ def demo_project_detection():
     print("🔍 Analyzing project structure...")
     analysis = analyze_npm_project(str(repo_dir))
     
-    print(f"\n📊 Project Analysis:")
+    print("\n📊 Project Analysis:")
     print(f"  • Is JS Project: {analysis['project_info']['is_js_project']}")
     print(f"  • Package Manager: {analysis['project_info']['package_manager']}")
     print(f"  • Has Test Script: {analysis['project_info']['has_test_script']}")
@@ -255,7 +252,7 @@ def demo_project_detection():
     print(f"  • Test Complexity: {analysis['test_complexity']}")
     print(f"  • Estimated Duration: {analysis['estimated_duration']}")
     
-    print(f"\n📄 Sample JS Files:")
+    print("\n📄 Sample JS Files:")
     for file in analysis['js_files_sample']:
         print(f"    {file}")
     
@@ -269,13 +266,13 @@ def demo_change_detection(repo_dir: str):
     
     # Test 1: No changes (should skip)
     decision = should_skip_npm_tests(repo_dir, changed_files=[])
-    print(f"📋 No files changed:")
+    print("📋 No files changed:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
     
     # Test 2: Only Python file changed (should skip)  
     decision = should_skip_npm_tests(repo_dir, changed_files=["main.py", "README.md"])
-    print(f"\n📋 Only Python/docs changed:")
+    print("\n📋 Only Python/docs changed:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
     
@@ -285,7 +282,7 @@ def demo_change_detection(repo_dir: str):
         "src/components/Button.tsx", 
         "main.py"
     ])
-    print(f"\n📋 JS/TS files changed:")
+    print("\n📋 JS/TS files changed:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
     print(f"   JS files changed: {decision['js_files_changed']}")
@@ -296,14 +293,14 @@ def demo_change_detection(repo_dir: str):
         "package.json", 
         "tsconfig.json"
     ])
-    print(f"\n📋 Config files changed:")
+    print("\n📋 Config files changed:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
     print(f"   Relevant changes: {decision['relevant_changes']}")
     
     # Test 5: Manual override (should run)
     decision = should_skip_npm_tests(repo_dir, changed_files=["main.py"], force_run=True)
-    print(f"\n📋 Manual override --run-npm-anyway:")
+    print("\n📋 Manual override --run-npm-anyway:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
 
@@ -325,7 +322,7 @@ async def demo_smart_npm_execution(repo_dir: str):
     print(f"   Duration: {result['duration']}s")
     
     # Scenario 2: Would run if JS files changed (simulate)
-    print(f"\n📋 Scenario 2: JS files changed (would run)")
+    print("\n📋 Scenario 2: JS files changed (would run)")
     result = await run_smart_npm_test(
         repo_root=repo_dir,
         changed_files=["src/App.tsx", "src/components/Button.tsx"],
@@ -337,7 +334,7 @@ async def demo_smart_npm_execution(repo_dir: str):
         print(f"   Note: {result.get('output', 'npm not actually installed in demo')}")
     
     # Scenario 3: Manual override
-    print(f"\n📋 Scenario 3: Manual override --run-npm-anyway")
+    print("\n📋 Scenario 3: Manual override --run-npm-anyway")
     result = await run_smart_npm_test(
         repo_root=repo_dir,
         changed_files=["main.py"],  # Only Python
@@ -393,12 +390,12 @@ def demo_optimization_impact():
         print(f"     Optimized: {scenario['optimized_time']}")
         print(f"     Improvement: {scenario['improvement']}")
     
-    print(f"\n💡 Key Benefits:")
-    print(f"   • Skip npm tests when no JS/TS files changed")
-    print(f"   • Cache results based on JS file hashes")
-    print(f"   • Detect package manager (npm/yarn/pnpm/bun)")
-    print(f"   • Manual override with --run-npm-anyway")
-    print(f"   • Automatic timeout protection (2min)")
+    print("\n💡 Key Benefits:")
+    print("   • Skip npm tests when no JS/TS files changed")
+    print("   • Cache results based on JS file hashes")
+    print("   • Detect package manager (npm/yarn/pnpm/bun)")
+    print("   • Manual override with --run-npm-anyway")
+    print("   • Automatic timeout protection (2min)")
 
 
 async def demo_integration_with_orchestrator():

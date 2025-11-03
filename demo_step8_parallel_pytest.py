@@ -34,16 +34,16 @@ async def demo_step8_parallel_pytest():
     print(f"   Chunking recommended: {analysis['chunking_recommended']}")
     
     if analysis["sample_counts"]:
-        print(f"   Sample test counts:")
+        print("   Sample test counts:")
         for file, count in list(analysis["sample_counts"].items())[:3]:
             print(f"     {file}: {count} tests")
     
     # Show test discovery
     test_files = discover_all_tests(repo_root)
-    print(f"\n🔍 Test Discovery:")
+    print("\n🔍 Test Discovery:")
     print(f"   Found {len(test_files)} test files")
     if test_files:
-        print(f"   Examples:")
+        print("   Examples:")
         for test_file in test_files[:5]:
             print(f"     {test_file}")
         if len(test_files) > 5:
@@ -52,14 +52,14 @@ async def demo_step8_parallel_pytest():
     # Show chunking strategy
     if test_files:
         chunks = create_test_chunks(test_files, max_workers=4)
-        print(f"\n🧩 Chunking Strategy:")
+        print("\n🧩 Chunking Strategy:")
         print(f"   Created {len(chunks)} chunks")
         for i, chunk in enumerate(chunks):
             print(f"     Chunk {i}: {len(chunk)} files")
     
     # Test parallel execution
     if analysis['total_files'] > 0:
-        print(f"\n🏃 Testing Parallel Execution:")
+        print("\n🏃 Testing Parallel Execution:")
         
         try:
             # Test with small subset to avoid long runs
@@ -72,7 +72,7 @@ async def demo_step8_parallel_pytest():
                 use_cache=True
             )
             
-            print(f"📊 Parallel Execution Results:")
+            print("📊 Parallel Execution Results:")
             print(f"   Status: {result['status']}")
             print(f"   Chunking used: {result.get('chunking_used', False)}")
             
@@ -83,18 +83,18 @@ async def demo_step8_parallel_pytest():
                 print(f"   Successful chunks: {result.get('successful_chunks', 0)}")
                 print(f"   Failed chunks: {result.get('failed_chunks', 0)}")
             else:
-                print(f"   Single execution mode")
+                print("   Single execution mode")
                 print(f"   Duration: {result.get('duration', 0):.2f}s")
                 print(f"   Files: {result.get('file_count', 0)}")
             
             if result.get('cached'):
-                print(f"   ⚡ Used cached result")
+                print("   ⚡ Used cached result")
             
             # Show output preview
             output = result.get('output', '')
             if output:
                 lines = output.split('\n')[:8]
-                print(f"\n📝 Output Preview:")
+                print("\n📝 Output Preview:")
                 for line in lines:
                     if line.strip():
                         print(f"    {line}")
@@ -102,13 +102,13 @@ async def demo_step8_parallel_pytest():
         except Exception as e:
             print(f"   ❌ Error: {e}")
     
-    print(f"\n🎉 Step 8 Demo Complete!")
-    print(f"Parallel pytest system features:")
-    print(f"  • Automatic test suite analysis")
-    print(f"  • Intelligent chunking for large suites (>200 tests)")
-    print(f"  • Parallel chunk execution with result aggregation")
-    print(f"  • Fallback to single execution for small suites")
-    print(f"  • Cache-aware with chunk-level caching")
+    print("\n🎉 Step 8 Demo Complete!")
+    print("Parallel pytest system features:")
+    print("  • Automatic test suite analysis")
+    print("  • Intelligent chunking for large suites (>200 tests)")
+    print("  • Parallel chunk execution with result aggregation")
+    print("  • Fallback to single execution for small suites")
+    print("  • Cache-aware with chunk-level caching")
 
 
 if __name__ == "__main__":
