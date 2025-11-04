@@ -1,3 +1,15 @@
+.PHONY: pro pro-warm pro-verify bandit-json
+pro:
+	@rm -rf .firsttry && ft pro --report-json .firsttry/pro.cold.json --show-report || true
+
+pro-warm:
+	@ft pro --report-json .firsttry/pro.warm.json --show-report || true
+
+pro-verify:
+	@python -c "import json,sys; p='.firsttry/pro.warm.json'; d=json.load(open(p)); b=[c for c in d.get('checks',[]) if c.get('name')=='bandit' or c.get('id')=='bandit']; assert b, 'Bandit missing in report'; b=b[0]; assert b.get('status') in ('pass','advisory','ok'), 'Unexpected status: %s'%b.get('status'); print('OK: bandit', b.get('status'))"
+
+bandit-json:
+	@jq . ".firsttry/bandit.json" 2>/dev/null || echo "bandit.json not present yet"
 # Top-level Makefile helpers
 .PHONY: node-validate
 node-validate:

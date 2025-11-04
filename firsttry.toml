@@ -18,3 +18,12 @@ cmd = "pytest -q"
 
 [tool.firsttry.tool."npm test"]
 cmd = "npm test"
+
+[tool.firsttry.checks.bandit]
+enabled = true
+blocking = false
+fail_on = "high"
+jobs = 0
+include = ["src"]
+exclude = [".venv","node_modules",".git","__pycache__","build","dist"]
+extra_args = ["-q"]

@@ -1,14 +1,27 @@
 # firsttry/executor.py
+import shlex
 import subprocess
 import shutil
 from typing import Any
 
 
-def run_command(cmd: str, cwd: str) -> dict:
+def run_command(cmd: Any, cwd: str) -> dict:
+    """Run a command safely without shell=True.
+
+    Accepts either a string or a list. If given a string we split it with
+    shlex.split() to avoid shell=True. This removes Bandit B602 findings
+    while preserving the existing call-site behavior.
+    """
     try:
+        if isinstance(cmd, str):
+            args = shlex.split(cmd)
+        else:
+            args = cmd
+
         proc = subprocess.run(
-            cmd,
-            shell=True,
+            args,
+            # explicit: do not use the shell. Use list/args instead.
+            shell=False,
             cwd=cwd,
             capture_output=True,
             text=True,

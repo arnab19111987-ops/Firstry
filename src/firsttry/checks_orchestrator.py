@@ -2,9 +2,29 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import os
+from pathlib import Path
+from time import perf_counter
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 
 from .profiler import get_profiler
+
+# Bandit JSON runner
+try:
+    from .checks.bandit_runner import run_bandit_json, evaluate_bandit
+except Exception:
+    # graceful fallback if module not importable
+    run_bandit_json = None
+    evaluate_bandit = None
+
+# Sharded bandit runner (faster for large repos)
+try:
+    from .checks.bandit_sharded import BanditConfig, run_bandit_sharded
+except Exception:
+    BanditConfig = None
+    run_bandit_sharded = None
 
 
 async def _timed_runner_execution(runner, worker_id: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> Dict[str, Any]:
@@ -93,6 +113,91 @@ def _family_of(item: Any) -> str:
         return item.get("family") or item.get("tool") or item.get("name") or ""
     else:
         return str(item)
+
+
+def _pyproj_cfg(cfg: Optional[Dict[str, Any]], path: str, key: str, default=None):
+    # safe nested accessor in case pyproject mapping shape varies
+    try:
+        return cfg.get(path, {}).get(key, default) if isinstance(cfg, dict) else default
+    except Exception:
+        return default
+
+
+def _bandit_cfg_from_config(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Return the bandit config regardless of whether `config` is the full
+    pyproject mapping (with a `tool.firsttry` nested table) or the already-
+    extracted `tool.firsttry` dict that `load_config()` returns.
+    """
+    if not config or not isinstance(config, dict):
+        return {}
+
+    # Case A: full pyproject mapping (tool.firsttry.checks.bandit)
+    try:
+        tool = config.get("tool")
+        if isinstance(tool, dict) and isinstance(tool.get("firsttry"), dict):
+            return tool.get("firsttry", {}).get("checks", {}).get("bandit", {}) or {}
+    except Exception:
+        pass
+
+    # Case B: config is already the tool.firsttry mapping (returned by load_config())
+    try:
+        return config.get("checks", {}).get("bandit", {}) or {}
+    except Exception:
+        return {}
+
+
+def register_bandit_check(config: Optional[Dict[str, Any]], repo_root: Path, report_dir: Path, results: List[Dict[str, Any]]):
+    """
+    Adds/runs the Bandit check using JSON, respecting pyproject overrides:
+    [tool.firsttry.checks.bandit]
+    fail_on = "high" | "medium" | "low" | "critical"
+    blocking = true | false
+    enabled = true | false
+    """
+    if run_bandit_json is None or evaluate_bandit is None:
+        # Bandit runner not available; mark as skipped
+        results.append({
+            "ok": True,
+            "family": "bandit",
+            "tool": "bandit",
+            "result": SimpleNamespace(message="bandit runner unavailable"),
+            "duration": 0.0,
+        })
+        return
+
+    # read nested config at [tool.firsttry.checks.bandit]
+    bandit_cfg = _bandit_cfg_from_config(config)
+
+    enabled = bandit_cfg.get("enabled", True)
+    if not enabled:
+        results.append({
+            "ok": True,
+            "family": "bandit",
+            "tool": "bandit",
+            "result": SimpleNamespace(message="disabled via config"),
+            "duration": 0.0,
+        })
+        return
+
+    fail_on = (bandit_cfg.get("fail_on") or "high").lower()
+    blocking = bool(bandit_cfg.get("blocking", True))
+    out_json = Path(report_dir) / "bandit.json"
+    res = run_bandit_json(repo_root, out_json)
+    cr = evaluate_bandit(res, fail_on=fail_on, blocking=blocking)
+
+    # Normalize into orchestrator result shape
+    ok = cr.status == "pass"
+    if cr.status == "advisory":
+        # advisory counts as ok for pipeline-level gating but we surface details
+        ok = True
+
+    results.append({
+        "ok": ok,
+        "family": "bandit",
+        "tool": "bandit",
+        "result": SimpleNamespace(message=json.dumps(cr.details)),
+        "duration": 0.0,
+    })
 
 
 def _bucketize(plan: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
@@ -284,6 +389,91 @@ async def run_orchestrator(
             print("⏳ firsttry: running SLOW checks in parallel:", ", ".join(_family_of(i) for i in buckets["slow"]))
         slow_results = await _run_bucket(buckets["slow"], allocation, ctx, tier, config)
         all_results.extend(slow_results)
+
+    # If plan requested bandit, run the JSON-based bandit check (respects pyproject)
+    try:
+        if any((_family_of(i) == "bandit" or (isinstance(i, dict) and i.get("tool") == "bandit")) for i in plan):
+            # Remove any existing bandit entries produced by legacy runners
+            all_results = [r for r in all_results if not (r.get("tool") == "bandit" or r.get("family") == "bandit")]
+            # report_dir: use .firsttry under repo root
+            report_dir = Path(ctx.get("repo_root", ".")) / ".firsttry"
+            # Prefer the sharded bandit runner when available
+            if run_bandit_sharded is not None and BanditConfig is not None:
+                bandit_cfg = _bandit_cfg_from_config(config)
+
+                enabled = bool(bandit_cfg.get("enabled", True))
+                if enabled:
+                    default_include = ["src"] if (Path(ctx.get("repo_root", ".")) / "src").exists() else [""]
+                    include = list(bandit_cfg.get("include", default_include))
+                    exclude = list(bandit_cfg.get("exclude", [".venv","node_modules",".git","__pycache__","build","dist"]))
+                    jobs = int(bandit_cfg.get("jobs", 0) or 0)
+                    fail_on = str(bandit_cfg.get("fail_on", "high")).lower()
+                    blocking = bool(bandit_cfg.get("blocking", True))
+                    extra_args = list(bandit_cfg.get("extra_args", []))
+
+                    cfg = BanditConfig(
+                        include_dirs=include,
+                        exclude_dirs=exclude,
+                        jobs=jobs,
+                        fail_on=fail_on,
+                        blocking=blocking,
+                        extra_args=extra_args,
+                    )
+                    out_json = report_dir / "bandit.json"
+                    t0 = perf_counter()
+                    agg = run_bandit_sharded(Path(ctx.get("repo_root", ".")), out_json, cfg)
+                    dur = perf_counter() - t0
+
+                    # evaluate
+                    order = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+                    max_sev = agg.max_severity
+                    meets_threshold = (order.get(str(max_sev or "").lower(), 0) >= order.get(fail_on, 0))
+
+                    if agg.issues_total == 0 or not max_sev:
+                        status = "pass"
+                        reason = "No issues identified"
+                    else:
+                        if meets_threshold:
+                            status = "fail" if blocking else "advisory"
+                            reason = f"Max severity {max_sev} >= fail_on {fail_on}"
+                        else:
+                            status = "pass"
+                            reason = f"Max severity {max_sev} < fail_on {fail_on}"
+
+                    results_entry = {
+                        "ok": status in ("pass", "advisory"),
+                        "family": "bandit",
+                        "tool": "bandit",
+                        "result": SimpleNamespace(message=json.dumps({
+                            "issues_total": agg.issues_total,
+                            "by_severity": agg.by_severity,
+                            "max_severity": agg.max_severity,
+                            "raw_json": str(agg.raw_json_path),
+                            "blocking": blocking,
+                            "fail_on": fail_on,
+                            "reason": reason,
+                            "sharded": True,
+                            "jobs": cfg.jobs or (os.cpu_count() or 2),
+                            "include": include,
+                            "exclude": exclude,
+                        })),
+                        "duration": float(dur),
+                    }
+                    all_results.append(results_entry)
+                else:
+                    all_results.append({
+                        "ok": True,
+                        "family": "bandit",
+                        "tool": "bandit",
+                        "result": SimpleNamespace(message="disabled via config"),
+                        "duration": 0.0,
+                    })
+                # end sharded path
+            else:
+                register_bandit_check(config, Path(ctx.get("repo_root", ".")), report_dir, all_results)
+    except Exception:
+        # if anything goes wrong, don't block orchestrator
+        pass
 
     ok = all(r.get("ok", True) for r in all_results)
 

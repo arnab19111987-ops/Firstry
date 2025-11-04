@@ -21,7 +21,9 @@ def repo_id_from_root(root):
     except Exception:
         remote = root
     key = (root + "::" + remote).encode()
-    return hashlib.sha1(key).hexdigest()
+    # use a stronger hash (SHA256) for repository identifiers to avoid
+    # Bandit B324 warnings about weak hashes
+    return hashlib.sha256(key).hexdigest()
 
 
 def state_file_for_repo(root):

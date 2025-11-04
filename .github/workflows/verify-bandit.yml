@@ -1,0 +1,22 @@
+name: Verify Bandit Advisory
+on: [push, pull_request]
+jobs:
+  bandit-advisory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: pip install -e . bandit pytest
+      - name: Run ft pro and verify bandit advisory
+        env:
+          FIRSTTRY_LICENSE_KEY: devkey-abcdefghijkl
+        run: |
+          ft pro --report-json .firsttry/ci_pro.json --show-report || true
+          python - <<'PY'
+          import json; d=json.load(open(".firsttry/ci_pro.json"))
+          b=[c for c in d["checks"] if c.get("name")=="bandit"][0]
+          assert b["status"] in {"pass","advisory"}, b
+          PY

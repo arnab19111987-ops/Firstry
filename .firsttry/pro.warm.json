@@ -1,0 +1,45 @@
+{
+  "schema_version": 2,
+  "repo": "/workspaces/Firstry",
+  "tier": "pro",
+  "profile": "fast",
+  "run_at": "2025-11-04T08:57:00.067193+00:00",
+  "timing": {
+    "fast_ms": 32435,
+    "mutating_ms": 0,
+    "slow_ms": 0,
+    "total_ms": 32438
+  },
+  "checks": [
+    {
+      "id": "ruff",
+      "status": "ok",
+      "duration_s": 0.017904976000863826
+    },
+    {
+      "id": "mypy",
+      "status": "ok",
+      "duration_s": 9.32532378399992
+    },
+    {
+      "id": "pytest",
+      "status": "ok",
+      "duration_s": 7.252779436999845
+    },
+    {
+      "id": "pip-audit",
+      "status": "ok",
+      "duration_s": 6.512628320000658
+    },
+    {
+      "id": "ci-parity",
+      "status": "fail",
+      "duration_s": 0.0
+    },
+    {
+      "id": "bandit",
+      "status": "ok",
+      "duration_s": 9.329626738001025
+    }
+  ]
+}

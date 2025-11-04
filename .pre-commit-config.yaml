@@ -31,3 +31,11 @@ repos:
         language: system
         pass_filenames: false
         stages: [push]
+  - repo: local
+    hooks:
+      - id: ignore-firsttry-dir
+        name: ignore .firsttry directory
+        entry: echo
+        language: system
+        files: "^$"
+        exclude: "(^|/)(\.firsttry|dist)/"

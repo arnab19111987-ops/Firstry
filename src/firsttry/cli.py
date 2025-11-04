@@ -488,31 +488,40 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run_async_cli(coro) -> int:
+    # Use run_async helper to ensure a fresh event loop with graceful shutdown
     try:
-        return asyncio.run(coro)
-    except RuntimeError:
-        # We're running inside an existing event loop (e.g., test harness).
-        # Run the coroutine in a dedicated thread using asyncio.run to
-        # ensure proper loop lifecycle and avoid "Event loop is closed"
-        # warnings during interpreter shutdown.
-        import threading
+        # Prefer our safe runner in case subprocess transports or other
+        # tasks need an explicit graceful shutdown to avoid finalizer errors.
+        from .async_utils import run_async
 
-        result: dict = {}
+        rc = run_async(coro)
+        return int(rc) if isinstance(rc, int) else 0
+    except Exception:
+        # Fallback to asyncio.run if anything goes wrong
+        try:
+            return asyncio.run(coro)
+        except SystemExit as se:
+            return int(se.code) if isinstance(se.code, int) else 0
+        except Exception:
+            # Last-resort: run coroutine in a thread to avoid interfering with
+            # existing event loops in environments like pytest.
+            import threading
 
-        def _runner():
-            try:
-                rc = asyncio.run(coro)
-                result["rc"] = int(rc) if isinstance(rc, int) else 0
-            except SystemExit as se:
-                # allow explicit SystemExit from deep codepaths
-                result["rc"] = int(se.code) if isinstance(se.code, int) else 0
-            except Exception:
-                result["rc"] = 1
+            result: dict = {}
 
-        th = threading.Thread(target=_runner, daemon=True)
-        th.start()
-        th.join()
-        return int(result.get("rc", 0))
+            def _runner():
+                try:
+                    rc = asyncio.run(coro)
+                    result["rc"] = int(rc) if isinstance(rc, int) else 0
+                except SystemExit as se:
+                    result["rc"] = int(se.code) if isinstance(se.code, int) else 0
+                except Exception:
+                    result["rc"] = 1
+
+            th = threading.Thread(target=_runner, daemon=True)
+            th.start()
+            th.join()
+            return int(result.get("rc", 0))
 
 
 def cmd_lint(*, args=None) -> int:

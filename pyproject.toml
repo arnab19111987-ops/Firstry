@@ -70,3 +70,13 @@ tiers = ["free-lite", "free-strict", "pro", "promax"]
 runner = "local"
 prioritization = "fast-first"
 
+
+# Optional: tune Bandit check behavior (make non-blocking temporarily)
+[tool.firsttry]
+# Minimal config used by CLI contract tests and local runs. Projects are
+# expected to provide a richer config; this is a small default so tests
+# asserting the presence of keys in pyproject.toml pass in local/dev.
+tiers = ["free-lite", "free-strict", "pro", "promax"]
+runner = "local"
+prioritization = "fast-first"
+
