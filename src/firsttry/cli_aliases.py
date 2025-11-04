@@ -49,7 +49,7 @@ def main() -> None:
     # make sure we always have a place to write reports
     report_dir = Path(".firsttry")
     report_dir.mkdir(parents=True, exist_ok=True)
-    default_report = str(report_dir / "report.json")
+    default_report = str(report_dir / "last_run.json")
 
     # 1) core, tier-aware fast flows
     if sub in ("lite", "fast"):
@@ -210,11 +210,11 @@ def _print_help() -> None:
 
 Core fast flows:
   {prog} lite
-      -> python -m firsttry run fast --tier free-lite --profile fast --report-json .firsttry/report.json
+      -> python -m firsttry run fast --tier free-lite --profile fast --report-json .firsttry/last_run.json
   {prog} strict
-      -> python -m firsttry run strict --tier free-strict --report-json .firsttry/report.json
+    -> python -m firsttry run strict --tier free-strict --report-json .firsttry/last_run.json
   {prog} pro
-      -> python -m firsttry run fast --tier pro --report-json .firsttry/report.json
+    -> python -m firsttry run fast --tier pro --report-json .firsttry/last_run.json
 
 Maintenance / visibility:
   {prog} doctor
@@ -224,19 +224,19 @@ Maintenance / visibility:
   {prog} setup
       -> python -m firsttry setup --install-hooks
   {prog} dash
-      -> python -m firsttry inspect dashboard --json .firsttry/report.json
+            -> python -m firsttry inspect dashboard --json .firsttry/last_run.json
   {prog} lock
-      -> python -m firsttry inspect report --json .firsttry/report.json --filter locked=true
+    -> python -m firsttry inspect report --json .firsttry/last_run.json --filter locked=true
 
 Tool-focused (faster than manual in FT):
   {prog} ruff
-      -> python -m firsttry run fast --tier free-lite --report-json .firsttry/report.json
+    -> python -m firsttry run fast --tier free-lite --report-json .firsttry/last_run.json
   {prog} mypy
-      -> python -m firsttry run fast --tier free-strict --report-json .firsttry/report.json
+    -> python -m firsttry run fast --tier free-strict --report-json .firsttry/last_run.json
   {prog} pytest
-      -> python -m firsttry run fast --tier free-strict --report-json .firsttry/report.json
+    -> python -m firsttry run fast --tier free-strict --report-json .firsttry/last_run.json
   {prog} js-test
-      -> python -m firsttry run fast --tier free-strict --report-json .firsttry/report.json
+    -> python -m firsttry run fast --tier free-strict --report-json .firsttry/last_run.json
 
 Extra flags still work, e.g.:
   {prog} lite --show-report

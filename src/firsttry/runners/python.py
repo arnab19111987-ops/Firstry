@@ -65,8 +65,7 @@ class RuffRunner(BaseRunner):
             roots = _discover_python_roots(repo_root)
             paths = " ".join(roots)
             cmd = item.get("cmd") or f"ruff --format=json {paths}"
-
-        res = await self.run_cmd(name, "ruff", cmd)
+        res = await self.run_cmd(name, "ruff", cmd, ctx=ctx)
         # parse JSON if present
         try:
             data = json.loads(res.message)
@@ -88,7 +87,7 @@ class MypyRunner(BaseRunner):
     async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
         name = f"type[{idx}]"
         cmd = item.get("cmd") or "mypy ."
-        res = await self.run_cmd(name, "mypy", cmd)
+        res = await self.run_cmd(name, "mypy", cmd, ctx=ctx)
         if not res.ok:
             m = _MYPY_CODE_RE.search(res.message)
             if m:
@@ -110,7 +109,7 @@ class PytestRunner(BaseRunner):
         else:
             test_paths = _discover_test_paths(repo_root)
             cmd = item.get("cmd") or f"pytest -q {' '.join(test_paths)}"
-        return await self.run_cmd(name, "pytest", cmd)
+        return await self.run_cmd(name, "pytest", cmd, ctx=ctx)
 
 
 class BanditRunner(BaseRunner):
@@ -119,4 +118,4 @@ class BanditRunner(BaseRunner):
     async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
         name = f"security[{idx}]"
         cmd = item.get("cmd") or "bandit -q -r ."
-        return await self.run_cmd(name, "bandit", cmd)
+        return await self.run_cmd(name, "bandit", cmd, ctx=ctx)

@@ -3,6 +3,13 @@ from __future__ import annotations
 
 import json
 import subprocess
+import threading
+from typing import Optional
+try:
+    # import the global sync semaphore set by the orchestrator
+    from firsttry.runners.base import GLOBAL_SYNC_SEMAPHORE  # type: ignore
+except Exception:
+    GLOBAL_SYNC_SEMAPHORE = None
 from typing import List, Tuple
 import os
 import fnmatch
@@ -28,16 +35,28 @@ def _run_cmd(cmd: list[str]) -> tuple[int, str, str]:
     We NEVER raise here. Scanner should not crash just because
     a tool isn't installed yet on the user's machine.
     """
+    # If a global synchronous semaphore is available, acquire it to respect
+    # the same concurrency ceiling as the async orchestrator.
+    sem: Optional[threading.Semaphore] = GLOBAL_SYNC_SEMAPHORE
+    if sem:
+        sem.acquire()
     try:
-        proc = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except FileNotFoundError:
-        return 127, "", "not found"
-    return proc.returncode, proc.stdout, proc.stderr
+        try:
+            proc = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        except FileNotFoundError:
+            return 127, "", "not found"
+        return proc.returncode, proc.stdout, proc.stderr
+    finally:
+        if sem:
+            try:
+                sem.release()
+            except Exception:
+                pass
 
 
 # -----------------------------------------------------------------------------

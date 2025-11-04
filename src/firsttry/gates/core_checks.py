@@ -10,6 +10,7 @@ All commands auto-skip if tool not installed → never crash.
 import importlib.util
 import subprocess
 from pathlib import Path
+from ..ignore import is_ignored
 
 # ────────────────────────────────
 # helper
@@ -58,23 +59,7 @@ def run_autofix():
     return _run(["ruff", "check", ".", "--fix"], "auto-fixing trivial issues")
 
 
-IGNORE_DIRS = {
-    ".git",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".venv",
-    ".venv-build",
-    ".idea",
-    ".vscode",
-    ".devcontainer",
-    "docs",
-    "dist",
-    "build",
-    ".github",
-    "__pycache__",
-    "htmlcov",
-    "coverage",
-}
+# Use centralized ignore rules
 
 def run_repo_sanity():
     missing = []
@@ -83,7 +68,7 @@ def run_repo_sanity():
             continue
         name = p.name
         # skip ignored dirs
-        if name in IGNORE_DIRS:
+        if is_ignored(Path(name)):
             continue
         # skip .egg-info directories
         if name.endswith(".egg-info"):

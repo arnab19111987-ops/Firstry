@@ -172,44 +172,87 @@ def filter_plan_by_changes(
     
     # Get changed files
     changed_files = get_changed_files(repo_root)
-    
+
     if not changed_files:
         print("📝 No changes detected - skipping all checks")
         return []
-    
-    # Categorize changes
-    file_categories = categorize_changed_files(changed_files)
-    
-    # Map to relevant checks
-    relevant_checks = map_changes_to_checks(file_categories)
-    
-    if "*all*" in relevant_checks:
-        print("🔄 Major changes detected - running all checks")
-        return plan
-    
-    if not relevant_checks:
-        return []
-    
-    # Filter plan
-    filtered_plan = []
-    skipped_checks = []
-    
+
+    # Cheap domain inference from changed file names
+    PY_EXT = {".py", ".pyi"}
+    JS_EXT = {".js", ".ts", ".jsx", ".tsx"}
+
+    def infer_domains(paths: List[str]) -> set[str]:
+        out = set()
+        for p in paths:
+            if p.endswith("pyproject.toml") or Path(p).suffix in PY_EXT or p.endswith(".py"):
+                out.add("python")
+            if p.endswith("package.json") or Path(p).suffix in JS_EXT:
+                out.add("node")
+            if p.endswith("Dockerfile") or p.endswith("dockerfile"):
+                out.add("infra")
+        return out
+
+    domains = infer_domains(changed_files)
+    if not domains:
+        # fallback to existing behavior
+        file_categories = categorize_changed_files(changed_files)
+        relevant_checks = map_changes_to_checks(file_categories)
+        if "*all*" in relevant_checks:
+            print("🔄 Major changes detected - running all checks")
+            return plan
+        if not relevant_checks:
+            return []
+
+        # old-style filtering
+        filtered_plan = []
+        skipped_checks = []
+        for item in plan:
+            tool = item.get("tool") or item.get("family") or str(item)
+            family = item.get("family") or tool
+            if any(check in tool.lower() or check in family.lower() for check in relevant_checks):
+                filtered_plan.append(item)
+            else:
+                skipped_checks.append(tool)
+        if skipped_checks:
+            print(f"⏭️  Skipped checks (no relevant changes): {', '.join(skipped_checks)}")
+        if filtered_plan:
+            relevant_tools = [item.get("tool") or str(item) for item in filtered_plan]
+            print(f"🎯 Running relevant checks: {', '.join(relevant_tools)}")
+        return filtered_plan
+
+    # Domain-aware filtering: keep items that declare lang or map to domain families
+    FAMILY_TO_DOMAIN = {
+        # python families
+        "ruff": "python",
+        "mypy": "python",
+        "pytest": "python",
+        "bandit": "python",
+        "black": "python",
+        # node families
+        "npm": "node",
+        "eslint": "node",
+        "npm-test": "node",
+        # infra / others can be extended
+    }
+
+    keep = []
+    skipped = []
     for item in plan:
-        tool = item.get("tool") or item.get("family") or str(item)
-        family = item.get("family") or tool
-        
-        # Check if this tool/family is relevant
-        if any(check in tool.lower() or check in family.lower() for check in relevant_checks):
-            filtered_plan.append(item)
+        fam = (item.get("family") or "").lower()
+        lang = (item.get("lang") or "").lower()
+        domain_match = False
+        if lang and lang in domains:
+            domain_match = True
+        elif fam and FAMILY_TO_DOMAIN.get(fam) in domains:
+            domain_match = True
+
+        if domain_match:
+            keep.append(item)
         else:
-            skipped_checks.append(tool)
-    
-    # Show what was skipped
-    if skipped_checks:
-        print(f"⏭️  Skipped checks (no relevant changes): {', '.join(skipped_checks)}")
-    
-    if filtered_plan:
-        relevant_tools = [item.get("tool") or str(item) for item in filtered_plan]
-        print(f"🎯 Running relevant checks: {', '.join(relevant_tools)}")
-    
-    return filtered_plan
+            skipped.append(item.get("tool") or fam or str(item))
+
+    if skipped:
+        print(f"⏭️  Skipped checks (no relevant domain changes): {', '.join(skipped[:20])}")
+    if keep:
+        print(f"🎯 Running domain-relevant checks: {', '.join([i.get('tool') or i.get('family') for i in keep][:20])}")
+    return keep

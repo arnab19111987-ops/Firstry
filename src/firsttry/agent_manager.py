@@ -86,4 +86,8 @@ class SmartAgentManager:
                 if alloc[fam] > 1 and total_alloc > budget:
                     alloc[fam] -= 1
                     total_alloc -= 1
+        # Ensure mutating families are never given >1 worker (safety clamp)
+        for fam in list(alloc):
+            if fam in ("black", "black-fix", "ruff-fix", "isort", "autoflake", "autofix"):
+                alloc[fam] = 1
         return alloc

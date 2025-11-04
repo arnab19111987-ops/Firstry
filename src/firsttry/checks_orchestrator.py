@@ -11,6 +11,30 @@ from typing import Any, Dict, List, Optional
 
 from .profiler import get_profiler
 
+# soft imports / fallbacks: allow orchestrator to be imported even if
+# agent_manager or config_loader move around during refactors.
+try:
+    from firsttry.agent_manager import SmartAgentManager  # type: ignore
+except Exception:  # pragma: no cover - fallback for analysis tools
+    class SmartAgentManager:  # type: ignore
+        @classmethod
+        def from_context(cls, cpu_hint=None):
+            return cls()
+
+        def allocate_for_plan(self, plan):
+            # default: 1 worker per family
+            alloc = {}
+            for p in plan:
+                fam = (p.get("family") or "").strip().lower()
+                alloc[fam] = max(1, alloc.get(fam, 0))
+            return alloc
+
+try:
+    from firsttry.config_loader import load_config  # type: ignore
+except Exception:
+    def load_config(_):  # type: ignore
+        return {}
+
 # Bandit JSON runner
 try:
     from .checks.bandit_runner import run_bandit_json, evaluate_bandit
@@ -71,7 +95,8 @@ async def _timed_runner_execution(runner, worker_id: int, ctx: Dict[str, Any], i
 try:  # safe fallback so copy-paste doesn't explode
     from .runners import RUNNERS  # type: ignore
 except Exception:  # pragma: no cover
-    from .runner import RUNNERS  # type: ignore
+    # fallback stub if runners package isn't importable during static analysis
+    RUNNERS = {}
 
 
 # ---- BUCKET DEFINITIONS -------------------------------------------------
@@ -104,6 +129,42 @@ SLOW_FAMILIES = {
     "ci_parity",
 }
 
+    # Map generic families produced by plan builders to canonical bucket families
+FAMILY_ALIASES = {
+    "tests": "pytest",
+    "lint": "ruff",
+    "type": "mypy",
+    "security": "bandit",
+    # default - may be adjusted dynamically below
+    "deps": "safety",
+}
+
+# Prefer the deps runner that exists in the loaded RUNNERS mapping.
+# Use pip-audit if available, otherwise fall back to safety.
+try:
+    if "pip-audit" in RUNNERS:
+        FAMILY_ALIASES["deps"] = "pip-audit"
+    elif "safety" in RUNNERS:
+        FAMILY_ALIASES["deps"] = "safety"
+    else:
+        FAMILY_ALIASES["deps"] = FAMILY_ALIASES.get("deps", "safety")
+except Exception:
+    # conservative default
+    FAMILY_ALIASES["deps"] = FAMILY_ALIASES.get("deps", "safety")
+
+
+def _norm_family(item: Any) -> str:
+    """Return canonical family name for an item, applying aliases.
+
+    This helper centralizes normalization so callers can rely on a
+    consistent canonical family string for bucket membership checks.
+    """
+    raw = ""
+    if isinstance(item, dict):
+        raw = (item.get("family") or _family_of(item) or "").strip().lower()
+    else:
+        raw = str(item).strip().lower()
+    return FAMILY_ALIASES.get(raw, raw)
 
 def _family_of(item: Any) -> str:
     """Extract family/tool name from item (supports both dict and string)."""
@@ -121,6 +182,36 @@ def _pyproj_cfg(cfg: Optional[Dict[str, Any]], path: str, key: str, default=None
         return cfg.get(path, {}).get(key, default) if isinstance(cfg, dict) else default
     except Exception:
         return default
+
+
+# Per-family worker caps (enforced after allocation)
+# keys may be tool-only (e.g. 'ruff') or family:tool (e.g. 'python:ruff')
+FAMILY_WORKER_CAPS: Dict[str, int] = {
+    "ruff": 1,
+    "mypy": 1,
+    "pytest": 2,
+    "bandit": 2,
+}
+
+# runtime-adjustable caps loaded from config [tool.firsttry.runner.caps]
+RUNNER_CAPS: Dict[str, int] = {}
+
+
+def _cap_workers(family: str, tool: str, workers: int) -> int:
+    """Apply per-family/tool caps to the requested worker count."""
+    if not family and not tool:
+        return workers
+    key1 = f"{family}:{tool}".lower()
+    key2 = (tool or "").lower()
+    key3 = (family or "").lower()
+    # config-specified caps take precedence
+    for k in (key1, key2, key3):
+        if k in RUNNER_CAPS:
+            return min(workers, int(RUNNER_CAPS[k]))
+    for k in (key1, key2, key3):
+        if k in FAMILY_WORKER_CAPS:
+            return min(workers, FAMILY_WORKER_CAPS[k])
+    return workers
 
 
 def _bandit_cfg_from_config(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -207,12 +298,14 @@ def _bucketize(plan: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     other: List[Dict[str, Any]] = []
 
     for item in plan:
-        family = _family_of(item)
-        if family in MUTATING_FAMILIES:
+        # normalize family names and apply aliases so buckets match expected names
+        raw = (item.get("family") or _family_of(item) or "").strip().lower()
+        fam = FAMILY_ALIASES.get(raw, raw)
+        if fam in MUTATING_FAMILIES:
             mutating.append(item)
-        elif family in FAST_FAMILIES:
+        elif fam in FAST_FAMILIES:
             fast.append(item)
-        elif family in SLOW_FAMILIES:
+        elif fam in SLOW_FAMILIES:
             slow.append(item)
         else:
             other.append(item)
@@ -261,7 +354,18 @@ async def _run_bucket_with_timeout(
                 continue
         
         # create up to N tasks for this family
-        for i in range(max(1, workers)):
+        # Keep allocation lookup using the original family key (allocator expects that),
+        # but determine canonical family (via _norm_family) when checking mutating membership.
+        family = (item.get("family") or "").lower()
+        tool = item.get("tool") or family
+        workers = max(1, allocation.get(family, 1))
+        canonical = _norm_family(item)
+        # Hard clamp for safety: never allow >1 concurrent workers for mutating families
+        if canonical in MUTATING_FAMILIES:
+            workers = 1
+        # Apply configured per-family caps (ruff=1, mypy=1, pytest<=2, bandit<=2)
+        workers = _cap_workers(family, tool, workers)
+        for i in range(workers):
             # Wrap with timeout - capture all loop variables to avoid closure bug
             async def run_with_timeout(captured_item=item, captured_family=family, captured_tool=tool, captured_runner=runner, worker_id=i):
                 try:
@@ -355,38 +459,78 @@ async def run_orchestrator(
     from .profiler import reset_profiler
     reset_profiler()
 
+    # Create a shared global semaphore for bounded concurrency across all runners.
+    # Config may optionally include [runner].max_workers to override CPU-based default.
+    try:
+        max_workers_cfg = 0
+        if isinstance(config, dict) and config.get("runner"):
+            max_workers_cfg = int((config.get("runner") or {}).get("max_workers", 0) or 0)
+    except Exception:
+        max_workers_cfg = 0
+
+    import threading
+    cpu = os.cpu_count() or 4
+    limit = cpu if max_workers_cfg in (0, None) else max(1, max_workers_cfg)
+    # create the async semaphore instance and expose it to runners via ctx
+    SEM = asyncio.Semaphore(limit)
+    ctx.setdefault("global_semaphore", SEM)
+    # Also expose a sync semaphore for synchronous helpers (scanner) to respect same cap
+    try:
+        from firsttry.runners import base as runners_base
+
+        runners_base.GLOBAL_SYNC_SEMAPHORE = threading.Semaphore(limit)
+    except Exception:
+        # best-effort: if import fails, skip sync semaphore wiring
+        pass
+
     if not plan:
         return {"ok": True, "checks": []}
 
     buckets = _bucketize(plan)
+    # Load per-runner caps from config if provided (tool.firsttry.runner.caps)
+    try:
+        cfg_caps = (config or {}).get("runner", {}).get("caps", {}) if isinstance(config, dict) else {}
+        if isinstance(cfg_caps, dict):
+            # normalize keys to lowercase
+            for k, v in cfg_caps.items():
+                try:
+                    RUNNER_CAPS[k.lower()] = int(v)
+                except Exception:
+                    pass
+    except Exception:
+        pass
     all_results: List[Dict[str, Any]] = []
 
     # 1) fast → parallel (gives immediate feedback)
     if buckets["fast"]:
         if show_phases:
-            print("⚡ firsttry: running FAST checks in parallel:", ", ".join(_family_of(i) for i in buckets["fast"]))
+            print("⚡ firsttry: running FAST checks in parallel:", ", ".join(_norm_family(i) for i in buckets["fast"]))
         fast_results = await _run_bucket(buckets["fast"], allocation, ctx, tier, config)
         all_results.extend(fast_results)
 
     # 2) mutating → serial (avoids file conflicts)
     if buckets["mutating"]:
         if show_phases:
-            print("→ firsttry: running MUTATING checks serially:", ", ".join(_family_of(i) for i in buckets["mutating"]))
+            print("→ firsttry: running MUTATING checks serially:", ", ".join(_norm_family(i) for i in buckets["mutating"]))
         for item in buckets["mutating"]:
-            mut_res = await _run_bucket([item], allocation, ctx, tier, config)
-            all_results.extend(mut_res)
+            # Shadow allocation so this item's family is clamped to 1
+            orig_fam = (item.get("family") or "").lower()
+            alloc1 = dict(allocation)
+            alloc1[orig_fam] = 1
+            res = await _run_bucket([item], alloc1, ctx, tier, config)
+            all_results.extend(res)
 
     # 3) other → parallel (safe default)
     if buckets["other"]:
         if show_phases:
-            print("→ firsttry: running OTHER checks in parallel:", ", ".join(_family_of(i) for i in buckets["other"]))
+            print("→ firsttry: running OTHER checks in parallel:", ", ".join(_norm_family(i) for i in buckets["other"]))
         other_results = await _run_bucket(buckets["other"], allocation, ctx, tier, config)
         all_results.extend(other_results)
 
     # 4) slow → parallel, but last so users see quick wins first
     if buckets["slow"]:
         if show_phases:
-            print("⏳ firsttry: running SLOW checks in parallel:", ", ".join(_family_of(i) for i in buckets["slow"]))
+            print("⏳ firsttry: running SLOW checks in parallel:", ", ".join(_norm_family(i) for i in buckets["slow"]))
         slow_results = await _run_bucket(buckets["slow"], allocation, ctx, tier, config)
         all_results.extend(slow_results)
 

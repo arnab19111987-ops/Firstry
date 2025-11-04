@@ -13,7 +13,7 @@ class PipAuditRunner(BaseRunner):
     async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
         name = f"deps[{idx}]"
         cmd = item.get("cmd") or "pip-audit -f json"
-        res = await self.run_cmd(name, "pip-audit", cmd)
+        res = await self.run_cmd(name, "pip-audit", cmd, ctx=ctx)
         # even if nonzero, try to parse
         try:
             data = json.loads(res.message)
@@ -32,7 +32,7 @@ class NpmAuditRunner(BaseRunner):
     async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
         name = f"deps-npm[{idx}]"
         cmd = item.get("cmd") or "npm audit --json"
-        res = await self.run_cmd(name, "npm-audit", cmd)
+        res = await self.run_cmd(name, "npm-audit", cmd, ctx=ctx)
         try:
             data = json.loads(res.message)
             vulns = data.get("vulnerabilities") or {}

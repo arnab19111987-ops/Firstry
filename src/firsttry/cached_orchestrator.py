@@ -74,7 +74,12 @@ async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, s
 
 async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):
     """Run subprocess with semaphore for concurrency control"""
-    async with sem:
+    # Prefer a global semaphore to be supplied by the caller/context.
+    # If sem is provided, use it; otherwise run without local semaphore.
+    if sem:
+        async with sem:
+            return await run_subprocess(cmd, cwd=cwd)
+    else:
         return await run_subprocess(cmd, cwd=cwd)
 
 
@@ -159,7 +164,8 @@ async def run_checks_for_profile(
     fast_checks = buckets["fast"]
     if fast_checks:
         progress.bucket_header("fast", len(fast_checks))
-        fast_sem = asyncio.Semaphore(MAX_WORKERS)
+    # Do not create a local semaphore here; rely on a global semaphore when available.
+    fast_sem = None
         fast_tasks = []
         
         for chk in fast_checks:
@@ -246,7 +252,8 @@ async def run_checks_for_profile(
     slow_checks = buckets["slow"]
     if slow_checks:
         progress.bucket_header("slow", len(slow_checks))
-        slow_sem = asyncio.Semaphore(MAX_WORKERS)
+    # Do not create a local semaphore here; rely on a global semaphore when available.
+    slow_sem = None
         slow_tasks = []
         
         for chk in slow_checks:

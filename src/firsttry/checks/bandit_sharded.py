@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal, Optional
+from ..ignore import IGNORE_DIRS
 
 Severity = Literal["low", "medium", "high", "critical"]
 
@@ -40,7 +41,7 @@ class BanditAggregate:
 
 def run_bandit_sharded(
     repo_root: Path,
-    out_json: Path,
+    out_json: Optional[Path],
     cfg: BanditConfig,
     max_files_per_shard: int = 250,
 ) -> BanditAggregate:
@@ -51,10 +52,14 @@ def run_bandit_sharded(
     - Writes a merged JSON at `out_json`
     """
     repo_root = repo_root.resolve()
-    out_json = out_json.resolve()
-    out_json.parent.mkdir(parents=True, exist_ok=True)
+    # out_json may be None -> in-memory mode (no files written)
+    if out_json is not None:
+        out_json = out_json.resolve()
+        out_json.parent.mkdir(parents=True, exist_ok=True)
 
-    files = list(_discover_py_files(repo_root, cfg.include_dirs, cfg.exclude_dirs))
+    # respect config-provided exclude_dirs, otherwise fall back to global ignores
+    exclude_dirs = list(cfg.exclude_dirs) if cfg.exclude_dirs else list(IGNORE_DIRS)
+    files = list(_discover_py_files(repo_root, cfg.include_dirs, exclude_dirs))
     if not files:
         # nothing to scan -> write an empty JSON with minimal fields
         _write_empty_bandit_json(out_json)
@@ -82,31 +87,45 @@ def run_bandit_sharded(
         _merge_jsons([shard_json], out_json)
         return _aggregate(out_json)
 
-    # Parallel execution into a temp dir
-    tmpdir = Path(tempfile.mkdtemp(prefix="bandit_shards_"))
-    json_paths: list[Path] = []
+    # Parallel execution: collect per-shard parsed JSON (in-memory) and merge
+    parsed_fragments: list[dict] = []
 
-    try:
-        def do_one(idx_and_files: tuple[int, list[Path]]) -> BanditShardResult:
-            idx, file_list = idx_and_files
-            sj = tmpdir / f"bandit.shard.{idx:03d}.json"
-            _run_bandit_on_files(file_list, sj, cfg.extra_args)
-            cnt = _count_results(sj)
-            return BanditShardResult(json_path=sj, results_count=cnt)
+    def do_one_collect(file_list: list[Path]) -> dict:
+        # If out_json is provided, _run_bandit_on_files will write to that path (handled per-call)
+        return _run_bandit_on_files(file_list, None, cfg.extra_args) or {}
 
-        with ThreadPoolExecutor(max_workers=jobs) as ex:
-            futs = {ex.submit(do_one, (i, shard)): i for i, shard in enumerate(shards)}
-            for fut in as_completed(futs):
-                res = fut.result()
-                json_paths.append(res.json_path)
+    with ThreadPoolExecutor(max_workers=jobs) as ex:
+        futs = [ex.submit(do_one_collect, shard) for shard in shards]
+        for fut in as_completed(futs):
+            parsed = fut.result()
+            if isinstance(parsed, dict):
+                parsed_fragments.append(parsed)
 
-        # Merge final JSON
-        _merge_jsons(json_paths, out_json)
+    # Merge parsed fragments in-memory
+    merged = {"results": []}
+    for p in parsed_fragments:
+        res = p.get("results") or []
+        if isinstance(res, list):
+            merged["results"].extend(res)
+
+    # If caller requested a merged file, write it; otherwise operate in-memory
+    if out_json is not None:
+        out_json.write_text(json.dumps(merged, indent=2), encoding="utf-8")
         return _aggregate(out_json)
-
-    finally:
-        # keep only the final merged JSON; delete temp shard files
-        shutil.rmtree(tmpdir, ignore_errors=True)
+    else:
+        # Build aggregate from in-memory merged JSON
+        issues = merged.get("results") or []
+        by = {}
+        max_sev: Optional[Severity] = None
+        max_rank = 0
+        order = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+        for it in issues:
+            sev = str(it.get("issue_severity") or "").lower()
+            by[sev] = by.get(sev, 0) + 1
+            r = order.get(sev, 0)
+            if r > max_rank:
+                max_rank, max_sev = r, sev if sev in ("low", "medium", "high", "critical") else None
+        return BanditAggregate(issues_total=len(issues), by_severity=by, max_severity=max_sev, raw_json_path=Path(""))
 
 
 # ---------- internals ----------
@@ -131,10 +150,12 @@ def _discover_py_files(
             yield p
 
 
-def _run_bandit_on_files(files: list[Path], out_json: Path, extra_args: Optional[list[str]]):
-    out_json.parent.mkdir(parents=True, exist_ok=True)
-    # Bandit supports multiple file targets; avoid -r for faster direct file mode.
-    cmd = ["bandit", "-f", "json", "-o", str(out_json)]
+def _run_bandit_on_files(files: list[Path], out_json: Optional[Path], extra_args: Optional[list[str]]):
+    # Bandit supports multiple file targets; prefer capturing stdout when
+    # no output file is requested so we avoid writing disk artifacts.
+    cmd = ["bandit", "-f", "json"]
+    if out_json is not None:
+        cmd += ["-o", str(out_json)]
     if extra_args:
         cmd.extend(extra_args)
     # Append file paths
@@ -143,10 +164,22 @@ def _run_bandit_on_files(files: list[Path], out_json: Path, extra_args: Optional
         # use the async-safe sync wrapper to avoid leaking event loops
         from firsttry.utils.async_subproc import run_sync
 
-        run_sync(cmd, check=False, capture_output=True, text=True)
+        if out_json is not None:
+            run_sync(cmd, check=False, capture_output=True, text=True)
+            return None
+        else:
+            proc = run_sync(cmd, check=False, capture_output=True, text=True)
+            out = proc.stdout or ""
+            try:
+                return json.loads(out or "{}")
+            except Exception:
+                return {}
     except FileNotFoundError:
-        # write empty JSON so merge logic stays simple
-        _write_empty_bandit_json(out_json)
+        # If bandit not found, return empty structure or write empty JSON if requested
+        if out_json is not None:
+            _write_empty_bandit_json(out_json)
+            return None
+        return {}
 
 
 def _merge_jsons(shard_jsons: list[Path], merged_out: Path):

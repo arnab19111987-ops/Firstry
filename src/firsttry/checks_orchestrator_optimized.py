@@ -24,7 +24,11 @@ async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, s
 
 
 async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):
-    async with sem:
+    # Prefer a caller-supplied/global semaphore; if none provided, run directly.
+    if sem:
+        async with sem:
+            return await run_subprocess(cmd, cwd=cwd)
+    else:
         return await run_subprocess(cmd, cwd=cwd)
 
 
@@ -90,7 +94,8 @@ async def run_checks_for_profile(
     # ─────────────────────────────
     fast_checks = [c for c in checks if CHECK_REGISTRY[c]["bucket"] == "fast"]
     print(f"⚡ FAST ({len(fast_checks)} checks)")
-    fast_sem = asyncio.Semaphore(MAX_WORKERS)
+    # Do not create a local semaphore here; prefer a global semaphore created by the main orchestrator.
+    fast_sem = None
     fast_tasks = []
 
     for chk in fast_checks:
@@ -151,7 +156,8 @@ async def run_checks_for_profile(
     # IMPORTANT: if any mutating check ran, do NOT trust cache for slow ones
     use_cache_for_slow = use_cache and not mutating_ran
 
-    slow_sem = asyncio.Semaphore(MAX_WORKERS)
+    # Do not create a local semaphore here; prefer a global semaphore created by the main orchestrator.
+    slow_sem = None
     slow_tasks = []
     for chk in slow_checks:
         inp_hash = _tool_input_hash(root, chk)

@@ -21,6 +21,15 @@ dependencies = [
   "pytest>=7.0.0",
 ]
 
+[project.optional-dependencies]
+# pin common dev/test tools so CI and local runs align
+dev = [
+  "pytest==8.3.3",
+  "mypy==1.11.2",
+  "ruff==0.6.9",
+  "bandit==1.7.9",
+]
+
 [project.scripts]
 firsttry = "firsttry.cli:main"
 ft = "firsttry.cli_aliases:main"

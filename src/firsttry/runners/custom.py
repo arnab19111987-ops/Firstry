@@ -15,4 +15,4 @@ class CustomRunner(BaseRunner):
         cmd = item.get("cmd")
         if not cmd:
             return RunnerResult(name=name, ok=True, message="no cmd", tool=display_name)
-        return await self.run_cmd(name, display_name, cmd)
+        return await self.run_cmd(name, display_name, cmd, ctx=ctx)

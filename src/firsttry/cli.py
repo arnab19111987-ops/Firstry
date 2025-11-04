@@ -5,6 +5,8 @@ import argparse
 import asyncio
 import sys
 from typing import Callable, Optional
+import json
+from pathlib import Path
 
 from . import __version__
 from .license_guard import get_tier
@@ -16,6 +18,19 @@ from .agent_manager import SmartAgentManager
 from .repo_rules import plan_checks_for_repo
 from .checks_orchestrator import run_checks_with_allocation_and_plan
 from .sync import sync_with_ci
+from .plan_adapter import adapt_planner_steps
+
+# change_detector helpers - provide safe fallbacks so the CLI fast-path
+# doesn't crash if the module was moved or unavailable in a trimmed build
+try:
+    from .change_detector import git_changed_paths, filter_python, no_changes_since_head
+except Exception:
+    def no_changes_since_head() -> bool:  # type: ignore
+        return False
+    def git_changed_paths(_="HEAD"):
+        return set()
+    def filter_python(paths):
+        return set(paths)
 
 # add these imports for old enhanced handlers
 try:
@@ -748,7 +763,13 @@ async def run_fast_pipeline(*, args=None) -> int:
             if ci_plan is not None:
                 plan = ci_plan
             else:
-                plan = plan_checks_for_repo(repo_profile)
+                    # plan_checks_for_repo returns orchestrator-ready items in this codebase
+                    plan = plan_checks_for_repo(repo_profile)
+
+        # If build_plan-style dict was returned by a planner, adapt into orchestrator items
+        # (some callers may return {'root':..., 'steps': [...]})
+        if isinstance(plan, dict) and plan.get("steps"):
+            plan = adapt_planner_steps(plan.get("steps") or [])
 
     # 3) apply overrides (works for all sources)
     plan = apply_overrides_to_plan(plan, cfg)
