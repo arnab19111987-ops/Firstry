@@ -1,4 +1,6 @@
-import subprocess, json, re, sys, os
+import subprocess
+import re
+import os
 
 # The commands we promise publicly
 PUBLIC_CMDS = [
@@ -60,5 +62,9 @@ def test_no_stubbed_functions_in_src():
 
 def test_pyproject_config_contract():
     # pyproject must contain the expected [tool.firsttry] shape
-    out = run_ok(["bash","-lc","python - <<'PY'\nimport tomllib,sys; f=open('pyproject.toml','rb'); d=tomllib.load(f);\ncfg=d.get('tool',{}).get('firsttry',{})\nassert 'tiers' in cfg and 'runner' in cfg and 'prioritization' in cfg\nprint('OK')\nPY"])
-    assert "OK" in out
+    import tomllib
+
+    with open("pyproject.toml", "rb") as fh:
+        data = tomllib.load(fh)
+    cfg = data.get("tool", {}).get("firsttry", {})
+    assert "tiers" in cfg and "runner" in cfg and "prioritization" in cfg

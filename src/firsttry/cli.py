@@ -349,6 +349,20 @@ def build_parser() -> argparse.ArgumentParser:
     # the ft alias `ft doctor-tools`.
     sub.add_parser("doctor-tools", help=argparse.SUPPRESS)
 
+    # --- license ---------------------------------------------------------
+    p_license = sub.add_parser("license", help="Manage FirstTry license keys")
+    sp = p_license.add_subparsers(dest="license_cmd", required=True)
+
+    p_act = sp.add_parser("activate", help="Activate and persist a license key")
+    p_act.add_argument("key", nargs="?", help="License key (or omit to prompt)")
+    p_act.add_argument("--scope", choices=["repo", "user"], default="user", help="Save scope: repo or user")
+
+    p_show = sp.add_parser("show", help="Show current license key (env|repo|user)")
+    p_show.add_argument("--scope", choices=["env", "repo", "user", "all"], default="all")
+
+    p_deact = sp.add_parser("deactivate", help="Remove persisted license key(s)")
+    p_deact.add_argument("--scope", choices=["repo", "user", "all"], default="all")
+
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
 
@@ -440,6 +454,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"doctor-tools: probe failed: {e}")
             return 2
 
+    elif args.cmd == "license":
+        # license subcommands
+        try:
+            from .license_cli import cmd_activate, cmd_show, cmd_deactivate
+        except Exception as e:
+            print(f"license: unavailable in this build: {e}")
+            return 2
+
+        subcmd = getattr(args, "license_cmd", None)
+        if subcmd == "activate":
+            return cmd_activate(args)
+        if subcmd == "show":
+            return cmd_show(args)
+        if subcmd == "deactivate":
+            return cmd_deactivate(args)
+        print("Unknown license command")
+        return 2
+
     elif args.cmd == "mirror-ci":
         if cmd_mirror_ci is None:
             print("mirror-ci not available in this build")
@@ -459,9 +491,28 @@ def _run_async_cli(coro) -> int:
     try:
         return asyncio.run(coro)
     except RuntimeError:
-        loop = asyncio.get_event_loop()
-        loop.create_task(coro)
-        return 0
+        # We're running inside an existing event loop (e.g., test harness).
+        # Run the coroutine in a dedicated thread using asyncio.run to
+        # ensure proper loop lifecycle and avoid "Event loop is closed"
+        # warnings during interpreter shutdown.
+        import threading
+
+        result: dict = {}
+
+        def _runner():
+            try:
+                rc = asyncio.run(coro)
+                result["rc"] = int(rc) if isinstance(rc, int) else 0
+            except SystemExit as se:
+                # allow explicit SystemExit from deep codepaths
+                result["rc"] = int(se.code) if isinstance(se.code, int) else 0
+            except Exception:
+                result["rc"] = 1
+
+        th = threading.Thread(target=_runner, daemon=True)
+        th.start()
+        th.join()
+        return int(result.get("rc", 0))
 
 
 def cmd_lint(*, args=None) -> int:

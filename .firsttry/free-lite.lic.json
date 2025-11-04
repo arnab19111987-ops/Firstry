@@ -1,51 +1,55 @@
 {
   "schema_version": 2,
   "repo": "/workspaces/Firstry",
-  "tier": "free-strict",
-  "profile": "strict",
-  "run_at": "2025-11-04T05:54:46.935689+00:00",
+  "tier": "free-lite",
+  "profile": "fast",
+  "run_at": "2025-11-04T06:16:38.671129+00:00",
   "timing": {
-    "fast_ms": 10139,
+    "fast_ms": 17393,
     "mutating_ms": 0,
-    "slow_ms": 32,
-    "total_ms": 10173
+    "slow_ms": 34,
+    "total_ms": 17430
   },
   "checks": [
     {
       "id": "ruff",
       "status": "ok",
-      "duration_s": 0.045000090999565145
+      "duration_s": 0.042951175000780495
     },
     {
       "id": "mypy",
-      "status": "ok",
-      "duration_s": 3.733420641000521
+      "status": "skipped",
+      "locked": true,
+      "reason": "Available in Pro tier",
+      "duration_s": 3.453730884999459
     },
     {
       "id": "pytest",
-      "status": "ok",
-      "duration_s": 3.118626976000087
+      "status": "skipped",
+      "locked": true,
+      "reason": "Available in Pro tier",
+      "duration_s": 3.0586805390003065
     },
     {
       "id": "bandit",
       "status": "skipped",
       "locked": true,
       "reason": "Available in Pro tier",
-      "duration_s": 0.004209931999866967
+      "duration_s": 0.009581108000020322
     },
     {
       "id": "pip-audit",
       "status": "skipped",
       "locked": true,
       "reason": "Available in Pro tier",
-      "duration_s": 3.2397459920002802
+      "duration_s": 10.831433469999865
     },
     {
       "id": "ci-parity",
       "status": "skipped",
       "locked": true,
       "reason": "Available in Pro tier",
-      "duration_s": 0.032980250000036904
+      "duration_s": 0.03427327899953525
     }
   ]
 }

@@ -1,4 +1,3 @@
-import pytest, os
 
 
 def pytest_configure(config):

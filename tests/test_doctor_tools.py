@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import shutil
-from typing import Dict
 
-import pytest
 
 
 def test_doctor_tools_all_present(monkeypatch):

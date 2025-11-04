@@ -98,12 +98,43 @@ def doctor_tools_probe() -> Tuple[Dict[str, str], bool]:
     tools = list_required_tools()
     results: Dict[str, str] = {}
     all_ok = True
+    # Provide actionable install hints depending on the platform to help
+    # developers fix missing external tools quickly.
+    import platform
+
+    sysname = platform.system().lower()
+
+    def install_hint_for(tool: str) -> str:
+        if sysname == "linux":
+            # Distinguish Alpine (musl) vs Debian-like using /etc/os-release
+            try:
+                with open("/etc/os-release") as f:
+                    osrel = f.read().lower()
+                if "alpine" in osrel:
+                    if tool in ("node", "npm"):
+                        return "apk add --no-cache nodejs npm"
+                    return f"apk add --no-cache {tool}"
+            except Exception:
+                pass
+            # Debian/Ubuntu fallback
+            if tool in ("node", "npm"):
+                return "sudo apt-get update && sudo apt-get install -y nodejs npm"
+            return f"sudo apt-get install -y {tool}"
+        if sysname == "darwin":
+            # macOS
+            if tool in ("node", "npm"):
+                return "brew install node"
+            return f"brew install {tool}"
+        # Generic fallback
+        return f"Install {tool} (package manager: apt/yum/brew)"
+
     for t in tools:
         path = shutil.which(t)
         if path:
-            results[t] = "ok"
+            results[t] = f"ok ({path})"
         else:
-            results[t] = "missing"
+            hint = install_hint_for(t)
+            results[t] = f"missing — Install hint: {hint}"
             all_ok = False
     return results, all_ok
 

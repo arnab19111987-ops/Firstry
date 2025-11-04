@@ -1,7 +1,11 @@
 import tomllib
-import pytest
-pytest.importorskip("pydantic")
-from pydantic import BaseModel
+
+try:
+    from pydantic import BaseModel
+except Exception:
+    import pytest
+
+    pytest.skip("pydantic not available", allow_module_level=True)
 
 
 class Runner(BaseModel):

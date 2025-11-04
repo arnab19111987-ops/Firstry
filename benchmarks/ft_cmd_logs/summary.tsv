@@ -1,0 +1,8 @@
+cmd	exit	log
+ft --help	1	benchmarks/ft_cmd_logs/20251104-060706_ft_--help.log
+ft version	0	benchmarks/ft_cmd_logs/20251104-060707_ft_version.log
+ft lite --report-json .firsttry/free-lite.ent.json --show-report	0	benchmarks/ft_cmd_logs/20251104-060708_ft_lite_--report-json_.firsttry_free-lite.ent.json_--show-report.log
+ft strict --report-json .firsttry/free-strict.ent.json --show-report	0	benchmarks/ft_cmd_logs/20251104-060713_ft_strict_--report-json_.firsttry_free-strict.ent.json_--show-report.log
+ft pro --report-json .firsttry/pro.ent.json --show-report	1	benchmarks/ft_cmd_logs/20251104-060717_ft_pro_--report-json_.firsttry_pro.ent.json_--show-report.log
+ft promax --report-json .firsttry/promax.ent.json --show-report	1	benchmarks/ft_cmd_logs/20251104-060719_ft_promax_--report-json_.firsttry_promax.ent.json_--show-report.log
+ft doctor --tools	2	benchmarks/ft_cmd_logs/20251104-060720_ft_doctor_--tools.log

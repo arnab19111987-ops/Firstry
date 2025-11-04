@@ -78,6 +78,31 @@ def _get_license_key_from_env() -> Optional[str]:
     )
 
 
+def _get_license_key() -> Optional[str]:
+    """Return license key from env or persisted loader (env takes precedence).
+
+    This consults the environment first, then falls back to the repo/user
+    persisted locations via firsttry.license_loader if available.
+    """
+    # 1) env vars
+    env_key = _get_license_key_from_env()
+    if env_key:
+        return env_key
+
+    # 2) persisted locations (repo, user)
+    try:
+        from .license_loader import load_license_key
+
+        k = load_license_key()
+        if k:
+            return k
+    except Exception:
+        # loader missing or failed → fall back to no key
+        pass
+
+    return None
+
+
 def _validate_license_max_security(license_key: str, tier: str) -> None:
     """
     "Max security" = ALWAYS validate + ALWAYS fail closed.
@@ -120,7 +145,7 @@ def ensure_license_for_current_tier() -> None:
     if not is_paid_tier(tier):
         # Free Lite and Free Strict are free forever
         return
-    license_key = _get_license_key_from_env()
+    license_key = _get_license_key()
     if not license_key:
         raise LicenseError(
             f"Tier '{tier}' is locked. Set FIRSTTRY_LICENSE_KEY=... or run `firsttry license activate`."
