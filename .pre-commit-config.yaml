@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks: [{id: ruff, args: ["--fix"]}]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks: [{id: mypy}]
+  - repo: local
+    hooks:
+      - id: ft-lite
+        name: ft lite
+        entry: ft lite
+        language: system
+        pass_filenames: false
+      - id: ft-strict
+        name: ft strict (pre-push)
+        entry: ft strict
+        language: system
+        pass_filenames: false
+        stages: [push]

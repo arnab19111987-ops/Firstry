@@ -20,9 +20,16 @@ class PytestTool:
         import subprocess
 
         cmd = ["pytest"] + self.extra_args
-        proc = subprocess.run(
-            cmd, cwd=self.repo_root, capture_output=True, text=True
-        )
+        try:
+            proc = subprocess.run(
+                cmd, cwd=self.repo_root, capture_output=True, text=True
+            )
+        except FileNotFoundError:
+            return "fail", {
+                "stdout": "",
+                "stderr": "pytest executable not found in PATH. Hint: pip install pytest or run: make dev",
+            }
+
         if proc.returncode == 0:
             return "ok", {"stdout": proc.stdout, "stderr": proc.stderr}
         return "fail", {"stdout": proc.stdout, "stderr": proc.stderr}

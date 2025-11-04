@@ -61,8 +61,16 @@ def _collect_workflow_files(root: str) -> List[str]:
 
 
 def _safe_load_yaml(path: str) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    # Read file contents first and pass the string to yaml.safe_load.
+    # Some YAML stream readers behave differently when given a file object
+    # vs a string; normalizing to a string makes parsing more predictable
+    # across PyYAML versions and environments.
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return yaml.safe_load(content) or {}
+    except Exception:
+        return {}
 
 
 def _normalize_step(

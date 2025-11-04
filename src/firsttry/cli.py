@@ -327,6 +327,13 @@ def build_parser() -> argparse.ArgumentParser:
             choices=["report-json", "telemetry"],
             help="Additional validation checks (report-json, telemetry). Can be used multiple times.",
         )
+        # Extra: probe installed external tools
+        p_doctor.add_argument(
+            "--tools",
+            dest="tools",
+            action="store_true",
+            help="Check presence of external tools (ruff, mypy, pytest, node, npm)",
+        )
 
     # --- mirror-ci ---------------------------------------------------------
     if cmd_mirror_ci is not None:
@@ -335,6 +342,12 @@ def build_parser() -> argparse.ArgumentParser:
             help="Run the CI-parity pipeline locally (same steps as CI)",
         )
         p_mirror.add_argument("--root", help="Repository root path", default=".")
+
+    # --- doctor-tools (shortcut) -----------------------------------------
+    # Separate subcommand that only checks the external tools. This can be
+    # used in CI or by developers quickly: `firsttry doctor-tools` or via
+    # the ft alias `ft doctor-tools`.
+    sub.add_parser("doctor-tools", help=argparse.SUPPRESS)
 
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
@@ -400,7 +413,32 @@ def main(argv: list[str] | None = None) -> int:
         if handle_doctor is None:
             print("doctor not available in this build")
             return 1
+        # If user requested a tools probe, run it and print a concise table.
+        if getattr(args, "tools", False):
+            try:
+                from .doctor import doctor_tools_probe
+
+                results, ok = doctor_tools_probe()
+                for name, status in results.items():
+                    print(f"{name}: {status}")
+                return 0 if ok else 2
+            except Exception as e:
+                print(f"doctor-tools: probe failed: {e}")
+                return 2
         return handle_doctor(args)
+
+    elif args.cmd == "doctor-tools":
+        # Top-level shortcut: call the tools probe and exit nonzero if missing
+        try:
+            from .doctor import doctor_tools_probe
+
+            results, ok = doctor_tools_probe()
+            for name, status in results.items():
+                print(f"{name}: {status}")
+            return 0 if ok else 2
+        except Exception as e:
+            print(f"doctor-tools: probe failed: {e}")
+            return 2
 
     elif args.cmd == "mirror-ci":
         if cmd_mirror_ci is None:

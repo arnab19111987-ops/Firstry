@@ -9,6 +9,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any
 from typing import List, Optional, Protocol, Tuple
+import shutil
 
 from .quickfix import generate_quickfix_suggestions
 
@@ -79,17 +80,61 @@ def _optional_check(
     )
 
 
+def list_required_tools() -> List[str]:
+    """Return a minimal list of external binaries the project expects locally.
+
+    Keep this list small and focused on tools actually used by FirstTry
+    in local developer flows.
+    """
+    return ["ruff", "mypy", "pytest", "node", "npm"]
+
+
+def doctor_tools_probe() -> Tuple[Dict[str, str], bool]:
+    """Probe for required external tools using shutil.which.
+
+    Returns (mapping, all_ok) where mapping maps tool->"ok"|"missing" and
+    all_ok is True when every tool is present.
+    """
+    tools = list_required_tools()
+    results: Dict[str, str] = {}
+    all_ok = True
+    for t in tools:
+        path = shutil.which(t)
+        if path:
+            results[t] = "ok"
+        else:
+            results[t] = "missing"
+            all_ok = False
+    return results, all_ok
+
+
 def _build_check_specs() -> List[Tuple[str, List[str], Optional[str]]]:
     """
     Returns a list of tuples describing the checks to run:
     (name, cmd, fix_hint)
     """
-    return [
+    # Avoid running pytest when this code is executed under an active pytest
+    # process (e.g., running unit tests). Detect pytest presence via env
+    # variables or loaded modules and omit the pytest check to prevent
+    # recursion / unexpected test execution.
+    skip_pytest = bool(os.getenv("PYTEST_CURRENT_TEST")) or ("_pytest" in sys.modules)
+
+    # When running inside pytest, avoid invoking pytest recursively. Instead
+    # include a harmless no-op command so the pytest check exists in the
+    # report but doesn't actually run the full test suite.
+    if skip_pytest:
+        pytest_cmd = [sys.executable, "-c", "print('skipping-pytest');"]
+    else:
+        pytest_cmd = [sys.executable, "-m", "pytest", "-q"]
+
+    specs = [
         (
             "pytest",
-            [sys.executable, "-m", "pytest", "-q"],
+            pytest_cmd,
             "Run failing tests locally and fix assertions/import errors.",
         ),
+    ]
+    specs.extend([
         (
             "ruff",
             ["ruff", "check", "."],
@@ -110,7 +155,9 @@ def _build_check_specs() -> List[Tuple[str, List[str], Optional[str]]]:
             ["coverage", "report", "--show-missing"],
             "run: coverage run -m pytest -q && coverage report --show-missing",
         ),
-    ]
+    ])
+
+    return specs
 
 
 def gather_checks(

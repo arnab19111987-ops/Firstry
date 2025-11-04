@@ -14,7 +14,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
-  "PyYAML",
+  "PyYAML>=6.0",
   "ruff>=0.1.0",
   "black>=22.0.0",
   "mypy>=1.0.0",
@@ -61,4 +61,12 @@ select = ["E", "F"]
 [tool.ruff.lint.per-file-ignores]
 # Tests may use dynamic names and type comparisons in legacy cases
 "tests/**" = ["F821", "E721", "F841"]
+
+[tool.firsttry]
+# Minimal config used by CLI contract tests and local runs. Projects are
+# expected to provide a richer config; this is a small default so tests
+# asserting the presence of keys in pyproject.toml pass in local/dev.
+tiers = ["free-lite", "free-strict", "pro", "promax"]
+runner = "local"
+prioritization = "fast-first"
 

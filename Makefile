@@ -47,3 +47,28 @@ bench:  ## run full benchmark suite
 
 bench-short:  ## run shortened benchmark (future feature)
 	python benchmarks/bench_runner.py --short
+
+
+# Developer convenience targets
+.PHONY: dev
+dev:
+	@bash scripts/bootstrap_dev.sh
+
+.PHONY: ft-help
+ft-help:
+	@which ft || true
+	@ft --help || python -m firsttry --help
+
+.PHONY: test
+test:
+	PYTHONPATH=./src pytest tests
+
+.PHONY: test-all
+test-all:
+	PYTHONPATH=./src pytest
+
+
+.PHONY: perf
+perf:
+	bash scripts/perf_snapshot.sh
+

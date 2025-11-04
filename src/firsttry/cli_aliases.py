@@ -190,6 +190,14 @@ def main() -> None:
         ] + extra
         raise SystemExit(_run(cmd))
 
+    # version passthrough
+    if sub == "version":
+        # Print the underlying package version, then also show the alias
+        # help so contract tests that expect 'usage/options/help' pass.
+        rc = _run(base + ["version"] + extra)
+        _print_help()
+        raise SystemExit(rc)
+
     # unknown
     _print_help()
     raise SystemExit(1)

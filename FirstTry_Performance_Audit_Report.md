@@ -14,22 +14,22 @@ This report compares FirstTry's execution time against real-world developer comm
 
 | Tool | Command | Avg Time (s) | Cache | Relative Speed vs FirstTry |
 |------|---------|-------------|-------|---------------------------|
-| **FirstTry (free-lite)** | `firsttry run free` | 0.36 | cold | 1.0x (baseline) |
-| **FirstTry (free-lite)** | `firsttry run free` | 0.37 | warm | 1.0x (baseline) |
-| Ruff | `ruff check .` | 0.06 | cold | 6.2x slower individually |
-| **Manual Total** | All commands sequentially | 0.06 | cold | 6.2x faster when run sequentially |
+| **FirstTry (free-lite)** | `firsttry run free` | 0.17 | cold | 1.0x (baseline) |
+| **FirstTry (free-lite)** | `firsttry run free` | 0.13 | warm | 1.0x (baseline) |
+| Ruff | `ruff check .` | 0.00 | cold | 126.1x slower individually |
+| **Manual Total** | All commands sequentially | 0.00 | cold | 126.1x faster when run sequentially |
 
 ### Analysis: Free Lite
 
 **Cache Effectiveness:**
-- Cold run: 0.36s
-- Warm run: 0.37s
-- Cache speedup: -1.5% improvement
+- Cold run: 0.17s
+- Warm run: 0.13s
+- Cache speedup: 23.8% improvement
 
 **Individual Tool Performance:**
-- ruff: 0.06s (FirstTry adds 0.30s overhead)
+- ruff: 0.00s (FirstTry adds 0.17s overhead)
 
-**FirstTry Overhead:** FirstTry adds 0.30s (523.5%) due to orchestration and UI formatting.
+**FirstTry Overhead:** FirstTry adds 0.17s (12509.3%) due to orchestration and UI formatting.
 
 ## 🎯 Free Strict Tier Analysis
 
@@ -37,26 +37,26 @@ This report compares FirstTry's execution time against real-world developer comm
 
 | Tool | Command | Avg Time (s) | Cache | Relative Speed vs FirstTry |
 |------|---------|-------------|-------|---------------------------|
-| **FirstTry (free-strict)** | `firsttry run free` | 31.19 | cold | 1.0x (baseline) |
-| **FirstTry (free-strict)** | `firsttry run free` | 32.73 | warm | 1.0x (baseline) |
-| Ruff | `ruff check .` | 0.05 | cold | 681.5x slower individually |
-| Mypy | `mypy .` | 1.43 | cold | 21.8x slower individually |
-| Pytest | `pytest -x --tb=no -q tests/test_import_installable_package.py` | 0.50 | cold | 62.4x slower individually |
-| **Manual Total** | All commands sequentially | 1.98 | cold | 15.8x faster when run sequentially |
+| **FirstTry (free-strict)** | `firsttry run free` | 0.12 | cold | 1.0x (baseline) |
+| **FirstTry (free-strict)** | `firsttry run free` | 0.13 | warm | 1.0x (baseline) |
+| Ruff | `ruff check .` | 0.00 | cold | 90.3x slower individually |
+| Mypy | `mypy .` | 0.00 | cold | 86.9x slower individually |
+| Pytest | `pytest -x --tb=no -q tests/test_import_installable_package.py` | 0.00 | cold | 95.3x slower individually |
+| **Manual Total** | All commands sequentially | 0.00 | cold | 30.2x faster when run sequentially |
 
 ### Analysis: Free Strict
 
 **Cache Effectiveness:**
-- Cold run: 31.19s
-- Warm run: 32.73s
-- Cache speedup: -5.0% improvement
+- Cold run: 0.12s
+- Warm run: 0.13s
+- Cache speedup: -5.7% improvement
 
 **Individual Tool Performance:**
-- ruff: 0.05s (FirstTry adds 31.14s overhead)
-- mypy: 1.43s (FirstTry adds 29.76s overhead)
-- pytest: 0.50s (FirstTry adds 30.69s overhead)
+- ruff: 0.00s (FirstTry adds 0.12s overhead)
+- mypy: 0.00s (FirstTry adds 0.12s overhead)
+- pytest: 0.00s (FirstTry adds 0.12s overhead)
 
-**FirstTry Overhead:** FirstTry adds 29.21s (1476.3%) due to orchestration and UI formatting.
+**FirstTry Overhead:** FirstTry adds 0.12s (2922.0%) due to orchestration and UI formatting.
 
 ## 🎯 Key Findings
 

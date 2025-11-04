@@ -20,9 +20,16 @@ class MypyTool:
         import subprocess
 
         cmd = ["mypy"] + self.targets
-        proc = subprocess.run(
-            cmd, cwd=self.repo_root, capture_output=True, text=True
-        )
+        try:
+            proc = subprocess.run(
+                cmd, cwd=self.repo_root, capture_output=True, text=True
+            )
+        except FileNotFoundError:
+            return "fail", {
+                "stdout": "",
+                "stderr": "mypy executable not found in PATH. Hint: pip install mypy or run: make dev",
+            }
+
         if proc.returncode == 0:
             return "ok", {"stdout": proc.stdout, "stderr": proc.stderr}
         return "fail", {"stdout": proc.stdout, "stderr": proc.stderr}

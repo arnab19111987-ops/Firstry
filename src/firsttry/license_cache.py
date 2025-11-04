@@ -95,3 +95,20 @@ def assert_license(product: str = "firsttry") -> Tuple[bool, list[str], str]:
     ok, feats = _lc.remote_verify(url, product, key)
     save_cache(CachedLicense(key=key, valid=ok, features=feats, ts=_now()))
     return ok, feats, "remote"
+
+
+def validate_license_key(key: str, tier: str = "pro", strict: bool = False) -> Tuple[bool, dict]:
+    """Backward-compatible validation shim used by license_guard.
+
+    In this development environment we accept any non-empty key longer
+    than 10 characters as valid. Returns (ok, metadata).
+    """
+    if key and len(key) > 10:
+        return True, {"tier": tier}
+    return False, {}
+
+
+def validate(key: str, tier: str = "pro") -> bool:
+    """Legacy validate() interface expected by some callers."""
+    ok, _ = validate_license_key(key, tier=tier)
+    return ok

@@ -1,27 +1,32 @@
 CLI compatibility
 -----------------
 
+Current Truth vs Plan:
+
+- Current Truth: the CLI is implemented using `argparse` in `src/firsttry/cli.py` (see `build_parser()` / `main()`).
+- Planned: a future migration to Click is noted in docs; the code currently uses argparse.
+
 This repository provides a small CLI under `firsttry`.
 
-- The modern entrypoint uses Click and is implemented in `firsttry/cli.py` as a `click.Group` named `main`.
 - For backward-compatibility with some older tests, `firsttry/cli.py` also exposes `build_parser()` and argparse-compatible wrappers that return integer exit codes.
 
 How to run
 
-- Click (recommended):
+- How to run (argparse):
 
 ```bash
 python -m firsttry run --gate pre-commit
 python -m firsttry mirror-ci --root .
 ```
 
-- Argparse wrapper (programmatic/tests):
+Argparse wrapper (programmatic/tests):
 
 ```python
 from firsttry.cli import build_parser
 parser = build_parser()
 ns = parser.parse_args(["run", "--gate", "pre-commit"])
-rc = ns.func(ns)
+# Use `firsttry.main()` to execute the parsed args in tests
+rc = firsttry.cli.main(ns)
 ```
 
 Notes

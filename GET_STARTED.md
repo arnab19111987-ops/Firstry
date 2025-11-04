@@ -34,6 +34,24 @@ fi
 make check
 ```
 
+### Check your toolchain
+
+You can quickly verify essential external tools are available locally:
+
+```bash
+ft doctor --tools
+# nonzero exit if something critical is missing
+```
+
+### Perf snapshot
+
+Capture a small, versioned snapshot of local perf & reports:
+
+```bash
+make perf
+# logs at benchmarks/ft_logs/
+```
+
 Install the VSIX (optional)
 
 1. Download the latest `firsttry-extension-0.0.1.vsix` from the v0.1.0-beta release: https://github.com/arnab19111987-ops/Firstry/releases/tag/v0.1.0-beta
