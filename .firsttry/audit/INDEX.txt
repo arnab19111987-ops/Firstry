@@ -1,0 +1,64 @@
+Audit proof pack index for FirstTry flow audit
+
+Files produced by automated audit (all read-only evidence):
+
+/tmp/audit_python_version.txt        - python -V
+/tmp/audit_which_python.txt         - which python
+/tmp/audit_pip_freeze.txt           - pip freeze
+/tmp/audit_uname.txt                - uname -a
+/tmp/audit_nproc.txt                - nproc / getconf
+/tmp/audit_env.txt                  - sorted environment
+
+/tmp/audit_git_sha.txt              - git rev-parse --short HEAD
+/tmp/audit_git_status.txt           - working_changes count
+/tmp/audit_files_all.txt            - git ls-files
+/tmp/audit_files_all_count.txt      - tracked files count
+/tmp/audit_files_py.txt             - git ls-files "*.py"
+/tmp/audit_files_py_count.txt       - tracked python files count
+/tmp/audit_files_src.txt            - git ls-files "src/**"
+/tmp/audit_files_src_count.txt      - tracked src files count
+
+/tmp/audit_firsttry_meta.txt       - firsttry module version/path
+/tmp/audit_importtime_firsttry.txt  - python -X importtime import firsttry
+/tmp/audit_firsttry_version_cmd.txt - python -m firsttry version (if available)
+
+FT run logs and extracts:
+/tmp/ft_free_lite_debug.log
+/tmp/extract_free_lite_tools.txt
+/tmp/ft_free_strict_debug.log
+/tmp/extract_free_strict_tools.txt
+/tmp/ft_pro_debug.log
+/tmp/ft_promax_debug.log
+
+Direct tool baselines:
+/tmp/manual_ruff.log
+/tmp/manual_mypy.log
+/tmp/manual_pytest.log
+/tmp/manual_pytest_collect.log
+/tmp/manual_pip_audit.log
+/tmp/bandit_plain.log
+/tmp/bandit_plain.json
+/tmp/bandit_excl.log
+/tmp/bandit_excl.json
+/tmp/audit_bandit_counts.txt  (embedded counts printed to console)
+
+Ignore/exclude & subprocess audit:
+/tmp/audit_ignore_py.txt
+/tmp/audit_ignore_usage.txt
+/tmp/audit_subproc_sites.txt
+/tmp/audit_subproc_site_async_subproc.py.txt
+/tmp/audit_subproc_site_bandit_runner.py.txt
+/tmp/audit_subproc_site_bandit_sharded.py.txt
+/tmp/audit_subproc_site_cached_orchestrator.py.txt
+/tmp/audit_subproc_site_parallel_pytest.py.txt
+/tmp/audit_subproc_site_base.py.txt
+/tmp/audit_subproc_site_checks_orchestrator_optimized.py.txt
+
+Dev harness runs (bandit sharded):
+/tmp/run_bandit_sharded_jobs2.log
+/tmp/run_bandit_sharded_jobs4.log
+/workspaces/Firstry/.firsttry/bandit_sharded/bandit_merged.json
+
+Notes:
+- All artifacts were produced without modifying repository code. 
+- Large JSON outputs (bandit) are saved under /tmp and .firsttry as listed above.

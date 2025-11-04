@@ -61,15 +61,18 @@ def run_tool_with_smart_cache(repo_root: str, tool_name: str, input_paths: List[
 
 
 async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, str]:
-    """Run subprocess and return exit code + output"""
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        cwd=cwd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-    stdout, _ = await proc.communicate()
-    return proc.returncode, stdout.decode("utf-8", "replace")
+    """Run subprocess in a thread using the blocking helper and return exit code + output.
+
+    Running the blocking `run_cmd` in a thread avoids creating asyncio
+    subprocess transports that can get finalized after the loop closes.
+    """
+    from firsttry.proc import run_cmd
+
+    # Offload the blocking subprocess.run to a thread so we don't create
+    # asyncio transports in the running event loop.
+    proc = await asyncio.to_thread(run_cmd, list(cmd), cwd=str(cwd) if cwd is not None else None, capture_output=True, text=True)
+    stdout = proc.stdout or ""
+    return proc.returncode, str(stdout)
 
 
 async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):
@@ -85,13 +88,20 @@ async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None =
 
 def _glob_inputs(repo_root: Path, patterns: List[str]) -> List[Path]:
     """Expand glob patterns to actual file paths"""
+    # IMPORTANT: do NOT perform a repository-wide pre-walk here. Tools are
+    # expected to provide exact file lists via their `input_paths()` method.
+    # Keep this function cheap: return the pattern paths rooted at repo_root
+    # without expanding directories or performing recursive globbing.
     if not patterns:
         return []
     out: List[Path] = []
     for pat in patterns:
-        # Use pathlib's glob for consistency
-        matches = list(repo_root.glob(pat))
-        out.extend(matches)
+        # Normalize to a Path relative to the repo root, but do not rglob.
+        try:
+            p = repo_root / pat
+        except Exception:
+            p = Path(pat)
+        out.append(p)
     return out
 
 
@@ -166,24 +176,24 @@ async def run_checks_for_profile(
         progress.bucket_header("fast", len(fast_checks))
     # Do not create a local semaphore here; rely on a global semaphore when available.
     fast_sem = None
-        fast_tasks = []
-        
-        for chk in fast_checks:
-            # Use smart cache that replays failed results  
-            patterns = get_check_inputs(chk)
-            input_paths = [str(f) for f in _glob_inputs(root, patterns)]
-            
-            if use_cache:
-                cache_result = run_tool_with_smart_cache(repo_root, chk, input_paths)
-                if cache_result["cached"]:
-                    progress.cached(chk)
-                    results[chk] = cache_result
-                    continue
-            
-            # Need to run the tool - compute hash for cache writing
-            inp_hash = _tool_input_hash(root, chk)
-            cmd = _tool_to_cmd(chk)
-            fast_tasks.append((chk, inp_hash, _bounded_run(cmd, fast_sem, cwd=repo_root)))        # Execute pending fast checks
+    fast_tasks = []
+
+    for chk in fast_checks:
+        # Use smart cache that replays failed results
+        patterns = get_check_inputs(chk)
+        input_paths = [str(f) for f in _glob_inputs(root, patterns)]
+
+        if use_cache:
+            cache_result = run_tool_with_smart_cache(repo_root, chk, input_paths)
+            if cache_result["cached"]:
+                progress.cached(chk)
+                results[chk] = cache_result
+                continue
+
+        # Need to run the tool - compute hash for cache writing
+        inp_hash = _tool_input_hash(root, chk)
+        cmd = _tool_to_cmd(chk)
+        fast_tasks.append((chk, inp_hash, _bounded_run(cmd, fast_sem, cwd=repo_root)))
         for chk, inp_hash, coro in fast_tasks:
             start = time.monotonic()
             try:
@@ -254,98 +264,98 @@ async def run_checks_for_profile(
         progress.bucket_header("slow", len(slow_checks))
     # Do not create a local semaphore here; rely on a global semaphore when available.
     slow_sem = None
-        slow_tasks = []
-        
-        for chk in slow_checks:
-            # Check dependencies before running
-            blocking_rule = should_skip_due_to_dependencies(chk, failed_checks, profile)
-            if blocking_rule:
-                progress.cached(f"{chk} (skipped: {blocking_rule.reason})")
-                results[chk] = {
-                    "status": "skipped",
-                    "reason": blocking_rule.reason,
-                    "prerequisite": blocking_rule.prerequisite,
-                    "strict": blocking_rule.strict
-                }
+    slow_tasks = []
+
+    for chk in slow_checks:
+        # Check dependencies before running
+        blocking_rule = should_skip_due_to_dependencies(chk, failed_checks, profile)
+        if blocking_rule:
+            progress.cached(f"{chk} (skipped: {blocking_rule.reason})")
+            results[chk] = {
+                "status": "skipped",
+                "reason": blocking_rule.reason,
+                "prerequisite": blocking_rule.prerequisite,
+                "strict": blocking_rule.strict
+            }
+            continue
+
+        # Special handling for pytest - use smart pytest system
+        if chk == "pytest":
+            try:
+                pytest_mode = get_pytest_mode_for_profile(profile)
+                pytest_result = await run_smart_pytest(
+                    repo_root=repo_root,
+                    changed_files=changed_files,
+                    mode=pytest_mode,
+                    use_cache=use_cache
+                )
+
+                if pytest_result["status"] == "ok":
+                    progress.done("pytest (smart)")
+                elif pytest_result.get("cached"):
+                    progress.cached("pytest")
+                else:
+                    failed_checks.add(chk)  # Track pytest failure
+                    progress.fail("pytest (smart)")
+
+                results[chk] = pytest_result
                 continue
-            
-            # Special handling for pytest - use smart pytest system
-            if chk == "pytest":
-                try:
-                    pytest_mode = get_pytest_mode_for_profile(profile)
-                    pytest_result = await run_smart_pytest(
-                        repo_root=repo_root,
-                        changed_files=changed_files,
-                        mode=pytest_mode,
-                        use_cache=use_cache
-                    )
-                    
-                    if pytest_result["status"] == "ok":
-                        progress.done("pytest (smart)")
-                    elif pytest_result.get("cached"):
-                        progress.cached("pytest")
-                    else:
-                        failed_checks.add(chk)  # Track pytest failure
-                        progress.fail("pytest (smart)")
-                    
-                    results[chk] = pytest_result
-                    continue
-                except Exception as e:
-                    failed_checks.add(chk)  # Track pytest error
-                    progress.fail(f"pytest (error: {e})")
-                    results[chk] = {"status": "error", "error": str(e)}
-                    continue
-            
-            # Special handling for npm test - use smart npm system
-            if chk == "npm test":
-                try:
-                    npm_result = await run_smart_npm_test(
-                        repo_root=repo_root,
-                        changed_files=changed_files or [],
-                        force_run=(profile == "strict"),  # Force run in strict mode
-                        use_cache=use_cache
-                    )
-                    
-                    if npm_result["status"] == "ok":
-                        progress.done("npm test (smart)")
-                    elif npm_result["status"] == "skipped":
-                        progress.cached(f"npm test (skipped: {npm_result['reason']})")
-                    elif npm_result.get("cached"):
-                        progress.cached("npm test")
-                    else:
-                        failed_checks.add(chk)  # Track npm test failure
-                        progress.fail("npm test (smart)")
-                    
-                    results[chk] = npm_result
-                    continue
-                except Exception as e:
-                    failed_checks.add(chk)  # Track npm test error
-                    progress.fail(f"npm test (error: {e})")
-                    results[chk] = {"status": "error", "error": str(e)}
-                    continue
-            
-            # Regular handling for other slow checks
-            patterns = get_check_inputs(chk)
-            input_paths = [str(f) for f in _glob_inputs(root, patterns)]
-            
-            # CRITICAL: If any mutating check ran, do NOT trust cache for slow checks
-            use_cache_for_slow = use_cache and not mutating_ran
-            
-            if use_cache_for_slow:
-                is_valid, cache_state = ft_cache.is_tool_cache_valid_fast(repo_root, chk, input_paths)
-                if is_valid:
-                    progress.cached(chk)
-                    results[chk] = {"status": "ok", "cached": True, "cache_state": cache_state, "elapsed": 0.0}
-                    continue
-            
-            # Fallback to hash for cache writing (only computed when needed)
-            inp_hash = _tool_input_hash(root, chk)
-            
-            cmd = _tool_to_cmd(chk)
-            slow_tasks.append((chk, inp_hash, _bounded_run(cmd, slow_sem, cwd=repo_root)))
-        
-        # Execute pending slow checks (non-pytest)
-        for chk, inp_hash, coro in slow_tasks:
+            except Exception as e:
+                failed_checks.add(chk)  # Track pytest error
+                progress.fail(f"pytest (error: {e})")
+                results[chk] = {"status": "error", "error": str(e)}
+                continue
+
+        # Special handling for npm test - use smart npm system
+        if chk == "npm test":
+            try:
+                npm_result = await run_smart_npm_test(
+                    repo_root=repo_root,
+                    changed_files=changed_files or [],
+                    force_run=(profile == "strict"),  # Force run in strict mode
+                    use_cache=use_cache
+                )
+
+                if npm_result["status"] == "ok":
+                    progress.done("npm test (smart)")
+                elif npm_result["status"] == "skipped":
+                    progress.cached(f"npm test (skipped: {npm_result['reason']})")
+                elif npm_result.get("cached"):
+                    progress.cached("npm test")
+                else:
+                    failed_checks.add(chk)  # Track npm test failure
+                    progress.fail("npm test (smart)")
+
+                results[chk] = npm_result
+                continue
+            except Exception as e:
+                failed_checks.add(chk)  # Track npm test error
+                progress.fail(f"npm test (error: {e})")
+                results[chk] = {"status": "error", "error": str(e)}
+                continue
+
+        # Regular handling for other slow checks
+        patterns = get_check_inputs(chk)
+        input_paths = [str(f) for f in _glob_inputs(root, patterns)]
+
+        # CRITICAL: If any mutating check ran, do NOT trust cache for slow checks
+        use_cache_for_slow = use_cache and not mutating_ran
+
+        if use_cache_for_slow:
+            is_valid, cache_state = ft_cache.is_tool_cache_valid_fast(repo_root, chk, input_paths)
+            if is_valid:
+                progress.cached(chk)
+                results[chk] = {"status": "ok", "cached": True, "cache_state": cache_state, "elapsed": 0.0}
+                continue
+
+        # Fallback to hash for cache writing (only computed when needed)
+        inp_hash = _tool_input_hash(root, chk)
+
+        cmd = _tool_to_cmd(chk)
+        slow_tasks.append((chk, inp_hash, _bounded_run(cmd, slow_sem, cwd=repo_root)))
+
+    # Execute pending slow checks (non-pytest)
+    for chk, inp_hash, coro in slow_tasks:
             start = time.monotonic()
             try:
                 rc, out = await coro

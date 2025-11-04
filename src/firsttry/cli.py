@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+import time
+import os
 from typing import Callable, Optional
 import json
 from pathlib import Path
@@ -387,6 +389,8 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    # t0: very early start timer (argument parsing/config load)
+    t0 = time.perf_counter()
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -407,12 +411,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"❌ {e}")
             print("💡 Get a license at https://firsttry.com/pricing")
             return 1
-        
         # normalize old --level and new --profile into one value
         profile = _normalize_profile(getattr(args, "profile", None))
         # Update args.profile with normalized value for downstream functions
         args.profile = profile
-        return _run_async_cli(run_fast_pipeline(args=args))
+        # t1: after argument parsing + basic setup
+        t1 = time.perf_counter()
+        return _run_async_cli(run_fast_pipeline(args=args, cli_start_times={"t0": t0, "t1": t1}))
 
     elif args.cmd == "lint":
         return cmd_lint(args=args)
@@ -726,7 +731,7 @@ def cmd_inspect(*, args=None) -> int:
     return 0
 
 
-async def run_fast_pipeline(*, args=None) -> int:
+async def run_fast_pipeline(*, args=None, cli_start_times: dict | None = None) -> int:
     # Get tier info at start - always use environment (set from args in main)
     tier = get_tier()
     
@@ -893,11 +898,18 @@ async def run_fast_pipeline(*, args=None) -> int:
         if report_json_path:
             from .reporting import write_report_async
             path = Path(report_json_path)
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(write_report_async(path, payload))
-            except RuntimeError:
+            # Conditionally block on report write: CI/tests set FT_FORCE_REPORT_WRITE=1
+            blocking = os.environ.get("FT_FORCE_REPORT_WRITE", "0") == "1"
+            if blocking:
                 await write_report_async(path, payload)
+            else:
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(write_report_async(path, payload))
+                except RuntimeError:
+                    # no loop available, fall back to sync write
+                    from .reporting import write_report_sync_to_path
+                    write_report_sync_to_path(path, payload)
         
         return 0
 
@@ -907,6 +919,8 @@ async def run_fast_pipeline(*, args=None) -> int:
     # Check if debug phases flag is set
     show_phases = getattr(args, "debug_phases", False) if args else False
     
+    # mark t2: about to start the orchestration / first tool
+    t2 = time.perf_counter()
     result = await run_checks_with_allocation_and_plan(
         allocation,
         plan,
@@ -915,6 +929,18 @@ async def run_fast_pipeline(*, args=None) -> int:
         config=cfg,
         show_phases=show_phases,
     )
+
+    # Record startup profiling into result metadata so reports can expose it
+    try:
+        if cli_start_times and "t0" in cli_start_times and "t1" in cli_start_times:
+            t0 = float(cli_start_times.get("t0", 0.0))
+            t1 = float(cli_start_times.get("t1", 0.0))
+            startup_s = round(max(0.0, t1 - t0), 3)
+            to_first_tool_s = round(max(0.0, t2 - t0), 3)
+            result.setdefault("meta", {})["startup_s"] = startup_s
+            result.setdefault("meta", {})["to_first_tool_s"] = to_first_tool_s
+    except Exception:
+        pass
 
     # Build and write JSON report if requested
     report_json_path = getattr(args, "report_json", None) if args else None
@@ -1005,13 +1031,21 @@ async def run_fast_pipeline(*, args=None) -> int:
 
             payload["timing"]["total_ms"] = int(total_s * 1000)
 
+            # Expose startup profiling (if available)
+            payload["meta"] = result.get("meta", {})
+
             # write the report (async if possible)
             path = Path(report_json_path)
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(write_report_async(path, payload))
-            except RuntimeError:
+            blocking = os.environ.get("FT_FORCE_REPORT_WRITE", "0") == "1"
+            if blocking:
                 await write_report_async(path, payload)
+            else:
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(write_report_async(path, payload))
+                except RuntimeError:
+                    from .reporting import write_report_sync_to_path
+                    write_report_sync_to_path(path, payload)
 
             # Optional telemetry
             if getattr(args, "send_telemetry", False):
@@ -1083,6 +1117,11 @@ async def run_fast_pipeline(*, args=None) -> int:
 
     # Use new tier-aware reporting system
     interactive = getattr(args, "interactive", False) if args else False
+    # propagate perf meta into context for console display
+    try:
+        context["meta"] = result.get("meta", {})
+    except Exception:
+        context["meta"] = {}
     return render_cli_summary(tier_results, context, interactive=interactive, tier=tier)
 
 

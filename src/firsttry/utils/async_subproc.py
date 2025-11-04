@@ -10,11 +10,18 @@ async def run(cmd: list[str], *, capture_output: bool = False, text: bool = Fals
 
     Returns a subprocess.CompletedProcess similar to subprocess.run.
     """
+    # Only forward a small, safe set of kwargs to create_subprocess_exec
+    create_kw: dict = {}
+    if "cwd" in kw:
+        create_kw["cwd"] = kw["cwd"]
+    if "env" in kw:
+        create_kw["env"] = kw["env"]
+
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE if capture_output else None,
         stderr=asyncio.subprocess.PIPE if capture_output else None,
-        **kw,
+        **create_kw,
     )
     out, err = await proc.communicate()
 

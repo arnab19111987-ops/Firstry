@@ -1,0 +1,9 @@
+scenario,mode,ft_n,ft_median,manual_n,manual_median,delta(manual-ft),speedup(manual/ft)
+lite,cold,1,45.04,2,0.085,-44.955,0.002
+lite,warm,1,39.19,1,0.05,-39.14,0.001
+pro,cold,1,49.54,1,0.4,-49.14,0.008
+pro,warm,1,53.71,1,0.15,-53.56,0.003
+promax,cold,1,0.4,1,0.3,-0.10000000000000003,0.75
+promax,warm,1,0.44,1,0.14,-0.3,0.318
+strict,cold,1,41.34,1,0.19,-41.150000000000006,0.005
+strict,warm,1,46.74,1,0.12,-46.620000000000005,0.003

@@ -459,6 +459,15 @@ async def run_orchestrator(
     from .profiler import reset_profiler
     reset_profiler()
 
+    # Determine tier-allowed checks (locked checks should be visible but
+    # not enqueued/timed). If a tier is provided, compute allowed set.
+    try:
+        from .reports.tier_map import get_checks_for_tier, LOCKED_MESSAGE
+        allowed_checks = set(get_checks_for_tier(tier)) if tier else None
+    except Exception:
+        allowed_checks = None
+        LOCKED_MESSAGE = "🔒 Locked — available in Pro / ProMax. Run `firsttry upgrade` to unlock."
+
     # Create a shared global semaphore for bounded concurrency across all runners.
     # Config may optionally include [runner].max_workers to override CPU-based default.
     try:
@@ -486,7 +495,20 @@ async def run_orchestrator(
     if not plan:
         return {"ok": True, "checks": []}
 
-    buckets = _bucketize(plan)
+    # Filter out locked checks so they are not enqueued or timed.
+    plan_filtered: List[Dict[str, Any]] = []
+    locked_items: List[Dict[str, Any]] = []
+    if allowed_checks is None:
+        plan_filtered = list(plan)
+    else:
+        for item in plan:
+            name = (item.get("tool") or _family_of(item) or "").strip()
+            if name and (name not in allowed_checks):
+                locked_items.append(item)
+            else:
+                plan_filtered.append(item)
+
+    buckets = _bucketize(plan_filtered)
     # Load per-runner caps from config if provided (tool.firsttry.runner.caps)
     try:
         cfg_caps = (config or {}).get("runner", {}).get("caps", {}) if isinstance(config, dict) else {}
@@ -618,6 +640,21 @@ async def run_orchestrator(
     except Exception:
         # if anything goes wrong, don't block orchestrator
         pass
+
+    # Append locked items to results so they appear in reports but do not
+    # affect timing or execution counts. Mark them as locked with a helpful
+    # message.
+    if 'locked_items' in locals() and locked_items:
+        for item in locked_items:
+            name = (item.get("tool") or _family_of(item) or "").strip()
+            all_results.append({
+                "ok": True,
+                "family": name,
+                "tool": name,
+                "result": SimpleNamespace(message=LOCKED_MESSAGE),
+                "duration": 0.0,
+                "locked": True,
+            })
 
     ok = all(r.get("ok", True) for r in all_results)
 

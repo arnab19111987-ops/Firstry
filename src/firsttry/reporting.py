@@ -135,7 +135,12 @@ def write_report_sync(payload: Dict[str, Any]) -> None:
     with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
         f.flush()
-        os.fsync(f.fileno())
+        # Only fsync in CI/tests when deterministic writes are required.
+        if os.environ.get("FT_FORCE_REPORT_WRITE", "0") == "1":
+            try:
+                os.fsync(f.fileno())
+            except Exception:
+                pass
     tmp_path.replace(REPORT_FILE)
 
 
@@ -147,7 +152,12 @@ def write_report_sync_to_path(path: Path, payload: Dict[str, Any]) -> None:
     with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
         f.flush()
-        os.fsync(f.fileno())
+        # Only fsync in CI/tests when deterministic writes are required.
+        if os.environ.get("FT_FORCE_REPORT_WRITE", "0") == "1":
+            try:
+                os.fsync(f.fileno())
+            except Exception:
+                pass
     tmp_path.replace(path)
 
 

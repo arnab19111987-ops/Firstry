@@ -1,3 +1,11 @@
+[bandit]
+args = [
+  "-q",
+  "-x",
+  ".git,.venv,.venv-build,__pycache__,.pytest_cache,.mypy_cache,.ruff_cache,node_modules,dist,build,.next,coverage,.firsttry",
+]
+# 0 => auto (CPU count). Can be overridden with FT_BANDIT_JOBS env var.
+jobs = 0
 [tool.firsttry]
 fail_on_drift = true
 

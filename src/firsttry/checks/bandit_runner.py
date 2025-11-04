@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from firsttry.utils.async_subproc import run_sync
+from firsttry.proc import run_cmd
+from ..ignore import bandit_excludes
 import shlex
 import sys
 from dataclasses import dataclass
@@ -27,10 +28,36 @@ def _severity_rank(s: str) -> int:
 def run_bandit_json(root: Path, output: Path) -> BanditResult:
     output.parent.mkdir(parents=True, exist_ok=True)
     # Force a deterministic JSON run
-    cmd = ["bandit", "-r", str(root), "-f", "json", "-o", str(output)]
+    # Build excludes from FT ignore list and env overrides
+    excludes = bandit_excludes(root)
+    excl_arg = ",".join(excludes) if excludes else ""
+    # Prefer scanning explicit git-tracked files to avoid walking the whole tree.
+    def _git_ls_py(repo: Path) -> list[Path]:
+        try:
+            from ..utils.git_cache import git_ls
+
+            files = git_ls(repo, "*.py")
+            return [repo / ln for ln in files]
+        except Exception:
+            return []
+
+    files = _git_ls_py(root)
+    if files:
+        # Build a file-targeted Bandit invocation (fast)
+        cmd = ["bandit", "-f", "json", "-o", str(output)]
+        if excl_arg:
+            cmd += ["-x", excl_arg]
+        # Append explicit file paths
+        cmd += [str(p) for p in files]
+    else:
+        # Fallback: instruct bandit to recurse from repo root
+        cmd = ["bandit", "-r", str(root), "-f", "json", "-o", str(output)]
+        if excl_arg:
+            cmd += ["-x", excl_arg]
+
     try:
         # Do not use shell=True; ensure real exit code but don't crash FirstTry
-        proc = run_sync(cmd, capture_output=True, text=True, check=False)
+        proc = run_cmd(cmd, capture_output=True, text=True, check=False)
     except FileNotFoundError:
         # Bandit not installed; represent as “skipped"
         return BanditResult(issues_total=0, by_severity={}, max_severity=None, raw_path=output)

@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import multiprocessing as mp
 import subprocess
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal, Optional
-from ..ignore import IGNORE_DIRS
+from ..ignore import IGNORE_DIRS, bandit_excludes
 
 Severity = Literal["low", "medium", "high", "critical"]
 
@@ -59,15 +60,62 @@ def run_bandit_sharded(
 
     # respect config-provided exclude_dirs, otherwise fall back to global ignores
     exclude_dirs = list(cfg.exclude_dirs) if cfg.exclude_dirs else list(IGNORE_DIRS)
-    files = list(_discover_py_files(repo_root, cfg.include_dirs, exclude_dirs))
+    # Prefer git-tracked files for determinism & speed. Fall back to rglob discovery.
+    def _git_ls_py(repo: Path) -> list[Path]:
+        try:
+            from ..utils.git_cache import git_ls
+
+            files = git_ls(repo, "*.py")
+            return [repo / ln for ln in files]
+        except Exception:
+            return []
+
+    git_files = _git_ls_py(repo_root)
+    if git_files:
+        # Filter git files by include/exclude dirs
+        inc = [repo_root / d for d in cfg.include_dirs] if cfg.include_dirs else [repo_root]
+        inc_resolved = [p.resolve() for p in inc]
+        exset = {str((repo_root / d).resolve()) for d in exclude_dirs}
+        files = []
+        for p in git_files:
+            rp = p.resolve()
+            # exclude if under any exclude dir
+            sp = str(rp.parent)
+            if any(sp.startswith(ex) for ex in exset):
+                continue
+            # include only if under any include dir (unless include_dirs contains empty string)
+            if cfg.include_dirs and cfg.include_dirs != [""]:
+                if not any(str(rp).startswith(str(incp)) for incp in inc_resolved):
+                    continue
+            files.append(p)
+    else:
+        files = list(_discover_py_files(repo_root, cfg.include_dirs, exclude_dirs))
     if not files:
         # nothing to scan -> write an empty JSON with minimal fields
         _write_empty_bandit_json(out_json)
         return BanditAggregate(0, {}, None, out_json)
 
-    # Decide parallelism
-    cpu = os.cpu_count() or 2
-    jobs = cpu if cfg.jobs in (None, 0) else max(1, int(cfg.jobs))
+    # Decide parallelism (env wins, then cfg, then auto)
+    def _resolve_jobs(cfg_jobs: int | None) -> int:
+        env = os.environ.get("FT_BANDIT_JOBS")
+        if env:
+            try:
+                v = int(env)
+                return max(1, v)
+            except Exception:
+                pass
+        if cfg_jobs and cfg_jobs > 0:
+            try:
+                return int(cfg_jobs)
+            except Exception:
+                return 1
+        # fallback to CPU count
+        try:
+            return max(1, int(mp.cpu_count() or 1))
+        except Exception:
+            return 1
+
+    jobs = _resolve_jobs(cfg.jobs)
 
     # Make shards (avoid too-long command lines)
     shards: list[list[Path]] = []
@@ -80,10 +128,23 @@ def run_bandit_sharded(
     if cur:
         shards.append(cur)
 
+    # Debug: log shard sizing when requested so CI spikes are obvious
+    try:
+        if os.environ.get("FT_DEBUG", "0") == "1":
+            files_count = len(files)
+            shard_count = len(shards)
+            avg = int(files_count / shard_count) if shard_count else files_count
+            print(f"[bandit] files={files_count} shards={shard_count} (~{avg}/shard)")
+    except Exception:
+        pass
+
+    # Build bandit exclude list once (absolute paths)
+    excludes = bandit_excludes(repo_root)
+
     # If only one shard and jobs==1, just run single bandit quickly
     if len(shards) == 1 and jobs == 1:
         shard_json = out_json.with_suffix(".single.json")
-        _run_bandit_on_files(shards[0], shard_json, cfg.extra_args)
+        _run_bandit_on_files(shards[0], shard_json, cfg.extra_args, excludes)
         _merge_jsons([shard_json], out_json)
         return _aggregate(out_json)
 
@@ -92,7 +153,7 @@ def run_bandit_sharded(
 
     def do_one_collect(file_list: list[Path]) -> dict:
         # If out_json is provided, _run_bandit_on_files will write to that path (handled per-call)
-        return _run_bandit_on_files(file_list, None, cfg.extra_args) or {}
+        return _run_bandit_on_files(file_list, None, cfg.extra_args, excludes) or {}
 
     with ThreadPoolExecutor(max_workers=jobs) as ex:
         futs = [ex.submit(do_one_collect, shard) for shard in shards]
@@ -101,8 +162,8 @@ def run_bandit_sharded(
             if isinstance(parsed, dict):
                 parsed_fragments.append(parsed)
 
-    # Merge parsed fragments in-memory
-    merged = {"results": []}
+    # Merge parsed fragments into a single in-memory merged JSON structure
+    merged: dict = {"results": []}
     for p in parsed_fragments:
         res = p.get("results") or []
         if isinstance(res, list):
@@ -150,7 +211,12 @@ def _discover_py_files(
             yield p
 
 
-def _run_bandit_on_files(files: list[Path], out_json: Optional[Path], extra_args: Optional[list[str]]):
+def _run_bandit_on_files(
+    files: list[Path],
+    out_json: Optional[Path],
+    extra_args: Optional[list[str]],
+    excludes: Optional[list[str]] = None,
+) -> dict | None:
     # Bandit supports multiple file targets; prefer capturing stdout when
     # no output file is requested so we avoid writing disk artifacts.
     cmd = ["bandit", "-f", "json"]
@@ -158,17 +224,22 @@ def _run_bandit_on_files(files: list[Path], out_json: Optional[Path], extra_args
         cmd += ["-o", str(out_json)]
     if extra_args:
         cmd.extend(extra_args)
-    # Append file paths
+    # Append excludes (comma-separated absolute paths) if provided
+    if excludes:
+        excl_arg = ",".join(excludes)
+        if excl_arg:
+            cmd += ["-x", excl_arg]
+    # Append file paths (explicit file targets so bandit doesn't re-scan tree)
     cmd.extend(str(f) for f in files)
     try:
-        # use the async-safe sync wrapper to avoid leaking event loops
-        from firsttry.utils.async_subproc import run_sync
+        # Use the centralized blocking helper to avoid event-loop races.
+        from firsttry.proc import run_cmd
 
         if out_json is not None:
-            run_sync(cmd, check=False, capture_output=True, text=True)
+            run_cmd(cmd, check=False, capture_output=True, text=True)
             return None
         else:
-            proc = run_sync(cmd, check=False, capture_output=True, text=True)
+            proc = run_cmd(cmd, check=False, capture_output=True, text=True)
             out = proc.stdout or ""
             try:
                 return json.loads(out or "{}")
@@ -180,6 +251,7 @@ def _run_bandit_on_files(files: list[Path], out_json: Optional[Path], extra_args
             _write_empty_bandit_json(out_json)
             return None
         return {}
+    # append excludes if present (after building cmd but before file paths)
 
 
 def _merge_jsons(shard_jsons: list[Path], merged_out: Path):

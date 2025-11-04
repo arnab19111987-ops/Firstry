@@ -1,0 +1,72 @@
+name: FirstTry Smoke
+on: [push, pull_request]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      FT_PERF_STARTUP_MAX: "0.60"
+      FT_PERF_TTFT_MAX: "1.00"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install (editable + dev)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Run free-lite (debug phases)
+        env:
+          FT_FORCE_REPORT_WRITE: '1'
+        run: |
+          python -m firsttry run --tier free-lite --debug-phases --show-report --report-json .firsttry/smoke_report.json 2>&1 | tee ft_smoke.log
+      - name: Guard: no event-loop finalizer
+        run: |
+          ! grep -q "Event loop is closed" ft_smoke.log
+      - name: Guard: locked checks not timed
+        run: |
+          python - <<'PY'
+import re, sys
+log = open("ft_smoke.log", "r", encoding="utf-8", errors="ignore").read()
+# If locked checks are mentioned, ensure timing lines don't include them.
+if "Locked" in log or "🔒" in log:
+    bad = re.search(r"tim(e|ing).*(locked|🔒)", log, re.IGNORECASE)
+    assert not bad, "Locked checks appear in timing output"
+print("OK: Locked checks present but not timed")
+PY
+
+      - name: Run smoke test
+        run: |
+          pytest -q tests/test_ft_smoke.py
+
+      - name: Run perf-meta test
+        run: |
+          pytest -q tests/test_report_meta.py
+
+      - name: Assert perf thresholds
+        run: |
+          python - <<'PY'
+import os, json, sys
+data = json.load(open('.firsttry/smoke_report.json'))
+meta = data.get('meta', {})
+s = float(meta.get('startup_s', 9e9))
+t = float(meta.get('to_first_tool_s', 9e9))
+max_s = float(os.environ.get('FT_PERF_STARTUP_MAX', '0.60'))
+max_t = float(os.environ.get('FT_PERF_TTFT_MAX', '1.00'))
+assert s <= max_s, f"startup_s too high: {s}s (max {max_s})"
+assert t <= max_t, f"to_first_tool_s too high: {t}s (max {max_t})"
+print('Perf thresholds OK:', {'startup_s': s, 'to_first_tool_s': t})
+PY
+
+      - name: Upload FT smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ft-smoke-${{ github.run_number }}
+          path: |
+            ft_smoke.log
+            .firsttry/smoke_report.json
+            .firsttry/ft_logs/**
+          if-no-files-found: warn
+          retention-days: 7

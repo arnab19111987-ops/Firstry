@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""
+Aggregate JSONL benchmark results, compute stats and emit CSV + Markdown report.
+"""
+import json
+from pathlib import Path
+from statistics import median, mean, stdev
+import math
+import csv
+import sys
+
+RAW_DIR = Path('.firsttry/bench/raw')
+OUT_DIR = Path('.firsttry/bench')
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+def percentile(sorted_list, p):
+    if not sorted_list:
+        return None
+    k = (len(sorted_list)-1) * p
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return sorted_list[int(k)]
+    d0 = sorted_list[f] * (c-k)
+    d1 = sorted_list[c] * (k-f)
+    return d0 + d1
+
+def load_rows():
+    rows = []
+    if not RAW_DIR.exists():
+        return rows
+    for p in RAW_DIR.glob('*.jsonl'):
+        with p.open() as fh:
+            for line in fh:
+                line=line.strip()
+                if not line:
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except Exception:
+                    # skip malformed
+                    continue
+    return rows
+
+def group_rows(rows):
+    groups = {}
+    for r in rows:
+        key = (r.get('scenario'), r.get('run_mode'), r.get('toolchain'))
+        groups.setdefault(key, []).append(r)
+    return groups
+
+def summarize_group(key, items):
+    times = [float(i.get('wall_seconds') or 0) for i in items if i.get('skipped') is not True]
+    n = len(times)
+    if n == 0:
+        return { 'n':0 }
+    ssorted = sorted(times)
+    med = median(ssorted)
+    p10 = percentile(ssorted, 0.10)
+    p90 = percentile(ssorted, 0.90)
+    mn = mean(ssorted)
+    sd = stdev(ssorted) if n>1 else 0.0
+    best = min(ssorted)
+    return {
+        'n': n,
+        'median': med,
+        'p10': p10,
+        'p90': p90,
+        'mean': mn,
+        'stddev': sd,
+        'best': best,
+    }
+
+def write_csv(summary, path):
+    with open(path, 'w', newline='') as fh:
+        w = csv.writer(fh)
+        w.writerow(['scenario','mode','toolchain','n','median','p10','p90','mean','stddev','best'])
+        for key, s in summary.items():
+            scenario, mode, toolchain = key
+            if s.get('n',0)==0:
+                w.writerow([scenario,mode,toolchain,0,'','','','','',''])
+            else:
+                w.writerow([scenario,mode,toolchain,s['n'],f"{s['median']:.3f}",f"{s['p10']:.3f}",f"{s['p90']:.3f}",f"{s['mean']:.3f}",f"{s['stddev']:.3f}",f"{s['best']:.3f}"])
+
+def write_markdown(summary, groups, path):
+    lines = []
+    lines.append('# FirstTry vs Manual Benchmarks')
+    lines.append('')
+    lines.append('## Summary table')
+    lines.append('')
+    lines.append('| Scenario | Mode | FT median (s) | Manual median (s) | Δ (manual - ft) | Speedup (×) |')
+    lines.append('|---|---:|---:|---:|---:|---:|')
+
+    # build map for quick lookup
+    for (scenario, mode, toolchain), s in summary.items():
+        if toolchain != 'ft':
+            continue
+        ft_key = (scenario, mode, 'ft')
+        man_key = (scenario, mode, 'manual')
+        ft_s = summary.get(ft_key, {})
+        man_s = summary.get(man_key, {})
+        ft_med = ft_s.get('median')
+        man_med = man_s.get('median')
+        if ft_med is None or man_med is None:
+            lines.append(f'| {scenario} | {mode} | {ft_med or "-"} | {man_med or "-"} | - | - |')
+            continue
+        delta = man_med - ft_med
+        speedup = man_med / ft_med if ft_med>0 else float('inf')
+        lines.append(f'| {scenario} | {mode} | {ft_med:.3f} | {man_med:.3f} | {delta:.3f} | {speedup:.2f} |')
+
+    lines.append('')
+    lines.append('## Per-scenario details')
+    lines.append('')
+    for key, items in groups.items():
+        scenario, mode, toolchain = key
+        lines.append(f'### {scenario} — {mode} — {toolchain}')
+        lines.append('')
+        lines.append('Commands executed (one line per trial):')
+        for i,r in enumerate(items, start=1):
+            cmd = r.get('command')
+            wall = r.get('wall_seconds')
+            rc = r.get('rc')
+            lines.append(f'- Trial {i}: `{cmd}` — {wall}s (rc={rc})')
+        lines.append('')
+
+    path.write_text('\n'.join(lines), encoding='utf-8')
+
+def main():
+    rows = load_rows()
+    groups = group_rows(rows)
+    summary = {}
+    for key, items in groups.items():
+        summary[key] = summarize_group(key, items)
+
+    write_csv(summary, OUT_DIR / 'summary.csv')
+    write_markdown(summary, groups, OUT_DIR / 'report.md')
+    print('Wrote', OUT_DIR / 'report.md', 'and', OUT_DIR / 'summary.csv')
+
+if __name__ == '__main__':
+    main()

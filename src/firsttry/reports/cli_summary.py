@@ -60,6 +60,17 @@ def render_cli_summary(results: Dict[str, Any], context: Dict[str, Any], interac
     if interactive:
         from .summary import render_summary
         render_summary(results, context)
+
+    # Print perf meta (startup / to-first-tool) if present in context
+    try:
+        meta = context.get("meta") or {}
+        if meta:
+            startup = meta.get("startup_s")
+            ttft = meta.get("to_first_tool_s")
+            if startup is not None or ttft is not None:
+                print(f"\n[perf] startup={startup!s}s  to_first_tool={ttft!s}s")
+    except Exception:
+        pass
     
     return 0 if passed_all else 1
 

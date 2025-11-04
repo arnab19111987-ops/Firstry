@@ -13,14 +13,15 @@ MAX_WORKERS = min(4, os.cpu_count() or 2)
 
 
 async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, str]:
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        cwd=cwd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-    stdout, _ = await proc.communicate()
-    return proc.returncode, stdout.decode("utf-8", "replace")
+    """Run subprocess via the blocking helper executed in a thread.
+
+    This avoids creating asyncio subprocess transports in the event loop
+    for one-shot tool invocations.
+    """
+    from firsttry.proc import run_cmd
+    proc = await asyncio.to_thread(run_cmd, list(cmd), cwd=str(cwd) if cwd is not None else None, capture_output=True, text=True)
+    stdout = proc.stdout or ""
+    return proc.returncode, str(stdout)
 
 
 async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):

@@ -19,11 +19,21 @@ def load_config() -> Dict[str, Any]:
       1. ./firsttry.toml
       2. ./pyproject.toml [tool.firsttry]
     """
+    # memoize config reads for this process to avoid repeated disk/toml parses
+    global _CONFIG_CACHE  # type: ignore
+    try:
+        if _CONFIG_CACHE is not None:
+            return _CONFIG_CACHE
+    except NameError:
+        _CONFIG_CACHE = None  # type: ignore
+
     root = Path(".").resolve()
 
     ft = root / "firsttry.toml"
     if ft.exists() and tomllib is not None:
-        return tomllib.loads(ft.read_text())
+        data = tomllib.loads(ft.read_text())
+        _CONFIG_CACHE = data
+        return data
 
     pp = root / "pyproject.toml"
     if pp.exists() and tomllib is not None:
@@ -31,9 +41,11 @@ def load_config() -> Dict[str, Any]:
         tool = data.get("tool") or {}
         ft_conf = tool.get("firsttry")
         if isinstance(ft_conf, dict):
+            _CONFIG_CACHE = ft_conf
             return ft_conf
 
-    return {}
+    _CONFIG_CACHE = {}
+    return _CONFIG_CACHE
 
 
 def plan_from_config(config: Dict[str, Any]) -> List[Dict[str, Any]] | None:
