@@ -1,40 +1,67 @@
 from __future__ import annotations
-
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
-import yaml
+from typing import Dict
+
+try:
+    import tomllib  # 3.11+
+except Exception:  # py<3.11
+    import tomli as tomllib  # type: ignore
 
 
-_DEFAULTS = {
-    "coverage_threshold": 80,
-    "pytest_smoke_expr": "not slow and not integration",
-    "pytest_base_args": ["-q"],
-    "map_dirs": ["tools/firsttry/firsttry", "tools/firsttry/tests"],
-}
+@dataclass
+class Timeouts:
+    default: int = 300
+    per_check: Dict[str, int] = field(default_factory=dict)
 
 
-@dataclass(frozen=True)
-class FirstTryConfig:
-    coverage_threshold: int
-    pytest_smoke_expr: str
-    pytest_base_args: tuple[str, ...]
-    map_dirs: tuple[str, ...]
+@dataclass
+class Workflow:
+    pytest_depends_on: list[str] = field(default_factory=list)
+    npm_test_depends_on: list[str] = field(default_factory=list)
 
-    @staticmethod
-    def load(path: Optional[Path] = None) -> "FirstTryConfig":
-        cfg_path = (path or Path.cwd()) / ".firsttry.yml"
-        data: Dict[str, Any] = {}
-        if cfg_path.exists():
-            with cfg_path.open("r", encoding="utf-8") as f:
-                loaded = yaml.safe_load(f) or {}
-                if not isinstance(loaded, dict):
-                    raise ValueError(".firsttry.yml must be a YAML mapping")
-                data = loaded
-        merged = {**_DEFAULTS, **data}
-        return FirstTryConfig(
-            coverage_threshold=int(merged["coverage_threshold"]),
-            pytest_smoke_expr=str(merged["pytest_smoke_expr"]),
-            pytest_base_args=tuple(merged["pytest_base_args"]),
-            map_dirs=tuple(merged["map_dirs"]),
-        )
+
+@dataclass
+class Config:
+    tier: str = "lite"
+    remote_cache: bool = False
+    workers: int = 8
+    timeouts: Timeouts = field(default_factory=Timeouts)
+    checks_flags: Dict[str, list[str]] = field(default_factory=dict)
+    # workflow section (pytest/npm dependencies)
+    workflow: Workflow = field(default_factory=Workflow)
+
+
+def load_config(repo_root: Path) -> Config:
+    path = repo_root / "firsttry.toml"
+    if not path.exists():
+        return Config()
+
+    data = tomllib.loads(path.read_text())
+    core = data.get("core", {})
+    c = Config(
+        tier=core.get("tier", "lite"),
+        remote_cache=bool(core.get("remote_cache", False)),
+        workers=int(core.get("workers", 8)),
+    )
+    to = data.get("timeouts", {})
+    c.timeouts.default = int(to.get("default", 300))
+    c.timeouts.per_check = {k: int(v) for k, v in to.get("per_check", {}).items()} if isinstance(to.get("per_check", {}), dict) else {}
+    # checks.flags table may be dotted in some toml variants
+    c.checks_flags = {k: list(v) for k, v in data.get("checks.flags", {}).items()} if "checks.flags" in data else {}
+    # workflow parsing
+    wf = data.get("workflow", {}) or {}
+    c.workflow = Workflow(
+        pytest_depends_on=list(wf.get("pytest_depends_on", [])),
+        npm_test_depends_on=list(wf.get("npm-test_depends_on", [])) or list(wf.get("npm_test_depends_on", [])),
+    )
+    return c
+
+
+def timeout_for(cfg: Config, check_id: str) -> int:
+    return int(cfg.timeouts.per_check.get(check_id, cfg.timeouts.default))
+ 
+def workflow_requires(cfg: Config) -> list[str]:
+    # unified list the planner understands per language section
+    return list(set(cfg.workflow.pytest_depends_on + cfg.workflow.npm_test_depends_on))
+

@@ -171,3 +171,25 @@ async def write_report_async(path: Path, payload: Dict[str, Any], enabled: bool 
     except Exception:
         # last-resort guard
         write_report_sync_to_path(path, payload)
+
+
+def render_tty(results: Dict[str, Any]) -> None:
+    """Render a compact cache vs run summary for TaskResult-like dicts.
+
+    Accepts a mapping of id -> object with fields `.status` and `.duration_ms`.
+    """
+    for tid, r in results.items():
+        status = getattr(r, "status", r.get("status") if isinstance(r, dict) else "unknown")
+        dur = getattr(r, "duration_ms", r.get("duration_ms") if isinstance(r, dict) else 0)
+        prefix = "[CACHE]" if str(status).startswith("hit-") else "[ RUN ]"
+        print(f"{prefix} {str(status).upper():10s} {tid} ({dur}ms)")
+    hits = sum(1 for r in results.values() if str(getattr(r, "status", r.get("status") if isinstance(r, dict) else "")).startswith("hit-"))
+    runs = sum(1 for r in results.values() if not str(getattr(r, "status", r.get("status") if isinstance(r, dict) else "")).startswith("hit-"))
+    print(f"\n{hits} checks verified from cache, {runs} run locally.\n")
+
+
+def write_json(repo_root: Path, results: Dict[str, Any], out: str = ".firsttry/report.json") -> None:
+    payload = {"checks": {tid: (r.to_report_json() if hasattr(r, "to_report_json") else r) for tid, r in results.items()}}
+    p = repo_root / out
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))

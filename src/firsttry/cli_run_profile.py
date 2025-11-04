@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 import asyncio
 import json
+import sys
 
 from .lazy_orchestrator import run_profile_for_repo
 from .reporting import write_report_async
@@ -59,7 +60,7 @@ def main():
         print(json.dumps(payload, indent=2))
         print("=====================")
     
-    # Handle durable report writing with error handling
+    # Handle durable report writing with error handling and ensure we exit 0
     try:
         # Try to get running loop first
         try:
@@ -69,18 +70,24 @@ def main():
         except RuntimeError:
             # no running loop, create one and complete the write
             asyncio.run(write_report_async(report_path, payload))
+        rc = 0
     except Exception as e:
+        # Don't let report-writing failures make the CLI fail.
         print(f"[firsttry] warning: failed to write timing report: {e}")
         # Always show timing so CI/CD / humans can scrape it
-        if "timing" in payload:
-            print(json.dumps(payload["timing"], indent=2))
-    
+        try:
+            if "timing" in payload:
+                print(json.dumps(payload["timing"], indent=2))
+        except Exception:
+            pass
+        rc = 0
+
     # Print quick summary
     print(f"Ran {len(results)} tools")
     for result in results:
-        status_emoji = "✅" if result["status"] == "ok" else "❌"
+        status_emoji = "✅" if result.get("status") == "ok" else "❌"
         cache_info = " (cached)" if result.get("from_cache") else ""
-        
+
         # Show timing information
         duration = result.get("duration_s", result.get("elapsed", 0.0))
         last_duration = result.get("last_duration_s")
@@ -88,8 +95,10 @@ def main():
         if last_duration is not None and result.get("from_cache"):
             timing_info += f", was {last_duration:.1f}s"
         timing_info += ")"
-        
+
         print(f"{status_emoji} {result['name']}{cache_info}{timing_info}")
+
+    sys.exit(rc)
 
 
 if __name__ == "__main__":

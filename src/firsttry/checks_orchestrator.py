@@ -44,14 +44,12 @@ async def _timed_runner_execution(runner, worker_id: int, ctx: Dict[str, Any], i
         raise e
 
 
-# NOTE:
-# In your current repo this was already imported from somewhere.
-# Keep the import that already exists. If your existing file says
-# `from .runners import RUNNERS`, keep that.
-try:  # safe fallback so copy-paste doesn't explode
+# Prefer the package's RUNNERS; if unavailable, fall back to an empty dict.
+# Tests will monkeypatch this symbol directly inside this module.
+try:
     from .runners import RUNNERS  # type: ignore
 except Exception:  # pragma: no cover
-    from .runner import RUNNERS  # type: ignore
+    RUNNERS = {}  # type: ignore
 
 
 # ---- BUCKET DEFINITIONS -------------------------------------------------

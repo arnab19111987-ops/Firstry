@@ -19,7 +19,11 @@ dependencies = [
   "black>=22.0.0",
   "mypy>=1.0.0",
   "pytest>=7.0.0",
+  "tomli; python_version < \"3.11\"",
 ]
+
+[project.optional-dependencies]
+enterprise = ["boto3>=1.34"]
 
 [project.scripts]
 firsttry = "firsttry.cli:main"

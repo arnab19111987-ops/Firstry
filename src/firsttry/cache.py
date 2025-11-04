@@ -9,9 +9,12 @@ from typing import Dict, Any, Iterable, Optional
 from .cache_models import ToolCacheEntry, InputFileMeta
 from .cache_utils import get_cache_state
 
-# Global cache location for cross-repo caching
+# Global cache file (can be monkeypatched in tests)
+CACHE_FILE: Path | None = None
+
+# Default location when CACHE_FILE is not overridden by tests
 CACHE_DIR = Path(os.path.expanduser("~")) / ".firsttry"
-CACHE_FILE = CACHE_DIR / "cache.json"
+_DEFAULT_CACHE_FILE = CACHE_DIR / "cache.json"
 
 # Local cache for legacy compatibility
 CACHE_DIRNAME = ".firsttry"
@@ -22,22 +25,53 @@ def _ensure_dir() -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _get_cache_file_path() -> Path:
+    """Return the filesystem path for the global cache file.
+
+    If tests set ``firsttry.cache.CACHE_FILE`` to a Path, honor that value.
+    Otherwise fall back to the conventional location under the user's home
+    directory.
+    """
+    if CACHE_FILE is not None:
+        return Path(CACHE_FILE)
+    return _DEFAULT_CACHE_FILE
+
+
 def load_cache() -> Dict[str, Any]:
-    """Load global cache from home directory"""
-    _ensure_dir()
-    if not CACHE_FILE.exists():
+    """Load global cache from home directory
+
+    Compute the cache path first so tests can monkeypatch `CACHE_FILE` to
+    a temporary path without triggering creation/reads of the user's
+    home-based cache directory. Only ensure the default cache directory
+    exists when we're actually using the default path.
+    """
+    p = _get_cache_file_path()
+    # Only create the default cache dir when we're using the default path
+    if p == _DEFAULT_CACHE_FILE or str(p).startswith(str(CACHE_DIR)):
+        _ensure_dir()
+
+    if not Path(p).exists():
         return {"repos": {}}
     try:
-        with CACHE_FILE.open("r", encoding="utf-8") as f:
-            return json.load(f)
+        with Path(p).open("r", encoding="utf-8") as f:
+            data = json.load(f)
     except Exception:
         return {"repos": {}}
+
+    # Defensive normalization: tests expect a dict with a "repos" mapping.
+    if not isinstance(data, dict):
+        return {"repos": {}}
+    repos = data.get("repos")
+    if not isinstance(repos, dict):
+        return {"repos": {}}
+    return data
 
 
 def save_cache(data: Dict[str, Any]) -> None:
     """Save global cache to home directory"""
     _ensure_dir()
-    with CACHE_FILE.open("w", encoding="utf-8") as f:
+    p = _get_cache_file_path()
+    with Path(p).open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 
