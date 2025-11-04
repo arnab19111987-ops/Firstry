@@ -1,3 +1,56 @@
+name: verify-bandit
+on: [push, pull_request]
+
+jobs:
+  bandit-advisory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e .
+          python -m pip install "bandit==1.7.9"
+
+      - name: Run ft pro (advisory respected)
+        run: |
+          set -euo pipefail
+          ft pro --report-json .firsttry/pro.json --show-report || true
+          python - <<'PY'
+import json, sys
+d=json.load(open(".firsttry/pro.json"))
+checks=d.get("checks",[])
+b=[c for c in checks if c.get("id")=="bandit" or c.get("name")=="bandit"]
+if not b:
+    print("ERROR: bandit check missing from report"); sys.exit(2)
+b=b[0]
+summ=b.get("summary",{})
+blocking=b.get("blocking", True)
+high=summ.get("high", 0) or summ.get("HIGH", 0) or b.get("high", 0)
+print("bandit blocking:", blocking, "high:", high)
+if blocking and high>0:
+    print("Failing because bandit is blocking and high issues exist.")
+    sys.exit(1)
+print("Bandit advisory mode respected; not failing.")
+PY
+
+      - name: Upload FirstTry artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firsttry-pro-report
+          path: .firsttry/
 name: Verify Bandit Advisory
 on: [push, pull_request]
 jobs:

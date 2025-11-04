@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-import subprocess
+from firsttry.utils.async_subproc import run_sync
 import shlex
 import sys
 from dataclasses import dataclass
@@ -30,9 +30,9 @@ def run_bandit_json(root: Path, output: Path) -> BanditResult:
     cmd = ["bandit", "-r", str(root), "-f", "json", "-o", str(output)]
     try:
         # Do not use shell=True; ensure real exit code but don't crash FirstTry
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        proc = run_sync(cmd, capture_output=True, text=True, check=False)
     except FileNotFoundError:
-        # Bandit not installed; represent as “skipped”
+        # Bandit not installed; represent as “skipped"
         return BanditResult(issues_total=0, by_severity={}, max_severity=None, raw_path=output)
 
     # bandit exits 0 or non-zero depending on config; we always parse the JSON it wrote

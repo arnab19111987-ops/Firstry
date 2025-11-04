@@ -84,3 +84,20 @@ test-all:
 perf:
 	bash scripts/perf_snapshot.sh
 
+
+.PHONY: ci-bandit
+ci-bandit:
+	@set -euo pipefail; \
+	python -m pip install -e . >/dev/null; \
+	python -m pip install "bandit==1.7.9" >/dev/null; \
+	ft pro --report-json .firsttry/pro.json --show-report || true; \
+	python - <<'PY' || exit $$?
+import json, sys
+d=json.load(open('.firsttry/pro.json'))
+b=[c for c in d.get('checks',[]) if c.get('id')=='bandit' or c.get('name')=='bandit']
+assert b, 'bandit check missing'
+b=b[0]; s=b.get('summary',{}); blocking=b.get('blocking',True); high=s.get('high',0) or s.get('HIGH',0) or 0
+print('bandit blocking:', blocking, 'high:', high)
+sys.exit(1 if (blocking and high>0) else 0)
+PY
+

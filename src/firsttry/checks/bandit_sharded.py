@@ -140,7 +140,10 @@ def _run_bandit_on_files(files: list[Path], out_json: Path, extra_args: Optional
     # Append file paths
     cmd.extend(str(f) for f in files)
     try:
-        subprocess.run(cmd, check=False, capture_output=True, text=True)
+        # use the async-safe sync wrapper to avoid leaking event loops
+        from firsttry.utils.async_subproc import run_sync
+
+        run_sync(cmd, check=False, capture_output=True, text=True)
     except FileNotFoundError:
         # write empty JSON so merge logic stays simple
         _write_empty_bandit_json(out_json)
