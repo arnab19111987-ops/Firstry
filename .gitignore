@@ -59,4 +59,5 @@ yarn.lock
 # Misc
 .env
 .env.*
+/.firsttry/change_log/
 /.firsttry/license.key
