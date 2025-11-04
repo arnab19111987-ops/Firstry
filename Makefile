@@ -56,6 +56,14 @@ coverage-check:  ## run tests with coverage and check floor
 .PHONY: bench bench-short
 bench:  ## run full benchmark suite
 	python benchmarks/bench_runner.py
+	TRIALS=3 bash tools/bench/bench_matrix.sh
+	python3 tools/bench/bench_aggregate.py --raw-dir .firsttry_bench/bench/raw --out-dir .firsttry_bench/bench
+	@echo "Report: .firsttry_bench/bench/report.md"
+
+bench-fast:
+	TRIALS=1 bash tools/bench/bench_matrix.sh
+	python3 tools/bench/bench_aggregate.py --raw-dir .firsttry_bench/bench/raw --out-dir .firsttry_bench/bench
+	@echo "Report: .firsttry_bench/bench/report.md"
 
 bench-short:  ## run shortened benchmark (future feature)
 	python benchmarks/bench_runner.py --short

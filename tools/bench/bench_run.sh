@@ -162,6 +162,8 @@ run_one_trial() {
     ok_bool=false
   fi
 
+  # defensive: ensure parent dir exists right before append (harmless)
+  mkdir -p "$(dirname "$RAWFILE")"
   cat >>"$RAWFILE" <<EOF
 {"scenario":"$SCENARIO","toolchain":"$TOOLCHAIN","command":"$cmd","run_mode":"$MODE","trial":$trial,"wall_seconds":$real_s,"user_seconds":$user_s,"sys_seconds":$sys_s,"rc":$RC,"ok":$ok_bool,"start_iso":"$start_iso","end_iso":"$end_iso","start_mono":"$start_mono","end_mono":"$end_mono","git_sha":"$git_sha","cpu_count":$cpu_count,"ft_version":"$ft_ver","ruff_version":"$ruff_ver","mypy_version":"$mypy_ver","pytest_version":"$pytest_ver","bandit_version":"$bandit_ver","stderr_snippet":"$stderr_snippet"}
 EOF

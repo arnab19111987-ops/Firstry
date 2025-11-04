@@ -1,0 +1,56 @@
+name: bench-fast
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "tools/bench/**"
+      - "src/**"
+      - "Makefile"
+      - ".github/workflows/bench-fast.yml"
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install project + tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          # tools FT depends on for “manual” mapping; ignore missing safely:
+          pip install ruff mypy bandit pytest || true
+          ruff --version || true
+          mypy --version || true
+          bandit --version || true
+          pytest --version || true
+          ft --help || python -m firsttry --help || true
+
+      - name: Run fast bench matrix (1 trial/cell)
+        env:
+          TRIALS: "1"
+        run: |
+          bash tools/bench/bench_matrix.sh
+
+      - name: Aggregate results
+        run: |
+          python3 tools/bench/bench_aggregate.py --raw-dir .firsttry_bench/bench/raw --out-dir .firsttry_bench/bench
+          echo "== Report Preview =="
+          sed -n '1,80p' .firsttry_bench/bench/report.md || true
+
+      - name: Upload bench artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-report
+          path: |
+            .firsttry_bench/bench/report.md
+            .firsttry_bench/bench/summary.csv
+            .firsttry_bench/bench/raw/*.jsonl
+          if-no-files-found: warn
