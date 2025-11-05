@@ -20,34 +20,35 @@ async def main():
     """Test the new smart cache and timing instrumentation."""
     print("🧪 Testing Smart Cache & Timing Instrumentation")
     print("=" * 60)
-    
+
     repo_root = str(Path.cwd())
     checks = select_checks(profile="dev", changed=None)
-    
+
     print(f"📊 Running {len(checks)} checks to test improvements")
-    
+
     # Run once to see timing breakdown
     results = await run_checks_for_profile(
-        repo_root=repo_root,
-        checks=checks,
-        use_cache=True,
-        profile="dev"
+        repo_root=repo_root, checks=checks, use_cache=True, profile="dev"
     )
-    
+
     print("\n📈 Timing Analysis:")
     timing = results.get("_timing_metadata", {})
     for phase, duration_ms in timing.items():
         if phase != "total_ms":
             print(f"  • {phase}: {duration_ms:.0f}ms")
-    
+
     total_ms = timing.get("total_ms", 0)
     print(f"  • Total: {total_ms:.0f}ms ({total_ms/1000:.2f}s)")
-    
+
     # Check if any results have cache_state indicating smart cache usage
-    cache_states = [r.get("cache_state") for r in results.values() if isinstance(r, dict) and "cache_state" in r]
+    cache_states = [
+        r.get("cache_state")
+        for r in results.values()
+        if isinstance(r, dict) and "cache_state" in r
+    ]
     if cache_states:
         print(f"\n💾 Cache states observed: {set(cache_states)}")
-    
+
     print("\n✅ Smart cache and timing instrumentation are working!")
     print("🔍 This reveals exactly where execution time is spent")
 

@@ -44,13 +44,15 @@ def print_ci_like_conclusion(report: dict):
             print("💡 Manual fixes required for some checks.")
 
 
-def run_unified(gates_or_root=".", autofix=False, no_license_prompt=False, profile=None):
+def run_unified(
+    gates_or_root=".", autofix=False, no_license_prompt=False, profile=None
+):
     """Main unified run command - supports both list of gates and legacy interface."""
-    
+
     # Check if first argument is a list of gates (new interface)
     if isinstance(gates_or_root, list):
         return run_unified_gates(gates_or_root)
-    
+
     # Legacy interface - first arg is root path
     root = gates_or_root
     if profile is None:
@@ -112,18 +114,15 @@ GATE_MAP = {
     "lint_basic": g.run_lint_basic,
     "autofix": g.run_autofix,
     "repo_sanity": g.run_repo_sanity,
-
     # Level 2
     "type_check_fast": g.run_type_check_fast,
     "tests_fast": g.run_tests_fast,
     "env_deps_check": g.run_env_deps_check,
-
     # Level 3
     "duplication_fast": g.run_duplication_fast,
     "security_light": g.run_security_light,
     "coverage_warn": g.run_coverage_warn,
     "conventions": g.run_conventions,
-
     # Level 4
     "type_check_strict": g.run_type_check_strict,
     "tests_full": g.run_tests_full,
@@ -162,10 +161,14 @@ def run_unified_gates(gates: list[str]) -> dict[str, Any]:
 
         if ok:
             summary["passed"] += 1
-            summary["details"].append({"name": gate, "status": "passed", "errors": errors})
+            summary["details"].append(
+                {"name": gate, "status": "passed", "errors": errors}
+            )
         else:
             summary["failed"] += 1
-            summary["details"].append({"name": gate, "status": "failed", "errors": errors})
+            summary["details"].append(
+                {"name": gate, "status": "failed", "errors": errors}
+            )
 
     return summary
 

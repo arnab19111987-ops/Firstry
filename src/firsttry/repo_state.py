@@ -7,7 +7,9 @@ from datetime import datetime, timezone
 
 def repo_root_cwd(cwd):
     try:
-        out = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], cwd=cwd, stderr=subprocess.DEVNULL)
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"], cwd=cwd, stderr=subprocess.DEVNULL
+        )
         return out.decode().strip()
     except Exception:
         return None
@@ -16,7 +18,11 @@ def repo_root_cwd(cwd):
 def repo_id_from_root(root):
     # prefer remote URL if exists
     try:
-        remote = subprocess.check_output(["git", "config", "--get", "remote.origin.url"], cwd=root, stderr=subprocess.DEVNULL)
+        remote = subprocess.check_output(
+            ["git", "config", "--get", "remote.origin.url"],
+            cwd=root,
+            stderr=subprocess.DEVNULL,
+        )
         remote = remote.decode().strip()
     except Exception:
         remote = root

@@ -48,7 +48,13 @@ class DependencyParityAgent(Agent):
         if missing:
             issues.append("Missing deps locally: " + ", ".join(sorted(missing)))
         if version_drift:
-            issues.append("Version drift: " + ", ".join(f"{dep} CI:{ci_ver} local:{local_ver}" for dep, ci_ver, local_ver in version_drift))
+            issues.append(
+                "Version drift: "
+                + ", ".join(
+                    f"{dep} CI:{ci_ver} local:{local_ver}"
+                    for dep, ci_ver, local_ver in version_drift
+                )
+            )
 
         return AgentResult(
             name=self.name,

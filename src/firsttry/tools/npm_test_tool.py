@@ -19,9 +19,7 @@ class NpmTestTool:
         import subprocess
 
         cmd = ["npm", "run", self.script, "--", "--color=false"]
-        proc = subprocess.run(
-            cmd, cwd=self.repo_root, capture_output=True, text=True
-        )
+        proc = subprocess.run(cmd, cwd=self.repo_root, capture_output=True, text=True)
         if proc.returncode == 0:
             return "ok", {"stdout": proc.stdout, "stderr": proc.stderr}
         return "fail", {"stdout": proc.stdout, "stderr": proc.stderr}

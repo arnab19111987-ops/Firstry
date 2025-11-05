@@ -46,22 +46,31 @@ def load_config(repo_root: Path) -> Config:
     )
     to = data.get("timeouts", {})
     c.timeouts.default = int(to.get("default", 300))
-    c.timeouts.per_check = {k: int(v) for k, v in to.get("per_check", {}).items()} if isinstance(to.get("per_check", {}), dict) else {}
+    c.timeouts.per_check = (
+        {k: int(v) for k, v in to.get("per_check", {}).items()}
+        if isinstance(to.get("per_check", {}), dict)
+        else {}
+    )
     # checks.flags table may be dotted in some toml variants
-    c.checks_flags = {k: list(v) for k, v in data.get("checks.flags", {}).items()} if "checks.flags" in data else {}
+    c.checks_flags = (
+        {k: list(v) for k, v in data.get("checks.flags", {}).items()}
+        if "checks.flags" in data
+        else {}
+    )
     # workflow parsing
     wf = data.get("workflow", {}) or {}
     c.workflow = Workflow(
         pytest_depends_on=list(wf.get("pytest_depends_on", [])),
-        npm_test_depends_on=list(wf.get("npm-test_depends_on", [])) or list(wf.get("npm_test_depends_on", [])),
+        npm_test_depends_on=list(wf.get("npm-test_depends_on", []))
+        or list(wf.get("npm_test_depends_on", [])),
     )
     return c
 
 
 def timeout_for(cfg: Config, check_id: str) -> int:
     return int(cfg.timeouts.per_check.get(check_id, cfg.timeouts.default))
- 
+
+
 def workflow_requires(cfg: Config) -> list[str]:
     # unified list the planner understands per language section
     return list(set(cfg.workflow.pytest_depends_on + cfg.workflow.npm_test_depends_on))
-

@@ -66,3 +66,31 @@ select = ["E", "F"]
 # Tests may use dynamic names and type comparisons in legacy cases
 "tests/**" = ["F821", "E721", "F841"]
 
+[tool.black]
+# Black configuration made authoritative for this repository
+line-length = 100
+target-version = ["py311"]
+
+# Only format code we own
+include = '^(src|tests|tools|scripts)/'
+
+# Keep Black away from fixture forests and envs
+extend-exclude = '''
+(
+  ^benchmarks/
+ | ^my-monorepo/
+ | ^vscode-extension/
+ | \.venv
+ | \.venv-build
+ | node_modules
+ | \.mypy_cache
+ | \.ruff_cache
+ | \.pytest_cache
+ | \.firsttry
+ | dist
+ | build
+ | \.next
+ | coverage
+)
+'''
+

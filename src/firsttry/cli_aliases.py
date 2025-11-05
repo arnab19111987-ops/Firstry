@@ -54,44 +54,56 @@ def main() -> None:
     # 1) core, tier-aware fast flows
     if sub in ("lite", "fast"):
         # main dev loop
-        cmd = base + [
-            "run",
-            "fast",
-            "--tier",
-            "free-lite",
-            "--profile",
-            "fast",
-            "--report-json",
-            default_report,
-            "--report-schema",
-            "2",
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "fast",
+                "--tier",
+                "free-lite",
+                "--profile",
+                "fast",
+                "--report-json",
+                default_report,
+                "--report-schema",
+                "2",
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub in ("strict", "free-strict"):
         # before push, still free tier
-        cmd = base + [
-            "run",
-            "strict",
-            "--tier",
-            "free-strict",
-            "--report-json",
-            default_report,
-            "--report-schema",
-            "2",
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "strict",
+                "--tier",
+                "free-strict",
+                "--report-json",
+                default_report,
+                "--report-schema",
+                "2",
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub == "pro":
         # paid / CI-ish run
-        cmd = base + [
-            "run",
-            "fast",
-            "--tier",
-            "pro",
-            "--report-json",
-            default_report,
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "fast",
+                "--tier",
+                "pro",
+                "--report-json",
+                default_report,
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     # 2) maintenance / visibility
@@ -100,13 +112,17 @@ def main() -> None:
         raise SystemExit(_run(cmd))
 
     if sub == "doctor-checks":
-        cmd = base + [
-            "doctor",
-            "--check",
-            "report-json",
-            "--check",
-            "telemetry",
-        ] + extra
+        cmd = (
+            base
+            + [
+                "doctor",
+                "--check",
+                "report-json",
+                "--check",
+                "telemetry",
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub == "setup":
@@ -114,23 +130,31 @@ def main() -> None:
         raise SystemExit(_run(cmd))
 
     if sub in ("dash", "dashboard"):
-        cmd = base + [
-            "inspect",
-            "dashboard",
-            "--json",
-            default_report,
-        ] + extra
+        cmd = (
+            base
+            + [
+                "inspect",
+                "dashboard",
+                "--json",
+                default_report,
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub == "lock":
-        cmd = base + [
-            "inspect",
-            "report",
-            "--json",
-            default_report,
-            "--filter",
-            "locked=true",
-        ] + extra
+        cmd = (
+            base
+            + [
+                "inspect",
+                "report",
+                "--json",
+                default_report,
+                "--filter",
+                "locked=true",
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     # 3) tool-focused fast paths
@@ -144,50 +168,66 @@ def main() -> None:
     # you can add --only flag support.
     #
     if sub == "ruff":
-        cmd = base + [
-            "run",
-            "fast",
-            "--tier",
-            "free-lite",
-            "--report-json",
-            default_report,
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "fast",
+                "--tier",
+                "free-lite",
+                "--report-json",
+                default_report,
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub == "mypy":
         # mypy requires higher tier, so use free-strict
-        cmd = base + [
-            "run",
-            "fast",
-            "--tier",
-            "free-strict",
-            "--report-json",
-            default_report,
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "fast",
+                "--tier",
+                "free-strict",
+                "--report-json",
+                default_report,
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub == "pytest":
         # pytest requires higher tier
-        cmd = base + [
-            "run",
-            "fast",
-            "--tier",
-            "free-strict",
-            "--report-json",
-            default_report,
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "fast",
+                "--tier",
+                "free-strict",
+                "--report-json",
+                default_report,
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     if sub in ("js-test", "npm-test", "node-test"):
         # call FirstTry's smart_npm path
-        cmd = base + [
-            "run",
-            "fast",
-            "--tier",
-            "free-strict",
-            "--report-json",
-            default_report,
-        ] + extra
+        cmd = (
+            base
+            + [
+                "run",
+                "fast",
+                "--tier",
+                "free-strict",
+                "--report-json",
+                default_report,
+            ]
+            + extra
+        )
         raise SystemExit(_run(cmd))
 
     # unknown

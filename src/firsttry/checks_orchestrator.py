@@ -7,18 +7,20 @@ from typing import Any, Dict, List, Optional
 from .profiler import get_profiler
 
 
-async def _timed_runner_execution(runner, worker_id: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> Dict[str, Any]:
+async def _timed_runner_execution(
+    runner, worker_id: int, ctx: Dict[str, Any], item: Dict[str, Any]
+) -> Dict[str, Any]:
     """Execute a runner with timing instrumentation."""
     profiler = get_profiler()
     family = _family_of(item)
     tool = item.get("tool") or family
-    
+
     # Start timing
     profiler.start_check(tool, family)
-    
+
     try:
         result = await runner.run(worker_id, ctx, item)
-        
+
         # Determine success/exit code from result
         if isinstance(result, dict):
             success = result.get("ok", True)
@@ -26,18 +28,18 @@ async def _timed_runner_execution(runner, worker_id: int, ctx: Dict[str, Any], i
         else:
             success = True
             exit_code = 0
-        
+
         # End timing
         duration = profiler.end_check(tool, family, exit_code, success)
-        
+
         # Add timing info to result
         if isinstance(result, dict):
             result["duration"] = duration
         else:
             result = {"ok": True, "result": result, "duration": duration}
-        
+
         return result
-        
+
     except Exception as e:
         # End timing with error
         profiler.end_check(tool, family, 1, False)
@@ -135,15 +137,15 @@ async def _run_bucket_with_timeout(
     """
     if not bucket:
         return []
-    
+
     tasks = []
     task_to_item = {}
-    
+
     for item in bucket:
         family = _family_of(item)
         tool = item.get("tool") or family
         workers = allocation.get(family, 1)
-        
+
         runner = RUNNERS.get(tool)
         if not runner:
             # custom command runner
@@ -152,15 +154,23 @@ async def _run_bucket_with_timeout(
             else:
                 # nothing we can run for this item
                 continue
-        
+
         # create up to N tasks for this family
         for i in range(max(1, workers)):
             # Wrap with timeout - capture all loop variables to avoid closure bug
-            async def run_with_timeout(captured_item=item, captured_family=family, captured_tool=tool, captured_runner=runner, worker_id=i):
+            async def run_with_timeout(
+                captured_item=item,
+                captured_family=family,
+                captured_tool=tool,
+                captured_runner=runner,
+                worker_id=i,
+            ):
                 try:
                     return await asyncio.wait_for(
-                        _timed_runner_execution(captured_runner, worker_id, ctx, captured_item),
-                        timeout=timeout_seconds
+                        _timed_runner_execution(
+                            captured_runner, worker_id, ctx, captured_item
+                        ),
+                        timeout=timeout_seconds,
                     )
                 except asyncio.TimeoutError:
                     return {
@@ -169,28 +179,30 @@ async def _run_bucket_with_timeout(
                         "tool": captured_tool,
                         "error": f"Timed out after {timeout_seconds}s",
                     }
-            
+
             t = asyncio.create_task(run_with_timeout())
             tasks.append(t)
             task_to_item[t] = item
-    
+
     if not tasks:
         return []
-    
+
     finished = await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     results = []
     for task, out in zip(tasks, finished):
         item = task_to_item[task]
         family = _family_of(item)
-        
+
         if isinstance(out, Exception):
-            results.append({
-                "ok": False,
-                "family": family,
-                "tool": item.get("tool") or family,
-                "error": str(out),
-            })
+            results.append(
+                {
+                    "ok": False,
+                    "family": family,
+                    "tool": item.get("tool") or family,
+                    "error": str(out),
+                }
+            )
         else:
             # ensure the runner result is a dict and contains family/tool
             if not isinstance(out, dict):
@@ -198,7 +210,7 @@ async def _run_bucket_with_timeout(
             out.setdefault("family", family)
             out.setdefault("tool", item.get("tool") or family)
             results.append(out)
-    
+
     return results
 
 
@@ -214,15 +226,17 @@ async def _run_bucket(
     """
     # Different timeout for different bucket types
     family_names = [_family_of(item) for item in bucket]
-    
+
     # SLOW checks get longer timeout
     slow_families = {"pytest", "npm", "ci-parity"}
     if any(f in slow_families for f in family_names):
         timeout = 60.0  # 60s for slow checks
     else:
         timeout = 30.0  # 30s for fast checks
-    
-    return await _run_bucket_with_timeout(bucket, allocation, ctx, tier, config, timeout)
+
+    return await _run_bucket_with_timeout(
+        bucket, allocation, ctx, tier, config, timeout
+    )
 
 
 # ---- PUBLIC ENTRYPOINT (USED BY CLI) ------------------------------------
@@ -246,6 +260,7 @@ async def run_orchestrator(
     """
     # Reset profiler for this run
     from .profiler import reset_profiler
+
     reset_profiler()
 
     if not plan:
@@ -257,14 +272,20 @@ async def run_orchestrator(
     # 1) fast → parallel (gives immediate feedback)
     if buckets["fast"]:
         if show_phases:
-            print("⚡ firsttry: running FAST checks in parallel:", ", ".join(_family_of(i) for i in buckets["fast"]))
+            print(
+                "⚡ firsttry: running FAST checks in parallel:",
+                ", ".join(_family_of(i) for i in buckets["fast"]),
+            )
         fast_results = await _run_bucket(buckets["fast"], allocation, ctx, tier, config)
         all_results.extend(fast_results)
 
     # 2) mutating → serial (avoids file conflicts)
     if buckets["mutating"]:
         if show_phases:
-            print("→ firsttry: running MUTATING checks serially:", ", ".join(_family_of(i) for i in buckets["mutating"]))
+            print(
+                "→ firsttry: running MUTATING checks serially:",
+                ", ".join(_family_of(i) for i in buckets["mutating"]),
+            )
         for item in buckets["mutating"]:
             mut_res = await _run_bucket([item], allocation, ctx, tier, config)
             all_results.extend(mut_res)
@@ -272,14 +293,22 @@ async def run_orchestrator(
     # 3) other → parallel (safe default)
     if buckets["other"]:
         if show_phases:
-            print("→ firsttry: running OTHER checks in parallel:", ", ".join(_family_of(i) for i in buckets["other"]))
-        other_results = await _run_bucket(buckets["other"], allocation, ctx, tier, config)
+            print(
+                "→ firsttry: running OTHER checks in parallel:",
+                ", ".join(_family_of(i) for i in buckets["other"]),
+            )
+        other_results = await _run_bucket(
+            buckets["other"], allocation, ctx, tier, config
+        )
         all_results.extend(other_results)
 
     # 4) slow → parallel, but last so users see quick wins first
     if buckets["slow"]:
         if show_phases:
-            print("⏳ firsttry: running SLOW checks in parallel:", ", ".join(_family_of(i) for i in buckets["slow"]))
+            print(
+                "⏳ firsttry: running SLOW checks in parallel:",
+                ", ".join(_family_of(i) for i in buckets["slow"]),
+            )
         slow_results = await _run_bucket(buckets["slow"], allocation, ctx, tier, config)
         all_results.extend(slow_results)
 
@@ -297,4 +326,3 @@ async def run_orchestrator(
 
 # Alias for backward compatibility
 run_checks_with_allocation_and_plan = run_orchestrator
-

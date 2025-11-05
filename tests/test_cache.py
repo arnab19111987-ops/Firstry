@@ -18,7 +18,7 @@ def test_save_and_load_cache(tmp_path, monkeypatch):
     # Test save and load cycle
     cache_file = tmp_path / "test_cache.json"
     monkeypatch.setattr("firsttry.cache.CACHE_FILE", cache_file)
-    
+
     data = {"hello": "world", "repos": {}}
     save_cache(data)
     loaded = load_cache()

@@ -14,12 +14,12 @@ def _safe_gate(
 ) -> GateResult:
     """
     Run a shell/tool-based gate but never crash the whole run.
-    
+
     Args:
         gate_id: Identifier for this gate (e.g., "lint", "types")
         cmd: Command to run as list of strings, or None for pythonic gates
         ok_if_missing: Whether to treat missing tool as ok (skipped) or failure
-    
+
     Returns:
         GateResult with structured success/failure/skip information
     """
@@ -27,7 +27,7 @@ def _safe_gate(
         if cmd is None:
             # Pure Python gate with no subprocess
             return GateResult(gate_id=gate_id, ok=True, skipped=False, output="")
-        
+
         # Run the command - pass all kwargs that subprocess.run might accept
         try:
             proc = subprocess.run(
@@ -43,7 +43,7 @@ def _safe_gate(
                 capture_output=True,
                 text=True,
             )
-        
+
         return GateResult(
             gate_id=gate_id,
             ok=(proc.returncode == 0),

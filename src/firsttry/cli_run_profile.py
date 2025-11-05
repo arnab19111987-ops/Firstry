@@ -18,32 +18,38 @@ def main():
         default=".firsttry/last_run.json",
         help="Where to write telemetry report",
     )
-    parser.add_argument("--debug-report", action="store_true", help="Print report JSON before writing")
+    parser.add_argument(
+        "--debug-report", action="store_true", help="Print report JSON before writing"
+    )
     args = parser.parse_args()
 
     repo_root = Path(args.repo).resolve()
     report_path = repo_root / args.report
 
     # First get the raw results without writing the report
-    results, report = run_profile_for_repo(repo_root, profile=None, report_path=report_path)
-    
+    results, report = run_profile_for_repo(
+        repo_root, profile=None, report_path=report_path
+    )
+
     # Build comprehensive report payload from orchestrator report with locked schema
     from datetime import datetime, timezone
-    
+
     payload = {
         "schema_version": 1,
         "repo": report.get("repo", str(repo_root)),
         "run_at": datetime.now(timezone.utc).isoformat(),
         "timing": report.get("timing", {"total_ms": 0.0}),
-        "checks": []
+        "checks": [],
     }
-    
+
     # Convert results to check format with timing info
     for result in results:
-        status = "cached" if result.get("from_cache") else result.get("status", "unknown")
+        status = (
+            "cached" if result.get("from_cache") else result.get("status", "unknown")
+        )
         duration = result.get("duration_s", result.get("elapsed", 0.0))
         last_duration = result.get("last_duration_s")
-        
+
         check_data = {
             "name": result["name"],
             "status": status,
@@ -51,15 +57,15 @@ def main():
         }
         if last_duration is not None:
             check_data["last_duration_s"] = last_duration
-            
+
         payload["checks"].append(check_data)
-    
+
     # Debug output if requested
     if args.debug_report:
         print("=== Report Payload ===")
         print(json.dumps(payload, indent=2))
         print("=====================")
-    
+
     # Handle durable report writing with error handling and ensure we exit 0
     try:
         # Try to get running loop first

@@ -6,9 +6,9 @@ from .base import Gate, GateResult
 
 class CiFilesChangedGate(Gate):
     """Gate that checks if CI files have changed."""
-    
+
     gate_id = "ci_files_changed"
-    
+
     def run(self, project_root: Optional[Any] = None) -> GateResult:
         """Check if CI files have changed."""
         # This is a placeholder implementation
@@ -16,5 +16,5 @@ class CiFilesChangedGate(Gate):
             gate_id=self.gate_id,
             ok=True,
             skipped=True,
-            reason="CI files changed check not implemented, skipping"
+            reason="CI files changed check not implemented, skipping",
         )

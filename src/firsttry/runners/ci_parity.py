@@ -13,7 +13,9 @@ from .base import BaseRunner, RunnerResult
 class CiParityRunner(BaseRunner):
     tool = "ci-parity"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         # make sure ctx has ci_plan
         if "ci_plan" not in ctx:
             ctx["ci_plan"] = resolve_ci_plan(ctx.get("repo_root", ".")) or []

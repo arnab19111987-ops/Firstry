@@ -6,9 +6,9 @@ from .base import Gate, GateResult
 
 class DriftCheckGate(Gate):
     """Gate that checks for configuration drift."""
-    
+
     gate_id = "drift_check"
-    
+
     def run(self, project_root: Optional[Any] = None) -> GateResult:
         """Run drift check."""
         # This is a placeholder implementation
@@ -17,5 +17,5 @@ class DriftCheckGate(Gate):
             gate_id=self.gate_id,
             ok=True,
             skipped=True,
-            reason="drift check not implemented, skipping"
+            reason="drift check not implemented, skipping",
         )

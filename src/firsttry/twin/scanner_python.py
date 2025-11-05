@@ -6,11 +6,13 @@ import tomllib
 from .graph import CodebaseTwin, FileNode, ProjectNode
 from .hashers import hash_file, hash_dir
 
+
 def _iter_py_files(root: Path) -> Iterable[Path]:
     for p in root.rglob("*.py"):
         if any(part.startswith(".") for part in p.parts):
             continue
         yield p
+
 
 def _module_name(repo_root: Path, file_path: Path) -> Optional[str]:
     # Heuristic: turn path like src/pkg/mod.py into pkg.mod if under a src-like root
@@ -27,6 +29,7 @@ def _module_name(repo_root: Path, file_path: Path) -> Optional[str]:
         parts[-1] = parts[-1][:-3]
     return ".".join(p for p in parts if p)
 
+
 def _imports_from_ast(src: str) -> set[str]:
     out: set[str] = set()
     try:
@@ -42,15 +45,18 @@ def _imports_from_ast(src: str) -> set[str]:
                 out.add(n.module.split(".")[0])
     return out
 
+
 def build_python_twin(repo_root: Path) -> CodebaseTwin:
     twin = CodebaseTwin(repo_root=str(repo_root))
     # 1) project-level detection via pyproject.toml (optional poetry/pep621)
     pyproject = repo_root / "pyproject.toml"
     if pyproject.exists():
         data = tomllib.loads(pyproject.read_text("utf-8"))
-        name = (data.get("project", {}) or {}).get("name") \
-            or (data.get("tool", {}).get("poetry", {}) or {}).get("name") \
+        name = (
+            (data.get("project", {}) or {}).get("name")
+            or (data.get("tool", {}).get("poetry", {}) or {}).get("name")
             or "python-project"
+        )
         proj = ProjectNode(name=name, lang="python", root=".", deps=set(), files=set())
         twin.projects[proj.name] = proj
 

@@ -22,19 +22,27 @@ def _ok(msg: str = "ok") -> types.SimpleNamespace:
     return types.SimpleNamespace(ok=True, stdout=msg, stderr="", duration_s=0.0, cmd=())
 
 
-def run_ruff(repo_root: str, files: Optional[List[str]] = None) -> types.SimpleNamespace:
+def run_ruff(
+    repo_root: str, files: Optional[List[str]] = None
+) -> types.SimpleNamespace:
     return _ok("ruff(stub)")
 
 
-def run_black_check(repo_root: str, files: Optional[List[str]] = None) -> types.SimpleNamespace:
+def run_black_check(
+    repo_root: str, files: Optional[List[str]] = None
+) -> types.SimpleNamespace:
     return _ok("black --check (stub)")
 
 
-def run_mypy(repo_root: str, targets: Optional[List[str]] = None) -> types.SimpleNamespace:
+def run_mypy(
+    repo_root: str, targets: Optional[List[str]] = None
+) -> types.SimpleNamespace:
     return _ok("mypy(stub)")
 
 
-def run_pytest_kexpr(repo_root: str, kexpr: Optional[str] = None) -> types.SimpleNamespace:
+def run_pytest_kexpr(
+    repo_root: str, kexpr: Optional[str] = None
+) -> types.SimpleNamespace:
     return _ok("pytest -k (stub)")
 
 
@@ -61,6 +69,7 @@ if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
             run_coverage_xml as _real_run_coverage_xml,
             coverage_gate as _real_coverage_gate,
         )
+
         run_ruff = _real_run_ruff
         run_black_check = _real_run_black_check
         run_mypy = _real_run_mypy

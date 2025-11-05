@@ -12,6 +12,7 @@ import yaml
 
 # -------------------- helpers -------------------- #
 
+
 def _iter_ci_files(root: Path) -> Generator[Path, None, None]:
     gh = root / ".github" / "workflows"
     if gh.exists():
@@ -60,6 +61,7 @@ def _extract_run_commands(step: Any) -> List[str]:
 
 # -------------------- resolution helpers -------------------- #
 
+
 def _family_from_tool(tool: str) -> str:
     tool = tool.lower()
     if tool in ("ruff", "flake8", "black", "eslint", "hadolint"):
@@ -106,7 +108,9 @@ def _resolve_tox(root: Path) -> List[Dict[str, str]]:
                 {
                     "tool": _tool_from_command(cl, root) or "pytest",
                     "cmd": cl,
-                    "family": _family_from_tool(_tool_from_command(cl, root) or "pytest"),
+                    "family": _family_from_tool(
+                        _tool_from_command(cl, root) or "pytest"
+                    ),
                     "source": "ci:tox",
                 }
             )
@@ -188,7 +192,17 @@ def _tool_from_command(cmd: str, root: Path) -> str | None:
     first = parts[0]
 
     # direct tools
-    if first in ("ruff", "flake8", "black", "pytest", "mypy", "pyright", "bandit", "safety", "pip-audit"):
+    if first in (
+        "ruff",
+        "flake8",
+        "black",
+        "pytest",
+        "mypy",
+        "pyright",
+        "bandit",
+        "safety",
+        "pip-audit",
+    ):
         return first
 
     if first in ("npm", "yarn", "pnpm") and len(parts) > 1 and parts[1] == "test":
@@ -214,6 +228,7 @@ def _tool_from_command(cmd: str, root: Path) -> str | None:
 
 
 # -------------------- PUBLIC API -------------------- #
+
 
 def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
     """
@@ -246,7 +261,12 @@ def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
                         if parts and parts[0] == "tox":
                             items.extend(_resolve_tox(root))
                             continue
-                        if parts and parts[0] == "make" and len(parts) >= 2 and parts[1] == "test":
+                        if (
+                            parts
+                            and parts[0] == "make"
+                            and len(parts) >= 2
+                            and parts[1] == "test"
+                        ):
                             items.extend(_resolve_make_test(root))
                             continue
 

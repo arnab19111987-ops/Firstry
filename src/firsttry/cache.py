@@ -197,15 +197,16 @@ def update_gate_cache(cache: dict, gate_id: str, watched_files: list[str]) -> No
 
 # Enhanced cache functions using stat-first validation
 
+
 def load_tool_cache_entry(repo_root: str, tool_name: str) -> Optional[ToolCacheEntry]:
     """Load enhanced cache entry with stat-first validation support."""
     repo_data = get_repo_cache(repo_root)
     tools = repo_data.get("tools", {})
     tool_data = tools.get(tool_name)
-    
+
     if not tool_data:
         return None
-        
+
     try:
         # Try to load as enhanced cache entry
         if "input_files" in tool_data:
@@ -220,7 +221,7 @@ def load_tool_cache_entry(repo_root: str, tool_name: str) -> Optional[ToolCacheE
             )
     except (KeyError, TypeError):
         pass
-        
+
     return None
 
 
@@ -229,12 +230,12 @@ def save_tool_cache_entry(repo_root: str, entry: ToolCacheEntry) -> None:
     cache = load_cache()
     repo_data = cache.setdefault("repos", {}).setdefault(repo_root, {})
     tools = repo_data.setdefault("tools", {})
-    
+
     tools[entry.tool_name] = {
         "input_files": [
             {
                 "path": f.path,
-                "size": f.size, 
+                "size": f.size,
                 "mtime": f.mtime,
             }
             for f in entry.input_files
@@ -244,22 +245,26 @@ def save_tool_cache_entry(repo_root: str, entry: ToolCacheEntry) -> None:
         "created_at": entry.created_at,
         "extra": entry.extra,
     }
-    
+
     save_cache(cache)
 
 
-def is_tool_cache_valid_fast(repo_root: str, tool_name: str, input_paths: list[str]) -> tuple[bool, str]:
+def is_tool_cache_valid_fast(
+    repo_root: str, tool_name: str, input_paths: list[str]
+) -> tuple[bool, str]:
     """
     Fast cache validation using stat-first approach.
-    
+
     Returns (is_valid, cache_state) where cache_state is:
     - "hit": Valid cache, use result
-    - "miss": No cache or files changed  
+    - "miss": No cache or files changed
     - "policy-rerun": Valid cache but policy says re-run (e.g., failed tools)
     - "stale": Cache too old
     """
     entry = load_tool_cache_entry(repo_root, tool_name)
-    cache_state, use_cache = get_cache_state(entry, input_paths, policy_rerun_failures=True)
+    cache_state, use_cache = get_cache_state(
+        entry, input_paths, policy_rerun_failures=True
+    )
     return use_cache, cache_state
 
 

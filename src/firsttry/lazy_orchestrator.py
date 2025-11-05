@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 from .run_profiles import RunProfile, dev_profile
-from .cache import load_tool_cache_entry, save_tool_cache_entry  
+from .cache import load_tool_cache_entry, save_tool_cache_entry
 from .cache_utils import collect_input_stats, input_stats_match
 from .cache_models import ToolCacheEntry
 from .detectors import detect_stack
@@ -24,7 +24,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
     if cache_entry and input_stats_match(cache_entry.input_files, current_stats):
         # Get the last real duration for analytics
         last_duration = cache_entry.extra.get("elapsed", 0.0)
-        
+
         # replay failed => visible fast run
         if cache_entry.status == "fail":
             return {
@@ -34,7 +34,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
                 "cache_state": "hit-policy",
                 "meta": cache_entry.extra,
                 "duration_s": 0.0,  # cached -> always 0
-                "last_duration_s": last_duration  # preserve for analytics
+                "last_duration_s": last_duration,  # preserve for analytics
             }
         return {
             "name": tool.name,
@@ -43,14 +43,14 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
             "cache_state": "hit",
             "meta": cache_entry.extra,
             "duration_s": 0.0,  # cached -> always 0
-            "last_duration_s": last_duration  # preserve for analytics
+            "last_duration_s": last_duration,  # preserve for analytics
         }
 
     # SLOW PATH: something changed -> run the tool
     start_time = time.monotonic()
     status, meta = tool.run()
     duration_s = time.monotonic() - start_time
-    
+
     # Update meta with timing
     meta["elapsed"] = duration_s
 
@@ -62,7 +62,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
             input_hash="",  # We use stat-first, hash not needed
             status=status,
             created_at=time.time(),
-            extra=meta
+            extra=meta,
         )
         save_tool_cache_entry(str(repo_root), entry)
 
@@ -72,7 +72,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
         "from_cache": False,
         "cache_state": "miss",
         "meta": meta,
-        "duration_s": duration_s
+        "duration_s": duration_s,
     }
 
 
@@ -153,8 +153,8 @@ def run_profile_for_repo(
             "name": profile.name,
             "fast_count": len(fast_results),
             "mutating_count": len(mutating_results),
-            "slow_count": len(slow_results)
-        }
+            "slow_count": len(slow_results),
+        },
     }
 
     # 6) DEFER REPORT WRITE - don't block CLI

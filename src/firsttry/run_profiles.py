@@ -46,7 +46,9 @@ class RunProfile:
 def dev_profile() -> RunProfile:
     return RunProfile(
         name="dev",
-        fast_tools=[lambda root: RuffTool(root),],
+        fast_tools=[
+            lambda root: RuffTool(root),
+        ],
         mutating_tools=[
             # put black here if you have one
         ],
@@ -80,7 +82,15 @@ def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
 
     if profile in ("full", "strict"):
         # Legacy fallback - provide comprehensive check list
-        return ["ruff", "repo_sanity", "black_check", "mypy", "pytest", "npm_test", "ci_parity"]
+        return [
+            "ruff",
+            "repo_sanity",
+            "black_check",
+            "mypy",
+            "pytest",
+            "npm_test",
+            "ci_parity",
+        ]
 
     # default/fallback
     return ["ruff", "repo_sanity"]
@@ -90,7 +100,7 @@ def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
 
 PROFILES_BY_TIER = {
     "free-lite": "dev_fast",
-    "free-strict": "dev_strict", 
+    "free-strict": "dev_strict",
     "pro": "team_strict",
     "promax": "enterprise",
 }
@@ -104,10 +114,10 @@ def get_profile_for_current_tier() -> str:
 def get_pytest_mode_for_profile(profile: str) -> str:
     """Get the pytest mode for a given profile"""
     mode_map = {
-        "fast": "smoke",     # Fast smoke tests only
-        "dev": "smart",      # Smart failed-first + changed targeting  
-        "full": "full",      # Full test suite with auto-parallel
-        "strict": "full"     # Full test suite with auto-parallel
+        "fast": "smoke",  # Fast smoke tests only
+        "dev": "smart",  # Smart failed-first + changed targeting
+        "full": "full",  # Full test suite with auto-parallel
+        "strict": "full",  # Full test suite with auto-parallel
     }
     return mode_map.get(profile, "smart")
 
@@ -124,7 +134,7 @@ def get_profile_description(profile: str) -> str:
     descriptions = {
         "fast": "Quick static analysis only (ruff, sanity checks)",
         "dev": "Development workflow (linting + formatting + types)",
-        "full": "Complete validation (all checks, no optimizations)", 
+        "full": "Complete validation (all checks, no optimizations)",
         "strict": "Full CI-equivalent validation",
     }
     return descriptions.get(profile, "Standard development checks")

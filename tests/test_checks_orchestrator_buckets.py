@@ -10,7 +10,9 @@ class _DummyRunner:
     def __init__(self, name: str):
         self.name = name
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> Dict[str, Any]:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> Dict[str, Any]:
         # simulate real runner shape
         return {
             "ok": True,
@@ -28,6 +30,7 @@ def test_bucketed_execution_runs_in_phases(monkeypatch):
       - then slow (pytest)
     regardless of asyncio task completion order.
     """
+
     async def _test():
         from firsttry import checks_orchestrator
 
@@ -44,7 +47,7 @@ def test_bucketed_execution_runs_in_phases(monkeypatch):
         plan: List[Dict[str, Any]] = [
             {"family": "ruff"},
             {"family": "mypy"},
-            {"family": "black"},   # mutating → should be AFTER fast
+            {"family": "black"},  # mutating → should be AFTER fast
             {"family": "pytest"},  # slow → should be LAST
         ]
 
@@ -73,7 +76,7 @@ def test_bucketed_execution_runs_in_phases(monkeypatch):
 
         # Extract families that were run
         families = [check["family"] for check in checks]
-        
+
         # All families should be present
         assert "ruff" in families
         assert "mypy" in families

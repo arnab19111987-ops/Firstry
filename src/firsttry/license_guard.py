@@ -23,20 +23,17 @@ TIER_SYNONYMS = {
     "developer": "free-lite",
     "fast": "free-lite",
     "auto": "free-lite",
-
     # ----- free-strict -----
     "free-strict": "free-strict",
     "strict": "free-strict",
     "ci": "free-strict",
     "config": "free-strict",
     "verify": "free-strict",
-
     # ----- pro (paid) -----
     "pro": "pro",
     "team": "pro",
     "teams": "pro",
     "full": "pro",
-
     # ----- promax (paid) -----
     "promax": "promax",
     "enterprise": "promax",
@@ -46,6 +43,7 @@ TIER_SYNONYMS = {
 
 class LicenseError(RuntimeError):
     """Raised when a paid tier is used without a valid license."""
+
     pass
 
 
@@ -110,9 +108,7 @@ def _validate_license_max_security(license_key: str, tier: str) -> None:
             )
     else:
         # backend is present but unknown interface → fail closed
-        raise LicenseError(
-            f"Tier '{tier}' requires license. Unknown license backend."
-        )
+        raise LicenseError(f"Tier '{tier}' requires license. Unknown license backend.")
 
 
 def ensure_license_for_current_tier() -> None:
@@ -132,8 +128,10 @@ def ensure_license_for_current_tier() -> None:
 def is_pro() -> bool:
     return get_tier() == "pro"
 
+
 def is_teams() -> bool:
     return get_tier() == "pro"
+
 
 def is_developer() -> bool:
     return get_tier() in ("free-lite", "free-strict")

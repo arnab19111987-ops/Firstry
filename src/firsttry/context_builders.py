@@ -6,6 +6,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Dict, List
 
+
 def _detect_repo_root() -> str:
     return str(Path(".").resolve())
 
@@ -19,6 +20,7 @@ def _list_py_files(repo_root: str | None = None) -> List[str]:
             continue
         out.append(str(p))
     return out
+
 
 CONFIG_FILES = [
     "pyproject.toml",
@@ -52,7 +54,11 @@ def build_repo_profile() -> Dict[str, Any]:
     """
     repo_root = _detect_repo_root()
     py_files = _list_py_files(repo_root)
-    test_count = sum(1 for f in py_files if "/tests/" in f or f.endswith("_test.py") or f.startswith("tests/"))
+    test_count = sum(
+        1
+        for f in py_files
+        if "/tests/" in f or f.endswith("_test.py") or f.startswith("tests/")
+    )
     return {
         "repo_root": repo_root,
         "file_count": len(py_files),

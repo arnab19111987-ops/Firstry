@@ -5,7 +5,7 @@ import types
 def test_cli_doctor_uses_report(monkeypatch):
     """Test that CLI doctor command executes and produces output."""
     from tests.cli_utils import run_cli
-    
+
     # Import from the ROOT firsttry package (not tools/firsttry)
     import firsttry.doctor as doctor_mod
 
@@ -26,7 +26,7 @@ def test_cli_doctor_uses_report(monkeypatch):
 
     # Test argparse CLI
     code, out, err = run_cli(["doctor"])
-    
+
     # Doctor should succeed and output the report
     assert code == 0, f"Expected exit code 0, got {code}. Stderr: {err}"
     assert "Doctor" in out or "Health" in out, f"Expected doctor output, got: {out}"
@@ -53,7 +53,7 @@ def test_cli_doctor_exitcode_nonzero(monkeypatch):
     monkeypatch.setattr(doctor_mod, "render_report_md", fake_render)
 
     code, out, err = run_cli(["doctor"])
-    
+
     # Doctor should run and produce output (exit code behavior may vary)
     assert "Doctor" in out or "Health" in out or "FAILED" in out
 
@@ -61,15 +61,11 @@ def test_cli_doctor_exitcode_nonzero(monkeypatch):
 def test_cli_license_verify_prints_status(monkeypatch):
     """Test that CLI license verify command prints license status."""
     from tests.cli_utils import run_cli
-    
+
     # Mock license verification to return a valid license
     def fake_verify(key=None):
-        return types.SimpleNamespace(
-            valid=True,
-            tier="pro",
-            message="License is valid"
-        )
-    
+        return types.SimpleNamespace(valid=True, tier="pro", message="License is valid")
+
     # Note: This test is simplified because license verification has complex dependencies
     # For now, just verify the command doesn't crash
     code, out, err = run_cli(["--help"])
@@ -79,17 +75,14 @@ def test_cli_license_verify_prints_status(monkeypatch):
 def test_cli_license_verify_nonvalid_exitcode(monkeypatch):
     """Test that CLI license verify returns non-zero for invalid license."""
     from tests.cli_utils import run_cli
-    
+
     # Mock license verification to return invalid license
     def fake_verify(key=None):
         return types.SimpleNamespace(
-            valid=False,
-            tier="free-lite",
-            message="Invalid license"
+            valid=False, tier="free-lite", message="Invalid license"
         )
-    
+
     # Note: This test is simplified because license verification has complex dependencies
     # For now, just verify the command doesn't crash
     code, out, err = run_cli(["--help"])
     assert code == 0
-

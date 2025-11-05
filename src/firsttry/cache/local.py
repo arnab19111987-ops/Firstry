@@ -5,13 +5,15 @@ import json
 import time
 from .base import BaseCache, CacheHit
 
+
 class LocalCache(BaseCache):
     """
     Simple on-disk cache under .firsttry/cache/.
     Stores one JSON file per key. Optional size cap via LRU timestamps.
     """
+
     def __init__(self, repo_root: Path, max_entries: int = 2000):
-        self.root = (repo_root / ".firsttry" / "cache")
+        self.root = repo_root / ".firsttry" / "cache"
         self.root.mkdir(parents=True, exist_ok=True)
         self.max_entries = max_entries
 
@@ -30,7 +32,11 @@ class LocalCache(BaseCache):
             data = json.loads(p.read_text())
             # touch file to update "access time"
             p.touch()
-            return CacheHit(stdout=data.get("stdout",""), stderr=data.get("stderr",""), meta=data.get("meta"))
+            return CacheHit(
+                stdout=data.get("stdout", ""),
+                stderr=data.get("stderr", ""),
+                meta=data.get("meta"),
+            )
         except Exception:
             return None
 
@@ -47,10 +53,12 @@ class LocalCache(BaseCache):
 
     def _maybe_evict(self) -> None:
         # cheap LRU by modified time across all shards
-        files = sorted(self.root.rglob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True)
+        files = sorted(
+            self.root.rglob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True
+        )
         if len(files) <= self.max_entries:
             return
-        for f in files[self.max_entries:]:
+        for f in files[self.max_entries :]:
             try:
                 f.unlink(missing_ok=True)
             except Exception:

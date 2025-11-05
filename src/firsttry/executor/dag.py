@@ -17,7 +17,7 @@ from ..cache.s3 import S3Cache
 @dataclass
 class TaskResult:
     id: str
-    status: str         # "ok" | "fail" | "skip" | "error" | "hit-local" | "hit-remote"
+    status: str  # "ok" | "fail" | "skip" | "error" | "hit-local" | "hit-remote"
     duration_ms: int
     # Can be bytes when coming from subprocess without text=True; accept both.
     stdout: str | bytes = ""
@@ -30,6 +30,7 @@ class TaskResult:
             cache_status = "hit-local"
         if self.status == "hit-remote":
             cache_status = "hit-remote"
+
         def _to_str(x: str | bytes) -> str:
             if isinstance(x, bytes):
                 try:
@@ -41,7 +42,9 @@ class TaskResult:
         return {
             "name": self.id,
             "check_id": self.id,
-            "status": "ok" if self.status in {"ok", "hit-local", "hit-remote"} else self.status,
+            "status": "ok"
+            if self.status in {"ok", "hit-local", "hit-remote"}
+            else self.status,
             "duration_ms": self.duration_ms,
             "stdout": _to_str(self.stdout),
             "stderr": _to_str(self.stderr),
@@ -50,7 +53,15 @@ class TaskResult:
 
 
 class DagExecutor:
-    def __init__(self, repo_root: Path, plan: Plan, caches: List[BaseCache], runners: Dict[str, CheckRunner] | None = None, max_workers: int = 8, timeouts: callable | None = None):
+    def __init__(
+        self,
+        repo_root: Path,
+        plan: Plan,
+        caches: List[BaseCache],
+        runners: Dict[str, CheckRunner] | None = None,
+        max_workers: int = 8,
+        timeouts: callable | None = None,
+    ):
         self.repo_root = repo_root
         self.plan = plan
         self.caches = caches
@@ -78,8 +89,17 @@ class DagExecutor:
         for idx, cache in enumerate(self.caches):
             hit = cache.get(key)
             if hit:
-                status = "hit-remote" if idx == 0 and len(self.caches) > 1 else "hit-local"
-                return TaskResult(id="", status=status, duration_ms=0, stdout=hit.stdout, stderr=hit.stderr, cache_key=key)
+                status = (
+                    "hit-remote" if idx == 0 and len(self.caches) > 1 else "hit-local"
+                )
+                return TaskResult(
+                    id="",
+                    status=status,
+                    duration_ms=0,
+                    stdout=hit.stdout,
+                    stderr=hit.stderr,
+                    cache_key=key,
+                )
         return None
 
     def _store_success(self, key: str, rr: RunResult) -> None:
@@ -101,7 +121,14 @@ class DagExecutor:
             missing_msg = "prereq_check failed"
         if missing_msg:
             dur = int((time.monotonic() - start) * 1000)
-            return TaskResult(id=task_id, status="skip", duration_ms=dur, stdout="", stderr=missing_msg, cache_key=None)
+            return TaskResult(
+                id=task_id,
+                status="skip",
+                duration_ms=dur,
+                stdout="",
+                stderr=missing_msg,
+                cache_key=None,
+            )
 
         key = runner.build_cache_key(self.repo_root, task.targets, task.flags)
 
@@ -113,9 +140,18 @@ class DagExecutor:
             return cached
         # Respect per-check timeout: call runner.run with timeout_s kwarg
         timeout_s = int(self.timeout_fn(task.check_id))
-        rr = runner.run(self.repo_root, task.targets, task.flags or [], timeout_s=timeout_s)
+        rr = runner.run(
+            self.repo_root, task.targets, task.flags or [], timeout_s=timeout_s
+        )
         dur = int((time.monotonic() - start) * 1000)
-        tr = TaskResult(id=task_id, status=rr.status, duration_ms=dur, stdout=rr.stdout, stderr=rr.stderr, cache_key=key)
+        tr = TaskResult(
+            id=task_id,
+            status=rr.status,
+            duration_ms=dur,
+            stdout=rr.stdout,
+            stderr=rr.stderr,
+            cache_key=key,
+        )
         if rr.status == "ok":
             self._store_success(key, rr)
         return tr
@@ -148,7 +184,6 @@ class DagExecutor:
 
 
 def default_caches(repo_root: Path, use_remote: bool) -> List[BaseCache]:
-
     caches: List[BaseCache] = []
     if use_remote:
         s3 = S3Cache.from_env()

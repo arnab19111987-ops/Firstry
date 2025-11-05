@@ -34,7 +34,7 @@ def test_pre_push_gate_contains_heavier_checks() -> None:
 
     # security and scanners
     assert "bandit" in joined or "pip-audit" in joined
-    
+
     # code complexity analysis
     assert "radon" in joined
 

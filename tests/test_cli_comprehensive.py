@@ -1,25 +1,32 @@
-
 from firsttry import cli
 
 
 def test_cli_install_hooks(monkeypatch):
     import pytest
-    pytest.skip("install-hooks functionality has been removed in favor of new CLI structure")
+
+    pytest.skip(
+        "install-hooks functionality has been removed in favor of new CLI structure"
+    )
 
 
 def test_argparse_gates_json(monkeypatch, capsys, tmp_path):
     import pytest
+
     pytest.skip("gates command functionality has been integrated into the run command")
 
 
 def test_argparse_gates_human(monkeypatch, capsys, tmp_path):
     import pytest
+
     pytest.skip("gates command functionality has been integrated into the run command")
 
 
 def test_run_gate_via_runners_failure(monkeypatch):
     import pytest
-    pytest.skip("run_gate_via_runners functionality has been refactored into the new CLI structure")
+
+    pytest.skip(
+        "run_gate_via_runners functionality has been refactored into the new CLI structure"
+    )
 
 
 def test_cli_mirror_ci_dry_run_empty_plan(monkeypatch, capsys, tmp_path):

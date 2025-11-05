@@ -3,45 +3,59 @@ from dataclasses import dataclass, field
 from typing import Dict, Set, List, Optional
 import json
 
+
 @dataclass
 class FileNode:
-    path: str                  # repo-relative
-    lang: str                  # "py", "js", "ts", etc.
+    path: str  # repo-relative
+    lang: str  # "py", "js", "ts", etc.
     module: Optional[str] = None
     hash: Optional[str] = None
-    imports: Set[str] = field(default_factory=set)   # import targets (module names)
+    imports: Set[str] = field(default_factory=set)  # import targets (module names)
     depends_on: Set[str] = field(default_factory=set)  # file paths (resolved)
     dependents: Set[str] = field(default_factory=set)  # reverse edges
+
 
 @dataclass
 class ProjectNode:
     name: str
-    lang: str                  # "python", "node"
-    root: str                  # repo-relative directory
-    deps: Set[str] = field(default_factory=set)       # other ProjectNode names
-    files: Set[str] = field(default_factory=set)      # repo-relative file paths
-    hash: Optional[str] = None                        # aggregate hash
+    lang: str  # "python", "node"
+    root: str  # repo-relative directory
+    deps: Set[str] = field(default_factory=set)  # other ProjectNode names
+    files: Set[str] = field(default_factory=set)  # repo-relative file paths
+    hash: Optional[str] = None  # aggregate hash
+
 
 @dataclass
 class CodebaseTwin:
     repo_root: str
-    files: Dict[str, FileNode] = field(default_factory=dict)     # by path
+    files: Dict[str, FileNode] = field(default_factory=dict)  # by path
     projects: Dict[str, ProjectNode] = field(default_factory=dict)  # by project name
     # index helpers
     module_to_files: Dict[str, Set[str]] = field(default_factory=dict)
 
     def to_json(self) -> str:
-        return json.dumps({
-            "repo_root": self.repo_root,
-            "files": {k: self._file_to_dict(v) for k, v in self.files.items()},
-            "projects": {k: self._proj_to_dict(v) for k, v in self.projects.items()},
-            "module_to_files": {k: list(v) for k, v in self.module_to_files.items()},
-        }, separators=(",", ":"), ensure_ascii=False)
+        return json.dumps(
+            {
+                "repo_root": self.repo_root,
+                "files": {k: self._file_to_dict(v) for k, v in self.files.items()},
+                "projects": {
+                    k: self._proj_to_dict(v) for k, v in self.projects.items()
+                },
+                "module_to_files": {
+                    k: list(v) for k, v in self.module_to_files.items()
+                },
+            },
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
 
     @staticmethod
     def _file_to_dict(f: FileNode) -> dict:
         return {
-            "path": f.path, "lang": f.lang, "module": f.module, "hash": f.hash,
+            "path": f.path,
+            "lang": f.lang,
+            "module": f.module,
+            "hash": f.hash,
             "imports": sorted(f.imports),
             "depends_on": sorted(f.depends_on),
             "dependents": sorted(f.dependents),
@@ -50,8 +64,12 @@ class CodebaseTwin:
     @staticmethod
     def _proj_to_dict(p: ProjectNode) -> dict:
         return {
-            "name": p.name, "lang": p.lang, "root": p.root,
-            "deps": sorted(p.deps), "files": sorted(p.files), "hash": p.hash
+            "name": p.name,
+            "lang": p.lang,
+            "root": p.root,
+            "deps": sorted(p.deps),
+            "files": sorted(p.files),
+            "hash": p.hash,
         }
 
     @classmethod
@@ -60,19 +78,26 @@ class CodebaseTwin:
         twin = cls(repo_root=o["repo_root"])
         for path, fd in o["files"].items():
             twin.files[path] = FileNode(
-                path=fd["path"], lang=fd["lang"],
-                module=fd.get("module"), hash=fd.get("hash"),
+                path=fd["path"],
+                lang=fd["lang"],
+                module=fd.get("module"),
+                hash=fd.get("hash"),
                 imports=set(fd.get("imports", [])),
                 depends_on=set(fd.get("depends_on", [])),
                 dependents=set(fd.get("dependents", [])),
             )
         for name, pd in o["projects"].items():
             twin.projects[name] = ProjectNode(
-                name=pd["name"], lang=pd["lang"],
-                root=pd["root"], deps=set(pd.get("deps", [])),
-                files=set(pd.get("files", [])), hash=pd.get("hash"),
+                name=pd["name"],
+                lang=pd["lang"],
+                root=pd["root"],
+                deps=set(pd.get("deps", [])),
+                files=set(pd.get("files", [])),
+                hash=pd.get("hash"),
             )
-        twin.module_to_files = {k: set(v) for k, v in o.get("module_to_files", {}).items()}
+        twin.module_to_files = {
+            k: set(v) for k, v in o.get("module_to_files", {}).items()
+        }
         return twin
 
     # ----- Impact analysis -----

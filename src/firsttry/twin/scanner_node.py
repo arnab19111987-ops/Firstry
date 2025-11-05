@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 from .graph import CodebaseTwin, ProjectNode
 
+
 def attach_node_projects(repo_root: Path, twin: CodebaseTwin) -> None:
     pkg = repo_root / "package.json"
     if not pkg.exists():

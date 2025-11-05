@@ -7,26 +7,24 @@ Shows the new clean CLI interface with hidden complexity
 import subprocess
 from pathlib import Path
 
+
 def run_command(cmd, description):
     """Run a command and display results"""
     print(f"\n🧪 {description}")
     print("=" * 60)
     print(f"$ {cmd}")
     print("-" * 60)
-    
+
     try:
         result = subprocess.run(
-            cmd.split(),
-            capture_output=True,
-            text=True,
-            cwd=Path(__file__).parent
+            cmd.split(), capture_output=True, text=True, cwd=Path(__file__).parent
         )
-        
+
         if result.stdout:
             print(result.stdout)
         if result.stderr:
             print("STDERR:", result.stderr)
-        
+
         return result.returncode == 0
     except Exception as e:
         print(f"Error: {e}")
@@ -41,7 +39,7 @@ def main():
     print()
     print("Available modes:")
     print("  firsttry run        → auto, fast-enough (default)")
-    print("  firsttry run fast   → only fast/local checks (sub-30s)")  
+    print("  firsttry run fast   → only fast/local checks (sub-30s)")
     print("  firsttry run full   → everything for this repo")
     print("  firsttry run ci     → do what CI does")
     print("  firsttry run config → use your firsttry.toml")
@@ -52,22 +50,24 @@ def main():
     print("  firsttry run c      → ci")
     print("  firsttry run t      → teams")
     print()
-    
+
     # Demo 1: Help shows clean interface
     run_command("python -m firsttry run --help", "Clean help interface")
-    
+
     # Demo 2: Default mode (auto)
     run_command("python -m firsttry run", "Default mode: auto (clean output)")
-    
-    # Demo 3: Fast mode 
+
+    # Demo 3: Fast mode
     run_command("python -m firsttry run fast", "Fast mode: sub-30s target")
-    
+
     # Demo 4: Shortcut alias
     run_command("python -m firsttry run q", "Shortcut: q = fast")
-    
+
     # Demo 5: Debug phases (shows internal buckets)
-    run_command("python -m firsttry run fast --debug-phases", "Debug mode: shows phase buckets")
-    
+    run_command(
+        "python -m firsttry run fast --debug-phases", "Debug mode: shows phase buckets"
+    )
+
     print("\n🎯 CLI Simplification Summary")
     print("=" * 60)
     print("✅ BEFORE: Complex flags")

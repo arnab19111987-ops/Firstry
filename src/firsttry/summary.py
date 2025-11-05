@@ -13,7 +13,9 @@ LEVEL_NAME_MAP = {
 
 
 class SummaryPrinter:
-    def __init__(self, *, tier: str, results: List[Dict[str, Any]], meta: Dict[str, Any]):
+    def __init__(
+        self, *, tier: str, results: List[Dict[str, Any]], meta: Dict[str, Any]
+    ):
         # tier: "free" | "pro"
         self.tier = (tier or "free").lower()
         self.results = results or []
@@ -36,11 +38,11 @@ class SummaryPrinter:
         machine = self.meta.get("machine", {})
         repo = self.meta.get("repo", {})
         planned = self.meta.get("planned_checks", [])
-        
+
         cpus = machine.get("cpus", "unknown")
         files = repo.get("files", "?")
         tests = repo.get("tests", "?")
-        
+
         print("\n--- Context ---")
         print(f"  Machine: {cpus} CPUs")
         print(f"  Repo:    {files} files, {tests} tests")
@@ -49,14 +51,16 @@ class SummaryPrinter:
         if self.tier == "pro":
             cfg = self.meta.get("config", {})
             level = cfg.get("level")
-            level_name = LEVEL_NAME_MAP.get(level, f"Level {level}" if level else "Default")
+            level_name = LEVEL_NAME_MAP.get(
+                level, f"Level {level}" if level else "Default"
+            )
             drift = "Yes" if cfg.get("fail_on_drift") else "No"
             print(f"  Config:  {level_name} (Enforcing drift: {drift})")
 
     def _print_summary_line(self, failed: int):
         """Prints the final Pass/Fail result line."""
         if failed:
-            s = 's' if failed != 1 else ''
+            s = "s" if failed != 1 else ""
             print(f"  Result: ❌ FAILED ({failed} check{s} failed)")
         else:
             print("  Result: ✅ PASSED (all checks passed)")
@@ -85,14 +89,18 @@ class SummaryPrinter:
                 print(f"  ❌ {name}: {detail}")
                 # Teaser for free tier
                 if "mypy" in name:
-                    print("      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this.")
+                    print(
+                        "      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this."
+                    )
                 elif "ci-parity" in name or "ci_parity" in name:
-                    print("      🔒 Upgrade to Pro to see the full drift report (tools, env, deps).")
+                    print(
+                        "      🔒 Upgrade to Pro to see the full drift report (tools, env, deps)."
+                    )
 
         print("\n--- Summary ---")
         self._print_summary_line(failed)
         self._print_footer_free()
-        
+
         return 1 if failed else 0
 
     def _print_footer_free(self):
@@ -119,7 +127,7 @@ class SummaryPrinter:
             detail = item.get("detail", "")
             override = item.get("config_override", False)
             suggestion = item.get("suggestion")
-            
+
             if status == "ok":
                 extra = " (config override)" if override else ""
                 print(f"  ✅ {name}: {detail}{extra}")
@@ -145,7 +153,9 @@ class SummaryPrinter:
             print("  Config: ✅ Enforcement active (fail_on_drift=true).")
 
 
-def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier: str | None = None) -> int:
+def print_run_summary(
+    results: List[Dict[str, Any]], meta: Dict[str, Any], tier: str | None = None
+) -> int:
     if not tier:
         tier = os.getenv("FIRSTTRY_TIER", "free")
     sp = SummaryPrinter(tier=tier, results=results, meta=meta)
@@ -154,7 +164,7 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
     def _print_summary_line(self, failed: int):
         """Prints the final Pass/Fail result line."""
         if failed:
-            s = 's' if failed != 1 else ''
+            s = "s" if failed != 1 else ""
             print(f"  Result: ❌ FAILED ({failed} check{s} failed)")
         else:
             print("  Result: ✅ PASSED (all checks passed)")
@@ -178,7 +188,9 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
     def _prompt_for_details(self) -> None:
         """Handles the interactive prompt and non-interactive detection."""
         if not sys.stdin.isatty():
-            print("⚠️ Non-interactive environment detected. Printing full error report.")
+            print(
+                "⚠️ Non-interactive environment detected. Printing full error report."
+            )
             if self.tier == "teams":
                 self._print_detailed_report_teams()
             else:
@@ -189,13 +201,13 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
         try:
             while True:
                 user_input = input("💡 Detailed error report? (Y/N): ").strip().upper()
-                if user_input == 'Y':
+                if user_input == "Y":
                     if self.tier == "teams":
                         self._print_detailed_report_teams()
                     else:
                         self._print_detailed_report_developer()
                     break
-                elif user_input == 'N':
+                elif user_input == "N":
                     print("\nDetailed report skipped.")
                     break
                 else:
@@ -209,7 +221,7 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
 
     def _print_teams_interactive(self) -> int:
         failed_count = len(self.failed_results)
-        
+
         self._print_header()
         self._print_metadata()
         print("\n--- Results ---")
@@ -221,18 +233,18 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
         if failed_count > 0:
             print()
             self._prompt_for_details()
-        
+
         return 1 if failed_count else 0
-    
+
     def _print_detailed_report_teams(self):
         """Prints the full, helpful details for the Teams tier."""
         print("\n================ DETAILED ERROR REPORT (TEAMS) ================")
-        
+
         for item in self.failed_results:
             name = item.get("name")
             detail = item.get("detail", "")
             suggestion = item.get("suggestion")
-            
+
             print(f"\n--- ❌ {name.upper()} ---")
             print(f"  Summary: {detail}")
 
@@ -255,7 +267,7 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
             name = item.get("name")
             detail = item.get("detail", "")
             override = item.get("config_override", False)
-            
+
             if status == "ok":
                 extra = " (config override)" if override else ""
                 print(f"  ✅ {name}[0]: {detail}{extra}")
@@ -269,11 +281,11 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
 
     def _print_developer_interactive(self) -> int:
         failed_count = len(self.failed_results)
-        
+
         self._print_header()
         self._print_metadata()
         print("\n--- Results ---")
-        
+
         # Developer Tier must print the high-level summary line AND the lock messages directly
         for item in self.results:
             status = item.get("status")
@@ -287,51 +299,60 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
                 print(f"  ❌ {name}[0]: {detail}")
                 # The lock messages remain in the main report block
                 if name == "mypy":
-                    print("      🔒 Upgrade to FirstTry Teams to get a plain-English fix for this.")
+                    print(
+                        "      🔒 Upgrade to FirstTry Teams to get a plain-English fix for this."
+                    )
                 elif name in ("ci-parity", "ci_parity"):
-                    print("      🔒 Upgrade to Teams to see the full drift report (tools, env, deps).")
+                    print(
+                        "      🔒 Upgrade to Teams to see the full drift report (tools, env, deps)."
+                    )
 
         print("\n--- Summary ---")
         self._print_summary_line(failed_count)
-        self._print_footer_status() # Now prints the "Limited features" status
+        self._print_footer_status()  # Now prints the "Limited features" status
 
         if failed_count > 0:
             print()
             self._prompt_for_details()
-        
+
         return 1 if failed_count else 0
 
     def _print_detailed_report_developer(self):
         """Prints the *limited* details and includes a final, large upsell block."""
         print("\n================ DETAILED ERROR REPORT (DEVELOPER) ================")
-        
+
         for item in self.failed_results:
             name = item.get("name")
             detail = item.get("detail", "")
-            
+
             print(f"\n--- ❌ {name.upper()} ---")
             print(f"  Summary: {detail}")
-            
+
             # This is the "detail" when a user asks for it, which is still an upsell
             if name == "mypy":
                 print("  Details: Full fix suggestion is locked. Upgrade to Teams.")
             elif name in ("ci-parity", "ci_parity"):
                 print("  Details: Full drift report is locked. Upgrade to Teams.")
             else:
-                print("  Details: No further details available. Upgrade to Teams for assistance.")
+                print(
+                    "  Details: No further details available. Upgrade to Teams for assistance."
+                )
 
         print("\n--- Upgrade Information ---")
         print("💡 Upgrade to FirstTry Teams to:")
-        print("   • Get detailed, actionable fix suggestions instead of this placeholder.")
+        print(
+            "   • Get detailed, actionable fix suggestions instead of this placeholder."
+        )
         print("   • See full CI Parity (tools, env, deps, score).")
         print("   • Enforce team-wide consistency via firsttry.toml.")
 
         print("\n================ END REPORT ================")
+
     # ---------------- FREE ----------------
 
     def _print_free(self) -> int:
         failed = len(self.failed_results)
-        
+
         self._print_header()
         self._print_metadata()
 
@@ -351,14 +372,18 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
                 print(f"  ❌ {name}[0]: {detail}")
                 # Teaser for free tier
                 if name == "mypy":
-                    print("      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this.")
+                    print(
+                        "      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this."
+                    )
                 elif name in ("ci-parity", "ci_parity"):
-                    print("      � Upgrade to Pro to see the full drift report (tools, env, deps).")
+                    print(
+                        "      � Upgrade to Pro to see the full drift report (tools, env, deps)."
+                    )
 
         print("\n--- Summary ---")
         self._print_summary_line(failed)
         self._print_footer_free()
-        
+
         return 1 if failed else 0
 
     def _print_footer_free(self):
@@ -367,6 +392,3 @@ def print_run_summary(results: List[Dict[str, Any]], meta: Dict[str, Any], tier:
         print("   • See full CI Parity (tools, env, deps, score)")
         print("   • Get plain-English fix suggestions for mypy/pytest/eslint")
         print("   • Enforce team-wide consistency via firsttry.toml")
-
-
-

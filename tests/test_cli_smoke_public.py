@@ -31,7 +31,7 @@ def test_doctor_runs_without_crash(tmp_path, monkeypatch):
 
     # Should not crash with traceback
     assert proc.returncode in [0, 1]  # 0 = all good, 1 = some issues found
-    
+
     # Should produce some output
     assert len(proc.stdout) > 0 or len(proc.stderr) > 0
 
@@ -43,11 +43,11 @@ def test_list_gates_shows_expected_gates(tmp_path, monkeypatch):
     """
     # Test that inspect command works
     monkeypatch.chdir(tmp_path)
-    
+
     proc = run_cli_subproc(["inspect"])
-    
-    # Should not crash 
+
+    # Should not crash
     assert proc.returncode in [0, 1, 2]  # Various exit codes are OK
-    
+
     # Should produce some output
     assert len(proc.stdout) > 0 or len(proc.stderr) > 0

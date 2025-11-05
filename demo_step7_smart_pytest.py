@@ -17,25 +17,25 @@ from firsttry.cached_orchestrator import run_checks_for_profile
 async def demo_step7_smart_pytest():
     """Demo the Step 7 smart pytest system"""
     repo_root = str(Path(__file__).parent)
-    
+
     print("🚀 Step 7: Smart pytest Integration Demo")
     print("=" * 50)
-    
+
     # Test different profiles with pytest
     profiles = ["fast", "dev", "full"]
-    
+
     for profile in profiles:
         print(f"\n🎯 Testing profile: {profile}")
-        
+
         # Show what checks are selected
         checks = select_checks(profile)
         print(f"   Selected checks: {', '.join(checks)}")
-        
+
         # Show pytest mode for this profile
         if "pytest" in checks:
             pytest_mode = get_pytest_mode_for_profile(profile)
             print(f"   Pytest mode: {pytest_mode}")
-        
+
         # Run with smart pytest
         print(f"\n--- Running {profile} profile with smart pytest ---")
         try:
@@ -44,18 +44,18 @@ async def demo_step7_smart_pytest():
                 checks=checks,
                 use_cache=True,
                 profile=profile,
-                changed_files=["src/firsttry/cli.py"]  # Simulate change
+                changed_files=["src/firsttry/cli.py"],  # Simulate change
             )
-            
+
             # Show results summary
             success_count = sum(1 for r in results.values() if r.get("status") == "ok")
             cached_count = sum(1 for r in results.values() if r.get("cached"))
             total_count = len(results)
-            
+
             print(f"\n📊 Profile {profile} Results:")
             print(f"   ✅ Success: {success_count}/{total_count}")
             print(f"   ⚡ Cached: {cached_count}/{total_count}")
-            
+
             # Show pytest-specific results if present
             if "pytest" in results:
                 pytest_result = results["pytest"]
@@ -67,12 +67,12 @@ async def demo_step7_smart_pytest():
                     print(f"   🧪 Pytest: {test_count} test files, {duration:.2f}s")
                 else:
                     print(f"   🧪 Pytest: {pytest_result.get('status', 'unknown')}")
-            
+
         except Exception as e:
             print(f"   ❌ Error: {e}")
-        
+
         print("=" * 50)
-    
+
     print("\n🎉 Step 7 Demo Complete!")
     print("Smart pytest system successfully integrated with:")
     print("  • Profile-based pytest modes (smoke/smart/full)")

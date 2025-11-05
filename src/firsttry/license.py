@@ -16,7 +16,8 @@ from pathlib import Path
 class HTTPResponseLike(Protocol):
     """Protocol for HTTP response objects."""
 
-    def json(self) -> dict: ...
+    def json(self) -> dict:
+        ...
 
 
 @dataclass
@@ -285,6 +286,7 @@ def get_active_license_key():
         return k
     # trial (from file)
     from .license_trial import load_trial
+
     t = load_trial()
     if t:
         return t.get("license_key")

@@ -12,5 +12,3 @@ def build_parser() -> object:
 
 def main(argv: Optional[List[str]] = None) -> int:
     return _main(argv)
-
-
