@@ -3,7 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-import anyio
+import pytest
+
+# Skip this entire module if anyio is not installed (optional async testing dependency)
+anyio = pytest.importorskip("anyio")
 
 
 class _DummyRunner:
