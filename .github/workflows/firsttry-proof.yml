@@ -1,4 +1,83 @@
 name: FirstTry Proof
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show workspace
+        run: |
+          pwd
+          ls -la
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install tools
+        run: |
+          python -m pip install -U pip
+          python -m pip install ruff mypy pytest
+
+      - name: Ensure demo files exist
+        run: |
+          mkdir -p tests src/ft_demo
+          printf "def test_ok():\n    assert True\n" > tests/test_ok.py
+          printf "def add(a:int,b:int)->int:\n    return a+b\n" > src/ft_demo/math.py
+
+      # Cold run may fail (miss-run) → don't fail the job here
+      - name: Cold run (free-fast)
+        run: |
+          PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report || true
+
+      - name: Warm run (expect cache hits)
+        run: |
+          PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report
+
+      - name: Print report + history
+        run: |
+          echo "== .firsttry contents =="
+          ls -la .firsttry || true
+          echo "== report.json =="
+          test -f .firsttry/report.json && cat .firsttry/report.json || echo "report.json missing"
+          echo "== history tail =="
+          test -f .firsttry/history.jsonl && tail -n 20 .firsttry/history.jsonl || echo "history.jsonl missing"
+
+      - name: Assert at least one cache hit
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path('.firsttry/report.json')
+          if not p.exists():
+              print("report.json not found"); sys.exit(1)
+          d = json.loads(p.read_text())
+          hits = sum(1 for r in d.get("checks", {}).values() if r.get("cache_status") in ("hit-local","hit-remote"))
+          print("Cache hits:", hits)
+          sys.exit(0 if hits >= 1 else 1)
+          PY
+
+      - name: Upload artifacts (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firsttry-reports
+          path: .firsttry/
+          if-no-files-found: warn
+name: FirstTry Proof
 on: [push, pull_request]
 jobs:
   proof:
