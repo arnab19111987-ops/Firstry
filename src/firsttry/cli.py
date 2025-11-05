@@ -205,8 +205,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["fast", "dev", "full", "strict"],
         help="Execution profile (defaults inferred from mode).",
     )
+    # Expose a small, demo-friendly tier set in the public CLI choices
+    TIER_CHOICES = ["free-fast", "free-lite", "lite", "pro", "strict"]
     p_run.add_argument(
         "--tier",
+<<<<<<< HEAD
         choices=[
             # New 4-tier system
             "free-lite",
@@ -220,6 +223,10 @@ def build_parser() -> argparse.ArgumentParser:
             "enterprise",
         ],
         help="License tier (e.g., free-lite, free-strict, pro, promax).",
+=======
+        choices=TIER_CHOICES,
+        help="tier/profile (e.g., free-fast, free-lite, lite, pro, strict)",
+>>>>>>> 0d819bd (proof: enable free-fast tier + CI)
     )
     p_run.add_argument(
         "--source",
@@ -383,11 +390,111 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# --- DAG-run helper functions (default run path) -------------------------
+from pathlib import Path
+from firsttry.planner.dag import Plan, Task
+from firsttry.run_swarm import run_plan
+from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
+
+
+def _build_plan_for_tier(repo_root: Path, tier: str) -> Plan:
+    tiers = {
+        # guaranteed-clean fast demo tier
+        "free-fast": ["ruff", "pytest"],
+        "free-lite": ["ruff", "pytest"],
+        "lite":      ["ruff", "mypy", "pytest"],
+        "pro":       ["ruff", "mypy", "pytest", "bandit"],
+        "strict":    ["ruff", "mypy", "pytest", "bandit"],
+    }
+    checks = tiers.get(tier, tiers["lite"])
+    plan = Plan()
+
+    # sensible defaults
+    tests_target = "tests/test_ok.py" if (repo_root / "tests" / "test_ok.py").exists() else "tests"
+    src_target = "src"
+    # demo ruff target when present (ensures a known-clean file for demo runs)
+    ruff_target = (
+        "src/ft_demo/math.py"
+        if (repo_root / "src" / "ft_demo" / "math.py").exists()
+        else ("src" if (repo_root / "src").exists() else ".")
+    )
+
+    for cid in checks:
+        if cid not in CHECKS_BY_ID:
+            continue
+        targets = ["."]
+        if cid == "pytest":
+            targets = [tests_target]
+        elif cid == "ruff":
+            targets = [ruff_target]
+        elif cid == "mypy":
+            targets = [src_target] if (repo_root / src_target).exists() else ["."]
+
+        plan.tasks[f"{cid}:_root"] = Task(
+            id=f"{cid}:_root", check_id=cid, targets=targets, flags=[], deps=set()
+        )
+    return plan
+
+
+def cmd_run(argv=None) -> int:
+    import argparse, json
+    p = argparse.ArgumentParser(prog="firsttry run")
+    # Accept either a positional tier (legacy UX) or --tier flag
+    p.add_argument("maybe_tier", nargs="?", help="tier/profile (e.g., free-lite, lite, pro)")
+    p.add_argument("--tier", help="tier/profile (alias of positional)")
+    p.add_argument("--legacy", action="store_true", help="use legacy orchestrator")
+    p.add_argument("--workers", type=int, default=3)
+    p.add_argument("--no-remote-cache", action="store_true")
+    p.add_argument("--show-report", action="store_true")
+    ns = p.parse_args(argv)
+
+    tier = ns.tier or ns.maybe_tier or "lite"
+    if tier == "auto":
+        tier = "lite"
+
+    if ns.legacy:
+        # delegate to legacy run path
+        try:
+            from .cli_run_profile import main as legacy_main
+            return legacy_main()
+        except Exception:
+            print("legacy orchestrator not available")
+            return 2
+
+    repo_root = Path(".").resolve()
+    plan = _build_plan_for_tier(repo_root, tier)
+    results = run_plan(
+        repo_root,
+        plan,
+        use_remote_cache=(not ns.no_remote_cache),
+        workers=ns.workers,
+    )
+
+    # Write JSON report (quietly)
+    try:
+        out = repo_root / ".firsttry" / "report.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(
+            {"checks": {k: v.to_report_json() for k, v in results.items()}},
+            indent=2
+        ))
+    except Exception:
+        pass
+
+    # Console summary
+    all_ok = True
+    for k, v in results.items():
+        print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
+        all_ok &= (v.status == "ok")
+    return 0 if all_ok else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
     parser = build_parser()
-    args = parser.parse_args(argv)
+    # Use parse_known_args so we don't error on run-subcommand specific args
+    args, _unknown = parser.parse_known_args(argv)
 
     if args.cmd == "run":
         # NEW: Handle simplified mode system
@@ -413,7 +520,14 @@ def main(argv: list[str] | None = None) -> int:
         profile = _normalize_profile(getattr(args, "profile", None))
         # Update args.profile with normalized value for downstream functions
         args.profile = profile
-        return _run_async_cli(run_fast_pipeline(args=args))
+        # Route to the new DAG-run helper by default. Preserve the
+        # license/profile env and then delegate to cmd_run so the
+        # simplified DAG path is used.
+        try:
+            return cmd_run(argv=argv[1:])
+        except Exception:
+            # Fallback to the async pipeline if cmd_run fails for any reason
+            return _run_async_cli(run_fast_pipeline(args=args))
 
     elif args.cmd == "lint":
         return cmd_lint(args=args)

@@ -47,3 +47,63 @@ bench:  ## run full benchmark suite
 
 bench-short:  ## run shortened benchmark (future feature)
 	python benchmarks/bench_runner.py --short
+
+.PHONY: inspection
+inspection:
+	@./tools/ft_inspection.sh || (echo "Inspection failed"; exit 2)
+
+.PHONY: report
+report:
+	@echo "Generating HTML report & dashboard (requires a recent run)"
+	@python - <<'PY'
+	from pathlib import Path
+	from src.firsttry.reporting.html import write_html_report, write_html_dashboard
+	repo = Path('.').resolve()
+	try:
+		import json
+		data = json.loads((repo/'.firsttry/report.json').read_text())
+		class R: pass
+		results = {}
+		for k,v in (data.get('checks',{}) or {}).items():
+			r = R(); r.status=v.get('status',''); r.duration_ms=int(v.get('duration_ms',0))
+			results[k]=r
+		write_html_report(repo, results)
+	except Exception:
+		pass
+	write_html_dashboard(repo)
+	print('HTML written under .firsttry/')
+	PY
+
+# Fast demo helpers: cold -> warm -> proof
+.PHONY: ft-cold ft-warm ft-proof
+ft-cold:
+	@PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report || true
+ft-warm:
+	@PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report
+ft-proof: ft-cold ft-warm
+	@python - <<'PY'
+import json, pathlib
+p=pathlib.Path('.firsttry/report.json'); d=json.loads(p.read_text())
+print("== checks ==")
+for k,v in d["checks"].items(): print(k, v["status"], v.get("cache_status"))
+h=pathlib.Path('.firsttry/history.jsonl')
+if h.exists():
+  lines=h.read_text().splitlines()[-5:]
+  for ln in lines:
+    rec=json.loads(ln); hits=sum(1 for c in rec["checks"].values() if c.get("cache_status") in ("hit-local","hit-remote"))
+    print(rec['ts'], rec.get('tier'), f"{hits}/{len(rec['checks'])} hits")
+PY
+
+.PHONY: ft-perf
+ft-perf:
+	@PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report || true
+	@PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report
+	@python - <<'PY'
+import json, pathlib
+p=pathlib.Path('.firsttry/report.json'); d=json.loads(p.read_text())
+hits=sum(1 for r in d["checks"].values() if r.get("cache_status") in ("hit-local","hit-remote"))
+total=len(d["checks"])
+slow=sorted(((k, r.get("duration_ms",0)) for k,r in d["checks"].items()), key=lambda x: x[1], reverse=True)
+print(f"cache hits: {hits}/{total}")
+print("slowest:", ", ".join(f"{k}:{ms}ms" for k,ms in slow))
+PY

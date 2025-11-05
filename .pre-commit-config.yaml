@@ -9,3 +9,9 @@ repos:
     hooks:
       - id: ruff
         args: ["--fix"]
+  - repo: local
+    hooks:
+      - id: forbid-legacy-cache-check
+        name: Forbid legacy cache-hit checks
+        entry: bash -lc "rg -n \"hit-local|hit-remote|miss-run\" src/ | rg -v cache_status && { echo 'Use cache_status, not status'; exit 1; } || true"
+        language: system

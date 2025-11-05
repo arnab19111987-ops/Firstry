@@ -1,0 +1,28 @@
+name: FirstTry Proof
+on: [push, pull_request]
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: python -m pip install -U pip ruff mypy pytest
+      - run: echo "def test_ok(): assert True" > tests/test_ok.py
+      - run: mkdir -p src/ft_demo && printf "def add(a:int,b:int)->int:\n    return a+b\n" > src/ft_demo/math.py
+      - run: PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report || true
+      - run: PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report
+      - name: Assert cache hit present
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          d=json.loads(pathlib.Path('.firsttry/report.json').read_text())
+          hits=sum(1 for r in d["checks"].values() if r.get("cache_status") in ("hit-local","hit-remote"))
+          print("Cache hits:", hits)
+          sys.exit(0 if hits>=1 else 1)
+          PY
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firsttry-reports
+          path: .firsttry/

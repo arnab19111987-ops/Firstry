@@ -17,19 +17,23 @@ from ..cache.s3 import S3Cache
 @dataclass
 class TaskResult:
     id: str
-    status: str  # "ok" | "fail" | "skip" | "error" | "hit-local" | "hit-remote"
+    # outcome: "ok" | "fail" | "skip" | "error"
+    status: str
     duration_ms: int
+    # Normalized cache marker: None | "hit-local" | "hit-remote" | "miss-run"
+    cache_status: Optional[str] = None
     # Can be bytes when coming from subprocess without text=True; accept both.
     stdout: str | bytes = ""
     stderr: str | bytes = ""
     cache_key: Optional[str] = None
 
+    @property
+    def is_cache_hit(self) -> bool:
+        """Return True if this result was served from cache (local or remote)."""
+        return (self.cache_status in ("hit-local", "hit-remote")) if getattr(self, "cache_status", None) is not None else (str(getattr(self, "status", "")).startswith("hit-"))
+
     def to_report_json(self) -> dict:
-        cache_status = "miss-run"
-        if self.status == "hit-local":
-            cache_status = "hit-local"
-        if self.status == "hit-remote":
-            cache_status = "hit-remote"
+        cache_status = self.cache_status or "miss-run"
 
         def _to_str(x: str | bytes) -> str:
             if isinstance(x, bytes):
@@ -42,9 +46,7 @@ class TaskResult:
         return {
             "name": self.id,
             "check_id": self.id,
-            "status": "ok"
-            if self.status in {"ok", "hit-local", "hit-remote"}
-            else self.status,
+            "status": self.status,
             "duration_ms": self.duration_ms,
             "stdout": _to_str(self.stdout),
             "stderr": _to_str(self.stderr),
@@ -89,17 +91,8 @@ class DagExecutor:
         for idx, cache in enumerate(self.caches):
             hit = cache.get(key)
             if hit:
-                status = (
-                    "hit-remote" if idx == 0 and len(self.caches) > 1 else "hit-local"
-                )
-                return TaskResult(
-                    id="",
-                    status=status,
-                    duration_ms=0,
-                    stdout=hit.stdout,
-                    stderr=hit.stderr,
-                    cache_key=key,
-                )
+                cache_status = "hit-remote" if idx == 0 and len(self.caches) > 1 else "hit-local"
+                return TaskResult(id="", status="ok", duration_ms=0, cache_status=cache_status, stdout=hit.stdout, stderr=hit.stderr, cache_key=key)
         return None
 
     def _store_success(self, key: str, rr: RunResult) -> None:
@@ -144,14 +137,8 @@ class DagExecutor:
             self.repo_root, task.targets, task.flags or [], timeout_s=timeout_s
         )
         dur = int((time.monotonic() - start) * 1000)
-        tr = TaskResult(
-            id=task_id,
-            status=rr.status,
-            duration_ms=dur,
-            stdout=rr.stdout,
-            stderr=rr.stderr,
-            cache_key=key,
-        )
+        # Normalize: status stays as outcome; cache_status marks this as a miss-run
+        tr = TaskResult(id=task_id, status=rr.status, duration_ms=dur, cache_status="miss-run", stdout=rr.stdout, stderr=rr.stderr, cache_key=key)
         if rr.status == "ok":
             self._store_success(key, rr)
         return tr

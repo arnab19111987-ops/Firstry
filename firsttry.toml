@@ -18,3 +18,15 @@ cmd = "pytest -q"
 
 [tool.firsttry.tool."npm test"]
 cmd = "npm test"
+
+
+[timeouts]
+# Default timeout (seconds)
+default = 300
+
+[timeouts.per_check]
+# Per-check timeouts (seconds)
+ruff = 10
+mypy = 25
+pytest = 60
+bandit = 20
