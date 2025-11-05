@@ -23,9 +23,21 @@ ruff-fix:  ## auto-fix ruff lint issues and format with black
 	python -m ruff check . --fix
 	python -m black . || true
 
+.PHONY: stub-check
+stub-check:  ## scan for code stubs, TODOs, and typing crutches
+	@echo "[stub-check] scanning for code stubs and placeholders..."
+	@echo "  ℹ️  Note: NotImplementedError in base classes (abstract methods) is acceptable"
+	@find src tests -name "*.py" -type f 2>/dev/null | xargs grep -l "pass\s*#.*stub" 2>/dev/null && { echo "❌ Stub placeholders found"; exit 1; } || echo "✅ No stub placeholders"
+	@echo "[stub-check] scanning for TODO/FIXME markers..."
+	@find src tests -name "*.py" -type f 2>/dev/null | xargs grep -n "TODO\|FIXME\|HACK\|XXX" 2>/dev/null | grep -v "config_loader\|drift_check\|checks_orchestrator_optimized" && echo "⚠️ TODO/FIXME markers found (excluding known)" || echo "✅ No active TODO/FIXME markers"
+	@echo "[stub-check] scanning for unjustified skip/xfail..."
+	@find tests -name "*.py" -type f 2>/dev/null | xargs grep -B1 "@pytest.mark.skip\|@pytest.mark.xfail" 2>/dev/null | grep -v "reason=" | grep -v "^--$$" && echo "⚠️ Potential unjustified skip/xfail found" || echo "✅ Skip/xfail appear properly justified"
+	@echo "✅ stub-check passed"
+
 .PHONY: check
-check:
+check:  ## run full quality gate (lints, types, tests)
 	@echo "[firsttry] running full quality gate..."
+	@make stub-check
 	@python -m ruff check . || echo "⚠ ruff not installed (optional)"
 	@python -m mypy . || echo "⚠ mypy not installed (optional)"
 	@echo "Running tests..."
