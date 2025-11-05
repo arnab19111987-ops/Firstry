@@ -13,4 +13,20 @@ _lic_app = import_module("licensing.app")
 for _name in getattr(_lic_app, "__all__", []) or [n for n in dir(_lic_app) if not n.startswith("_")]:
     globals()[_name] = getattr(_lic_app, _name)
 
+# Also expose the licensing implementation module as `app.licensing`
+try:
+    _licensing_mod = import_module("licensing.app.licensing")
+    globals()["licensing"] = _licensing_mod
+except Exception:
+    # best-effort; tests that need this will fail later with a clear error
+    pass
+
+# Also expose other submodules commonly imported from `app.*`
+for _sub in ("webhooks", "schemas"):
+    try:
+        _m = import_module(f"licensing.app.{_sub}")
+        globals()[_sub] = _m
+    except Exception:
+        pass
+
 __all__ = list(globals().keys())

@@ -1,22 +1,10 @@
 {
-  "name": "firsttry-dev (safe)",
+  "name": "firsttry-dev",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "remoteUser": "vscode",
-  "updateRemoteUserUID": false,
-  "overrideCommand": false,
-  "init": true,
-
   "features": {
     "ghcr.io/devcontainers/features/node:1": { "version": "20" },
     "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
   },
-
-  "containerEnv": {
-    "DEBIAN_FRONTEND": "noninteractive"
-  },
-
-  "postCreateCommand": "bash .devcontainer/postCreate.sh || true",
-  "postStartCommand": "echo '[devcontainer] started' >/tmp/devcontainer.postStart.ok",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -24,7 +12,42 @@
         "ms-python.vscode-pylance",
         "ms-azuretools.vscode-docker",
         "dbaeumer.vscode-eslint"
-      ]
+      ],
+      "settings": {
+        // --- I kept this from your inner config, as it's best practice ---
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvInCurrentTerminal": true,
+
+        // --- I merged these from your outer, broken config ---
+        "terminal.integrated.detectLocale": "off",
+        "files.watcherExclude": {
+          "**/.git/**": true,
+          "**/.venv/**": true,
+          "**/node_modules/**": true,
+          "**/.mypy_cache/**": true,
+          "**/.pytest_cache/**": true,
+          "**/.ruff_cache/**": true
+        }
+      }
     }
+  },
+  "onCreateCommand": "bash .devcontainer/onCreate.sh",
+  "postCreateCommand": ".devcontainer/postCreate.sh",
+  "updateRemoteUserUID": false,
+  "overrideCommand": false,
+  "init": true,
+  "containerEnv": {
+    "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"
+  },
+  "remoteUser": "vscode",
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined"
+  ],
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "16gb"
   }
 }
