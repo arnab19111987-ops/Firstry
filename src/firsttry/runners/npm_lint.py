@@ -1,8 +1,9 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
-import shutil, subprocess
-from .base import CheckRunner, RunResult, ensure_bin, _hash_targets, _hash_config
+import shutil
+import subprocess
+from .base import CheckRunner, RunResult, _hash_targets, _hash_config
 from ..twin.hashers import hash_bytes, tool_version_hash, env_fingerprint
 
 class NpmLintRunner(CheckRunner):

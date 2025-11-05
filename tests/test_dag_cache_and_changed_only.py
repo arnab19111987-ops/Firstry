@@ -3,13 +3,14 @@ import shutil
 import sys
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    not (shutil.which("ruff") and shutil.which("mypy") and shutil.which("pytest")),
-    reason="ruff/mypy/pytest CLIs must be on PATH"
-)
-
 from firsttry.planner.dag import Plan, Task
 from firsttry.run_swarm import run_plan
+
+
+pytestmark = pytest.mark.skipif(
+    not (shutil.which("ruff") and shutil.which("mypy") and shutil.which("pytest")),
+    reason="ruff/mypy/pytest CLIs must be on PATH",
+)
 
 def _write(p: Path, text: str):
     p.parent.mkdir(parents=True, exist_ok=True)

@@ -17,8 +17,17 @@ def _alias_to_root_package() -> None:
     # Compute repo root from this file: tools/firsttry/firsttry/__init__.py
     pkg_dir = Path(__file__).resolve().parent  # .../tools/firsttry/firsttry
     repo_root = pkg_dir.parents[2]  # .../ (workspace root)
+    # Prefer top-level `firsttry` package in repo root, but fall back to
+    # `src/firsttry` for repositories that use a src/ layout.
     root_pkg_dir = repo_root / "firsttry"
+    if not root_pkg_dir.exists():
+        root_pkg_dir = repo_root / "src" / "firsttry"
     root_init = root_pkg_dir / "__init__.py"
+
+    if not root_init.exists():
+        raise FileNotFoundError(
+            f"Could not locate root package 'firsttry' in repo root or src/: expected one of {repo_root/'firsttry'} or {repo_root/'src'/'firsttry'}"
+        )
 
     # Load the root package with proper submodule search locations so that
     # subsequent imports like `firsttry.cli` resolve under the root package.

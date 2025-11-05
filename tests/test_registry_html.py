@@ -21,8 +21,12 @@ def test_html_files_written(tmp_path: Path):
     from importlib.machinery import SourceFileLoader
     mod = SourceFileLoader('htmlmod', str(Path('src/firsttry/reporting/html.py').resolve())).load_module()
     # Create fake TaskResult-like objects for write_html_report
-    class R: pass
-    r = R(); r.status = 'ok'; r.duration_ms = 12
+    class R:
+        pass
+
+    r = R()
+    r.status = "ok"
+    r.duration_ms = 12
     mod.write_html_report(rdir, {"ruff:_root": r}, out=str(p / 'report.html'))
     mod.write_html_dashboard(rdir, out=str(p / 'dashboard.html'))
     assert (p / 'report.html').exists()

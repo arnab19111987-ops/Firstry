@@ -1,11 +1,15 @@
 from __future__ import annotations
 from pathlib import Path
-import json, html, time
+import json
+import html
+import time
 
 
 def _load_json(p: Path) -> dict:
-    try: return json.loads(p.read_text())
-    except Exception: return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
 
 
 def write_html_report(repo_root: Path, results: dict, out: str = ".firsttry/report.html") -> None:
@@ -54,8 +58,12 @@ def write_html_dashboard(repo_root: Path, out: str = ".firsttry/dashboard.html")
         hits = sum(1 for c in checks.values() if c.get("cache_status") in {"hit-local","hit-remote"})
         runs = sum(1 for c in checks.values() if c.get("cache_status","miss-run") == "miss-run")
         saved = sum(int(c.get("duration_ms",0)) for c in checks.values() if c.get("cache_status") in {"hit-local","hit-remote"})
-        total_hits += hits; total_runs += runs; total_saved += saved
-        rows.append(f"<tr><td>{html.escape(name)}</td><td>{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))}</td><td>{hits}</td><td>{runs}</td><td>{saved}</td></tr>")
+        total_hits += hits
+        total_runs += runs
+        total_saved += saved
+        rows.append(
+            f"<tr><td>{html.escape(name)}</td><td>{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))}</td><td>{hits}</td><td>{runs}</td><td>{saved}</td></tr>"
+        )
 
         for k, c in checks.items():
             st = c.get("status","")
@@ -66,8 +74,12 @@ def write_html_dashboard(repo_root: Path, out: str = ".firsttry/dashboard.html")
             prev[k] = st
 
     def _ol(d):
-        if not d: return "<i>None</i>"
-        items = "".join(f"<li>{html.escape(k)} — {v}</li>" for k,v in sorted(d.items(), key=lambda x:x[1], reverse=True)[:10])
+        if not d:
+            return "<i>None</i>"
+        items = "".join(
+            f"<li>{html.escape(k)} — {v}</li>"
+            for k, v in sorted(d.items(), key=lambda x: x[1], reverse=True)[:10]
+        )
         return f"<ol>{items}</ol>"
 
     html_doc = f"""<!doctype html><meta charset="utf-8">

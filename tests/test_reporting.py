@@ -1,6 +1,7 @@
 """
 Regression tests for reporting functionality to ensure schema stability.
 """
+import os
 from pathlib import Path
 import json
 import subprocess
@@ -31,7 +32,9 @@ def test_cli_run_profile_writes_report(tmp_path: Path, monkeypatch):
         ".",
         "--debug-report",
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).parent.parent / "src")
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30, env=env)
 
     # Should succeed
     assert proc.returncode == 0, f"CLI failed: {proc.stderr}"
@@ -108,7 +111,9 @@ def test_cli_error_handling_shows_timing(tmp_path: Path, monkeypatch):
         "--report",
         "/proc/version",  # This should fail to write
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(Path(__file__).parent.parent / "src")
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30, env=env)
 
     # Should still succeed (graceful failure)
     assert (

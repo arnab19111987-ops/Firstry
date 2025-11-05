@@ -45,7 +45,8 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
     caches = default_caches(repo_root, use_remote)
 
     # Timeouts: pull from config per check
-    timeout_fn = lambda check_id: timeout_for(cfg, check_id)
+    def timeout_fn(check_id: str) -> float:
+        return timeout_for(cfg, check_id)
 
     executor = DagExecutor(
         repo_root=repo_root,
@@ -67,7 +68,8 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
     print(f"\n{hits} checks verified from cache, {ran} run locally.\n")
     # Append to run history (one JSON line per run) for lightweight dashboards
     try:
-        import json, time
+        import json
+        import time
         rec = {
             "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "tier": tier if 'tier' in locals() else None,

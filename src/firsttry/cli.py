@@ -16,6 +16,12 @@ from .repo_rules import plan_checks_for_repo
 
 # sync_with_ci is imported lazily in cmd_sync to avoid optional deps at module import
 
+# Imports for DAG-run helper placed at top to satisfy linters (safe/eager import)
+from pathlib import Path
+from firsttry.planner.dag import Plan, Task
+from firsttry.run_swarm import run_plan
+from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
+
 # add these imports for old enhanced handlers
 try:
     from .cli_enhanced_old import (
@@ -209,24 +215,8 @@ def build_parser() -> argparse.ArgumentParser:
     TIER_CHOICES = ["free-fast", "free-lite", "lite", "pro", "strict"]
     p_run.add_argument(
         "--tier",
-<<<<<<< HEAD
-        choices=[
-            # New 4-tier system
-            "free-lite",
-            "free-strict",
-            "pro",
-            "promax",
-            # Legacy synonyms
-            "free",
-            "developer",
-            "teams",
-            "enterprise",
-        ],
-        help="License tier (e.g., free-lite, free-strict, pro, promax).",
-=======
-        choices=TIER_CHOICES,
-        help="tier/profile (e.g., free-fast, free-lite, lite, pro, strict)",
->>>>>>> 0d819bd (proof: enable free-fast tier + CI)
+    choices=TIER_CHOICES,
+    help="tier/profile (e.g., free-fast, free-lite, lite, pro, strict)",
     )
     p_run.add_argument(
         "--source",
@@ -391,10 +381,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # --- DAG-run helper functions (default run path) -------------------------
-from pathlib import Path
-from firsttry.planner.dag import Plan, Task
-from firsttry.run_swarm import run_plan
-from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
 
 
 def _build_plan_for_tier(repo_root: Path, tier: str) -> Plan:
@@ -437,7 +423,8 @@ def _build_plan_for_tier(repo_root: Path, tier: str) -> Plan:
 
 
 def cmd_run(argv=None) -> int:
-    import argparse, json
+    import argparse
+    import json
     p = argparse.ArgumentParser(prog="firsttry run")
     # Accept either a positional tier (legacy UX) or --tier flag
     p.add_argument("maybe_tier", nargs="?", help="tier/profile (e.g., free-lite, lite, pro)")

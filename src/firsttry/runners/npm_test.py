@@ -26,6 +26,14 @@ class NpmTestRunner(CheckRunner):
         pkgs = [repo_root / t for t in targets if (repo_root / t / "package.json").exists()] or [repo_root]
         out, err, rc = "", "", 0
         for pth in pkgs:
-            p = subprocess.run(["npm","test","--silent","--", *flags], cwd=pth, text=True, capture_output=True, timeout=timeout_s)
-            out += p.stdout; err += p.stderr; rc |= p.returncode
+            p = subprocess.run(
+                ["npm", "test", "--silent", "--", *flags],
+                cwd=pth,
+                text=True,
+                capture_output=True,
+                timeout=timeout_s,
+            )
+            out += p.stdout
+            err += p.stderr
+            rc |= p.returncode
         return RunResult(status="ok" if rc == 0 else "fail", stdout=out, stderr=err)
