@@ -31,7 +31,8 @@ jobs:
       - name: Install tools
         run: |
           python -m pip install -U pip
-          python -m pip install ruff mypy pytest
+          # Install pytest-xdist so -n (parallel) options in pytest.ini don't fail
+          python -m pip install ruff mypy pytest pytest-xdist
 
       - name: Ensure demo files exist
         run: |
@@ -42,11 +43,13 @@ jobs:
       # Cold run may fail (miss-run) → don't fail the job here
       - name: Cold run (free-fast)
         run: |
-          PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report || true
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src \
+          python -m firsttry.cli run --tier free-fast --show-report || true
 
       - name: Warm run (expect cache hits)
         run: |
-          PYTHONPATH=src python -m firsttry.cli run --tier free-fast --show-report
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src \
+          python -m firsttry.cli run --tier free-fast --show-report
 
       - name: Print report + history
         run: |
