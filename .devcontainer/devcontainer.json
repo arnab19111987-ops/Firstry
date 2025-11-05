@@ -1,84 +1,30 @@
 {
-  "name": "firsttry-dev",
+  "name": "firsttry-dev (safe)",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": false,
+  "overrideCommand": false,
+  "init": true,
 
   "features": {
     "ghcr.io/devcontainers/features/node:1": { "version": "20" },
     "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
   },
 
-  "remoteUser": "vscode",
-  "updateRemoteUserUID": false,
-  "overrideCommand": false,
-  "init": true,
-
-  "hostRequirements": {
-    "cpus": 4,
-    "memory": "8gb",
-    "storage": "32gb"
-  },
-
   "containerEnv": {
-    "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
-    "PYTHONUNBUFFERED": "1",
-    "FT_DEBUG_IMPORTS": "0"
+    "DEBIAN_FRONTEND": "noninteractive"
   },
 
-  "runArgs": [
-    "--cpus=4",
-    "--memory=8g",
-    "--ulimit", "nofile=32768:32768",
-    "--ulimit", "core=0:0"
-  ],
-
-  "mounts": [
-    "type=bind,source=/workspaces/.cache,target=/workspaces/.cache"
-  ],
-
-  "onCreateCommand": "bash -lc 'test -x .devcontainer/onCreate.sh && bash .devcontainer/onCreate.sh || true'",
-  "postCreateCommand": "bash .devcontainer/postCreate.sh",
-  "updateContentCommand": "bash -lc 'test -x .devcontainer/updateContent.sh && bash .devcontainer/updateContent.sh || true'",
-  "postStartCommand": "bash -lc 'test -x .devcontainer/postStart.sh && bash .devcontainer/postStart.sh || true'",
-
+  "postCreateCommand": "bash .devcontainer/postCreate.sh || true",
+  "postStartCommand": "echo '[devcontainer] started' >/tmp/devcontainer.postStart.ok",
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-azuretools.vscode-docker",
-        "dbaeumer.vscode-eslint",
-        "mhutchie.git-graph",
-        "streetsidesoftware.code-spell-checker"
-      ],
-      "settings": {
-        "terminal.integrated.scrollback": 5000,
-        "terminal.integrated.gpuAcceleration": "off",
-
-        "python.defaultInterpreterPath": "/workspaces/Firstry/.venv/bin/python",
-        "python.testing.pytestEnabled": true,
-        "python.testing.unittestEnabled": false,
-        "python.testing.pytestArgs": [
-          "-q",
-          "--maxfail=1",
-          "--disable-warnings",
-          "--import-mode=importlib"
-        ],
-
-        "python.analysis.indexing": false,
-
-        "files.watcherExclude": {
-          "**/.venv/**": true,
-          "**/.mypy_cache/**": true,
-          "**/.ruff_cache/**": true,
-          "**/.pytest_cache/**": true,
-          "**/.firsttry/**": true,
-          "**/node_modules/**": true,
-          "**/dist/**": true,
-          "**/build/**": true,
-          "**/.next/**": true,
-          "**/__pycache__/**": true
-        }
-      }
+        "dbaeumer.vscode-eslint"
+      ]
     }
   }
 }
