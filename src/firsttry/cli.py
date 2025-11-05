@@ -422,9 +422,85 @@ def _build_plan_for_tier(repo_root: Path, tier: str) -> Plan:
     return plan
 
 
+def _translate_legacy_args(argv: list[str] | None) -> list[str]:
+    """
+    Map old --gate and --require-license flags to new CLI forms.
+    This provides zero-churn backward compatibility for existing scripts/hooks.
+
+    Legacy:
+        firsttry run --gate pre-commit           → firsttry run fast
+        firsttry run --gate ruff                 → firsttry run fast
+        firsttry run --gate strict               → firsttry run strict
+        firsttry run --require-license           → firsttry run --tier pro
+
+    Prints a deprecation notice when legacy flags are used.
+    """
+    if not argv:
+        return argv or []
+
+    out = []
+    saw_gate = None
+    require_license = False
+    i = 0
+
+    while i < len(argv):
+        a = argv[i]
+        if a == "--gate":
+            # Consume --gate and its value
+            if i + 1 < len(argv):
+                saw_gate = argv[i + 1]
+                i += 2
+                continue
+            else:
+                i += 1
+                continue
+        elif a == "--require-license":
+            # Consume --require-license (no value)
+            require_license = True
+            i += 1
+            continue
+        else:
+            # Keep all other args
+            out.append(a)
+            i += 1
+
+    # Map gate to mode
+    if saw_gate:
+        gate = saw_gate.lower()
+        if gate in {"pre-commit", "precommit", "ruff"}:
+            # Fast mode: just ruff
+            out.insert(0, "fast")
+        elif gate in {"ci", "strict", "mypy", "pytest"}:
+            # Strict mode: ruff + mypy + pytest
+            out.insert(0, "strict")
+        else:
+            # Safe default: fast
+            out.insert(0, "fast")
+
+    # Add tier if license required
+    if require_license and "--tier" not in out:
+        out = ["--tier", "pro"] + out
+
+    # Print deprecation notice if any legacy flag was used
+    if saw_gate or require_license:
+        print(
+            "[firsttry] DEPRECATED: --gate/--require-license are no longer supported.\n"
+            "           Use 'run <mode>' (fast|strict|pro|enterprise) or '--tier <tier>' instead.\n"
+            "           See: https://docs.firsttry.com/cli-migration",
+            file=sys.stderr,
+            flush=True,
+        )
+
+    return out
+
+
 def cmd_run(argv=None) -> int:
     import argparse
     import json
+
+    # Translate legacy flags to new CLI form
+    argv = _translate_legacy_args(argv)
+
     p = argparse.ArgumentParser(prog="firsttry run")
     # Accept either a positional tier (legacy UX) or --tier flag
     p.add_argument("maybe_tier", nargs="?", help="tier/profile (e.g., free-lite, lite, pro)")
