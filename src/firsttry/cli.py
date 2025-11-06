@@ -30,7 +30,7 @@ handle_doctor: Optional[Callable[[argparse.Namespace], int]]
 cmd_mirror_ci: Optional[Callable[[argparse.Namespace], int]]
 
 try:
-    from .cli_enhanced_old import (  # type: ignore[import-not-found,no-redef]
+    from .cli_enhanced_old import (
         handle_status,
         handle_setup,
         handle_doctor,
@@ -1100,7 +1100,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         from .ci_parser import resolve_ci_plan
     except Exception:
 
-        def resolve_ci_plan(root):
+        def resolve_ci_plan(repo_root: str) -> list[dict[str, str]] | None:
             return None
 
     # make repo profile available to runners
@@ -1148,7 +1148,7 @@ async def run_fast_pipeline(*, args=None) -> int:
     # ensure we have ci_plan in ctx even if source=detect
     if ci_plan is None:
         # CI parsing disabled; keep an empty ci_plan
-        ci_plan: list = []
+        ci_plan = []  # type: ignore[var-annotated]
     ctx["ci_plan"] = ci_plan
     ctx["config"] = cfg
 
@@ -1261,7 +1261,7 @@ async def run_fast_pipeline(*, args=None) -> int:
                     entry["reason"] = "Available in Pro tier"
 
             if isinstance(payload.get("checks"), list):
-                payload["checks"].append(entry)
+                payload["checks"].append(entry)  # type: ignore[union-attr]
 
         # Print preview
         import json
@@ -1272,7 +1272,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         # Write to report-json if requested
         report_json_path = getattr(args, "report_json", None)
         if report_json_path:
-            from .reporting import write_report_async
+            from .reporting import write_report_async  # type: ignore[attr-defined]
 
             path = Path(report_json_path)
             try:
@@ -1311,7 +1311,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         try:
             from datetime import datetime, timezone
             from pathlib import Path
-            from .reporting import write_report_async
+            from .reporting import write_report_async  # type: ignore[attr-defined]
             from .checks_orchestrator import (
                 FAST_FAMILIES,
                 MUTATING_FAMILIES,
@@ -1388,17 +1388,17 @@ async def run_fast_pipeline(*, args=None) -> int:
                     total_s += float(duration_s)
                     if schema_ver == 2:
                         if family in MUTATING_FAMILIES:
-                            payload["timing"]["mutating_ms"] += int(duration_s * 1000)
+                            payload["timing"]["mutating_ms"] += int(duration_s * 1000)  # type: ignore[index]
                         elif family in SLOW_FAMILIES:
-                            payload["timing"]["slow_ms"] += int(duration_s * 1000)
+                            payload["timing"]["slow_ms"] += int(duration_s * 1000)  # type: ignore[index]
                         elif family in FAST_FAMILIES:
-                            payload["timing"]["fast_ms"] += int(duration_s * 1000)
+                            payload["timing"]["fast_ms"] += int(duration_s * 1000)  # type: ignore[index]
                         else:
-                            payload["timing"]["fast_ms"] += int(duration_s * 1000)
+                            payload["timing"]["fast_ms"] += int(duration_s * 1000)  # type: ignore[index]
 
-                payload["checks"].append(entry)
+                payload["checks"].append(entry)  # type: ignore[attr-defined]
 
-            payload["timing"]["total_ms"] = int(total_s * 1000)
+            payload["timing"]["total_ms"] = int(total_s * 1000)  # type: ignore[index]
 
             # write the report (async if possible)
             path = Path(report_json_path)
@@ -1528,29 +1528,29 @@ except ImportError:
 
 
 # Compatibility functions for CLI tests
-def _load_real_runners_or_stub():  # type: ignore
+def _load_real_runners_or_stub():
     """Legacy function expected by tests."""
     return runners
 
 
-def install_git_hooks():  # type: ignore
+def install_git_hooks():
     """Stub function for git hooks installation."""
     try:
-        from .hooks import install_git_hooks_impl  # type: ignore
+        from .hooks import install_git_hooks_impl
 
-        return install_git_hooks_impl()  # type: ignore
+        return install_git_hooks_impl()
     except ImportError:
         print("Git hooks installation not available")
         return False
 
 
-def cmd_gates(args=None):  # type: ignore
+def cmd_gates(args=None):
     """Stub function for gates command."""
     try:
-        from .gates import run_all_gates  # type: ignore
+        from .gates import run_all_gates
         from pathlib import Path
 
-        results = run_all_gates(Path("."))  # type: ignore
+        results = run_all_gates(Path("."))
 
         # Handle both dict format (from mocked tests) and GateResult objects
         if isinstance(results, dict) and "results" in results:
@@ -1572,12 +1572,12 @@ def cmd_gates(args=None):  # type: ignore
         print("Gates command not available")
 
 
-def assert_license():  # type: ignore
+def assert_license():
     """Stub function for license assertion."""
     try:
-        from .license_guard import get_tier  # type: ignore
+        from .license_guard import get_tier
 
-        tier = get_tier()  # type: ignore
+        tier = get_tier()
         return tier not in ("NONE", "INVALID")
     except ImportError:
         return True

@@ -4,7 +4,7 @@
       "name": "ruff:_root",
       "check_id": "ruff:_root",
       "status": "ok",
-      "duration_ms": 8,
+      "duration_ms": 9,
       "stdout": "All checks passed!\n",
       "stderr": "",
       "cache_status": "hit-local"
@@ -13,7 +13,7 @@
       "name": "pytest:_root",
       "check_id": "pytest:_root",
       "status": "ok",
-      "duration_ms": 473,
+      "duration_ms": 485,
       "stdout": ".                                                                        [100%]\n",
       "stderr": "",
       "cache_status": "miss-run"
@@ -21,9 +21,9 @@
     "mypy:_root": {
       "name": "mypy:_root",
       "check_id": "mypy:_root",
-      "status": "fail",
-      "duration_ms": 1010,
-      "stdout": "src/firsttry/profiler.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/profiler.py:29: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/parallel_pytest.py:144: error: Module has no attribute \"ceil\"  [attr-defined]\nsrc/firsttry/cli.py:33: error: Unused \"type: ignore[import-not-found, no-redef]\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1103: error: All conditional function variants must have identical signatures  [misc]\nsrc/firsttry/cli.py:1103: note: Original:\nsrc/firsttry/cli.py:1103: note:     def resolve_ci_plan(repo_root: str) -> list[dict[str, str]] | None\nsrc/firsttry/cli.py:1103: note: Redefinition:\nsrc/firsttry/cli.py:1103: note:     def resolve_ci_plan(root: Any) -> Any\nsrc/firsttry/cli.py:1151: error: Name \"ci_plan\" already defined on line 1111  [no-redef]\nsrc/firsttry/cli.py:1264: error: Item \"object\" of \"object | Any\" has no attribute \"append\"  [union-attr]\nsrc/firsttry/cli.py:1275: error: Module \"firsttry.reporting\" has no attribute \"write_report_async\"  [attr-defined]\nsrc/firsttry/cli.py:1314: error: Module \"firsttry.reporting\" has no attribute \"write_report_async\"  [attr-defined]\nsrc/firsttry/cli.py:1391: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1391: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1393: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1393: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1395: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1395: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1397: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1397: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1399: error: \"object\" has no attribute \"append\"  [attr-defined]\nsrc/firsttry/cli.py:1401: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1531: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1536: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1539: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1541: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1547: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1550: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1553: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1575: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1578: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1580: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cached_orchestrator.py:31: error: Argument 2 to \"input_stats_match\" has incompatible type \"list[InputFileMeta] | None\"; expected \"list[InputFileMeta]\"  [arg-type]\nsrc/firsttry/cached_orchestrator.py:74: error: Incompatible return value type (got \"tuple[int | None, str]\", expected \"tuple[int, str]\")  [return-value]\nsrc/firsttry/cached_orchestrator.py:158: error: Need type annotation for \"buckets\"  [var-annotated]\nsrc/firsttry/cached_orchestrator.py:234: error: Module has no attribute \"is_tool_cache_valid_fast\"  [attr-defined]\nsrc/firsttry/cached_orchestrator.py:361: error: Module has no attribute \"is_tool_cache_valid_fast\"  [attr-defined]\nsrc/firsttry/cached_orchestrator.py:427: error: Module has no attribute \"invalidate_tool_cache\"  [attr-defined]\nsrc/firsttry/performance_validator.py:293: error: Argument 1 to \"select_checks\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:297: error: Argument \"scenario\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:298: error: Argument \"profile\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:300: error: Argument \"use_cache\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"bool\"  [arg-type]\nsrc/firsttry/performance_validator.py:301: error: Argument \"changed_files\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"list[str] | None\"  [arg-type]\nFound 38 errors in 4 files (checked 151 source files)\n",
+      "status": "ok",
+      "duration_ms": 892,
+      "stdout": "src/firsttry/profiler.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/profiler.py:29: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nSuccess: no issues found in 150 source files\n",
       "stderr": "",
       "cache_status": "miss-run"
     }
