@@ -9,8 +9,8 @@ def test_mirror_ci_blocks_dangerous_command():
                 "steps": [
                     {"name": "Destroy", "run": "rm -rf /"},
                 ],
-            }
-        ]
+            },
+        ],
     }
 
     summary = pro_features.run_ci_steps_locally(plan, license_key="TEST-KEY-OK")
@@ -39,15 +39,16 @@ def test_mirror_ci_uses_env_license(monkeypatch, tmp_path, capsys):
                 {
                     "workflow_file": "ci.yml",
                     "jobs": [{"job_id": "qa", "steps": fake_steps}],
-                }
-            ]
+                },
+            ],
         },
     )
 
     # Build normalized plan and call pro_features directly (robust against CLI import order)
     normalized_plan = {"jobs": [{"job_name": "qa", "steps": fake_steps}]}
     summary = pro_features.run_ci_steps_locally(
-        normalized_plan, license_key="TEST-KEY-OK"
+        normalized_plan,
+        license_key="TEST-KEY-OK",
     )
     assert summary.get("ok") is True
     assert len(summary.get("results", [])) == 1

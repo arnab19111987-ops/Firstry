@@ -9,13 +9,11 @@ class _DummyQuickfix:
 
 
 def test_runner_stops_after_first_failure(monkeypatch):
-    """
-    The pro runner must:
+    """The pro runner must:
     - stop executing steps after the first failure (speed guarantee)
     - report only the steps that actually ran
     - surface the failing step in summary.failed_at
     """
-
     # Pretend we have a valid license
     license_key = "TEST-KEY-OK"
 
@@ -54,8 +52,8 @@ def test_runner_stops_after_first_failure(monkeypatch):
                         },
                     },
                 ],
-            }
-        ]
+            },
+        ],
     }
 
     res = pro_features.run_ci_plan_locally(plan, license_key=license_key)

@@ -1,19 +1,19 @@
 # src/firsttry/context_builders.py
 from __future__ import annotations
 
-import os
 import hashlib
+import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 def _detect_repo_root() -> str:
-    return str(Path(".").resolve())
+    return str(Path().resolve())
 
 
-def _list_py_files(repo_root: str | None = None) -> List[str]:
+def _list_py_files(repo_root: str | None = None) -> list[str]:
     root = Path(repo_root or ".")
-    out: List[str] = []
+    out: list[str] = []
     for p in root.rglob("*.py"):
         # skip venv/.git
         if ".venv" in p.parts or "venv" in p.parts or ".git" in p.parts:
@@ -34,10 +34,8 @@ CONFIG_FILES = [
 ]
 
 
-def build_context() -> Dict[str, Any]:
-    """
-    Context = machine + repo_root
-    """
+def build_context() -> dict[str, Any]:
+    """Context = machine + repo_root"""
     repo_root = _detect_repo_root()
     return {
         "repo_root": repo_root,
@@ -48,16 +46,12 @@ def build_context() -> Dict[str, Any]:
     }
 
 
-def build_repo_profile() -> Dict[str, Any]:
-    """
-    Basic repo facts for planner/agent-manager.
-    """
+def build_repo_profile() -> dict[str, Any]:
+    """Basic repo facts for planner/agent-manager."""
     repo_root = _detect_repo_root()
     py_files = _list_py_files(repo_root)
     test_count = sum(
-        1
-        for f in py_files
-        if "/tests/" in f or f.endswith("_test.py") or f.startswith("tests/")
+        1 for f in py_files if "/tests/" in f or f.endswith("_test.py") or f.startswith("tests/")
     )
     return {
         "repo_root": repo_root,
@@ -67,8 +61,8 @@ def build_repo_profile() -> Dict[str, Any]:
     }
 
 
-def compute_config_hashes(root: str) -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def compute_config_hashes(root: str) -> dict[str, str]:
+    out: dict[str, str] = {}
     for name in CONFIG_FILES:
         path = Path(root) / name
         if not path.exists():

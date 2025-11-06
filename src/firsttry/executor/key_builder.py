@@ -1,14 +1,17 @@
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Set
-from ..twin.hashers import hash_bytes, hash_file, tool_version_hash, env_fingerprint
+
+from ..twin.hashers import env_fingerprint
+from ..twin.hashers import hash_bytes
+from ..twin.hashers import hash_file
+from ..twin.hashers import tool_version_hash
 
 
-def build_cache_key(repo_root: Path, cmd: list[str], inputs: Set[str]) -> str:
-    """
-    Inputs can contain:
-      - repo-relative file paths ("src/app/x.py")
-      - special tokens: "TOOL:ruff", "TOOL:mypy", "CONF:pyproject.toml"
+def build_cache_key(repo_root: Path, cmd: list[str], inputs: set[str]) -> str:
+    """Inputs can contain:
+    - repo-relative file paths ("src/app/x.py")
+    - special tokens: "TOOL:ruff", "TOOL:mypy", "CONF:pyproject.toml"
     """
     file_hashes: list[str] = []
     tokens: list[str] = []
@@ -30,6 +33,6 @@ def build_cache_key(repo_root: Path, cmd: list[str], inputs: Set[str]) -> str:
     env = env_fingerprint()
     cmd_sig = " ".join(cmd).encode()
     key_data = "::".join(
-        sorted(file_hashes) + sorted(tokens) + [env, "CMD:" + hash_bytes(cmd_sig)]
+        sorted(file_hashes) + sorted(tokens) + [env, "CMD:" + hash_bytes(cmd_sig)],
     )
     return "ft-v1-" + hash_bytes(key_data.encode())

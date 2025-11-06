@@ -1,4 +1,5 @@
 """Shim module re-exporting licensing.app.licensing as app.licensing for tests."""
+
 from importlib import import_module
 
 _m = import_module("licensing.app.licensing")

@@ -1,7 +1,8 @@
 # src/firsttry/reporting/tty.py
 from __future__ import annotations
+
 import shutil
-from typing import Dict, Any
+from typing import Any
 
 from ..twin.graph import CodebaseTwin  # <-- use the twin for repo/file context
 
@@ -30,14 +31,13 @@ def _severity_priority(severity: str) -> int:
     sev = severity.lower()
     if sev in ("critical", "error"):
         return 0
-    elif sev in ("high", "warning"):
+    if sev in ("high", "warning"):
         return 1
-    elif sev in ("medium", "note"):
+    if sev in ("medium", "note"):
         return 2
-    elif sev == "low":
+    if sev == "low":
         return 3
-    else:
-        return 4
+    return 4
 
 
 def _severity_label(severity: str) -> str:
@@ -45,24 +45,23 @@ def _severity_label(severity: str) -> str:
     sev = severity.lower()
     if sev in ("critical", "error"):
         return "CRITICAL"
-    elif sev in ("high", "warning"):
+    if sev in ("high", "warning"):
         return "HIGH"
-    elif sev in ("medium", "note"):
+    if sev in ("medium", "note"):
         return "MEDIUM"
-    elif sev == "low":
+    if sev == "low":
         return "LOW"
-    else:
-        return severity.upper()
+    return severity.upper()
 
 
-def _tool_counts(checks: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
+def _tool_counts(checks: dict[str, Any]) -> dict[str, dict[str, int]]:
     """Aggregate counts by tool id (ruff/mypy/pytest/bandit/etc.)."""
-    agg: Dict[str, Dict[str, int]] = {}
+    agg: dict[str, dict[str, int]] = {}
     for tid, r in checks.items():
         tool = tid.split(":")[0]
         ent = agg.setdefault(tool, {"errors": 0, "findings": 0, "failures": 0, "ok": 0})
         st = r.get("status")
-        
+
         if tool == "pytest":
             if st == "ok":
                 ent["ok"] += 1
@@ -72,6 +71,7 @@ def _tool_counts(checks: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
             # Parse mypy error count from stdout: "Found X errors in Y files"
             stdout = r.get("stdout", "")
             import re
+
             match = re.search(r"Found (\d+) error", stdout)
             if match:
                 ent["findings"] += int(match.group(1))
@@ -90,19 +90,20 @@ def _tool_counts(checks: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
 
 
 def _result_line(overall_ok: bool, ran: int) -> str:
-    return f"Result: {'✅ PASSED' if overall_ok else f'{FAIL} FAILED'} ({_plural(ran, 'check')} run)"
+    return (
+        f"Result: {'✅ PASSED' if overall_ok else f'{FAIL} FAILED'} ({_plural(ran, 'check')} run)"
+    )
 
 
 def render_tty(
-    report: Dict[str, Any],
+    report: dict[str, Any],
     *,
     tier_name: str,
     twin: CodebaseTwin,  # <-- changed: receive CodebaseTwin instead of repo_root
     detailed: bool,
     max_items: int,
 ) -> None:
-    """
-    Render a human-friendly TTY report from the normalized report dict.
+    """Render a human-friendly TTY report from the normalized report dict.
 
     Args:
         report: normalized report payload (e.g., what's written to .firsttry/report.json)
@@ -110,6 +111,7 @@ def render_tty(
         twin: CodebaseTwin instance representing the scanned repo state
         detailed: if True, render detailed sections; otherwise summary-only
         max_items: truncate each detailed section to this many items
+
     """
     checks = report.get("checks", {})
     tools = sorted({k.split(":")[0] for k in checks})
@@ -168,11 +170,12 @@ def render_tty(
         # Calculate how many checks could have been shared from team cache
         # (For now, we show all cache hits as potential shared cache hits)
         remote_share_saved = sum(
-            1 for v in checks.values() 
-            if v.get("cache_status", "").startswith("hit-")
+            1 for v in checks.values() if v.get("cache_status", "").startswith("hit-")
         )
         if remote_share_saved > 0:
-            print(f"{LOCK} Shared Remote Cache (Pro): Your team re-ran {remote_share_saved} check{'s' if remote_share_saved != 1 else ''} you already passed. (Upgrade to Pro to share results)")
+            print(
+                f"{LOCK} Shared Remote Cache (Pro): Your team re-ran {remote_share_saved} check{'s' if remote_share_saved != 1 else ''} you already passed. (Upgrade to Pro to share results)",
+            )
             print()
 
     if not detailed:
@@ -196,17 +199,23 @@ def render_tty(
                 # Parse from stdout if no structured data
                 stdout = r.get("stdout", "")
                 import re
+
                 # Match: path:line: severity: message [code]
                 for line_txt in stdout.split("\n"):
-                    match = re.match(r'^(.+?):(\d+):\s*(error|note|warning):\s*(.+?)\s*\[([^\]]+)\]', line_txt)
+                    match = re.match(
+                        r"^(.+?):(\d+):\s*(error|note|warning):\s*(.+?)\s*\[([^\]]+)\]",
+                        line_txt,
+                    )
                     if match:
-                        items.append({
-                            "path": match.group(1),
-                            "line": match.group(2),
-                            "severity": match.group(3),
-                            "msg": match.group(4),
-                            "code": match.group(5),
-                        })
+                        items.append(
+                            {
+                                "path": match.group(1),
+                                "line": match.group(2),
+                                "severity": match.group(3),
+                                "msg": match.group(4),
+                                "code": match.group(5),
+                            },
+                        )
         if items:
             # Sort by priority: CRITICAL/ERROR first, then HIGH/WARNING, then MEDIUM/NOTE, then LOW
             items.sort(key=lambda x: _severity_priority(x.get("severity", "note")))
@@ -243,18 +252,21 @@ def render_tty(
                 # Ruff format: path:line:col: severity: message [code]
                 stdout = r.get("stdout", "")
                 import re
+
                 for line_txt in stdout.split("\n"):
                     # Match: path:line:col: CODE message
-                    match = re.match(r'^(.+?):(\d+):(\d+):\s*([A-Z]+\d+)\s*(.+)', line_txt)
+                    match = re.match(r"^(.+?):(\d+):(\d+):\s*([A-Z]+\d+)\s*(.+)", line_txt)
                     if match:
-                        items.append({
-                            "path": match.group(1),
-                            "line": match.group(2),
-                            "col": match.group(3),
-                            "code": match.group(4),
-                            "msg": match.group(5),
-                            "severity": "MEDIUM",
-                        })
+                        items.append(
+                            {
+                                "path": match.group(1),
+                                "line": match.group(2),
+                                "col": match.group(3),
+                                "code": match.group(4),
+                                "msg": match.group(5),
+                                "severity": "MEDIUM",
+                            },
+                        )
         if items:
             # Sort by priority: CRITICAL first, then HIGH, then MEDIUM, then LOW
             items.sort(key=lambda x: _severity_priority(x.get("severity", "medium")))
@@ -307,11 +319,12 @@ def render_tty(
             more = len(fail_items) - shown
             if more > 0:
                 print(f"...and {more} more failures\n")
-    
+
     # ---- HTML Report Link ----
     if detailed:
         # Check if HTML report exists
         from pathlib import Path
+
         html_path = Path(".firsttry/report.html")
         if html_path.exists():
             print()
@@ -323,7 +336,7 @@ def render_tty(
 
 # Backward compatibility wrapper for CLI
 def render_tty_report(
-    report: Dict[str, Any],
+    report: dict[str, Any],
     tier_label: str = "Free",
     repo_file_count: int | None = None,
     test_count: int | None = None,
@@ -333,26 +346,27 @@ def render_tty_report(
     order_by_priority: bool = True,
     skipped_checks_hint: list[str] | None = None,
 ) -> str:
-    """
-    Legacy wrapper for CLI compatibility.
+    """Legacy wrapper for CLI compatibility.
     Creates a minimal CodebaseTwin and calls render_tty.
     Returns empty string (since render_tty prints directly).
     """
     from pathlib import Path
+
     from ..twin.graph import CodebaseTwin
-    
+
     # Create a minimal twin for file count
     # Use the repo root from the report if available
     repo_root = Path.cwd()
     if "meta" in report and "repo_root" in report["meta"]:
         repo_root = Path(report["meta"]["repo_root"])
-    
+
     # Create a minimal twin with just file listing
     twin = CodebaseTwin(repo_root=str(repo_root))
-    
+
     # If repo_file_count was provided, create fake files to match
     if repo_file_count is not None:
         from ..twin.graph import FileNode
+
         for i in range(repo_file_count):
             twin.files[f"file_{i}"] = FileNode(
                 path=f"file_{i}",
@@ -363,7 +377,7 @@ def render_tty_report(
                 depends_on=set(),
                 dependents=set(),
             )
-    
+
     # Call the new render_tty function
     render_tty(
         report,
@@ -372,5 +386,5 @@ def render_tty_report(
         detailed=detailed,
         max_items=max_per_check,
     )
-    
+
     return ""  # render_tty prints directly, no string return

@@ -1,4 +1,5 @@
 import textwrap
+
 from firsttry import ci_mapper
 
 
@@ -24,7 +25,7 @@ def test_ci_mapper_builds_adaptive_plan(tmp_path):
                 run: ruff check .
               - name: Test
                 run: pytest -q
-        """
+        """,
     )
     (wf_dir / "ci.yml").write_text(wf_text, encoding="utf-8")
 

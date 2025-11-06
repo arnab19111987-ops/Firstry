@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import types
 import subprocess
+import types
+
 import pytest
 
-import firsttry.gates as gates
+from firsttry import gates
 
 
 def _fake_success_cmd(cmd: str):
@@ -19,17 +20,14 @@ def _fake_fail_cmd(cmd: str):
 
 @pytest.mark.parametrize("return_ok", [True, False])
 def test_gate_runner_handles_subprocess(monkeypatch, tmp_path, return_ok):
-    """
-    Ensure gates.run_gate handles subprocess outputs and reports pass/fail.
-    """
+    """Ensure gates.run_gate handles subprocess outputs and reports pass/fail."""
 
     def fake_run(*args, **kwargs):
         # Accept either list or str command
         cmd = args[0] if args else kwargs.get("cmd", "cmd")
         if return_ok:
             return _fake_success_cmd(cmd if isinstance(cmd, str) else "cmd")
-        else:
-            return _fake_fail_cmd(cmd if isinstance(cmd, str) else "cmd")
+        return _fake_fail_cmd(cmd if isinstance(cmd, str) else "cmd")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
@@ -73,9 +71,7 @@ def test_gate_runner_handles_subprocess(monkeypatch, tmp_path, return_ok):
 
 
 def test_gate_runner_json_serializable(monkeypatch, tmp_path):
-    """
-    The gate results should be convertible to JSON-able structures.
-    """
+    """The gate results should be convertible to JSON-able structures."""
 
     def fake_run(*args, **kwargs):
         Fake = types.SimpleNamespace
@@ -94,8 +90,7 @@ def test_gate_runner_json_serializable(monkeypatch, tmp_path):
 
 
 def test_gate_runner_handles_exception(monkeypatch, tmp_path):
-    """
-    If subprocess.run raises unexpectedly, the gate runner should catch
+    """If subprocess.run raises unexpectedly, the gate runner should catch
     the exception and return a failing, structured result rather than
     letting the exception bubble up.
     """

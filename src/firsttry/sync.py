@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 try:
     import tomllib  # py311+
@@ -14,13 +14,11 @@ except ImportError:
 
 from .ci_parser import resolve_ci_plan
 
-
 CONFIG_PATH = Path("firsttry.toml")
 
 
-def _load_existing() -> Dict[str, Any]:
-    """
-    Load firsttry.toml if present.
+def _load_existing() -> dict[str, Any]:
+    """Load firsttry.toml if present.
     We intentionally do NOT try to update pyproject.toml
     to avoid destroying a user's big file.
     """
@@ -29,7 +27,7 @@ def _load_existing() -> Dict[str, Any]:
     return {}
 
 
-def _ensure_nested(d: Dict[str, Any], *keys: str) -> Dict[str, Any]:
+def _ensure_nested(d: dict[str, Any], *keys: str) -> dict[str, Any]:
     cur = d
     for k in keys:
         if k not in cur or not isinstance(cur[k], dict):
@@ -38,9 +36,8 @@ def _ensure_nested(d: Dict[str, Any], *keys: str) -> Dict[str, Any]:
     return cur
 
 
-def _toml_dump_firsttry(data: Dict[str, Any]) -> str:
-    """
-    Very small TOML writer just for our structure:
+def _toml_dump_firsttry(data: dict[str, Any]) -> str:
+    """Very small TOML writer just for our structure:
 
     [tool.firsttry]
     fail_on_drift = true
@@ -51,7 +48,7 @@ def _toml_dump_firsttry(data: Dict[str, Any]) -> str:
     [tool.firsttry.tool.pytest]
     cmd = "pytest -m 'not slow'"
     """
-    lines: List[str] = []
+    lines: list[str] = []
 
     tool = data.get("tool", {})
     ft = tool.get("firsttry", {})
@@ -101,9 +98,8 @@ def _toml_dump_firsttry(data: Dict[str, Any]) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def sync_with_ci(repo_root: str = ".") -> Tuple[bool, str]:
-    """
-    1. resolve CI plan
+def sync_with_ci(repo_root: str = ".") -> tuple[bool, str]:
+    """1. resolve CI plan
     2. load current firsttry.toml (if any)
     3. merge CI into config:
        - add CI tools to run.tools (if missing)

@@ -1,4 +1,5 @@
 import textwrap
+
 from firsttry import ci_mapper
 
 
@@ -27,7 +28,7 @@ def test_ci_mapper_env_inheritance_legacy_steps(tmp_path):
                   B: "2"
               - name: Test
                 run: echo test
-        """
+        """,
     )
     (wf_dir / "legacy.yml").write_text(yaml_text, encoding="utf-8")
 

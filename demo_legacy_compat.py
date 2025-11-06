@@ -9,10 +9,11 @@ mode-based CLI system.
 import subprocess
 import sys
 
+
 def run_with_legacy_gate_precommit():
     """
     Legacy: Run just ruff (pre-commit checks) with old --gate flag
-    
+
     Modern equivalent:
         firsttry run fast
     """
@@ -25,7 +26,7 @@ def run_with_legacy_gate_precommit():
 def run_with_legacy_require_license():
     """
     Legacy: Run with license requirement (now: pro tier)
-    
+
     Modern equivalent:
         firsttry run --tier pro
     """
@@ -38,7 +39,7 @@ def run_with_legacy_require_license():
 def run_with_legacy_combined():
     """
     Legacy: Run strict checks with license requirement
-    
+
     Modern equivalent:
         firsttry run strict --tier pro
     """
@@ -105,22 +106,26 @@ if __name__ == "__main__":
     print("-" * 60)
     print()
     print("Old .pre-commit-config.yaml:")
-    print("""
+    print(
+        """
     - repo: local
       hooks:
         - id: firsttry
           name: FirstTry (old)
           entry: bash -c 'firsttry run --gate pre-commit'
           language: system
-    """)
+    """
+    )
     print()
     print("New .pre-commit-config.yaml:")
-    print("""
+    print(
+        """
     - repo: local
       hooks:
         - id: firsttry
           name: FirstTry (new)
           entry: bash -lc 'PYTHONPATH=src python -m firsttry.cli run fast --show-report'
           language: system
-    """)
+    """
+    )
     print()

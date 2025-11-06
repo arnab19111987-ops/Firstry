@@ -1,9 +1,13 @@
 from __future__ import annotations
+
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Any, Protocol, Optional
-import shutil
-from ..twin.hashers import hash_bytes, hash_file
+from typing import Any
+from typing import Protocol
+
+from ..twin.hashers import hash_bytes
+from ..twin.hashers import hash_file
 
 
 @dataclass
@@ -14,7 +18,7 @@ class RunResult:
     # they need string content.
     stdout: str | bytes = ""
     stderr: str | bytes = ""
-    meta: Dict[str, Any] | None = None
+    meta: dict[str, Any] | None = None
 
 
 # Alias for backward compatibility
@@ -24,18 +28,23 @@ RunnerResult = RunResult
 class CheckRunner(Protocol):
     check_id: str
 
-    def prereq_check(self) -> Optional[str]:
-        ...
+    def prereq_check(self) -> str | None: ...
 
     def build_cache_key(
-        self, repo_root: Path, targets: List[str], flags: List[str]
-    ) -> str:
-        ...
+        self,
+        repo_root: Path,
+        targets: list[str],
+        flags: list[str],
+    ) -> str: ...
 
     def run(
-        self, repo_root: Path, targets: List[str], flags: List[str], *, timeout_s: int
-    ) -> RunResult:
-        ...
+        self,
+        repo_root: Path,
+        targets: list[str],
+        flags: list[str],
+        *,
+        timeout_s: int,
+    ) -> RunResult: ...
 
 
 # Alias for backward compatibility
@@ -83,9 +92,9 @@ def _should_ignore_path(path: Path) -> bool:
     return False
 
 
-def _hash_targets(repo_root: Path, targets: List[str]) -> str:
+def _hash_targets(repo_root: Path, targets: list[str]) -> str:
     # Hash the CONTENTS of files under all target paths (intent, not cmd)
-    parts: List[str] = []
+    parts: list[str] = []
     for t in sorted(set(targets or [])):
         p = repo_root / t
         if p.is_dir():
@@ -99,7 +108,7 @@ def _hash_targets(repo_root: Path, targets: List[str]) -> str:
     return hash_bytes("||".join(parts).encode())
 
 
-def _hash_config(repo_root: Path, candidates: List[str]) -> str:
+def _hash_config(repo_root: Path, candidates: list[str]) -> str:
     parts = []
     for rel in candidates:
         p = repo_root / rel
@@ -110,7 +119,7 @@ def _hash_config(repo_root: Path, candidates: List[str]) -> str:
     return hash_bytes("|".join(parts).encode())
 
 
-def ensure_bin(name: str, alt: str | None = None) -> Optional[str]:
+def ensure_bin(name: str, alt: str | None = None) -> str | None:
     """Return None if binary is present (or alt is present), otherwise an error message."""
     if shutil.which(name):
         return None

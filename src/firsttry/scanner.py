@@ -1,29 +1,29 @@
 # firsttry/scanner.py
 from __future__ import annotations
 
-import json
-import subprocess
-from typing import List, Tuple
-import os
 import fnmatch
+import json
+import os
+import subprocess
 from pathlib import Path
 
 # Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse
 # a simple fallback format (lines starting with '-' under a 'files:' key).
 try:
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     YAML_AVAILABLE = True
 except Exception:
     YAML_AVAILABLE = False
-from .models import Issue, SectionSummary, ScanResult
+from .models import Issue
+from .models import ScanResult
+from .models import SectionSummary
 
 COVERAGE_REQUIRED_DEFAULT = 80.0
 
 
 def _run_cmd(cmd: list[str]) -> tuple[int, str, str]:
-    """
-    Run a shell command safely and capture exit code, stdout, stderr.
+    """Run a shell command safely and capture exit code, stdout, stderr.
     If the binary doesn't exist, return (127, "", "not found").
     We NEVER raise here. Scanner should not crash just because
     a tool isn't installed yet on the user's machine.
@@ -34,6 +34,7 @@ def _run_cmd(cmd: list[str]) -> tuple[int, str, str]:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            check=False,
         )
     except FileNotFoundError:
         return 127, "", "not found"
@@ -45,9 +46,8 @@ def _run_cmd(cmd: list[str]) -> tuple[int, str, str]:
 # -----------------------------------------------------------------------------
 
 
-def _scan_with_ruff() -> List[Issue]:
-    """
-    Run ruff in JSON mode and convert to Issue objects.
+def _scan_with_ruff() -> list[Issue]:
+    """Run ruff in JSON mode and convert to Issue objects.
 
     Command:
         ruff check --format=json .
@@ -78,7 +78,7 @@ def _scan_with_ruff() -> List[Issue]:
         # ruff missing
         return []
 
-    issues: List[Issue] = []
+    issues: list[Issue] = []
     try:
         data = json.loads(out or "[]")
     except json.JSONDecodeError:
@@ -103,17 +103,16 @@ def _scan_with_ruff() -> List[Issue]:
                     kind="lint-fixable" if autofixable else "lint-manual",
                     file=filename,
                     line=line,
-                    message=f"[{msg.get('code','?')}] {msg.get('message','')}",
+                    message=f"[{msg.get('code', '?')}] {msg.get('message', '')}",
                     autofixable=autofixable,
-                )
+                ),
             )
 
     return issues
 
 
-def _scan_with_black() -> List[Issue]:
-    """
-    Run black --check to detect formatting issues.
+def _scan_with_black() -> list[Issue]:
+    """Run black --check to detect formatting issues.
 
     Exit codes:
         0   already formatted
@@ -135,7 +134,7 @@ def _scan_with_black() -> List[Issue]:
         # formatted already, no issues
         return []
 
-    issues: List[Issue] = []
+    issues: list[Issue] = []
     lines = (out + "\n" + err).splitlines()
     for line in lines:
         line = line.strip()
@@ -148,7 +147,7 @@ def _scan_with_black() -> List[Issue]:
                     line=None,
                     message="File not formatted with black",
                     autofixable=True,
-                )
+                ),
             )
 
     # If black reported nonzero but we didn't find explicit files,
@@ -161,15 +160,14 @@ def _scan_with_black() -> List[Issue]:
                 line=None,
                 message="Code style differs from black formatting.",
                 autofixable=True,
-            )
+            ),
         )
 
     return issues
 
 
-def _collect_lint_section() -> Tuple[List[Issue], SectionSummary]:
-    """
-    Combine ruff + black results into a Lint / Style section.
+def _collect_lint_section() -> tuple[list[Issue], SectionSummary]:
+    """Combine ruff + black results into a Lint / Style section.
 
     This bucket includes:
     - unused imports
@@ -187,11 +185,11 @@ def _collect_lint_section() -> Tuple[List[Issue], SectionSummary]:
     autofix_count = sum(1 for i in all_lint if i.autofixable)
     manual_count = sum(1 for i in all_lint if not i.autofixable)
 
-    notes: List[str] = []
+    notes: list[str] = []
     notes.append(f"{autofix_count} autofixable via ruff/black (imports, format, etc.)")
     if manual_count > 0:
         notes.append(
-            f"{manual_count} manual cleanup (debug prints, duplication, syntax, etc.)"
+            f"{manual_count} manual cleanup (debug prints, duplication, syntax, etc.)",
         )
 
     summary = SectionSummary(
@@ -209,10 +207,8 @@ def _collect_lint_section() -> Tuple[List[Issue], SectionSummary]:
 # -----------------------------------------------------------------------------
 
 
-def _collect_type_section() -> Tuple[List[Issue], SectionSummary]:
-    """
-    Run mypy in JSON mode and capture only 'error' severity.
-    """
+def _collect_type_section() -> tuple[list[Issue], SectionSummary]:
+    """Run mypy in JSON mode and capture only 'error' severity."""
     code, out, err = _run_cmd(
         [
             "mypy",
@@ -221,7 +217,7 @@ def _collect_type_section() -> Tuple[List[Issue], SectionSummary]:
             "--no-error-summary",
             "--error-format=json",
             ".",
-        ]
+        ],
     )
     if code == 127:
         # mypy missing
@@ -234,7 +230,7 @@ def _collect_type_section() -> Tuple[List[Issue], SectionSummary]:
         )
         return [], summary
 
-    issues: List[Issue] = []
+    issues: list[Issue] = []
     try:
         data = json.loads(out or "[]")
     except json.JSONDecodeError:
@@ -254,7 +250,7 @@ def _collect_type_section() -> Tuple[List[Issue], SectionSummary]:
                 line=line,
                 message=f"[{code_s}] {message}",
                 autofixable=False,
-            )
+            ),
         )
 
     manual_count = len(issues)
@@ -279,10 +275,9 @@ def _collect_type_section() -> Tuple[List[Issue], SectionSummary]:
 
 
 def _collect_security_section() -> (
-    Tuple[List[Issue], SectionSummary, bool, int, int, List[str], List[str]]
+    tuple[list[Issue], SectionSummary, bool, int, int, list[str], list[str]]
 ):
-    """
-    Run bandit with JSON output and capture findings.
+    """Run bandit with JSON output and capture findings.
 
     HIGH severity == hard blocker.
 
@@ -339,7 +334,7 @@ def _collect_security_section() -> (
                 line=line,
                 message=f"[{sev}] {msg}",
                 autofixable=False,
-            )
+            ),
         )
         files_with_findings.add(filename)
         file_has_high[filename] = file_has_high.get(filename, False) or (sev == "HIGH")
@@ -347,7 +342,7 @@ def _collect_security_section() -> (
     # Load baseline (if present) to decide which security findings are
     # considered "known risky but baselined" versus truly unreviewed.
     baseline_path = Path(os.getcwd()) / "firsttry_security_baseline.yml"
-    baseline_patterns: List[str] = []
+    baseline_patterns: list[str] = []
     if baseline_path.exists():
         try:
             text = baseline_path.read_text(encoding="utf-8")
@@ -388,17 +383,16 @@ def _collect_security_section() -> (
         return False
 
     # Determine baselined files vs unreviewed high-risk files
-    baselined_files: List[str] = []
-    high_unreviewed_files: List[str] = []
+    baselined_files: list[str] = []
+    high_unreviewed_files: list[str] = []
     for fname in sorted(files_with_findings):
         if _is_baselined(fname):
             baselined += 1
             baselined_files.append(fname)
-        else:
-            # only treat files with a HIGH finding as high-risk-unreviewed
-            if file_has_high.get(fname, False):
-                high_unreviewed += 1
-                high_unreviewed_files.append(fname)
+        # only treat files with a HIGH finding as high-risk-unreviewed
+        elif file_has_high.get(fname, False):
+            high_unreviewed += 1
+            high_unreviewed_files.append(fname)
 
     manual_count = len(issues)
     if manual_count == 0:
@@ -407,10 +401,10 @@ def _collect_security_section() -> (
         notes = [f"{manual_count} security finding(s)."]
         if has_high:
             notes.append(
-                "HIGH severity present. See baseline grouping for reviewed vs unreviewed items."
+                "HIGH severity present. See baseline grouping for reviewed vs unreviewed items.",
             )
         notes.append(
-            f"{baselined} findings are baselined (known-risk). {high_unreviewed} remain unreviewed/high-risk."
+            f"{baselined} findings are baselined (known-risk). {high_unreviewed} remain unreviewed/high-risk.",
         )
 
     summary = SectionSummary(
@@ -439,16 +433,15 @@ def _collect_security_section() -> (
 
 def _collect_tests_and_coverage_section(
     coverage_required: float = COVERAGE_REQUIRED_DEFAULT,
-) -> Tuple[List[Issue], SectionSummary, float, float, bool]:
-    """
-    Run pytest under coverage and summarize:
+) -> tuple[list[Issue], SectionSummary, float, float, bool]:
+    """Run pytest under coverage and summarize:
       - test failures
       - coverage %
 
     If 'coverage' isn't installed, we treat as skipped.
     """
     code_covrun, out_covrun, err_covrun = _run_cmd(
-        ["coverage", "run", "-m", "pytest", "-q"]
+        ["coverage", "run", "-m", "pytest", "-q"],
     )
     pytest_failed = code_covrun != 0 and code_covrun != 127
 
@@ -467,7 +460,7 @@ def _collect_tests_and_coverage_section(
         except json.JSONDecodeError:
             coverage_pct = 0.0
 
-    issues: List[Issue] = []
+    issues: list[Issue] = []
     if pytest_failed:
         issues.append(
             Issue(
@@ -476,7 +469,7 @@ def _collect_tests_and_coverage_section(
                 line=None,
                 message="pytest reported failing tests.",
                 autofixable=False,
-            )
+            ),
         )
 
     if coverage_pct < coverage_required:
@@ -487,10 +480,10 @@ def _collect_tests_and_coverage_section(
                 line=None,
                 message=f"coverage {coverage_pct:.1f}% < required {coverage_required:.1f}%.",
                 autofixable=False,
-            )
+            ),
         )
 
-    notes: List[str] = []
+    notes: list[str] = []
     if pytest_failed:
         notes.append("pytest: failing tests detected.")
     else:
@@ -525,8 +518,7 @@ def _compute_commit_safe(
     include_security: bool,
     include_tests: bool,
 ) -> bool:
-    """
-    We ONLY call something SAFE TO COMMIT ✅ if everything we *actually
+    """We ONLY call something SAFE TO COMMIT ✅ if everything we *actually
     ran for this gate* is clean.
 
     Gate logic:
@@ -565,9 +557,8 @@ def _compute_commit_safe(
 # -----------------------------------------------------------------------------
 
 
-def _autofix_recommendations_for_gate(gate_name: str) -> List[str]:
-    """
-    This returns the shell commands we consider "safe autofix" for this gate.
+def _autofix_recommendations_for_gate(gate_name: str) -> list[str]:
+    """This returns the shell commands we consider "safe autofix" for this gate.
     cli.py can show or execute these.
 
     Strategy you asked for:
@@ -598,8 +589,7 @@ def _autofix_recommendations_for_gate(gate_name: str) -> List[str]:
 
 
 def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
-    """
-    Run scans WITHOUT modifying code. This is always the first step.
+    """Run scans WITHOUT modifying code. This is always the first step.
 
     gate_name controls depth:
       - pre-commit
@@ -626,7 +616,7 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
     type_issues, type_summary = _collect_type_section()
 
     # 3. Security (bandit) if this gate includes it
-    sec_issues: List[Issue] = []
+    sec_issues: list[Issue] = []
     sec_summary = SectionSummary(
         name="Security / Secrets",
         autofixable_count=0,
@@ -649,7 +639,7 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
         ) = _collect_security_section()
 
     # 4. Tests / Coverage if this gate includes it
-    test_issues: List[Issue] = []
+    test_issues: list[Issue] = []
     test_summary = SectionSummary(
         name="Tests & Coverage",
         autofixable_count=0,
@@ -672,8 +662,8 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
         coverage_ok = cov_pct >= cov_req
 
     # Combine all sections + issues
-    all_issues: List[Issue] = lint_issues + type_issues + sec_issues + test_issues
-    all_sections: List[SectionSummary] = [
+    all_issues: list[Issue] = lint_issues + type_issues + sec_issues + test_issues
+    all_sections: list[SectionSummary] = [
         lint_summary,
         type_summary,
         sec_summary,
@@ -724,10 +714,14 @@ def run_all_checks_dry_run(gate_name: str = "pre-commit") -> ScanResult:
     result.known_risky_but_baselined = baselined_count
     # Attach file lists
     result.high_risk_unreviewed_files = getattr(
-        locals().get("high_unreviewed_files", None), "copy", lambda: []
+        locals().get("high_unreviewed_files", None),
+        "copy",
+        list,
     )()
     result.known_risky_but_baselined_files = getattr(
-        locals().get("baselined_files", None), "copy", lambda: []
+        locals().get("baselined_files", None),
+        "copy",
+        list,
     )()
 
     return result

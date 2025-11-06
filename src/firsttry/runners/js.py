@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict
+from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 _ESLINT_RULE_RE = re.compile(r"\(([^()]+)\)\s*$")
 
@@ -13,7 +14,10 @@ class ESLintRunner(BaseRunner):
     tool = "eslint"
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
     ) -> RunnerResult:
         name = f"lint-js[{idx}]"
         cmd = item.get("cmd") or "npx eslint ."
@@ -29,7 +33,10 @@ class NpmTestRunner(BaseRunner):
     tool = "npm-test"
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
     ) -> RunnerResult:
         name = f"tests-js[{idx}]"
         cmd = item.get("cmd") or "npm test"

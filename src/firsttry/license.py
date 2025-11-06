@@ -1,30 +1,33 @@
 # firsttry/license.py
 from __future__ import annotations
 
-import json
-import os
-import pathlib
-from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, Any, Dict, Tuple
-from datetime import datetime, timezone, timedelta
 import base64
 import hashlib
 import hmac
+import json
+import os
+import pathlib
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from pathlib import Path
+from typing import Any
+from typing import Protocol
 
 
 class HTTPResponseLike(Protocol):
     """Protocol for HTTP response objects."""
 
-    def json(self) -> dict:
-        ...
+    def json(self) -> dict: ...
 
 
 @dataclass
 class LicenseInfo:
     valid: bool
     plan: str
-    expiry: Optional[str]
+    expiry: str | None
     raw: dict
 
 
@@ -35,7 +38,7 @@ def _ensure_cache_parent():
     CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
-def load_cached_license() -> Optional[LicenseInfo]:
+def load_cached_license() -> LicenseInfo | None:
     if not CACHE_PATH.exists():
         return None
     data = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
@@ -60,8 +63,7 @@ def verify_with_server(
     server_url: str,
     http_post: Callable[..., HTTPResponseLike],
 ) -> LicenseInfo:
-    """
-    server_url: e.g. http://localhost:8000/api/v1/license/verify
+    """server_url: e.g. http://localhost:8000/api/v1/license/verify
     http_post: injected callable so we can mock in tests.
 
     Expected server response JSON:
@@ -84,12 +86,11 @@ def verify_with_server(
 
 
 def verify_license(
-    license_key: Optional[str],
-    server_url: Optional[str],
-    http_post: Optional[Callable[..., HTTPResponseLike]] = None,
+    license_key: str | None,
+    server_url: str | None,
+    http_post: Callable[..., HTTPResponseLike] | None = None,
 ) -> LicenseInfo:
-    """
-    Public helper.
+    """Public helper.
     - Pulls key from env if not provided.
     - Falls back to cached info if server_url missing.
     - Saves cache on success.
@@ -100,7 +101,10 @@ def verify_license(
     if not license_key:
         # no key at all -> treat as invalid free tier
         return LicenseInfo(
-            valid=False, plan="free", expiry=None, raw={"valid": False, "plan": "free"}
+            valid=False,
+            plan="free",
+            expiry=None,
+            raw={"valid": False, "plan": "free"},
         )
 
     if server_url and http_post:
@@ -114,13 +118,15 @@ def verify_license(
 
     # Last resort, assume free
     return LicenseInfo(
-        valid=False, plan="free", expiry=None, raw={"valid": False, "plan": "free"}
+        valid=False,
+        plan="free",
+        expiry=None,
+        raw={"valid": False, "plan": "free"},
     )
 
 
 def license_summary_for_humans(lic_obj) -> str:
-    """
-    Produce a compact human-friendly one-line summary for the given license object.
+    """Produce a compact human-friendly one-line summary for the given license object.
 
     Accepts either a mapping (dict-like) or an object with attributes. The function
     adapts common field names (`plan` / `tier`, `expiry` / `expires_at`, `valid` / `is_valid`).
@@ -137,9 +143,7 @@ def license_summary_for_humans(lic_obj) -> str:
 
     plan = _get(lic_obj, "plan") or _get(lic_obj, "tier") or "trial"
     expires_raw = (
-        _get(lic_obj, "expires_at")
-        or _get(lic_obj, "expiry")
-        or _get(lic_obj, "expiry_date")
+        _get(lic_obj, "expires_at") or _get(lic_obj, "expiry") or _get(lic_obj, "expiry_date")
     )
     is_valid = _get(lic_obj, "is_valid")
     if is_valid is None:
@@ -176,8 +180,7 @@ def license_summary_for_humans(lic_obj) -> str:
 
 
 def ensure_trial_license_if_missing(days: int = 3, plan: str = "trial") -> LicenseInfo:
-    """
-    Ensure a trial license is present in the cache. If a cached license exists, return it.
+    """Ensure a trial license is present in the cache. If a cached license exists, return it.
     Otherwise create a short-lived trial license (signed) and save it to the cache,
     returning the resulting LicenseInfo.
     """
@@ -213,14 +216,17 @@ def _license_cache_path() -> Path:
 
 
 def _sign_payload(
-    valid: bool, plan: Optional[str], expiry: Optional[str], secret: str
+    valid: bool,
+    plan: str | None,
+    expiry: str | None,
+    secret: str,
 ) -> str:
     msg = f"{valid}|{plan}|{expiry}"
     mac = hmac.new(secret.encode("utf-8"), msg.encode("utf-8"), hashlib.sha256).digest()
     return base64.b64encode(mac).decode("ascii")
 
 
-def verify_sig(payload: Dict[str, Any], secret: str = DEFAULT_SHARED_SECRET) -> bool:
+def verify_sig(payload: dict[str, Any], secret: str = DEFAULT_SHARED_SECRET) -> bool:
     expected = _sign_payload(
         bool(payload.get("valid", False)),
         payload.get("plan"),
@@ -233,18 +239,17 @@ def verify_sig(payload: Dict[str, Any], secret: str = DEFAULT_SHARED_SECRET) -> 
 
 def build_license_payload(
     valid: bool,
-    plan: Optional[str],
-    expiry: Optional[str],
+    plan: str | None,
+    expiry: str | None,
     secret: str = DEFAULT_SHARED_SECRET,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     payload = {"valid": valid, "plan": plan, "expiry": expiry}
     payload["sig"] = _sign_payload(valid, plan, expiry, secret)
     return payload
 
 
-def require_license() -> Tuple[Dict[str, Any], None]:
-    """
-    Strict Pro gating: allow only signed, valid cached licenses.
+def require_license() -> tuple[dict[str, Any], None]:
+    """Strict Pro gating: allow only signed, valid cached licenses.
 
     Behavior:
     - If no cached payload: block with exit 3.
@@ -252,7 +257,7 @@ def require_license() -> Tuple[Dict[str, Any], None]:
     - If payload present, signature valid, and valid==True: allow.
     """
     lic_obj = load_cached_license()
-    lic_payload: Optional[Dict[str, Any]]
+    lic_payload: dict[str, Any] | None
     if isinstance(lic_obj, LicenseInfo):
         lic_payload = {
             "valid": lic_obj.valid,
@@ -267,11 +272,7 @@ def require_license() -> Tuple[Dict[str, Any], None]:
         raise SystemExit(3)
 
     # Must have a signature and pass verification
-    if (
-        "sig" not in lic_payload
-        or not verify_sig(lic_payload)
-        or not lic_payload.get("valid")
-    ):
+    if "sig" not in lic_payload or not verify_sig(lic_payload) or not lic_payload.get("valid"):
         print("License invalid or tampered. Run `firsttry license buy` to upgrade.")
         raise SystemExit(3)
 

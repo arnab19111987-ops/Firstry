@@ -41,9 +41,7 @@ TIER_CHECKS = {
     ],
 }
 
-LOCKED_MESSAGE = (
-    "🔒 Locked — available in Pro / ProMax. Run `firsttry upgrade` to unlock."
-)
+LOCKED_MESSAGE = "🔒 Locked — available in Pro / ProMax. Run `firsttry upgrade` to unlock."
 
 # Legacy tier mappings for backward compatibility
 LEGACY_TIER_CHECKS = {

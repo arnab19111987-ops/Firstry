@@ -1,7 +1,9 @@
 """Environment tools gate implementation."""
-from typing import Optional, Any
 
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class EnvToolsGate(Gate):
@@ -9,7 +11,7 @@ class EnvToolsGate(Gate):
 
     gate_id = "env_tools"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Check environment tools."""
         # This is a placeholder implementation
         return GateResult(

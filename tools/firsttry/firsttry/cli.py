@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Optional, List, Tuple, Any
+from typing import Any
 
 import click
 
@@ -61,7 +61,9 @@ def _make_stub_runners():
 
     def coverage_gate(*args, **kwargs):
         logger.debug(
-            "runners.stub coverage_gate called args=%r kwargs=%r", args, kwargs
+            "runners.stub coverage_gate called args=%r kwargs=%r",
+            args,
+            kwargs,
         )
         return _fake_result("coverage_gate")
 
@@ -76,8 +78,7 @@ def _make_stub_runners():
 
 
 def _load_real_runners_or_stub() -> SimpleNamespace:
-    """
-    Deterministic loader for runners.
+    """Deterministic loader for runners.
 
     Rules:
     - If FIRSTTRY_USE_REAL_RUNNERS=1:
@@ -110,7 +111,8 @@ def _load_real_runners_or_stub() -> SimpleNamespace:
 
             # Exec runners.py manually into a new module spec
             spec = importlib.util.spec_from_file_location(
-                "firsttry.runners.dynamic_loaded", str(runners_path)
+                "firsttry.runners.dynamic_loaded",
+                str(runners_path),
             )
             # mypy: ensure spec is not None before calling module_from_spec
             assert spec is not None, "spec_from_file_location() returned None"
@@ -150,7 +152,7 @@ runners = _load_real_runners_or_stub()
 # ---------------------------------------------------------------------------------
 
 
-def assert_license() -> Tuple[bool, List[str], str]:
+def assert_license() -> tuple[bool, list[str], str]:
     key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
     url = os.getenv("FIRSTTRY_LICENSE_URL", "").strip()
     if key and url:
@@ -176,9 +178,9 @@ def get_changed_files(*args, **kwargs):
 # ---------------------------------------------------------------------------------
 
 
-def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
+def _run_gate_via_runners(gate: str) -> tuple[str, int]:
     # steps is a list of (label, callable, args)
-    steps: List[Tuple[str, Any, list]] = [
+    steps: list[tuple[str, Any, list]] = [
         ("Lint..........", runners.run_ruff, []),
         ("Format........", runners.run_black_check, []),
         ("Types.........", runners.run_mypy, []),
@@ -215,9 +217,7 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
         verdict = (
             "SAFE TO COMMIT ✅"
             if gate == "pre-commit"
-            else "SAFE TO PUSH ✅"
-            if gate == "pre-push"
-            else "SAFE ✅"
+            else "SAFE TO PUSH ✅" if gate == "pre-push" else "SAFE ✅"
         )
         exit_code = 0
     else:
@@ -236,17 +236,17 @@ def _run_gate_via_runners(gate: str) -> Tuple[str, int]:
 
     if any_fail:
         lines.append(
-            "One or more checks FAILED. Fix the issues above before continuing."
+            "One or more checks FAILED. Fix the issues above before continuing.",
         )
     else:
         lines.append(
-            "Everything looks good. You'll almost certainly pass CI on the first try."
+            "Everything looks good. You'll almost certainly pass CI on the first try.",
         )
 
     return "\n".join(lines) + "\n", exit_code
 
 
-def _require_license_if_requested(require_license: bool) -> Optional[int]:
+def _require_license_if_requested(require_license: bool) -> int | None:
     if not require_license:
         return None
     ok, _features, _cache = assert_license()
@@ -274,10 +274,9 @@ def cli_run(gate: str, require_license: bool):
         # tests expect the literal text "License invalid"
         click.echo("License invalid")
         raise SystemExit(lic_code)
-    else:
-        # when license is required and valid, tests expect "License ok" to be printed
-        if require_license:
-            click.echo("License ok")
+    # when license is required and valid, tests expect "License ok" to be printed
+    if require_license:
+        click.echo("License ok")
 
     text, exit_code = _run_gate_via_runners(gate)
     click.echo(text, nl=False)
@@ -293,7 +292,7 @@ def cli_install_hooks():
         "Installed Git hooks:\n"
         f"  {pre_commit_path}\n"
         f"  {pre_push_path}\n\n"
-        "Now every commit/push will be checked by FirstTry automatically."
+        "Now every commit/push will be checked by FirstTry automatically.",
     )
     raise SystemExit(0)
 
@@ -305,12 +304,14 @@ def cli_install_hooks():
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="firsttry", description="FirstTry: pass CI in one shot."
+        prog="firsttry",
+        description="FirstTry: pass CI in one shot.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_parser = subparsers.add_parser(
-        "run", help="Run a quality gate and print summary."
+        "run",
+        help="Run a quality gate and print summary.",
     )
     run_parser.add_argument("--gate", choices=["pre-commit", "pre-push"], required=True)
     run_parser.add_argument(
@@ -326,10 +327,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     # mirror-ci (tests expect this argparse command)
     mirror = subparsers.add_parser(
-        "mirror-ci", help="Show local dry-run of CI workflow steps."
+        "mirror-ci",
+        help="Show local dry-run of CI workflow steps.",
     )
     mirror.add_argument(
-        "--root", required=True, help="Project root containing .github/workflows"
+        "--root",
+        required=True,
+        help="Project root containing .github/workflows",
     )
 
     # attach argparse-compatible callables used by tests
@@ -356,7 +360,7 @@ def build_parser() -> argparse.ArgumentParser:
                             print(f"        {k}={v}")
                     print("      Run:")
                     print(f"        {step['run']}")
-            print("")
+            print()
         return 0
 
     def _cmd_run_argparse(ns: argparse.Namespace) -> int:
@@ -367,8 +371,7 @@ def build_parser() -> argparse.ArgumentParser:
             if not ok:
                 print("License invalid")
                 return 1
-            else:
-                print("License ok")
+            print("License ok")
         text, exit_code = _run_gate_via_runners(gate)
         print(text, end="")
         return exit_code

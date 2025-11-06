@@ -1,15 +1,13 @@
-"""
-Change detection for optimizing FirstTry runs.
+"""Change detection for optimizing FirstTry runs.
 Maps file changes to relevant checks to skip unnecessary work.
 """
+
 import subprocess
 from pathlib import Path
-from typing import List, Set, Dict
 
 
-def get_changed_files(repo_root: str = ".") -> List[str]:
-    """
-    Get list of changed files using git.
+def get_changed_files(repo_root: str = ".") -> list[str]:
+    """Get list of changed files using git.
     Returns files changed since HEAD (uncommitted changes).
     Falls back to all files if git fails.
     """
@@ -21,6 +19,7 @@ def get_changed_files(repo_root: str = ".") -> List[str]:
             capture_output=True,
             text=True,
             timeout=5,
+            check=False,
         )
 
         if result.returncode == 0 and result.stdout.strip():
@@ -33,6 +32,7 @@ def get_changed_files(repo_root: str = ".") -> List[str]:
             capture_output=True,
             text=True,
             timeout=5,
+            check=False,
         )
 
         if result.returncode == 0 and result.stdout.strip():
@@ -50,11 +50,9 @@ def get_changed_files(repo_root: str = ".") -> List[str]:
         return ["**"]
 
 
-def categorize_changed_files(changed_files: List[str]) -> Dict[str, List[str]]:
-    """
-    Categorize changed files by type.
-    """
-    categories: Dict[str, List[str]] = {
+def categorize_changed_files(changed_files: list[str]) -> dict[str, list[str]]:
+    """Categorize changed files by type."""
+    categories: dict[str, list[str]] = {
         "python": [],
         "javascript": [],
         "docs": [],
@@ -114,10 +112,8 @@ def categorize_changed_files(changed_files: List[str]) -> Dict[str, List[str]]:
     return categories
 
 
-def map_changes_to_checks(file_categories: Dict[str, List[str]]) -> Set[str]:
-    """
-    Map file changes to relevant check families.
-    """
+def map_changes_to_checks(file_categories: dict[str, list[str]]) -> set[str]:
+    """Map file changes to relevant check families."""
     relevant_checks = set()
 
     # If "all files" marker or other files changed, run everything
@@ -162,10 +158,11 @@ def map_changes_to_checks(file_categories: Dict[str, List[str]]) -> Set[str]:
 
 
 def filter_plan_by_changes(
-    plan: List[Dict], repo_root: str = ".", changed_only: bool = False
-) -> List[Dict]:
-    """
-    Filter a plan to only include checks relevant to changed files.
+    plan: list[dict],
+    repo_root: str = ".",
+    changed_only: bool = False,
+) -> list[dict]:
+    """Filter a plan to only include checks relevant to changed files.
 
     Args:
         plan: Original check plan
@@ -174,6 +171,7 @@ def filter_plan_by_changes(
 
     Returns:
         Filtered plan with only relevant checks
+
     """
     if not changed_only:
         return plan
@@ -207,10 +205,7 @@ def filter_plan_by_changes(
         family = item.get("family") or tool
 
         # Check if this tool/family is relevant
-        if any(
-            check in tool.lower() or check in family.lower()
-            for check in relevant_checks
-        ):
+        if any(check in tool.lower() or check in family.lower() for check in relevant_checks):
             filtered_plan.append(item)
         else:
             skipped_checks.append(tool)

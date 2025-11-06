@@ -1,5 +1,4 @@
-"""
-Regression test: check_tests() must return rich output, not just ok/fail.
+"""Regression test: check_tests() must return rich output, not just ok/fail.
 
 This prevents accidentally simplifying check_tests() to use _safe_gate()
 which would lose the pytest output parsing that extracts test counts.
@@ -9,8 +8,7 @@ from firsttry.gates import check_tests
 
 
 def test_check_tests_has_rich_info():
-    """
-    check_tests() must return structured info about pytest results.
+    """check_tests() must return structured info about pytest results.
 
     If pytest is not installed, it should return a skipped result with
     a clear reason. If pytest runs, it should parse the output and
@@ -44,8 +42,7 @@ def test_check_tests_has_rich_info():
 
 
 def test_check_tests_info_contains_count_when_successful(monkeypatch):
-    """
-    When pytest succeeds, check_tests() should parse output and include
+    """When pytest succeeds, check_tests() should parse output and include
     test count in the info/reason field (e.g., "23 tests").
     """
     import subprocess

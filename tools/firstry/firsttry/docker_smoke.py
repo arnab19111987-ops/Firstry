@@ -1,5 +1,4 @@
-"""
-Day 7 docker smoke:
+"""Day 7 docker smoke:
 - Build commands for `docker compose up -d`
 - Check /healthz
 - Tear down with `docker compose down`
@@ -15,24 +14,23 @@ Public API:
 
 from __future__ import annotations
 
-import subprocess
 import shlex
+import subprocess
 import time
 import urllib.request
-from typing import Tuple
 
 
-def build_compose_cmds(compose_file: str = "docker-compose.yml") -> Tuple[str, str]:
+def build_compose_cmds(compose_file: str = "docker-compose.yml") -> tuple[str, str]:
     up_cmd = f"docker compose -f {compose_file} up -d"
     down_cmd = f"docker compose -f {compose_file} down"
     return up_cmd, down_cmd
 
 
 def check_health(
-    url: str = "http://localhost:8000/healthz", timeout: float = 5.0
+    url: str = "http://localhost:8000/healthz",
+    timeout: float = 5.0,
 ) -> bool:
-    """
-    Returns True if GET <url> returns HTTP 200 within timeout seconds.
+    """Returns True if GET <url> returns HTTP 200 within timeout seconds.
     Simple polling loop.
     """
     deadline = time.time() + timeout
@@ -53,8 +51,7 @@ def run_docker_smoke(
     health_url: str = "http://localhost:8000/healthz",
     timeout: float = 5.0,
 ) -> dict:
-    """
-    Full flow:
+    """Full flow:
     - docker compose up -d
     - poll /healthz
     - docker compose down
@@ -71,7 +68,7 @@ def run_docker_smoke(
     def _run(cmd: str) -> bool:
         # Prefer calling subprocess with a list of args to avoid shell=True
         try:
-            p = subprocess.run(shlex.split(cmd) if isinstance(cmd, str) else cmd)
+            p = subprocess.run(shlex.split(cmd) if isinstance(cmd, str) else cmd, check=False)
         except FileNotFoundError:
             return False
         return p.returncode == 0
@@ -95,7 +92,5 @@ def run_docker_smoke(
         "up_ok": up_ok,
         "health_ok": health_ok,
         "down_ok": down_ok,
-        "error": (
-            None if (up_ok and health_ok and down_ok) else "Health or teardown failed"
-        ),
+        "error": (None if (up_ok and health_ok and down_ok) else "Health or teardown failed"),
     }

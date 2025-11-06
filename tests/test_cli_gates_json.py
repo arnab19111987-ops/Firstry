@@ -13,19 +13,16 @@ def test_cli_gates_json_smoke(monkeypatch, tmp_path):
     import pytest
 
     pytest.skip("Legacy test disabled - functionality removed")
-    return
 
 
 @pytest.mark.skip(
-    reason="cmd_gates functionality has been removed in favor of new CLI structure"
+    reason="cmd_gates functionality has been removed in favor of new CLI structure",
 )
 def test_cmd_gates_json_output(monkeypatch, tmp_path):
-    """
-    CLI contract:
+    """CLI contract:
     cmd_gates with --json flag should produce parseable JSON on stdout
     and exit 1 if any gate failed.
     """
-
     fake_summary = {
         "ok": False,
         "results": [
@@ -67,7 +64,7 @@ def test_cmd_gates_json_output(monkeypatch, tmp_path):
             "--root",
             str(tmp_path),
             "--json",
-        ]
+        ],
     )
 
     buf = io.StringIO()

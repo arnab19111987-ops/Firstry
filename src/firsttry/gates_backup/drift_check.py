@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .base import Gate, GateResult
+from .base import Gate
+from .base import GateResult
 
 
 class DriftCheckGate(Gate):
-    """
-    PHASE 2 placeholder.
+    """PHASE 2 placeholder.
     Later:
       - compare DB migrations vs models
       - compare requirements.txt vs lock

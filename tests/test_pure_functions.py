@@ -1,7 +1,7 @@
 """Test pure functions in repo_rules and change_detector."""
 
-from firsttry.repo_rules import plan_checks_for_repo
 from firsttry.change_detector import categorize_changed_files
+from firsttry.repo_rules import plan_checks_for_repo
 
 
 def test_plan_checks_for_repo_returns_list():

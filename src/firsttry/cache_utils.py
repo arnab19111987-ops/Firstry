@@ -1,18 +1,17 @@
 # src/firsttry/cache_utils.py
-"""
-High-performance cache utilities using stat-first validation.
+"""High-performance cache utilities using stat-first validation.
 Avoids expensive file hashing when possible by checking file metadata first.
 """
 
 import os
-from typing import List, Optional
 
-from .cache_models import InputFileMeta, ToolCacheEntry, CacheStats
+from .cache_models import CacheStats
+from .cache_models import InputFileMeta
+from .cache_models import ToolCacheEntry
 
 
-def collect_input_stats(paths: List[str]) -> Optional[List[InputFileMeta]]:
-    """
-    Collect file metadata (size, mtime) for cache validation.
+def collect_input_stats(paths: list[str]) -> list[InputFileMeta] | None:
+    """Collect file metadata (size, mtime) for cache validation.
 
     Returns None if any file is missing (forces re-run).
     This is the fast path - no file content hashing.
@@ -32,10 +31,10 @@ def collect_input_stats(paths: List[str]) -> Optional[List[InputFileMeta]]:
 
 
 def input_stats_match(
-    cached: List[InputFileMeta], current: List[InputFileMeta]
+    cached: list[InputFileMeta],
+    current: list[InputFileMeta],
 ) -> bool:
-    """
-    Fast comparison of file metadata without hashing.
+    """Fast comparison of file metadata without hashing.
 
     Returns True if all files have same size and mtime.
     This is ~1000x faster than computing SHA256 hashes.
@@ -56,9 +55,8 @@ def input_stats_match(
     return True
 
 
-def validate_cache_fast(cache_entry: ToolCacheEntry, input_paths: List[str]) -> bool:
-    """
-    Ultra-fast cache validation using only file stats.
+def validate_cache_fast(cache_entry: ToolCacheEntry, input_paths: list[str]) -> bool:
+    """Ultra-fast cache validation using only file stats.
 
     Returns True if cache is valid without any file hashing.
     This is the performance-critical path for warm cache hits.
@@ -74,12 +72,11 @@ def validate_cache_fast(cache_entry: ToolCacheEntry, input_paths: List[str]) -> 
 
 
 def get_cache_state(
-    cache_entry: Optional[ToolCacheEntry],
-    input_paths: List[str],
+    cache_entry: ToolCacheEntry | None,
+    input_paths: list[str],
     policy_rerun_failures: bool = True,
 ) -> tuple[str, bool]:
-    """
-    Determine cache state and whether to use cached result.
+    """Determine cache state and whether to use cached result.
 
     Returns (state, use_cache) where:
     - state: "hit" | "miss" | "policy-rerun" | "stale"

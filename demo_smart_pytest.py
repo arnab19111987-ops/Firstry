@@ -53,9 +53,7 @@ async def demo_smart_pytest():
     failed_cmd = build_pytest_command(repo_root, mode="failed")
     print(f"  Failed: {' '.join(failed_cmd)}")
 
-    smart_cmd = build_pytest_command(
-        repo_root, mode="smart", test_files=list(target_tests)
-    )
+    smart_cmd = build_pytest_command(repo_root, mode="smart", test_files=list(target_tests))
     print(f"  Smart: {' '.join(smart_cmd)}")
 
     full_cmd = build_pytest_command(repo_root, mode="full")

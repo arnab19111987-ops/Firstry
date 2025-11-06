@@ -1,7 +1,8 @@
 from __future__ import annotations
-from pathlib import Path
+
 import hashlib
 import subprocess
+from pathlib import Path
 
 
 def hash_bytes(b: bytes) -> str:
@@ -35,8 +36,8 @@ def tool_version_hash(tool_cmd: list[str]) -> str:
 
 def env_fingerprint() -> str:
     # Keep it cheap and deterministic: python version + platform
-    import sys
     import platform
+    import sys
 
     s = f"py={sys.version_info[:3]}|impl={platform.python_implementation()}|plat={platform.platform()}"
     return hash_bytes(s.encode())

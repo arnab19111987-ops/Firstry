@@ -26,7 +26,7 @@ def test_gather_checks_builds_report_and_score():
             ("mypy", "."): (0, "Success: no issues found"),
             # coverage-report passes
             ("coverage", "report", "--show-missing"): (0, "Name Stmts Miss Cover"),
-        }
+        },
     )
 
     rep = doctor.gather_checks(runner=runner)
@@ -52,7 +52,7 @@ def test_render_report_md_contains_table_and_quickfix():
             ("black", "--check", "."): (0, "clean"),
             ("mypy", "."): (0, "Success"),
             ("coverage", "report", "--show-missing"): (0, "good"),
-        }
+        },
     )
     rep = doctor.gather_checks(runner=runner)
     md = doctor.render_report_md(rep)

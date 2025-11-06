@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterable, List
-import sys
 import subprocess as _subprocess
-
+import sys
+from collections.abc import Iterable
 
 # IMPORTANT:
 # We keep a module-level alias called `run` so tests can monkeypatch
@@ -23,8 +22,7 @@ run = _subprocess.run  # default fallback
 
 
 def _get_runner():
-    """
-    Resolve the best 'run' function to execute git.
+    """Resolve the best 'run' function to execute git.
 
     Priority:
     1. If sys.modules["firsttry.changed"].run exists (this is what tests
@@ -47,9 +45,8 @@ def _get_runner():
     return _subprocess.run
 
 
-def _git_diff_name_only(rev: str) -> List[str]:
-    """
-    Internal helper to collect changed file paths from git.
+def _git_diff_name_only(rev: str) -> list[str]:
+    """Internal helper to collect changed file paths from git.
 
     Returns [] instead of raising if git fails or repo doesn't exist.
     """
@@ -81,20 +78,17 @@ def _git_diff_name_only(rev: str) -> List[str]:
     return lines
 
 
-def filter_python(paths: Iterable[str]) -> List[str]:
-    """
-    Keep only .py files for selective checks (used by quick gates).
-    """
-    out: List[str] = []
+def filter_python(paths: Iterable[str]) -> list[str]:
+    """Keep only .py files for selective checks (used by quick gates)."""
+    out: list[str] = []
     for p in paths:
         if p.endswith(".py"):
             out.append(p)
     return out
 
 
-def get_changed_files(rev: str = "HEAD") -> List[str]:
-    """
-    Public API:
+def get_changed_files(rev: str = "HEAD") -> list[str]:
+    """Public API:
     - get list of changed files compared to `rev`
     - normalize slashes
     - dedupe
@@ -102,7 +96,7 @@ def get_changed_files(rev: str = "HEAD") -> List[str]:
     """
     raw = _git_diff_name_only(rev)
 
-    normed: List[str] = []
+    normed: list[str] = []
     for p in raw:
         cleaned = p.replace("//", "/").strip()
         if cleaned:

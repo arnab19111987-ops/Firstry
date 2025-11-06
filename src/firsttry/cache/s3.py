@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import Optional, Dict, Any
-from dataclasses import dataclass
+
 import json
 import os
+from dataclasses import dataclass
+from typing import Any
 
-from .base import BaseCache, CacheHit
+from .base import BaseCache
+from .base import CacheHit
 
 
 def _has_boto3() -> bool:
@@ -34,7 +36,7 @@ class S3Cache(BaseCache):
             self.s3 = None
 
     @staticmethod
-    def from_env() -> Optional["S3Cache"]:
+    def from_env() -> S3Cache | None:
         b = os.getenv("FT_S3_BUCKET")
         p = os.getenv("FT_S3_PREFIX", "").rstrip("/")
         if not b or not p:
@@ -44,7 +46,7 @@ class S3Cache(BaseCache):
     def _key(self, key: str) -> str:
         return f"{self.conf.prefix}/{key}.json"
 
-    def get(self, key: str) -> Optional[CacheHit]:
+    def get(self, key: str) -> CacheHit | None:
         if not self.enabled or not self.s3:
             return None
         try:
@@ -62,7 +64,7 @@ class S3Cache(BaseCache):
         if not self.enabled or not self.s3:
             return
         try:
-            payload: Dict[str, Any] = {
+            payload: dict[str, Any] = {
                 "stdout": result.stdout,
                 "stderr": result.stderr,
                 "meta": result.meta or {},

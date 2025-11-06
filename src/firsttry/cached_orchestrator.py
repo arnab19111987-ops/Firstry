@@ -1,27 +1,30 @@
 from __future__ import annotations
+
 import asyncio
 import os
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Any
 
-from .check_registry import CHECK_REGISTRY, get_check_inputs
 from . import cache as ft_cache
 from . import progress
-from .smart_pytest import run_smart_pytest
-from .smart_npm import run_smart_npm_test
-from .run_profiles import get_pytest_mode_for_profile
+from .cache_utils import collect_input_stats
+from .cache_utils import input_stats_match
 from .check_dependencies import should_skip_due_to_dependencies
-from .cache_utils import collect_input_stats, input_stats_match
-
+from .check_registry import CHECK_REGISTRY
+from .check_registry import get_check_inputs
+from .run_profiles import get_pytest_mode_for_profile
+from .smart_npm import run_smart_npm_test
+from .smart_pytest import run_smart_pytest
 
 MAX_WORKERS = min(4, os.cpu_count() or 2)
 
 
 def run_tool_with_smart_cache(
-    repo_root: str, tool_name: str, input_paths: List[str]
-) -> Dict[str, Any]:
-    """
-    Smart cache that replays failed results when inputs are identical.
+    repo_root: str,
+    tool_name: str,
+    input_paths: list[str],
+) -> dict[str, Any]:
+    """Smart cache that replays failed results when inputs are identical.
     This makes stat-first cache visible in demos by avoiding re-runs of failed tools.
     """
     current_stats = collect_input_stats(input_paths)
@@ -62,7 +65,7 @@ def run_tool_with_smart_cache(
     }
 
 
-async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, str]:
+async def run_subprocess(cmd: list[str], cwd: str | None = None) -> tuple[int, str]:
     """Run subprocess and return exit code + output"""
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -74,17 +77,17 @@ async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, s
     return proc.returncode, stdout.decode("utf-8", "replace")
 
 
-async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):
+async def _bounded_run(cmd: list[str], sem: asyncio.Semaphore, cwd: str | None = None):
     """Run subprocess with semaphore for concurrency control"""
     async with sem:
         return await run_subprocess(cmd, cwd=cwd)
 
 
-def _glob_inputs(repo_root: Path, patterns: List[str]) -> List[Path]:
+def _glob_inputs(repo_root: Path, patterns: list[str]) -> list[Path]:
     """Expand glob patterns to actual file paths"""
     if not patterns:
         return []
-    out: List[Path] = []
+    out: list[Path] = []
     for pat in patterns:
         # Use pathlib's glob for consistency
         matches = list(repo_root.glob(pat))
@@ -99,7 +102,7 @@ def _tool_input_hash(repo_root: Path, tool_name: str) -> str:
     return ft_cache.sha256_of_paths(files)
 
 
-def _tool_to_cmd(tool_name: str) -> List[str]:
+def _tool_to_cmd(tool_name: str) -> list[str]:
     """Map logical tool name to actual command"""
     # Map to actual commands used in this codebase
     command_map = {
@@ -125,13 +128,12 @@ def _tool_to_cmd(tool_name: str) -> List[str]:
 
 async def run_checks_for_profile(
     repo_root: str,
-    checks: List[str],
+    checks: list[str],
     use_cache: bool = True,
-    changed_files: List[str] | None = None,
+    changed_files: list[str] | None = None,
     profile: str = "dev",
-) -> Dict[str, Any]:
-    """
-    Run checks bucketed by speed: fast -> mutating -> slow
+) -> dict[str, Any]:
+    """Run checks bucketed by speed: fast -> mutating -> slow
     Returns results with per-check details for summary.
     Enhanced with timing and mutating cache invalidation.
     """
@@ -142,14 +144,14 @@ async def run_checks_for_profile(
 
     t_detect_start = time.monotonic()
     root = Path(repo_root)
-    results: Dict[str, Any] = {}
+    results: dict[str, Any] = {}
     failed_checks: set[str] = set()  # Track failed checks for dependency logic
     mutating_ran = False  # Track if any mutating check ran successfully
     t_detect_end = time.monotonic()
 
     t_setup_start = time.monotonic()
     progress.step(
-        f"Running {len(checks)} checks with caching={'enabled' if use_cache else 'disabled'}"
+        f"Running {len(checks)} checks with caching={'enabled' if use_cache else 'disabled'}",
     )
     t_setup_end = time.monotonic()
 
@@ -187,7 +189,7 @@ async def run_checks_for_profile(
             inp_hash = _tool_input_hash(root, chk)
             cmd = _tool_to_cmd(chk)
             fast_tasks.append(
-                (chk, inp_hash, _bounded_run(cmd, fast_sem, cwd=repo_root))
+                (chk, inp_hash, _bounded_run(cmd, fast_sem, cwd=repo_root)),
             )  # Execute pending fast checks
         for chk, inp_hash, coro in fast_tasks:
             start = time.monotonic()
@@ -196,7 +198,11 @@ async def run_checks_for_profile(
                 elapsed = time.monotonic() - start
                 if rc == 0:
                     ft_cache.write_tool_cache(
-                        repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+                        repo_root,
+                        chk,
+                        inp_hash,
+                        "ok",
+                        {"elapsed": elapsed},
                     )
                     progress.done(f"{chk} ({elapsed:.2f}s)")
                     results[chk] = {"status": "ok", "output": out, "elapsed": elapsed}
@@ -232,7 +238,9 @@ async def run_checks_for_profile(
 
             if use_cache:
                 is_valid, cache_state = ft_cache.is_tool_cache_valid_fast(
-                    repo_root, chk, input_paths
+                    repo_root,
+                    chk,
+                    input_paths,
                 )
                 if is_valid:
                     progress.cached(chk)
@@ -254,7 +262,11 @@ async def run_checks_for_profile(
                 if rc == 0:
                     mutating_ran = True  # Track that a mutating check ran successfully
                     ft_cache.write_tool_cache(
-                        repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+                        repo_root,
+                        chk,
+                        inp_hash,
+                        "ok",
+                        {"elapsed": elapsed},
                     )
                     progress.done(f"{chk} ({elapsed:.2f}s)")
                     results[chk] = {"status": "ok", "output": out, "elapsed": elapsed}
@@ -359,7 +371,9 @@ async def run_checks_for_profile(
 
             if use_cache_for_slow:
                 is_valid, cache_state = ft_cache.is_tool_cache_valid_fast(
-                    repo_root, chk, input_paths
+                    repo_root,
+                    chk,
+                    input_paths,
                 )
                 if is_valid:
                     progress.cached(chk)
@@ -376,7 +390,7 @@ async def run_checks_for_profile(
 
             cmd = _tool_to_cmd(chk)
             slow_tasks.append(
-                (chk, inp_hash, _bounded_run(cmd, slow_sem, cwd=repo_root))
+                (chk, inp_hash, _bounded_run(cmd, slow_sem, cwd=repo_root)),
             )
 
         # Execute pending slow checks (non-pytest)
@@ -387,7 +401,11 @@ async def run_checks_for_profile(
                 elapsed = time.monotonic() - start
                 if rc == 0:
                     ft_cache.write_tool_cache(
-                        repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+                        repo_root,
+                        chk,
+                        inp_hash,
+                        "ok",
+                        {"elapsed": elapsed},
                     )
                     progress.done(f"{chk} ({elapsed:.2f}s)")
                     results[chk] = {"status": "ok", "output": out, "elapsed": elapsed}
@@ -416,7 +434,7 @@ async def run_checks_for_profile(
 
     total_elapsed = sum(r.get("elapsed", 0.0) for r in results.values())
     progress.step(
-        f"⏱  Total active check time (not counting cache hits): {total_elapsed:.2f}s"
+        f"⏱  Total active check time (not counting cache hits): {total_elapsed:.2f}s",
     )
 
     if mutating_ran:
@@ -435,12 +453,8 @@ async def run_checks_for_profile(
     setup_ms = (t_setup_end - t_setup_start) * 1000
     bucketing_ms = (t_bucketing_end - t_bucketing_start) * 1000
     fast_ms = (t_fast_end - t_fast_start) * 1000
-    mutating_ms = (
-        (t_mutating_start - t_fast_end) * 1000 if "t_mutating_start" in locals() else 0
-    )
-    slow_ms = (
-        (t_slow_end - t_mutating_start) * 1000 if "t_mutating_start" in locals() else 0
-    )
+    mutating_ms = (t_mutating_start - t_fast_end) * 1000 if "t_mutating_start" in locals() else 0
+    slow_ms = (t_slow_end - t_mutating_start) * 1000 if "t_mutating_start" in locals() else 0
     report_ms = (time.monotonic() - t_report_start) * 1000
 
     progress.step("🔍 Phase Timing Analysis:")

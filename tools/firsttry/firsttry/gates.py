@@ -7,13 +7,10 @@ up so the tools copy or the top-level shim will be used).
 
 from __future__ import annotations
 
-import importlib.util
-import sys
-import os
-from typing import List, Tuple
-
 import importlib.machinery
 import importlib.util
+import os
+import sys
 import traceback
 
 
@@ -44,7 +41,7 @@ def _locate_and_load_impl() -> object:
     else:
         # fallback to a fixed relative guess (three levels up from shim)
         repo_root = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..")
+            os.path.join(os.path.dirname(__file__), "..", "..", ".."),
         )
 
     candidates = [
@@ -84,9 +81,11 @@ def _locate_and_load_impl() -> object:
         msg_lines.append(
             "".join(
                 traceback.format_exception(
-                    type(last_exc), last_exc, last_exc.__traceback__
-                )
-            )
+                    type(last_exc),
+                    last_exc,
+                    last_exc.__traceback__,
+                ),
+            ),
         )
 
     raise ImportError("\n".join(msg_lines))
@@ -126,17 +125,17 @@ if hasattr(_impl, "run_pre_push_gate"):
 # Other helpers
 format_summary = getattr(_impl, "format_summary", lambda *a, **k: "")
 print_verbose = getattr(_impl, "print_verbose", lambda *a, **k: None)
-PRE_COMMIT_TASKS: List[Tuple[str, object]] = getattr(_impl, "PRE_COMMIT_TASKS", [])
-PRE_PUSH_TASKS: List[Tuple[str, object]] = getattr(_impl, "PRE_PUSH_TASKS", [])
+PRE_COMMIT_TASKS: list[tuple[str, object]] = getattr(_impl, "PRE_COMMIT_TASKS", [])
+PRE_PUSH_TASKS: list[tuple[str, object]] = getattr(_impl, "PRE_PUSH_TASKS", [])
 GateResult = getattr(_impl, "GateResult", getattr(_impl, "GateResult", object))
 
 __all__ = [
-    "run_gate",
-    "format_summary",
-    "print_verbose",
     "PRE_COMMIT_TASKS",
     "PRE_PUSH_TASKS",
     "GateResult",
+    "format_summary",
+    "print_verbose",
+    "run_gate",
 ]
 if hasattr(_impl, "run_pre_commit_gate"):
     __all__.append("run_pre_commit_gate")

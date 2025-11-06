@@ -1,8 +1,7 @@
 import pytest
-from firsttry.db_pg import (
-    parse_destructive_ops,
-    run_pg_probe,
-)
+
+from firsttry.db_pg import parse_destructive_ops
+from firsttry.db_pg import run_pg_probe
 
 
 def test_parse_destructive_ops_classification():
@@ -41,13 +40,12 @@ def test_run_pg_probe_skips_if_not_pg(monkeypatch):
 
 
 def test_run_pg_probe_destructive_raises(monkeypatch):
-    """
-    We can't run the full Alembic autogen without Postgres here.
+    """We can't run the full Alembic autogen without Postgres here.
     Instead we'll simulate the final destructive check by faking env:
     We'll set a real-looking PG URL, then monkeypatch _alembic_autogen_pg
     to return destructive ops.
     """
-    import firsttry.db_pg as db_pg
+    from firsttry import db_pg
 
     monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
 

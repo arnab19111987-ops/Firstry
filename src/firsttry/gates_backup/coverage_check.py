@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
-from .base import Gate, GateResult
+from .base import Gate
+from .base import GateResult
 
 
 class CoverageCheckGate(Gate):

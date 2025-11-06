@@ -1,6 +1,5 @@
 """Utility functions for gate implementations."""
 
-from typing import List, Optional
 import subprocess
 
 from .base import GateResult
@@ -8,12 +7,11 @@ from .base import GateResult
 
 def _safe_gate(
     gate_id: str,
-    cmd: Optional[List[str]] = None,
+    cmd: list[str] | None = None,
     *,
     ok_if_missing: bool = True,
 ) -> GateResult:
-    """
-    Run a shell/tool-based gate but never crash the whole run.
+    """Run a shell/tool-based gate but never crash the whole run.
 
     Args:
         gate_id: Identifier for this gate (e.g., "lint", "types")
@@ -22,6 +20,7 @@ def _safe_gate(
 
     Returns:
         GateResult with structured success/failure/skip information
+
     """
     try:
         if cmd is None:
@@ -42,6 +41,7 @@ def _safe_gate(
                 cmd,
                 capture_output=True,
                 text=True,
+                check=False,
             )
 
         return GateResult(

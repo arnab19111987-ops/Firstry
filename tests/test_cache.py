@@ -1,9 +1,7 @@
-from firsttry.cache import (
-    load_cache,
-    save_cache,
-    should_skip_gate,
-    update_gate_cache,
-)
+from firsttry.cache import load_cache  # type: ignore[attr-defined]
+from firsttry.cache import save_cache  # type: ignore[attr-defined]
+from firsttry.cache import should_skip_gate  # type: ignore[attr-defined]
+from firsttry.cache import update_gate_cache  # type: ignore[attr-defined]
 
 
 def test_load_cache_when_missing(tmp_path, monkeypatch):

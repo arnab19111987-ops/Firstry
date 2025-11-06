@@ -3,8 +3,7 @@ import sys
 
 
 def run_cli_subproc(args: list[str]) -> subprocess.CompletedProcess[str]:
-    """
-    Helper: run `python -m firsttry.cli <args...>` in a subprocess and capture output.
+    """Helper: run `python -m firsttry.cli <args...>` in a subprocess and capture output.
     Use only for commands that are safe to execute in a child process.
     """
     cmd = [sys.executable, "-m", "firsttry.cli", *args]
@@ -13,13 +12,13 @@ def run_cli_subproc(args: list[str]) -> subprocess.CompletedProcess[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        check=False,
     )
     return proc
 
 
 def test_doctor_runs_without_crash(tmp_path, monkeypatch):
-    """
-    Core safety promise:
+    """Core safety promise:
     - 'firsttry doctor' should run without traceback
     - exit code should be reasonable (0 or 1)
     """
@@ -37,8 +36,7 @@ def test_doctor_runs_without_crash(tmp_path, monkeypatch):
 
 
 def test_list_gates_shows_expected_gates(tmp_path, monkeypatch):
-    """
-    User-facing contract:
+    """User-facing contract:
     CLI should run basic commands without crashing.
     """
     # Test that inspect command works

@@ -1,16 +1,17 @@
 from __future__ import annotations
+
 import asyncio
 import math
 import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any
 
 from . import cache as ft_cache
 
 
-def discover_all_tests(repo_root: str) -> List[str]:
+def discover_all_tests(repo_root: str) -> list[str]:
     """Discover all test files in the repository"""
     repo_path = Path(repo_root)
     test_files = []
@@ -42,6 +43,7 @@ def count_tests_in_file(repo_root: str, test_file: str) -> int:
             capture_output=True,
             text=True,
             timeout=10,
+            check=False,
         )
 
         if result.returncode == 0:
@@ -52,9 +54,8 @@ def count_tests_in_file(repo_root: str, test_file: str) -> int:
                 if "::" in line and "test" in line.lower():
                     test_count += 1
             return test_count
-        else:
-            # Fallback: count test functions by parsing file
-            return count_test_functions_in_file(repo_root, test_file)
+        # Fallback: count test functions by parsing file
+        return count_test_functions_in_file(repo_root, test_file)
 
     except Exception:
         return count_test_functions_in_file(repo_root, test_file)
@@ -86,7 +87,7 @@ def count_test_functions_in_file(repo_root: str, test_file: str) -> int:
         return 1  # Assume at least 1 test if we can't count
 
 
-def analyze_test_suite(repo_root: str) -> Dict[str, Any]:
+def analyze_test_suite(repo_root: str) -> dict[str, Any]:
     """Analyze test suite to determine chunking strategy"""
     test_files = discover_all_tests(repo_root)
 
@@ -125,10 +126,11 @@ def analyze_test_suite(repo_root: str) -> Dict[str, Any]:
 
 
 def create_test_chunks(
-    test_files: List[str], max_workers: int = None, target_chunk_size: int = None
-) -> List[List[str]]:
+    test_files: list[str],
+    max_workers: int = None,
+    target_chunk_size: int = None,
+) -> list[list[str]]:
     """Split test files into balanced chunks for parallel execution"""
-
     if not test_files:
         return []
 
@@ -154,10 +156,12 @@ def create_test_chunks(
 
 
 async def run_pytest_chunk(
-    repo_root: str, chunk_files: List[str], chunk_id: int, extra_args: List[str] = None
-) -> Dict[str, Any]:
+    repo_root: str,
+    chunk_files: list[str],
+    chunk_id: int,
+    extra_args: list[str] = None,
+) -> dict[str, Any]:
     """Run pytest on a specific chunk of test files"""
-
     if not chunk_files:
         return {
             "chunk_id": chunk_id,
@@ -212,9 +216,8 @@ async def run_pytest_chunk(
         }
 
 
-def aggregate_chunk_results(chunk_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+def aggregate_chunk_results(chunk_results: list[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate results from multiple test chunks"""
-
     if not chunk_results:
         return {
             "status": "error",
@@ -235,7 +238,7 @@ def aggregate_chunk_results(chunk_results: List[Dict[str, Any]]) -> Dict[str, An
     # Aggregate output
     output_lines = []
     output_lines.append(
-        f"=== Parallel pytest execution with {len(chunk_results)} chunks ==="
+        f"=== Parallel pytest execution with {len(chunk_results)} chunks ===",
     )
     output_lines.append(f"Total test files: {total_files}")
     output_lines.append(f"Successful chunks: {successful_chunks}")
@@ -253,7 +256,7 @@ def aggregate_chunk_results(chunk_results: List[Dict[str, Any]]) -> Dict[str, An
 
         status_icon = "✅" if status == "ok" else "❌" if status == "fail" else "⚠️"
         output_lines.append(
-            f"{status_icon} Chunk {chunk_id}: {file_count} files, {duration:.2f}s"
+            f"{status_icon} Chunk {chunk_id}: {file_count} files, {duration:.2f}s",
         )
 
     # Add failed chunk details
@@ -281,16 +284,14 @@ def aggregate_chunk_results(chunk_results: List[Dict[str, Any]]) -> Dict[str, An
 
 async def run_parallel_pytest(
     repo_root: str,
-    test_files: List[str] | None = None,
+    test_files: list[str] | None = None,
     max_workers: int = None,
     use_cache: bool = True,
-    extra_args: List[str] = None,
-) -> Dict[str, Any]:
-    """
-    Run pytest in parallel chunks for large test suites.
+    extra_args: list[str] = None,
+) -> dict[str, Any]:
+    """Run pytest in parallel chunks for large test suites.
     Falls back to regular pytest for small suites.
     """
-
     # Discover tests if not provided
     if test_files is None:
         analysis = analyze_test_suite(repo_root)
@@ -330,7 +331,7 @@ async def run_parallel_pytest(
         return await _run_single_pytest(repo_root, test_files, extra_args)
 
     print(
-        f"🧪 Running pytest in {len(chunks)} parallel chunks ({len(test_files)} test files)"
+        f"🧪 Running pytest in {len(chunks)} parallel chunks ({len(test_files)} test files)",
     )
 
     # Run chunks in parallel
@@ -368,10 +369,11 @@ async def run_parallel_pytest(
 
 
 async def _run_single_pytest(
-    repo_root: str, test_files: List[str] | None, extra_args: List[str] | None = None
-) -> Dict[str, Any]:
+    repo_root: str,
+    test_files: list[str] | None,
+    extra_args: list[str] | None = None,
+) -> dict[str, Any]:
     """Run pytest normally (non-chunked) for small test suites"""
-
     cmd = ["python", "-m", "pytest", "-v", "--tb=short"]
     if extra_args:
         cmd.extend(extra_args)

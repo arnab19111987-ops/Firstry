@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import Dict, List
 
-from .base import Gate, GateResult
 from .. import cache as cache_mod
+from .base import Gate
+from .base import GateResult
 
 try:
     import tomllib  # py3.11+
@@ -35,8 +35,7 @@ def _file_hash(p: Path) -> str:
 
 
 def _pyproject_config_hash(p: Path) -> str:
-    """
-    Hash only config-relevant sections of pyproject.toml if possible.
+    """Hash only config-relevant sections of pyproject.toml if possible.
     If tomllib unavailable or structure unexpected → hash whole file.
     """
     if tomllib is None:
@@ -74,10 +73,10 @@ class ConfigDriftGate(Gate):
 
     def run(self, root: Path) -> GateResult:
         cache = cache_mod.load_cache_legacy(root)
-        prev_cfg: Dict[str, str] = cache.get("config_hashes", {})
+        prev_cfg: dict[str, str] = cache.get("config_hashes", {})
 
-        current: Dict[str, str] = {}
-        changed: List[str] = []
+        current: dict[str, str] = {}
+        changed: list[str] = []
 
         for name in CONFIG_CANDIDATES:
             p = root / name

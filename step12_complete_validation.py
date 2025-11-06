@@ -63,9 +63,7 @@ async def validate_complete_optimization_suite():
     )
     second_run_time = time.monotonic() - start_time
 
-    cache_speedup = (
-        first_run_time / second_run_time if second_run_time > 0 else float("inf")
-    )
+    cache_speedup = first_run_time / second_run_time if second_run_time > 0 else float("inf")
     cached_count = sum(1 for r in results2.values() if r.get("cached"))
 
     print(f"  ✅ Cold cache run: {first_run_time:.2f}s")
@@ -95,18 +93,14 @@ async def validate_complete_optimization_suite():
     # Analyze timing results
     total_check_time = sum(r.get("elapsed", 0) for r in orchestrator_results.values())
     cached_checks = sum(1 for r in orchestrator_results.values() if r.get("cached"))
-    failed_checks = sum(
-        1 for r in orchestrator_results.values() if r.get("status") == "fail"
-    )
+    failed_checks = sum(1 for r in orchestrator_results.values() if r.get("status") == "fail")
 
     print(f"  ✅ Total execution: {orchestrator_time:.2f}s")
     print(f"  ⏱  Active check time: {total_check_time:.2f}s")
     print(
         f"  📊 Results: {len(orchestrator_results)} checks, {failed_checks} failed, {cached_checks} cached"
     )
-    print(
-        f"  🎯 Target (<60s): {'✅ ACHIEVED' if orchestrator_time < 60 else '❌ MISSED'}"
-    )
+    print(f"  🎯 Target (<60s): {'✅ ACHIEVED' if orchestrator_time < 60 else '❌ MISSED'}")
 
     results["orchestrator_test"] = {
         "total_time": orchestrator_time,

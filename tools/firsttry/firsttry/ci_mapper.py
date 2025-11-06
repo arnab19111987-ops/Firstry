@@ -7,12 +7,13 @@ from __future__ import annotations
 import os
 import sys
 from importlib.machinery import SourceFileLoader
-from importlib.util import spec_from_loader, module_from_spec
+from importlib.util import module_from_spec
+from importlib.util import spec_from_loader
 
 
 def _locate_and_load():
     repo_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        os.path.join(os.path.dirname(__file__), "..", "..", ".."),
     )
     candidates = [
         os.path.join(repo_root, "firsttry", "ci_mapper_impl.py"),
@@ -41,4 +42,4 @@ rewrite_run_cmd = _impl.rewrite_run_cmd
 build_ci_plan = _impl.build_ci_plan
 check_ci_consistency = getattr(_impl, "check_ci_consistency", lambda: None)
 
-__all__ = ["rewrite_run_cmd", "build_ci_plan", "check_ci_consistency"]
+__all__ = ["build_ci_plan", "check_ci_consistency", "rewrite_run_cmd"]

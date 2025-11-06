@@ -1,19 +1,29 @@
 from __future__ import annotations
-from pathlib import Path
-from typing import List, Optional
+
 import subprocess
-from .base import CheckRunner, RunResult, _hash_targets, _hash_config, ensure_bin
-from ..twin.hashers import hash_bytes, tool_version_hash, env_fingerprint
+from pathlib import Path
+
+from ..twin.hashers import env_fingerprint
+from ..twin.hashers import hash_bytes
+from ..twin.hashers import tool_version_hash
+from .base import CheckRunner
+from .base import RunResult
+from .base import _hash_config
+from .base import _hash_targets
+from .base import ensure_bin
 
 
 class MypyRunner(CheckRunner):
     check_id = "mypy"
 
-    def prereq_check(self) -> Optional[str]:
+    def prereq_check(self) -> str | None:
         return ensure_bin("mypy")
 
     def build_cache_key(
-        self, repo_root: Path, targets: List[str], flags: List[str]
+        self,
+        repo_root: Path,
+        targets: list[str],
+        flags: list[str],
     ) -> str:
         tv = tool_version_hash(["mypy", "--version"])
         env = env_fingerprint()
@@ -23,12 +33,22 @@ class MypyRunner(CheckRunner):
         return "ft-v1-mypy-" + hash_bytes(f"{tv}|{env}|{tgt}|{cfg}|{intent}".encode())
 
     def run(
-        self, repo_root: Path, targets: List[str], flags: List[str], *, timeout_s: int
+        self,
+        repo_root: Path,
+        targets: list[str],
+        flags: list[str],
+        *,
+        timeout_s: int,
     ) -> RunResult:
         args = ["mypy", *targets, *flags] if targets else ["mypy", *flags]
         try:
             proc = subprocess.run(
-                args, cwd=repo_root, text=True, capture_output=True, timeout=timeout_s
+                args,
+                cwd=repo_root,
+                text=True,
+                capture_output=True,
+                timeout=timeout_s,
+                check=False,
             )
             return RunResult(
                 status="ok" if proc.returncode == 0 else "fail",

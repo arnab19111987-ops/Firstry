@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import json
-import time
 import statistics
+import time
+from dataclasses import asdict
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
-from dataclasses import dataclass, asdict
 
 from .cached_orchestrator import run_checks_for_profile
 from .run_profiles import select_checks
@@ -24,8 +25,8 @@ class BenchmarkResult:
     checks_skipped: int
     cache_hits: int
     timestamp: str
-    optimizations_used: List[str]
-    memory_peak_mb: Optional[float] = None
+    optimizations_used: list[str]
+    memory_peak_mb: float | None = None
 
 
 @dataclass
@@ -47,8 +48,8 @@ class PerformanceBenchmark:
 
     def __init__(self, repo_root: str):
         self.repo_root = repo_root
-        self.results: List[BenchmarkResult] = []
-        self.metrics_history: List[PerformanceMetrics] = []
+        self.results: list[BenchmarkResult] = []
+        self.metrics_history: list[PerformanceMetrics] = []
 
     def add_result(self, result: BenchmarkResult):
         """Add a benchmark result"""
@@ -58,13 +59,12 @@ class PerformanceBenchmark:
         self,
         scenario: str,
         profile: str,
-        checks: List[str],
+        checks: list[str],
         use_cache: bool = True,
-        changed_files: Optional[List[str]] = None,
+        changed_files: list[str] | None = None,
         runs: int = 3,
-    ) -> List[BenchmarkResult]:
+    ) -> list[BenchmarkResult]:
         """Benchmark a specific scenario multiple times"""
-
         scenario_results = []
         optimizations = []
 
@@ -92,15 +92,9 @@ class PerformanceBenchmark:
                 duration = time.time() - start_time
 
                 # Analyze results
-                checks_passed = sum(
-                    1 for r in result.values() if r.get("status") == "ok"
-                )
-                checks_failed = sum(
-                    1 for r in result.values() if r.get("status") == "fail"
-                )
-                checks_skipped = sum(
-                    1 for r in result.values() if r.get("status") == "skipped"
-                )
+                checks_passed = sum(1 for r in result.values() if r.get("status") == "ok")
+                checks_failed = sum(1 for r in result.values() if r.get("status") == "fail")
+                checks_skipped = sum(1 for r in result.values() if r.get("status") == "skipped")
                 cache_hits = sum(1 for r in result.values() if r.get("cached", False))
 
                 benchmark_result = BenchmarkResult(
@@ -141,21 +135,18 @@ class PerformanceBenchmark:
 
     def calculate_metrics(
         self,
-        baseline_results: List[BenchmarkResult],
-        optimized_results: List[BenchmarkResult],
+        baseline_results: list[BenchmarkResult],
+        optimized_results: list[BenchmarkResult],
         scenario: str,
     ) -> PerformanceMetrics:
         """Calculate performance improvement metrics"""
-
         baseline_times = [r.duration for r in baseline_results]
         optimized_times = [r.duration for r in optimized_results]
 
         baseline_avg = statistics.mean(baseline_times)
         optimized_avg = statistics.mean(optimized_times)
 
-        improvement_factor = (
-            baseline_avg / optimized_avg if optimized_avg > 0 else float("inf")
-        )
+        improvement_factor = baseline_avg / optimized_avg if optimized_avg > 0 else float("inf")
         improvement_percentage = ((baseline_avg - optimized_avg) / baseline_avg) * 100
         time_saved = baseline_avg - optimized_avg
 
@@ -182,7 +173,6 @@ class PerformanceBenchmark:
 
     def export_results(self, output_path: Path):
         """Export benchmark results to JSON"""
-
         export_data = {
             "benchmark_info": {
                 "repo_root": self.repo_root,
@@ -201,7 +191,6 @@ class PerformanceBenchmark:
 
     def print_summary(self):
         """Print benchmark summary"""
-
         print("\n📈 Performance Benchmark Summary")
         print("=" * 50)
 
@@ -238,7 +227,6 @@ class PerformanceBenchmark:
 
 async def run_comprehensive_benchmark(repo_root: str) -> PerformanceBenchmark:
     """Run comprehensive performance benchmarks"""
-
     print("🚀 FirstTry Performance Validation Suite")
     print("=" * 50)
 
@@ -341,7 +329,6 @@ async def run_comprehensive_benchmark(repo_root: str) -> PerformanceBenchmark:
 
 def create_test_project(base_dir: Path) -> Path:
     """Create a test project for benchmarking"""
-
     test_project = base_dir / "benchmark_test_project"
     test_project.mkdir(exist_ok=True)
 
@@ -364,7 +351,7 @@ line-length = 88
 [tool.mypy]
 python_version = "3.10"
 strict = true
-"""
+""",
     )
 
     # Create source structure
@@ -422,7 +409,7 @@ class DataProcessor:
                 return str(value).lower()
         
         return value
-"""
+""",
     )
 
     # Create test files
@@ -493,7 +480,7 @@ class TestDataProcessor:
         processor = DataProcessor({})
         result = processor._transform_value(input_val, transform)
         assert result == expected
-"""
+""",
     )
 
     # Create more test files to make it substantial
@@ -529,7 +516,7 @@ class TestClass{i}:
     def test_parametrized(self, value):
         \"\"\"Parametrized test\"\"\"
         assert value > 0
-"""
+""",
         )
 
     return test_project
@@ -537,9 +524,8 @@ class TestClass{i}:
 
 async def validate_performance_targets(
     benchmark: PerformanceBenchmark,
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Validate that performance targets are met"""
-
     print("\n🎯 Performance Target Validation")
     print("=" * 40)
 

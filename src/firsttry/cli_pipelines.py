@@ -1,23 +1,26 @@
 # firsttry/cli_pipelines.py
-import sys
 import argparse
+import sys
 
+from .executor import execute_plan
 from .licensing import ensure_license_interactive
 from .planner import build_plan
-from .executor import execute_plan
 from .reporting import print_report
 from .setup_wizard import run_setup
 
 
 def build_parser():
     p = argparse.ArgumentParser(
-        prog="firsttry", description="FirstTry — local CI engine"
+        prog="firsttry",
+        description="FirstTry — local CI engine",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
     p_run = sub.add_parser("run", help="Analyze repo and run all checks.")
     p_run.add_argument(
-        "--autofix", action="store_true", help="Apply autofix where available."
+        "--autofix",
+        action="store_true",
+        help="Apply autofix where available.",
     )
     p_run.add_argument("--root", default=".", help="Project root")
     p_run.add_argument("--no-license-prompt", action="store_true")

@@ -24,9 +24,7 @@ def demo_pipeline():
     # Show the plan structure
     print("\n📝 Pipeline steps:")
     for step in plan["steps"]:
-        autofix_info = (
-            f" (autofix: {len(step['autofix'])} commands)" if step["autofix"] else ""
-        )
+        autofix_info = f" (autofix: {len(step['autofix'])} commands)" if step["autofix"] else ""
         optional_info = " [optional]" if step["optional"] else ""
         print(f"  • {step['id']} ({step['lang']}){autofix_info}{optional_info}")
 

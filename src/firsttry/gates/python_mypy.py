@@ -1,8 +1,10 @@
 """Python mypy gate implementation."""
 
 import subprocess
-from typing import Optional, Any
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class PythonMypyGate(Gate):
@@ -10,7 +12,7 @@ class PythonMypyGate(Gate):
 
     gate_id = "python_mypy"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Run mypy type checking."""
         try:
             result = subprocess.run(
@@ -19,6 +21,7 @@ class PythonMypyGate(Gate):
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -28,13 +31,12 @@ class PythonMypyGate(Gate):
                     skipped=False,
                     reason="mypy type checking passed",
                 )
-            else:
-                return GateResult(
-                    gate_id=self.gate_id,
-                    ok=False,
-                    skipped=False,
-                    reason=f"mypy found type errors:\n{result.stdout}\n{result.stderr}",
-                )
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"mypy found type errors:\n{result.stdout}\n{result.stderr}",
+            )
 
         except FileNotFoundError:
             return GateResult(
@@ -52,5 +54,8 @@ class PythonMypyGate(Gate):
             )
         except Exception as e:
             return GateResult(
-                gate_id=self.gate_id, ok=False, skipped=False, reason=f"mypy error: {e}"
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"mypy error: {e}",
             )

@@ -1,5 +1,4 @@
-"""
-quickfix.py
+"""quickfix.py
 -----------
 
 Given a failing CI step (command + stdout + stderr), try to produce
@@ -14,15 +13,14 @@ to a generic "run this command locally" hint.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .doctor import CheckResult
 
 
-def _rule_missing_database_url(output: str) -> List[str]:
-    """
-    If env / DATABASE_URL / connection string issues appear,
+def _rule_missing_database_url(output: str) -> list[str]:
+    """If env / DATABASE_URL / connection string issues appear,
     suggest sqlite fallback for local dev.
     """
     hits = []
@@ -35,61 +33,56 @@ def _rule_missing_database_url(output: str) -> List[str]:
         hits.append(
             "No DATABASE_URL? Create a local .env.development with:\n"
             "  DATABASE_URL=sqlite:///./.firsttry.db\n"
-            "Then re-run firsttry doctor."
+            "Then re-run firsttry doctor.",
         )
     return hits
 
 
-def _rule_import_error(output: str) -> List[str]:
-    """
-    Import errors --> tell user to expose symbol or install package.
-    """
+def _rule_import_error(output: str) -> list[str]:
+    """Import errors --> tell user to expose symbol or install package."""
     hits = []
     if "ModuleNotFoundError" in output or "ImportError" in output:
         hits.append(
             "Import error detected. Fix by ensuring the module is importable "
-            "(add __init__.py or re-export missing symbols)."
+            "(add __init__.py or re-export missing symbols).",
         )
     return hits
 
 
-def _rule_ruff_unused_import(output: str) -> List[str]:
-    """
-    Ruff unused-import / lint issues --> show autofix command.
-    """
+def _rule_ruff_unused_import(output: str) -> list[str]:
+    """Ruff unused-import / lint issues --> show autofix command."""
     hits = []
     if "unused import" in output.lower() or "F401" in output:
         hits.append(
             "Ruff reports unused imports. Auto-fix with:\n"
             "  ruff check . --fix\n"
-            "Then commit the changes."
+            "Then commit the changes.",
         )
     return hits
 
 
-def _rule_black_reformat(output: str) -> List[str]:
+def _rule_black_reformat(output: str) -> list[str]:
     hits = []
     if "would reformat" in output or "reformatted" in output:
-        hits.append("Black formatting needed. Run:\n" "  black .")
+        hits.append("Black formatting needed. Run:\n  black .")
     return hits
 
 
-def _rule_mypy_hint(output: str) -> List[str]:
+def _rule_mypy_hint(output: str) -> list[str]:
     hits = []
     if "error:" in output and "mypy" in output.lower():
         hits.append(
             "Mypy type errors found. Add/adjust type hints, or mark "
-            "# type: ignore for intentional dynamic code."
+            "# type: ignore for intentional dynamic code.",
         )
     return hits
 
 
-def generate_quickfix_suggestions(checks: List[CheckResult]) -> List[str]:
-    """
-    Look at failing CheckResult outputs and offer human-friendly fixes.
+def generate_quickfix_suggestions(checks: list[CheckResult]) -> list[str]:
+    """Look at failing CheckResult outputs and offer human-friendly fixes.
     Dedup messages while preserving order.
     """
-    suggestions: List[str] = []
+    suggestions: list[str] = []
 
     rules = [
         _rule_missing_database_url,
@@ -115,8 +108,7 @@ def generate_quickfix_suggestions(checks: List[CheckResult]) -> List[str]:
 
 
 def suggest_fix(cmd: str, stdout: str, stderr: str) -> str | None:
-    """
-    Heuristic quick-fix suggestion for a failing CI step.
+    """Heuristic quick-fix suggestion for a failing CI step.
 
     Returns a short, actionable hint string or None when no suggestion applies.
     This is intentionally conservative and best-effort.

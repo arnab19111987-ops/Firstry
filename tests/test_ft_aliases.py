@@ -1,16 +1,16 @@
-"""
-Test the ft CLI alias system.
-"""
+"""Test the ft CLI alias system."""
+
 import subprocess
 import sys
 
 
 def test_ft_help():
-    """ft with no args should show help"""
+    """Ft with no args should show help"""
     result = subprocess.run(
         [sys.executable, "-m", "firsttry.cli_aliases"],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 1
     assert "Usage: " in result.stdout
@@ -20,7 +20,7 @@ def test_ft_help():
 
 
 def test_ft_lite_constructs_correct_command(monkeypatch, tmp_path):
-    """ft lite should construct the right command"""
+    """Ft lite should construct the right command"""
     import firsttry.cli_aliases
 
     # Mock subprocess.run to capture the command
@@ -62,7 +62,7 @@ def test_ft_lite_constructs_correct_command(monkeypatch, tmp_path):
 
 
 def test_ft_doctor_checks_constructs_correct_command(monkeypatch, tmp_path):
-    """ft doctor-checks should call doctor with checks"""
+    """Ft doctor-checks should call doctor with checks"""
     import firsttry.cli_aliases
 
     captured_cmd = []
@@ -93,7 +93,7 @@ def test_ft_doctor_checks_constructs_correct_command(monkeypatch, tmp_path):
 
 
 def test_ft_dash_constructs_correct_command(monkeypatch, tmp_path):
-    """ft dash should construct the right command"""
+    """Ft dash should construct the right command"""
     import firsttry.cli_aliases
 
     captured_cmd = []
@@ -122,7 +122,7 @@ def test_ft_dash_constructs_correct_command(monkeypatch, tmp_path):
 
 
 def test_ft_lock_constructs_correct_command(monkeypatch, tmp_path):
-    """ft lock should filter locked checks"""
+    """Ft lock should filter locked checks"""
     import firsttry.cli_aliases
 
     captured_cmd = []

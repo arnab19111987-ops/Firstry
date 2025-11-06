@@ -1,12 +1,13 @@
 from __future__ import annotations
-from pathlib import Path
+
 import json
-from typing import Dict
+from pathlib import Path
+
 from ..executor.dag import TaskResult
 
 
 def render_tty(
-    results: Dict[str, TaskResult],
+    results: dict[str, TaskResult],
     *,
     show_fail_output: bool = True,
     max_lines: int = 80,
@@ -39,7 +40,7 @@ def render_tty(
                 lines = text.splitlines()
                 if len(lines) > max_lines:
                     head = "\n".join(lines[:max_lines])
-                    return f"{head}\n... (truncated {len(lines)-max_lines} lines)"
+                    return f"{head}\n... (truncated {len(lines) - max_lines} lines)"
                 return text
 
             if r.stdout:
@@ -51,7 +52,9 @@ def render_tty(
 
 
 def write_json(
-    repo_root: Path, results: Dict[str, TaskResult], out: str = ".firsttry/report.json"
+    repo_root: Path,
+    results: dict[str, TaskResult],
+    out: str = ".firsttry/report.json",
 ) -> None:
     payload = {"checks": {tid: r.to_report_json() for tid, r in results.items()}}
     p = repo_root / out

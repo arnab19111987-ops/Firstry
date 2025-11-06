@@ -1,17 +1,21 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, Set, List, Optional
-from concurrent.futures import ThreadPoolExecutor, Future
-from threading import Lock
-from pathlib import Path
-import time
 
-from ..planner.dag import Plan
-from ..runners.base import CheckRunner, RunResult
-from ..runners.registry import default_registry
-from ..cache.base import BaseCache, CacheHit
+import time
+from collections.abc import Callable
+from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from pathlib import Path
+from threading import Lock
+
+from ..cache.base import BaseCache
+from ..cache.base import CacheHit
 from ..cache.local import LocalCache
 from ..cache.s3 import S3Cache
+from ..planner.dag import Plan
+from ..runners.base import CheckRunner
+from ..runners.base import RunResult
+from ..runners.registry import default_registry
 
 
 @dataclass
@@ -21,16 +25,20 @@ class TaskResult:
     status: str
     duration_ms: int
     # Normalized cache marker: None | "hit-local" | "hit-remote" | "miss-run"
-    cache_status: Optional[str] = None
+    cache_status: str | None = None
     # Can be bytes when coming from subprocess without text=True; accept both.
     stdout: str | bytes = ""
     stderr: str | bytes = ""
-    cache_key: Optional[str] = None
+    cache_key: str | None = None
 
     @property
     def is_cache_hit(self) -> bool:
         """Return True if this result was served from cache (local or remote)."""
-        return (self.cache_status in ("hit-local", "hit-remote")) if getattr(self, "cache_status", None) is not None else (str(getattr(self, "status", "")).startswith("hit-"))
+        return (
+            (self.cache_status in ("hit-local", "hit-remote"))
+            if getattr(self, "cache_status", None) is not None
+            else (str(getattr(self, "status", "")).startswith("hit-"))
+        )
 
     def to_report_json(self) -> dict:
         cache_status = self.cache_status or "miss-run"
@@ -59,10 +67,10 @@ class DagExecutor:
         self,
         repo_root: Path,
         plan: Plan,
-        caches: List[BaseCache],
-        runners: Dict[str, CheckRunner] | None = None,
+        caches: list[BaseCache],
+        runners: dict[str, CheckRunner] | None = None,
         max_workers: int = 8,
-        timeouts: callable | None = None,
+        timeouts: Callable[[str], int] | None = None,
     ):
         self.repo_root = repo_root
         self.plan = plan
@@ -71,10 +79,10 @@ class DagExecutor:
         self.max_workers = max_workers
         self.timeout_fn = timeouts or (lambda _check_id: 300)
 
-        self.results: Dict[str, TaskResult] = {}
-        self.dependents: Dict[str, Set[str]] = {}
-        self.in_degree: Dict[str, int] = {}
-        self.ready_queue: List[str] = []
+        self.results: dict[str, TaskResult] = {}
+        self.dependents: dict[str, set[str]] = {}
+        self.in_degree: dict[str, int] = {}
+        self.ready_queue: list[str] = []
         self.lock = Lock()
 
     def _build_graph(self):
@@ -87,12 +95,20 @@ class DagExecutor:
             for d in deps:
                 self.dependents.setdefault(d, set()).add(tid)
 
-    def _check_caches(self, key: str) -> Optional[TaskResult]:
+    def _check_caches(self, key: str) -> TaskResult | None:
         for idx, cache in enumerate(self.caches):
             hit = cache.get(key)
             if hit:
                 cache_status = "hit-remote" if idx == 0 and len(self.caches) > 1 else "hit-local"
-                return TaskResult(id="", status="ok", duration_ms=0, cache_status=cache_status, stdout=hit.stdout, stderr=hit.stderr, cache_key=key)
+                return TaskResult(
+                    id="",
+                    status="ok",
+                    duration_ms=0,
+                    cache_status=cache_status,
+                    stdout=hit.stdout,
+                    stderr=hit.stderr,
+                    cache_key=key,
+                )
         return None
 
     def _store_success(self, key: str, rr: RunResult) -> None:
@@ -134,11 +150,22 @@ class DagExecutor:
         # Respect per-check timeout: call runner.run with timeout_s kwarg
         timeout_s = int(self.timeout_fn(task.check_id))
         rr = runner.run(
-            self.repo_root, task.targets, task.flags or [], timeout_s=timeout_s
+            self.repo_root,
+            task.targets,
+            task.flags or [],
+            timeout_s=timeout_s,
         )
         dur = int((time.monotonic() - start) * 1000)
         # Normalize: status stays as outcome; cache_status marks this as a miss-run
-        tr = TaskResult(id=task_id, status=rr.status, duration_ms=dur, cache_status="miss-run", stdout=rr.stdout, stderr=rr.stderr, cache_key=key)
+        tr = TaskResult(
+            id=task_id,
+            status=rr.status,
+            duration_ms=dur,
+            cache_status="miss-run",
+            stdout=rr.stdout,
+            stderr=rr.stderr,
+            cache_key=key,
+        )
         if rr.status == "ok":
             self._store_success(key, rr)
         return tr
@@ -152,9 +179,9 @@ class DagExecutor:
                 if self.in_degree[dep] == 0:
                     self.ready_queue.append(dep)
 
-    def run(self) -> Dict[str, TaskResult]:
+    def run(self) -> dict[str, TaskResult]:
         self._build_graph()
-        futures: Dict[str, Future] = {}
+        futures: dict[str, Future] = {}
         with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
             while True:
                 with self.lock:
@@ -170,8 +197,8 @@ class DagExecutor:
         return self.results
 
 
-def default_caches(repo_root: Path, use_remote: bool) -> List[BaseCache]:
-    caches: List[BaseCache] = []
+def default_caches(repo_root: Path, use_remote: bool) -> list[BaseCache]:
+    caches: list[BaseCache] = []
     if use_remote:
         s3 = S3Cache.from_env()
         if s3:

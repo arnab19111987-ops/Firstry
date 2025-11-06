@@ -1,10 +1,12 @@
 # src/firsttry/reports/detail.py
 from __future__ import annotations
-from typing import Dict, Any, List
+
+from typing import Any
+
 from .ui import c
 
 
-def render_detailed_report(results: Dict[str, Any], allowed_checks: List[str]):
+def render_detailed_report(results: dict[str, Any], allowed_checks: list[str]):
     print()
     print(c("📋 Detailed Report (your tier)", "bold"))
     print()
@@ -18,14 +20,14 @@ def render_detailed_report(results: Dict[str, Any], allowed_checks: List[str]):
 
 
 def render_locked_report(
-    results: Dict[str, Any],
-    allowed_checks: List[str],
+    results: dict[str, Any],
+    allowed_checks: list[str],
     locked_msg: str,
 ):
     print()
     print(c("🔒 Locked / Pro / Team Checks", "bold"))
     print()
-    for check_name in results.keys():
+    for check_name in results:
         if check_name in allowed_checks:
             continue
         print(c(f"▶ {check_name}", "yellow"))

@@ -1,5 +1,4 @@
-"""
-Launch-ready gate implementations for FirstTry Levels 1–4
+"""Launch-ready gate implementations for FirstTry Levels 1–4
 ---------------------------------------------------------
 Real checks for Levels 1–3  → uses ruff, black, mypy, pytest, bandit, pip-audit, radon
 Level 4 checks are simulated (safe to ship / demo).
@@ -20,7 +19,7 @@ def _run(cmd, desc=None):
     try:
         if desc:
             print(f"   ⏳ {desc}…")
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if result.returncode == 0:
             return True
         print(result.stdout or result.stderr)
@@ -41,6 +40,7 @@ def run_lint_basic():
             ["ruff", "check", "."],
             capture_output=True,
             text=True,
+            check=False,
         )
     except FileNotFoundError:
         print("   ⚠️  ruff not installed — skipping.")
@@ -50,9 +50,7 @@ def run_lint_basic():
         return True, 0
 
     # quick+dirty count: lines that look like diagnostics
-    issues = sum(
-        1 for line in result.stdout.splitlines() if ":" in line and line.strip()
-    )
+    issues = sum(1 for line in result.stdout.splitlines() if ":" in line and line.strip())
     print(result.stdout)
     return False, issues
 
@@ -82,7 +80,7 @@ IGNORE_DIRS = {
 
 def run_repo_sanity():
     missing = []
-    for p in Path(".").rglob("*"):
+    for p in Path().rglob("*"):
         if not p.is_dir():
             continue
         name = p.name
@@ -93,7 +91,7 @@ def run_repo_sanity():
         if name.endswith(".egg-info"):
             continue
         # skip hidden tool dirs
-        if name.startswith(".") and name not in ("src",):
+        if name.startswith(".") and name != "src":
             continue
         # only complain for python-package-like dirs
         if (p / "__init__.py").exists():
@@ -118,6 +116,7 @@ def run_type_check_fast():
             ["mypy", "--ignore-missing-imports", "."],
             capture_output=True,
             text=True,
+            check=False,
         )
     except FileNotFoundError:
         print("   ⚠️  mypy not installed — skipping.")

@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
+
 import yaml
 
 _DEFAULTS = {
@@ -20,9 +22,9 @@ class FirstTryConfig:
     map_dirs: tuple[str, ...]
 
     @staticmethod
-    def load(path: Optional[Path] = None) -> "FirstTryConfig":
+    def load(path: Path | None = None) -> FirstTryConfig:
         cfg_path = (path or Path.cwd()) / ".firsttry.yml"
-        data: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
         if cfg_path.exists():
             with cfg_path.open("r", encoding="utf-8") as f:
                 loaded = yaml.safe_load(f) or {}

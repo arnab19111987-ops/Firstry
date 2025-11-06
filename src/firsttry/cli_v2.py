@@ -1,20 +1,19 @@
 from __future__ import annotations
+
 import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
-from .runner_light import (
-    get_profile,
-    load_cache,
-    get_changed_files,
-    should_skip_gate,
-    update_gate_cache,
-    GATE_REGISTRY,
-)
 from .cache import save_cache
 from .gates.base import GateResult
+from .runner_light import GATE_REGISTRY
+from .runner_light import get_changed_files
+from .runner_light import get_profile
+from .runner_light import load_cache
+from .runner_light import should_skip_gate
+from .runner_light import update_gate_cache
 
 AUTOFIX_HINTS = {
     "python:ruff": "ruff fix .",
@@ -27,8 +26,8 @@ def _is_strict(name: str) -> bool:
     return name == "strict"
 
 
-def run_pipeline(profile: str, since: str | None) -> List[GateResult]:
-    root = Path(".")
+def run_pipeline(profile: str, since: str | None) -> list[GateResult]:
+    root = Path()
     prof = get_profile(profile)
     strict_mode = _is_strict(prof.name)
 
@@ -39,8 +38,8 @@ def run_pipeline(profile: str, since: str | None) -> List[GateResult]:
         cache = load_cache(root)
         changed = get_changed_files(root, since)
 
-    results: List[GateResult] = []
-    to_run: List[str] = []
+    results: list[GateResult] = []
+    to_run: list[str] = []
 
     # pick gates
     for gate_ref in prof.gates:
@@ -54,7 +53,7 @@ def run_pipeline(profile: str, since: str | None) -> List[GateResult]:
                     ok=optional,
                     skipped=optional,
                     reason="gate not registered",
-                )
+                ),
             )
             continue
 
@@ -69,7 +68,7 @@ def run_pipeline(profile: str, since: str | None) -> List[GateResult]:
                         ok=True,
                         skipped=True,
                         reason="not impacted by changes",
-                    )
+                    ),
                 )
                 continue
 
@@ -80,14 +79,15 @@ def run_pipeline(profile: str, since: str | None) -> List[GateResult]:
                         ok=True,
                         skipped=True,
                         reason="cached and unchanged",
-                    )
+                    ),
                 )
                 continue
 
         to_run.append(gate_id)
 
     # run in parallel
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import as_completed
 
     with ThreadPoolExecutor(max_workers=4) as ex:
         fut_map = {}
@@ -107,13 +107,13 @@ def run_pipeline(profile: str, since: str | None) -> List[GateResult]:
     return results
 
 
-def build_issue_report(results: List[GateResult]) -> Dict[str, Any]:
+def build_issue_report(results: list[GateResult]) -> dict[str, Any]:
     total = len(results)
     failed = [r for r in results if not r.ok and not r.skipped]
     skipped = [r for r in results if r.skipped]
     passed = [r for r in results if r.ok and not r.skipped]
 
-    per_gate: Dict[str, Any] = {}
+    per_gate: dict[str, Any] = {}
     for r in results:
         per_gate[r.gate_id] = {
             "ok": r.ok,
@@ -123,7 +123,7 @@ def build_issue_report(results: List[GateResult]) -> Dict[str, Any]:
             "autofix": AUTOFIX_HINTS.get(r.gate_id),
         }
 
-    by_type: Dict[str, list[str]] = {
+    by_type: dict[str, list[str]] = {
         "lint": [],
         "typing": [],
         "tests": [],
@@ -165,7 +165,7 @@ def build_issue_report(results: List[GateResult]) -> Dict[str, Any]:
     }
 
 
-def print_human_report(report: Dict[str, Any], show_details: bool = False) -> None:
+def print_human_report(report: dict[str, Any], show_details: bool = False) -> None:
     print("╔════════════════════════════════╗")
     print("║     FirstTry — Local CI        ║")
     print("╚════════════════════════════════╝")
@@ -211,12 +211,8 @@ def _is_tty() -> bool:
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
-def _interactive_menu(report: Dict[str, Any]) -> int:
-    failed = [
-        g
-        for g, info in report["per_gate"].items()
-        if not info["ok"] and not info["skipped"]
-    ]
+def _interactive_menu(report: dict[str, Any]) -> int:
+    failed = [g for g, info in report["per_gate"].items() if not info["ok"] and not info["skipped"]]
     if not failed:
         print("\n✅ Nothing to fix. You’re good.")
         return 0
@@ -253,7 +249,7 @@ SAFE_AUTOFIX_CMDS = {
 }
 
 
-def _run_safe_fixes(report: Dict[str, Any]) -> None:
+def _run_safe_fixes(report: dict[str, Any]) -> None:
     print("\n🛠  Running safe fixes...")
     for gate_id, info in report["per_gate"].items():
         if info["ok"] or info["skipped"]:
@@ -277,13 +273,17 @@ def main() -> int:
 
     run_p = sub.add_parser("run", help="run gates for a profile")
     run_p.add_argument(
-        "--profile", default="fast", choices=["fast", "strict", "release"]
+        "--profile",
+        default="fast",
+        choices=["fast", "strict", "release"],
     )
     run_p.add_argument("--since", default=None)
 
     rep_p = sub.add_parser("report", help="run and show detailed report")
     rep_p.add_argument(
-        "--profile", default="strict", choices=["fast", "strict", "release"]
+        "--profile",
+        default="strict",
+        choices=["fast", "strict", "release"],
     )
     rep_p.add_argument("--since", default=None)
     rep_p.add_argument("--detail", action="store_true")

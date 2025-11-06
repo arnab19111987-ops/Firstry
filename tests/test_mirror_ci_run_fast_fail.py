@@ -42,8 +42,8 @@ def _fake_plan_two_steps_ok_then_fail():
                         },
                     },
                 ],
-            }
-        ]
+            },
+        ],
     }
 
 

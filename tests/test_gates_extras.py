@@ -1,4 +1,4 @@
-import firsttry.gates as gates
+from firsttry import gates
 
 
 def test_gate_result_to_dict_normalizes():
@@ -47,16 +47,24 @@ def test_run_all_gates_aggregates(monkeypatch):
     monkeypatch.setattr(gates, "check_types", lambda: gates.GateResult("Types", "PASS"))
     monkeypatch.setattr(gates, "check_tests", lambda: gates.GateResult("Tests", "PASS"))
     monkeypatch.setattr(
-        gates, "check_sqlite_drift", lambda: gates.GateResult("SQLite Drift", "PASS")
+        gates,
+        "check_sqlite_drift",
+        lambda: gates.GateResult("SQLite Drift", "PASS"),
     )
     monkeypatch.setattr(
-        gates, "check_ci_mirror", lambda: gates.GateResult("CI Mirror", "PASS")
+        gates,
+        "check_ci_mirror",
+        lambda: gates.GateResult("CI Mirror", "PASS"),
     )
     monkeypatch.setattr(
-        gates, "check_pg_drift", lambda: gates.GateResult("PG Drift", "PASS")
+        gates,
+        "check_pg_drift",
+        lambda: gates.GateResult("PG Drift", "PASS"),
     )
     monkeypatch.setattr(
-        gates, "check_docker_smoke", lambda: gates.GateResult("Docker Smoke", "PASS")
+        gates,
+        "check_docker_smoke",
+        lambda: gates.GateResult("Docker Smoke", "PASS"),
     )
 
     out = gates.run_all_gates(None)

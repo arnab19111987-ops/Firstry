@@ -3,12 +3,13 @@ from __future__ import annotations
 import os
 import sys
 from importlib.machinery import SourceFileLoader
-from importlib.util import spec_from_loader, module_from_spec
+from importlib.util import module_from_spec
+from importlib.util import spec_from_loader
 
 
 def _locate_and_load():
     repo_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        os.path.join(os.path.dirname(__file__), "..", "..", ".."),
     )
     candidates = [
         os.path.join(repo_root, "firsttry", "vscode_skel.py"),
@@ -28,7 +29,7 @@ def _locate_and_load():
 
 _impl = _locate_and_load()
 
-PACKAGE_JSON = getattr(_impl, "PACKAGE_JSON")
-EXTENSION_JS = getattr(_impl, "EXTENSION_JS")
+PACKAGE_JSON = _impl.PACKAGE_JSON
+EXTENSION_JS = _impl.EXTENSION_JS
 
-__all__ = ["PACKAGE_JSON", "EXTENSION_JS"]
+__all__ = ["EXTENSION_JS", "PACKAGE_JSON"]

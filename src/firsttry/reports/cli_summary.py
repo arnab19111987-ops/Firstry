@@ -1,22 +1,23 @@
 # src/firsttry/reports/cli_summary.py
-"""
-Non-interactive tier-aware summary for CLI integration.
-"""
+"""Non-interactive tier-aware summary for CLI integration."""
+
 from __future__ import annotations
-from typing import Dict, Any
-from .tier_map import LOCKED_MESSAGE, get_checks_for_tier
-from .ui import c
+
+from typing import Any
+
 from ..license_guard import get_tier
+from .tier_map import LOCKED_MESSAGE
+from .tier_map import get_checks_for_tier
+from .ui import c
 
 
 def render_cli_summary(
-    results: Dict[str, Any],
-    context: Dict[str, Any],
+    results: dict[str, Any],
+    context: dict[str, Any],
     interactive: bool = False,
     tier: str | None = None,
 ) -> int:
-    """
-    Render tier-aware summary for CLI.
+    """Render tier-aware summary for CLI.
     Returns exit code: 0 for success, 1 for failure.
     """
     if tier is None:
@@ -29,7 +30,7 @@ def render_cli_summary(
     print(c("--- Context ---", "cyan"))
     print(f"  Machine: {context.get('machine', 'unknown')} CPUs")
     print(
-        f"  Repo:    {context.get('files', '?')} files, {context.get('tests', '?')} tests"
+        f"  Repo:    {context.get('files', '?')} files, {context.get('tests', '?')} tests",
     )
     print("  Checks:  " + ", ".join(allowed_checks))
     print()
@@ -47,9 +48,7 @@ def render_cli_summary(
     # overall
     print()
     print(c("--- Summary ---", "cyan"))
-    passed_all = all(
-        r.get("passed", True) for name, r in results.items() if name in allowed_checks
-    )
+    passed_all = all(r.get("passed", True) for name, r in results.items() if name in allowed_checks)
     done_msg = c("✅ PASSED", "green") if passed_all else c("❌ FAILED", "red")
     print(f"  Result: {done_msg} ({len(allowed_checks)} checks run)")
 
@@ -74,10 +73,8 @@ def render_cli_summary(
 
 def convert_orchestrator_results_to_tier_format(
     orchestrator_results: list,
-) -> Dict[str, Any]:
-    """
-    Convert orchestrator results to the format expected by tier-aware reporting.
-    """
+) -> dict[str, Any]:
+    """Convert orchestrator results to the format expected by tier-aware reporting."""
     results = {}
 
     for result in orchestrator_results:

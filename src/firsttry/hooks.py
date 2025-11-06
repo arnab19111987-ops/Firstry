@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import stat
-from typing import Tuple
 from pathlib import Path
-from .license import ensure_trial_license_if_missing, license_summary_for_humans
 
+from .license import ensure_trial_license_if_missing
+from .license import license_summary_for_humans
 
 PRE_COMMIT_SCRIPT = """#!/bin/sh
 # FirstTry pre-commit hook
@@ -48,7 +48,7 @@ def _write_executable(path: str | Path, content: str) -> None:
     os.chmod(path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def install_git_hooks(repo_root: str | Path = ".") -> Tuple[Path, Path]:
+def install_git_hooks(repo_root: str | Path = ".") -> tuple[Path, Path]:
     repo_root = Path(repo_root)
     hooks_dir = repo_root / ".git" / "hooks"
     pre_commit_path = hooks_dir / "pre-commit"
@@ -61,8 +61,7 @@ def install_git_hooks(repo_root: str | Path = ".") -> Tuple[Path, Path]:
 
 
 def install_hooks_and_bootstrap_trial(repo_root: str | Path = ".") -> None:
-    """
-    Convenience wrapper: install git hooks and ensure a short trial license is present.
+    """Convenience wrapper: install git hooks and ensure a short trial license is present.
     Prints onboarding information including the human-friendly license summary.
     """
     # 1. install hooks using existing logic
@@ -72,7 +71,7 @@ def install_hooks_and_bootstrap_trial(repo_root: str | Path = ".") -> None:
     lic_obj = ensure_trial_license_if_missing(days=3)
 
     # 3. onboarding messages
-    print("")
+    print()
     print("✅ Git hooks installed (pre-commit / pre-push).")
     print("✅ Trial license bootstrapped.")
     try:
@@ -80,7 +79,7 @@ def install_hooks_and_bootstrap_trial(repo_root: str | Path = ".") -> None:
     except Exception:
         # avoid crashing installers if summary formatting fails
         pass
-    print("")
+    print()
     print("You're now in trial mode. Run:")
     print("  python3 -m firsttry.cli run --gate pre-commit")
 

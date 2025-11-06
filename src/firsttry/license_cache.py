@@ -1,11 +1,13 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from typing import Optional, Tuple
+
 import json
 import os
 import urllib.request
+from dataclasses import dataclass
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from pathlib import Path
 
 # Root-level forwarder/implementation to ensure a single, canonical
 # firsttry.license_cache module is imported by tests and runtime.
@@ -26,7 +28,7 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def load_cache() -> Optional[CachedLicense]:
+def load_cache() -> CachedLicense | None:
     try:
         data = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
         ts = datetime.fromisoformat(data["ts"])
@@ -49,7 +51,7 @@ def save_cache(c: CachedLicense) -> None:
                 "valid": c.valid,
                 "features": c.features,
                 "ts": c.ts.isoformat(),
-            }
+            },
         ),
         encoding="utf-8",
     )
@@ -59,7 +61,7 @@ def is_fresh(c: CachedLicense) -> bool:
     return _now() - c.ts <= FRESH_FOR
 
 
-def remote_verify(base_url: str, product: str, key: str) -> Tuple[bool, list[str]]:
+def remote_verify(base_url: str, product: str, key: str) -> tuple[bool, list[str]]:
     payload = json.dumps({"product": product, "key": key}).encode("utf-8")
     req = urllib.request.Request(
         f"{base_url.rstrip('/')}/v1/license/verify",
@@ -72,9 +74,8 @@ def remote_verify(base_url: str, product: str, key: str) -> Tuple[bool, list[str
     return bool(js.get("valid")), list(js.get("features", []))
 
 
-def assert_license(product: str = "firsttry") -> Tuple[bool, list[str], str]:
-    """
-    Returns (ok, features, reason). Uses cache if fresh; otherwise re-verifies.
+def assert_license(product: str = "firsttry") -> tuple[bool, list[str], str]:
+    """Returns (ok, features, reason). Uses cache if fresh; otherwise re-verifies.
     Config:
       FIRSTTRY_LICENSE_KEY=<key>
       FIRSTTRY_LICENSE_URL=<http://host:port>
@@ -93,7 +94,7 @@ def assert_license(product: str = "firsttry") -> Tuple[bool, list[str], str]:
             return False, [], "ENV backend requires FIRSTTRY_LICENSE_ALLOW"
         # ENV backend always validates as OK if key and allowed tier are set
         return True, [allowed], "env"
-    
+
     # Default: remote verification
     key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
     url = os.getenv("FIRSTTRY_LICENSE_URL", "").strip()
@@ -113,9 +114,8 @@ def assert_license(product: str = "firsttry") -> Tuple[bool, list[str], str]:
     return ok, feats, "remote"
 
 
-def validate_license_key(key: str, tier: str = "", strict: bool = True) -> Tuple[bool, dict]:
-    """
-    Validate a license key for a specific tier.
+def validate_license_key(key: str, tier: str = "", strict: bool = True) -> tuple[bool, dict]:
+    """Validate a license key for a specific tier.
     Returns (ok, metadata) tuple.
     Used by license_guard._validate_license_max_security().
     """
@@ -131,7 +131,7 @@ def validate_license_key(key: str, tier: str = "", strict: bool = True) -> Tuple
         if tier.lower() in allowed_tiers or "pro" in allowed_tiers:
             return True, {"backend": "env", "tier": tier, "allowed": allowed_tiers}
         return False, {"reason": f"Tier '{tier}' not in FIRSTTRY_LICENSE_ALLOW={allowed}"}
-    
+
     # Default: use assert_license
     ok, features, reason = assert_license()
     return ok, {"features": features, "reason": reason}

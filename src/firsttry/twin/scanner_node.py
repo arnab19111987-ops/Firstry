@@ -1,7 +1,10 @@
 from __future__ import annotations
-from pathlib import Path
+
 import json
-from .graph import CodebaseTwin, ProjectNode
+from pathlib import Path
+
+from .graph import CodebaseTwin
+from .graph import ProjectNode
 
 
 def attach_node_projects(repo_root: Path, twin: CodebaseTwin) -> None:

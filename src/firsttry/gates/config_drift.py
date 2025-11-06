@@ -1,7 +1,9 @@
 """Config drift gate implementation."""
-from typing import Optional, Any
 
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class ConfigDriftGate(Gate):
@@ -9,7 +11,7 @@ class ConfigDriftGate(Gate):
 
     gate_id = "config_drift"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Check for configuration drift."""
         # This is a placeholder implementation
         # In a real scenario, this would check for configuration drift

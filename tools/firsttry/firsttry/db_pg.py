@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Dict, List, Any
-
+from typing import Any
 
 _DROP_TABLE_FUNC = re.compile(r"op\.drop_table\(\s*['\"]([^'\"]+)['\"]", re.IGNORECASE)
 _DROP_COLUMN_FUNC = re.compile(
@@ -11,13 +10,14 @@ _DROP_COLUMN_FUNC = re.compile(
     re.IGNORECASE,
 )
 _RAW_DROP_TABLE_SQL = re.compile(
-    r"\bDROP\s+TABLE\b\s+([A-Za-z0-9_\".]+)", re.IGNORECASE
+    r"\bDROP\s+TABLE\b\s+([A-Za-z0-9_\".]+)",
+    re.IGNORECASE,
 )
 
 
-def parse_destructive_ops(script_text: str) -> Dict[str, List[str]]:
-    destructive: List[str] = []
-    non_destructive: List[str] = []
+def parse_destructive_ops(script_text: str) -> dict[str, list[str]]:
+    destructive: list[str] = []
+    non_destructive: list[str] = []
 
     for line in script_text.splitlines():
         stripped = line.strip()
@@ -39,7 +39,7 @@ def parse_destructive_ops(script_text: str) -> Dict[str, List[str]]:
     return {"destructive": destructive, "non_destructive": non_destructive}
 
 
-def _alembic_autogen_pg(import_target: str, db_url: str) -> Dict[str, Any]:
+def _alembic_autogen_pg(import_target: str, db_url: str) -> dict[str, Any]:
     script_text = ""
     ops = parse_destructive_ops(script_text)
     return {
@@ -50,7 +50,7 @@ def _alembic_autogen_pg(import_target: str, db_url: str) -> Dict[str, Any]:
     }
 
 
-def run_pg_probe(import_target: str, allow_destructive: bool = True) -> Dict[str, Any]:
+def run_pg_probe(import_target: str, allow_destructive: bool = True) -> dict[str, Any]:
     db_url = os.getenv("DATABASE_URL", "").strip()
     if not db_url or not db_url.lower().startswith(("postgres://", "postgresql://")):
         return {"skipped": True, "reason": "not Postgres DATABASE_URL"}
@@ -60,7 +60,7 @@ def run_pg_probe(import_target: str, allow_destructive: bool = True) -> Dict[str
     destructive_ops = ops.get("destructive", [])
     if destructive_ops and not allow_destructive:
         raise RuntimeError(
-            "Destructive Postgres migration detected: " + "; ".join(destructive_ops)
+            "Destructive Postgres migration detected: " + "; ".join(destructive_ops),
         )
 
     return {

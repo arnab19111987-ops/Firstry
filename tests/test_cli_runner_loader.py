@@ -1,5 +1,4 @@
-"""
-FIRSTTRY_SECURITY_CONTEXT: test-only
+"""FIRSTTRY_SECURITY_CONTEXT: test-only
 
 Tests for the runner loader logic in firsttry.cli.
 
@@ -24,9 +23,7 @@ from firsttry import cli
 
 
 def _cleanup_sys_modules(names: list[str]) -> None:
-    """
-    Remove dynamically created test modules so tests don't leak into each other.
-    """
+    """Remove dynamically created test modules so tests don't leak into each other."""
     for n in names:
         if n in sys.modules:
             del sys.modules[n]
@@ -34,8 +31,7 @@ def _cleanup_sys_modules(names: list[str]) -> None:
 
 @pytest.fixture(autouse=True)
 def _isolate_env(monkeypatch, tmp_path):
-    """
-    Common sandbox for every test:
+    """Common sandbox for every test:
     - reset FIRSTTRY_* env flags
     - simulate pytest environment by default
     - chdir to a temp working directory so loader can't read random project files
@@ -56,7 +52,7 @@ def _isolate_env(monkeypatch, tmp_path):
             "tests._fake_runners_custom_real",
             "tests._fake_runners_team_custom",
             "tests._fake_runners_partial",
-        ]
+        ],
     )
 
     yield
@@ -66,14 +62,12 @@ def _isolate_env(monkeypatch, tmp_path):
             "tests._fake_runners_custom_real",
             "tests._fake_runners_team_custom",
             "tests._fake_runners_partial",
-        ]
+        ],
     )
 
 
 def _assert_runner_contract(runners):
-    """
-    All runners (stub, real, injected custom) must expose these callables.
-    """
+    """All runners (stub, real, injected custom) must expose these callables."""
     required = [
         "run_ruff",
         "run_black_check",
@@ -87,8 +81,7 @@ def _assert_runner_contract(runners):
 
 
 def _assert_result_shape(res):
-    """
-    Every runner method should return an object with this shape.
+    """Every runner method should return an object with this shape.
     We do NOT assert on .name text anymore, because the loader may
     normalize names like "ruff" instead of custom labels.
     """
@@ -100,14 +93,12 @@ def _assert_result_shape(res):
 
 
 def test_default_under_pytest_is_stub(monkeypatch):
-    """
-    Under pytest, with no overrides, loader should pick SAFE stub runners.
+    """Under pytest, with no overrides, loader should pick SAFE stub runners.
     We assert:
     - contract exists
     - calling a runner returns ok=True (pretend pass)
     - no crash
     """
-
     # Act
     runners = cli._load_real_runners_or_stub()
 
@@ -124,8 +115,7 @@ def test_default_under_pytest_is_stub(monkeypatch):
 
 @pytest.mark.skip(reason="Dynamic runner loading not implemented in current CLI")
 def test_FORCE_real_runners_overrides_stub(monkeypatch):
-    """
-    If FIRSTTRY_USE_REAL_RUNNERS=1 is set, loader should NOT just hand us the stub,
+    """If FIRSTTRY_USE_REAL_RUNNERS=1 is set, loader should NOT just hand us the stub,
     even if we're in pytest.
 
     We simulate a "custom real" runners module, inject it, and point loader to it
@@ -138,7 +128,6 @@ def test_FORCE_real_runners_overrides_stub(monkeypatch):
     - The returned result object matches expected shape
     - We see the stdout string we defined in the injected module, proving our module ran
     """
-
     monkeypatch.setenv("FIRSTTRY_USE_REAL_RUNNERS", "1")
 
     body = dedent(
@@ -157,7 +146,7 @@ def test_FORCE_real_runners_overrides_stub(monkeypatch):
         def run_pytest_kexpr(expr): return _Result(ok=True)
         def run_coverage_xml(args): return _Result(ok=True)
         def coverage_gate(threshold): return _Result(ok=True)
-        """
+        """,
     )
 
     mod_name = "tests._fake_runners_custom_real"
@@ -183,13 +172,11 @@ def test_FORCE_real_runners_overrides_stub(monkeypatch):
 
 @pytest.mark.skip(reason="Dynamic runner loading not implemented in current CLI")
 def test_custom_runners_is_preferred_if_present(monkeypatch):
-    """
-    If we are NOT in pytest mode AND FIRSTTRY_USE_REAL_RUNNERS=1,
+    """If we are NOT in pytest mode AND FIRSTTRY_USE_REAL_RUNNERS=1,
     and we provide a custom runners module, loader should use it to drive checks.
 
     This simulates team-provided policy / team-specific runners.
     """
-
     # Make environment look like "not running tests"
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.setenv("FIRSTTRY_USE_REAL_RUNNERS", "1")
@@ -210,7 +197,7 @@ def test_custom_runners_is_preferred_if_present(monkeypatch):
         def run_pytest_kexpr(expr): return _Result(ok=True)
         def run_coverage_xml(args): return _Result(ok=True)
         def coverage_gate(threshold): return _Result(ok=True)
-        """
+        """,
     )
 
     mod_name = "tests._fake_runners_team_custom"
@@ -233,14 +220,12 @@ def test_custom_runners_is_preferred_if_present(monkeypatch):
 
 @pytest.mark.skip(reason="Dynamic runner loading not implemented in current CLI")
 def test_missing_methods_are_backfilled(monkeypatch):
-    """
-    Loader should gracefully backfill any missing runner methods so that
+    """Loader should gracefully backfill any missing runner methods so that
     we never crash just because a custom runners module is partial.
 
     We'll only provide run_ruff() in our fake module. Loader must still
     return an object with ALL required methods callable.
     """
-
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.setenv("FIRSTTRY_USE_REAL_RUNNERS", "1")
 
@@ -256,7 +241,7 @@ def test_missing_methods_are_backfilled(monkeypatch):
                 self.cmd = ("partial",)
 
         def run_ruff(args): return _Result(ok=True)
-        """
+        """,
     )
 
     mod_name = "tests._fake_runners_partial"

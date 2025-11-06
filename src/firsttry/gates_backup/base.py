@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List, Sequence
 
 
 @dataclass
@@ -12,7 +13,7 @@ class GateResult:
     output: str = ""
     skipped: bool = False
     reason: str = ""
-    watched_files: List[str] | None = None
+    watched_files: list[str] | None = None
 
 
 class Gate(ABC):

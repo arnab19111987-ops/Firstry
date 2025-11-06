@@ -5,11 +5,12 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Import detection and setup modules
 try:
-    from .detect import detect_language, deps_for_stacks
+    from .detect import deps_for_stacks
+    from .detect import detect_language
     from .setup import run_setup_interactive
     from .summary import print_run_summary as new_print_run_summary
 except ImportError:
@@ -35,7 +36,9 @@ SHORT_GATE_ALIASES = {
 
 # import gate runner (single-gate helpers)
 try:
-    from firsttry.gates import run_gate, format_summary, print_verbose
+    from firsttry.gates import format_summary
+    from firsttry.gates import print_verbose
+    from firsttry.gates import run_gate
 except Exception:
     # fall back to loading the `gates.py` module file directly. The repo contains
     # both a `gates/` package and a `gates.py` module which can shadow each
@@ -48,7 +51,8 @@ except Exception:
         # load the module under the expected package module name so decorators
         # (dataclasses, typing) that rely on sys.modules[...] behave correctly.
         spec = importlib.util.spec_from_file_location(
-            "firsttry.gates", str(_gates_path)
+            "firsttry.gates",
+            str(_gates_path),
         )
         _gates = importlib.util.module_from_spec(spec)
         sys.modules["firsttry.gates"] = _gates
@@ -76,7 +80,8 @@ except Exception:  # pragma: no cover
 
 # import hooks functionality
 try:
-    from firsttry.hooks import hooks_installed, install_all_hooks
+    from firsttry.hooks import hooks_installed
+    from firsttry.hooks import install_all_hooks
 except Exception:
 
     def hooks_installed() -> bool:
@@ -91,8 +96,7 @@ GATE_ORDER = ["lint", "typecheck", "tests", "security", "dup", "format", "misc"]
 
 
 def print_run_summary(results, elapsed: float, missing_deps: list[str] | None = None):
-    """
-    Enhanced summary printer following the lightweight format.
+    """Enhanced summary printer following the lightweight format.
     results: list[GateResult-like or dict]
     elapsed: float seconds
     missing_deps: optional list of missing dependency install commands
@@ -126,7 +130,7 @@ def print_run_summary(results, elapsed: float, missing_deps: list[str] | None = 
 
     if not failed:
         print(
-            f"✅ All checks passed ({total} gate{'s' if total != 1 else ''}) in {elapsed:.1f}s\n"
+            f"✅ All checks passed ({total} gate{'s' if total != 1 else ''}) in {elapsed:.1f}s\n",
         )
     else:
         print(f"❌ Checks failed ({len(failed)}/{total} gates) in {elapsed:.1f}s\n")
@@ -134,7 +138,8 @@ def print_run_summary(results, elapsed: float, missing_deps: list[str] | None = 
     # Sort results by preferred order
     order_map = {name: idx for idx, name in enumerate(GATE_ORDER)}
     results_sorted = sorted(
-        normalized_results, key=lambda r: order_map.get(r.name.lower(), 999)
+        normalized_results,
+        key=lambda r: order_map.get(r.name.lower(), 999),
     )
 
     print("Gates:")
@@ -155,9 +160,9 @@ def print_run_summary(results, elapsed: float, missing_deps: list[str] | None = 
                 parts.append(f"({r.fixable} fixable)")
             # Tests special-case
             if r.name.lower() == "tests":
-                failed_tests = (r.extra or {}).get("failed_tests") or (
-                    r.extra or {}
-                ).get("first_failed_test")
+                failed_tests = (r.extra or {}).get("failed_tests") or (r.extra or {}).get(
+                    "first_failed_test",
+                )
                 if failed_tests:
                     if isinstance(failed_tests, list) and failed_tests:
                         parts.append(f"{failed_tests[0]}")
@@ -180,14 +185,12 @@ def print_run_summary(results, elapsed: float, missing_deps: list[str] | None = 
             print("\n👉 Run: firsttry run --gate pre-commit --autofix")
         else:
             # Pick the most relevant hint
-            tests_failed = any(
-                r.name.lower() == "tests" and not r.passed for r in failed
-            )
+            tests_failed = any(r.name.lower() == "tests" and not r.passed for r in failed)
             if tests_failed:
                 print("\n👉 Re-run your failing tests locally.")
             else:
                 print(
-                    "\n👉 See full logs with: firsttry run --gate pre-commit --verbose"
+                    "\n👉 See full logs with: firsttry run --gate pre-commit --verbose",
                 )
     else:
         print("\n🎉 Ready to commit & push.")
@@ -206,7 +209,7 @@ def ensure_hooks() -> None:
     try:
         resp = (
             input(
-                "Git hooks not installed. Install FirstTry pre-commit & pre-push hooks now? [Y/n]: "
+                "Git hooks not installed. Install FirstTry pre-commit & pre-push hooks now? [Y/n]: ",
             )
             .strip()
             .lower()
@@ -221,12 +224,12 @@ def ensure_hooks() -> None:
         pass
 
 
-def handle_interactive_menu(results: List[Dict[str, Any]], gate: str) -> int:
+def handle_interactive_menu(results: list[dict[str, Any]], gate: str) -> int:
     """Handle the interactive menu when gates fail."""
     try:
         # Count fixable errors
         total_fixable: int = 0
-        failed_results: List[Dict[str, Any]] = []
+        failed_results: list[dict[str, Any]] = []
 
         if results and isinstance(results[0], dict):
             for r in results:
@@ -261,14 +264,13 @@ def handle_interactive_menu(results: List[Dict[str, Any]], gate: str) -> int:
 
             if choice == "1":
                 return handle_show_details(failed_results)
-            elif choice == "2":
+            if choice == "2":
                 return handle_autofix(gate, total_fixable)
-            elif choice == "3":
+            if choice == "3":
                 print("\n👋 Canceled. Fix the issues manually and try again.")
                 return 1
-            else:
-                print(f"\n❌ Invalid choice '{choice}'. Please run the command again.")
-                return 1
+            print(f"\n❌ Invalid choice '{choice}'. Please run the command again.")
+            return 1
 
         except (EOFError, KeyboardInterrupt):
             print("\n\n👋 Canceled. Fix the issues manually and try again.")
@@ -279,7 +281,7 @@ def handle_interactive_menu(results: List[Dict[str, Any]], gate: str) -> int:
         return 1
 
 
-def handle_show_details(failed_results: List[Dict[str, Any]]) -> int:
+def handle_show_details(failed_results: list[dict[str, Any]]) -> int:
     """Show detailed error information."""
     print("\n" + "=" * 60)
     print("📄 DETAILED ERROR REPORT")
@@ -329,7 +331,7 @@ def handle_autofix(gate: str, fixable_count: int) -> int:
             [
                 "ruff check . --fix",
                 "black .",
-            ]
+            ],
         )
 
     if autofix_commands:
@@ -352,7 +354,11 @@ def handle_autofix(gate: str, fixable_count: int) -> int:
                     print(f"\n▶️  Running: {cmd}")
                     try:
                         result = subprocess.run(
-                            cmd.split(), capture_output=True, text=True, cwd="."
+                            cmd.split(),
+                            capture_output=True,
+                            text=True,
+                            cwd=".",
+                            check=False,
                         )
 
                         if result.returncode == 0:
@@ -365,15 +371,14 @@ def handle_autofix(gate: str, fixable_count: int) -> int:
                         print(f"   ❌ Failed: {e}")
 
                 print(
-                    f"\n🎉 Autofix completed! {success_count}/{len(autofix_commands)} commands succeeded."
+                    f"\n🎉 Autofix completed! {success_count}/{len(autofix_commands)} commands succeeded.",
                 )
                 print("💡 Run the gate again to see if issues are resolved:")
                 print(f"   firsttry run --gate {gate}")
 
                 return 0
-            else:
-                print("\n👋 Autofix canceled. You can run these commands manually.")
-                return 1
+            print("\n👋 Autofix canceled. You can run these commands manually.")
+            return 1
 
         except (EOFError, KeyboardInterrupt):
             print("\n\n👋 Autofix canceled.")
@@ -429,7 +434,7 @@ def handle_run(args: argparse.Namespace) -> int:
             for r in results:
                 info_part = f" {r.get('info')}" if r.get("info") else ""
                 print(f"{r.get('gate')} {r.get('status')}{info_part}")
-        print("")
+        print()
         verdict = "Verdict: " + ("SAFE ✅" if ok else "BLOCKED ❌")
         print(verdict)
 
@@ -494,7 +499,7 @@ gates:
         print("⚠️ Could not install git hooks.")
         return 1
 
-    print("")
+    print()
     print("🎉 FirstTry setup complete!")
     print("Next steps:")
     print("  • Run 'firsttry status' to check your setup")
@@ -508,7 +513,7 @@ def handle_status(args: argparse.Namespace) -> int:
     """Handle the status command."""
     print("FirstTry Status")
     print("===============")
-    print("")
+    print()
 
     # Check git repo
     git_dir = Path(".git")
@@ -533,7 +538,7 @@ def handle_status(args: argparse.Namespace) -> int:
 
     # Show last run info if available
     if load_last_run is not None:
-        print("")
+        print()
         print("Last run:")
         try:
             data = load_last_run()
@@ -541,7 +546,7 @@ def handle_status(args: argparse.Namespace) -> int:
         except Exception:
             print("  No previous runs found")
 
-    print("")
+    print()
     print("Available gates: pre-commit, pre-push, auto")
     print("Quick commands:")
     print("  ft commit  →  firsttry run --gate pre-commit")
@@ -554,7 +559,8 @@ def handle_status(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Handle the doctor command."""
     try:
-        from .doctor import run_doctor_report, render_human
+        from .doctor import render_human
+        from .doctor import run_doctor_report
 
         report = run_doctor_report()
         human_output = render_human(report)
@@ -623,13 +629,13 @@ def handle_doctor(args: argparse.Namespace) -> int:
     except ImportError:
         print("🩺 FirstTry Doctor")
         print("==================")
-        print("")
+        print()
         print("- lint: ok (passed)")
         print("- types: ok (passed)")
         print("- tests: ok (passed)")
         print("- docker: ok (passed)")
         print("- ci-mirror: ok (passed)")
-        print("")
+        print()
         print("📊 5/5 checks passed")
         return 0
 
@@ -637,8 +643,9 @@ def handle_doctor(args: argparse.Namespace) -> int:
 def cmd_mirror_ci(args: argparse.Namespace) -> int:
     """Handle the mirror-ci command."""
     try:
-        from .ci_mapper import build_ci_plan
         import json
+
+        from .ci_mapper import build_ci_plan
 
         # Get root path from args
         root_path = getattr(args, "root", ".")
@@ -733,7 +740,8 @@ def _make_parser() -> argparse.ArgumentParser:
     # firsttry doctor
     # ------------------------------------------------------------
     doctor_parser = subparsers.add_parser(
-        "doctor", help="diagnose environment and dependencies"
+        "doctor",
+        help="diagnose environment and dependencies",
     )
     doctor_parser.set_defaults(func=handle_doctor)
 
@@ -809,14 +817,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.parse_args(["run", "-h"])
         return 2
 
-    elif args.cmd == "report":
+    if args.cmd == "report":
         prof = args.profile or "strict"
         if run_profile is None:
             print("No run_profile available in this build.")
             return 2
         return int(run_profile(Path.cwd(), prof))
 
-    elif hasattr(args, "func"):
+    if hasattr(args, "func"):
         # Use the handler function set by set_defaults
         return args.func(args)
 

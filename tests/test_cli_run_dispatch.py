@@ -4,18 +4,18 @@ def test_main_routes_run_to_cmd_run(monkeypatch):
     We replace `cmd_run` with a stub and call `main(['run', 'free-lite'])` to
     verify the stub is invoked with the remaining argv (['free-lite']).
     """
-    import firsttry.cli as cli
+    from firsttry import cli
 
     called = {}
 
     def fake_cmd_run(argv=None):
-        called['argv'] = argv
+        called["argv"] = argv
         return 123
 
-    monkeypatch.setattr(cli, 'cmd_run', fake_cmd_run)
+    monkeypatch.setattr(cli, "cmd_run", fake_cmd_run)
 
     # Use a valid top-level mode choice that the main parser accepts
-    res = cli.main(['run', 'auto'])
+    res = cli.main(["run", "auto"])
 
     assert res == 123
-    assert called['argv'] == ['auto']
+    assert called["argv"] == ["auto"]

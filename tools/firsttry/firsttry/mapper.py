@@ -1,15 +1,15 @@
 from __future__ import annotations
+
+from collections.abc import Iterable
 from pathlib import PurePath
-from typing import Iterable, Set
 
 
 def guess_test_kexpr(changed: Iterable[str]) -> str | None:
-    """
-    Heuristic: build a pytest -k expression from changed source filenames.
+    """Heuristic: build a pytest -k expression from changed source filenames.
     - Map 'foo/bar/baz.py' → targets test names containing 'baz'
     - De-duplicate and ignore dunders/test files.
     """
-    tokens: Set[str] = set()
+    tokens: set[str] = set()
     for f in changed:
         p = PurePath(f)
         if p.name.startswith("test_"):

@@ -5,7 +5,7 @@ import os
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 try:  # stdlib HTTP client
     from urllib import request
@@ -13,16 +13,17 @@ except Exception:  # pragma: no cover
     request = None  # type: ignore
 
 
-def _write_report(path: Path, payload: Dict[str, Any]) -> None:
+def _write_report(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2))
 
 
 def write_report_async(
-    path: Path, payload: Dict[str, Any], enabled: bool = True
+    path: Path,
+    payload: dict[str, Any],
+    enabled: bool = True,
 ) -> None:
-    """
-    Fire-and-forget writer.
+    """Fire-and-forget writer.
     If enabled=False, writes synchronously (useful for tests).
     """
     if not enabled:
@@ -36,7 +37,8 @@ def write_report_async(
 # --- Telemetry (opt-in) --------------------------------------------------
 
 TELEMETRY_URL = os.environ.get(
-    "FIRSTTRY_TELEMETRY_URL", "https://telemetry.firsttry.run/collect"
+    "FIRSTTRY_TELEMETRY_URL",
+    "https://telemetry.firsttry.run/collect",
 )
 STATUS_FILE = Path(".firsttry/telemetry_status.json")
 
@@ -52,13 +54,13 @@ def _write_status(ok: bool, message: str = "") -> None:
                     "ts": int(time.time()),
                 },
                 indent=2,
-            )
+            ),
         )
     except Exception:
         pass
 
 
-def send_report(report: Dict[str, Any]) -> None:
+def send_report(report: dict[str, Any]) -> None:
     """Best-effort telemetry sender using stdlib HTTP; never raises."""
     try:
         if request is None:
@@ -78,7 +80,7 @@ def send_report(report: Dict[str, Any]) -> None:
                     }
                     for c in report.get("checks", [])
                 ],
-            }
+            },
         ).encode("utf-8")
         req = request.Request(
             TELEMETRY_URL,

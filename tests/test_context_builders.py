@@ -1,6 +1,7 @@
 """Test context builders for repo profiling."""
 
-from firsttry.context_builders import build_context, build_repo_profile
+from firsttry.context_builders import build_context
+from firsttry.context_builders import build_repo_profile
 
 
 def test_build_context_returns_dict():
@@ -20,9 +21,7 @@ def test_build_context_has_repo_info():
 
     # Should have some repo-related information
     # Common patterns: "repo_root", "root", "project_root", etc.
-    has_repo_info = any(
-        key in ctx for key in ["repo_root", "root", "project_root", "cwd", "files"]
-    )
+    has_repo_info = any(key in ctx for key in ["repo_root", "root", "project_root", "cwd", "files"])
     assert has_repo_info, f"Context should include repo info. Keys: {list(ctx.keys())}"
 
 

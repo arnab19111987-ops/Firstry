@@ -2,16 +2,20 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 
 class PipAuditRunner(BaseRunner):
     tool = "pip-audit"
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
     ) -> RunnerResult:
         name = f"deps[{idx}]"
         cmd = item.get("cmd") or "pip-audit -f json"
@@ -32,7 +36,10 @@ class NpmAuditRunner(BaseRunner):
     tool = "npm-audit"
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
     ) -> RunnerResult:
         name = f"deps-npm[{idx}]"
         cmd = item.get("cmd") or "npm audit --json"
@@ -41,14 +48,12 @@ class NpmAuditRunner(BaseRunner):
             data = json.loads(res.message)
             vulns = data.get("vulnerabilities") or {}
             highs = sum(1 for v in vulns.values() if (v.get("severity") == "high"))
-            critical = sum(
-                1 for v in vulns.values() if (v.get("severity") == "critical")
-            )
-            moderate = sum(
-                1 for v in vulns.values() if (v.get("severity") == "moderate")
-            )
+            critical = sum(1 for v in vulns.values() if (v.get("severity") == "critical"))
+            moderate = sum(1 for v in vulns.values() if (v.get("severity") == "moderate"))
             low = sum(1 for v in vulns.values() if (v.get("severity") == "low"))
-            res.message = f"npm-audit: {critical} critical, {highs} high, {moderate} moderate, {low} low"
+            res.message = (
+                f"npm-audit: {critical} critical, {highs} high, {moderate} moderate, {low} low"
+            )
             res.extra["vulnerabilities"] = vulns
         except Exception:
             # keep default message

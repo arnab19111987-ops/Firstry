@@ -14,7 +14,6 @@ import os
 import tempfile
 import time
 from pathlib import Path
-from typing import Optional, Tuple
 
 
 def _set_sqlite_env(db_path: str = "./.firsttry.db") -> str:
@@ -23,7 +22,7 @@ def _set_sqlite_env(db_path: str = "./.firsttry.db") -> str:
     return url
 
 
-def _try_import(import_target: str) -> Tuple[bool, Optional[BaseException]]:
+def _try_import(import_target: str) -> tuple[bool, BaseException | None]:
     try:
         importlib.import_module(import_target)
         return True, None
@@ -32,8 +31,7 @@ def _try_import(import_target: str) -> Tuple[bool, Optional[BaseException]]:
 
 
 def _guess_metadata_module(import_target: str):
-    """
-    We try a couple of common places to get SQLAlchemy Base.metadata.
+    """We try a couple of common places to get SQLAlchemy Base.metadata.
     Rules:
     - backend.Base.metadata
     - backend.db.Base.metadata
@@ -55,7 +53,7 @@ def _guess_metadata_module(import_target: str):
                 return base_obj.metadata
         # direct metadata attr
         if hasattr(mod, "metadata"):
-            return getattr(mod, "metadata")
+            return mod.metadata
         tried.append((mod_name, "No Base/metadata found"))
         return None
 
@@ -73,8 +71,7 @@ def _guess_metadata_module(import_target: str):
 
 
 def _write_temp_alembic_env(temp_dir: Path, import_target: str) -> None:
-    """
-    Create a minimal Alembic environment in temp_dir:
+    """Create a minimal Alembic environment in temp_dir:
     temp_dir/
       env.py
       script.py.mako (alembic needs this template)
@@ -182,8 +179,8 @@ run_migrations_online()
 
 
 def _run_alembic_autogen(import_target: str, db_url: str) -> dict:
-    """
-    We programmatically drive Alembic's `revision --autogenerate` into a temp dir.
+    """We programmatically drive Alembic's `revision --autogenerate` into a temp dir.
+
     Returns:
         {
           "has_drift": bool,
@@ -191,10 +188,11 @@ def _run_alembic_autogen(import_target: str, db_url: str) -> dict:
           "preview": str,
         }
     If we can't complete (no metadata, no alembic installed, etc.) we mark skipped.
+
     """
     try:
-        from alembic.config import Config
         from alembic import command
+        from alembic.config import Config
     except ImportError as e:  # Alembic not installed
         return {
             "skipped": True,
@@ -232,9 +230,8 @@ def _run_alembic_autogen(import_target: str, db_url: str) -> dict:
         script_text = rev_file.read_text(encoding="utf-8")
 
         # Heuristic: if upgrade() body is only "pass", no drift.
-        has_drift = (
-            "def upgrade()" in script_text
-            and "pass" not in _extract_upgrade_body(script_text)
+        has_drift = "def upgrade()" in script_text and "pass" not in _extract_upgrade_body(
+            script_text,
         )
 
         return {
@@ -246,8 +243,7 @@ def _run_alembic_autogen(import_target: str, db_url: str) -> dict:
 
 
 def _extract_upgrade_body(script_text: str) -> str:
-    """
-    Extract the body of upgrade() for heuristic drift detection.
+    """Extract the body of upgrade() for heuristic drift detection.
     We'll do a simple textual slice, not full AST.
     """
     up_start = script_text.find("def upgrade()")
@@ -266,8 +262,8 @@ def _extract_upgrade_body(script_text: str) -> str:
 
 
 def run_sqlite_probe(import_target: str = "backend") -> dict:
-    """
-    High-level probe.
+    """High-level probe.
+
     Returns:
     {
         "import_ok": bool,
@@ -275,6 +271,7 @@ def run_sqlite_probe(import_target: str = "backend") -> dict:
         "drift": "none" | "pending_migrations" | "skipped",
         "details": str,
     }
+
     """
     db_url = _set_sqlite_env("./.firsttry.db")
 

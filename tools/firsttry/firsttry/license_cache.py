@@ -1,5 +1,4 @@
-"""
-Forwarder: expose the canonical root-level licensing cache API.
+"""Forwarder: expose the canonical root-level licensing cache API.
 
 Tests and runtime should import from `firsttry.license_cache`, which is defined
 at the repository root under `firsttry/license_cache.py`. This thin wrapper
@@ -20,13 +19,13 @@ FRESH_FOR = _lc.FRESH_FOR
 _now = _lc._now
 
 __all__ = [
-    "CachedLicense",
-    "save_cache",
-    "load_cache",
-    "is_fresh",
-    "assert_license",
-    "remote_verify",
     "CACHE_PATH",
     "FRESH_FOR",
+    "CachedLicense",
     "_now",
+    "assert_license",
+    "is_fresh",
+    "load_cache",
+    "remote_verify",
+    "save_cache",
 ]

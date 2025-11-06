@@ -1,4 +1,5 @@
-from firsttry.env import detect_environment, DetectedEnv
+from firsttry.env import DetectedEnv
+from firsttry.env import detect_environment
 
 
 def test_detect_environment_empty_repo(tmp_path):

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from firsttry.config import FirstTryConfig
 
 
@@ -10,7 +11,8 @@ def test_defaults(tmp_path: Path):
 
 def test_load_from_yaml(tmp_path: Path):
     (tmp_path / ".firsttry.yml").write_text(
-        "coverage_threshold: 92\npytest_smoke_expr: 'not slow'\n", encoding="utf-8"
+        "coverage_threshold: 92\npytest_smoke_expr: 'not slow'\n",
+        encoding="utf-8",
     )
     cfg = FirstTryConfig.load(tmp_path)
     assert cfg.coverage_threshold == 92

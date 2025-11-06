@@ -1,14 +1,17 @@
 # firsttry/doctor.py
 from __future__ import annotations
 
-import subprocess
-import sys
-from dataclasses import dataclass, field, asdict
 import json
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, Any
-from typing import List, Optional, Protocol, Tuple
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
+from typing import Any
+from typing import Protocol
 
 from .quickfix import generate_quickfix_suggestions
 
@@ -18,16 +21,16 @@ class CheckResult:
     name: str
     passed: bool
     output: str
-    fix_hint: Optional[str] = None  # optional human hint for direct fix
+    fix_hint: str | None = None  # optional human hint for direct fix
 
 
 @dataclass
 class DoctorReport:
-    checks: List[CheckResult]
+    checks: list[CheckResult]
     passed_count: int
     total_count: int
     score_pct: float
-    quickfixes: List[str] = field(default_factory=list)
+    quickfixes: list[str] = field(default_factory=list)
 
     def summary_line(self) -> str:
         return f"{self.passed_count}/{self.total_count} checks passed ({self.score_pct:.0f}%)."
@@ -36,19 +39,19 @@ class DoctorReport:
 class Runner(Protocol):
     """Abstraction to allow mocking in tests."""
 
-    def run(self, cmd: List[str]) -> Tuple[int, str]:
-        ...
+    def run(self, cmd: list[str]) -> tuple[int, str]: ...
 
 
 class ShellRunner:
     """Default runner that actually runs shell commands."""
 
-    def run(self, cmd: List[str]) -> Tuple[int, str]:
+    def run(self, cmd: list[str]) -> tuple[int, str]:
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            check=False,
         )
         return proc.returncode, proc.stdout
 
@@ -56,11 +59,10 @@ class ShellRunner:
 def _optional_check(
     runner: Runner,
     name: str,
-    cmd: List[str],
-    fix_hint: Optional[str] = None,
+    cmd: list[str],
+    fix_hint: str | None = None,
 ) -> CheckResult:
-    """
-    Runs a check but downgrades "command not found" to passed=True w/ note.
+    """Runs a check but downgrades "command not found" to passed=True w/ note.
     This keeps doctor from exploding if mypy/black aren't installed yet.
     """
     try:
@@ -80,9 +82,8 @@ def _optional_check(
     )
 
 
-def _build_check_specs() -> List[Tuple[str, List[str], Optional[str]]]:
-    """
-    Returns a list of tuples describing the checks to run:
+def _build_check_specs() -> list[tuple[str, list[str], str | None]]:
+    """Returns a list of tuples describing the checks to run:
     (name, cmd, fix_hint)
     """
     return [
@@ -115,10 +116,10 @@ def _build_check_specs() -> List[Tuple[str, List[str], Optional[str]]]:
 
 
 def gather_checks(
-    runner: Optional[Runner] = None, parallel: bool = False
+    runner: Runner | None = None,
+    parallel: bool = False,
 ) -> DoctorReport:
-    """
-    Collect core health signals.
+    """Collect core health signals.
     NOTE: We *do not* call pytest here, because running pytest from pytest causes recursion.
     Instead, we rely on 'pytest -q' when invoked from CLI in normal usage,
     and we stub this in tests.
@@ -130,11 +131,9 @@ def gather_checks(
     # e.g., FIRSTTRY_DOCTOR_SKIP=all or comma-separated names (pytest,ruff,...)
     skip_env = os.getenv("FIRSTTRY_DOCTOR_SKIP", "").strip().lower()
     skip_all = skip_env in {"all", "*"}
-    skip_set = (
-        set(x.strip() for x in skip_env.split(",") if x.strip()) if skip_env else set()
-    )
+    skip_set = set(x.strip() for x in skip_env.split(",") if x.strip()) if skip_env else set()
 
-    checks: List[CheckResult] = []
+    checks: list[CheckResult] = []
     specs = _build_check_specs()
 
     def _should_skip(name: str) -> bool:
@@ -148,7 +147,7 @@ def gather_checks(
             for name, cmd, hint in specs:
                 if _should_skip(name):
                     checks.append(
-                        CheckResult(name=name, passed=True, output="skipped (env)")
+                        CheckResult(name=name, passed=True, output="skipped (env)"),
                     )
                     continue
                 futures[ex.submit(_optional_check, runner, name, cmd, hint)] = name
@@ -165,7 +164,7 @@ def gather_checks(
         for name, cmd, hint in specs:
             if _should_skip(name):
                 checks.append(
-                    CheckResult(name=name, passed=True, output="skipped (env)")
+                    CheckResult(name=name, passed=True, output="skipped (env)"),
                 )
                 continue
             checks.append(_optional_check(runner, name=name, cmd=cmd, fix_hint=hint))
@@ -189,7 +188,7 @@ def gather_checks(
 
 def render_report_md(report: DoctorReport) -> str:
     """Pretty, human-friendly markdown. Reused by CLI and VS Code extension."""
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append("# FirstTry Doctor Report\n")
     lines.append(f"Health: **{report.summary_line()}**\n")
 
@@ -251,10 +250,10 @@ class SimpleCheck:
 
 @dataclass
 class SimpleDoctorReport:
-    results: List[SimpleCheck]
+    results: list[SimpleCheck]
     warning: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {"results": [asdict(r) for r in self.results], "warning": self.warning}
 
     def to_json(self) -> str:
@@ -267,7 +266,9 @@ def run_doctor_report(parallel: bool = False) -> SimpleDoctorReport:
     if skip_mode:
         results = [
             SimpleCheck(
-                name=n, status="skip", detail="skipped due to FIRSTTRY_DOCTOR_SKIP=all"
+                name=n,
+                status="skip",
+                detail="skipped due to FIRSTTRY_DOCTOR_SKIP=all",
             )
             for n in check_names
         ]
@@ -282,7 +283,7 @@ def run_doctor_report(parallel: bool = False) -> SimpleDoctorReport:
 
 
 def render_human(report: SimpleDoctorReport) -> str:
-    lines: List[str] = []
+    lines: list[str] = []
     if report.warning:
         lines.append(f"WARNING: {report.warning}")
         lines.append("")

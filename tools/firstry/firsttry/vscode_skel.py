@@ -1,5 +1,4 @@
-"""
-VS Code extension skeleton for Day 6.
+"""VS Code extension skeleton for Day 6.
 You will create a folder `vscode-extension/` with these two files:
 
 1. package.json  (PACKAGE_JSON below)
@@ -32,8 +31,8 @@ PACKAGE_JSON = json.dumps(
                     "command": "firsttry.runGate",
                     "title": "FirstTry: Run Gate",
                     "category": "FirstTry",
-                }
-            ]
+                },
+            ],
         },
     },
     indent=2,

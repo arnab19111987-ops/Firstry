@@ -1,6 +1,7 @@
 import textwrap
 
-from firsttry.ci_mapper_impl import build_ci_plan, rewrite_run_cmd
+from firsttry.ci_mapper_impl import build_ci_plan
+from firsttry.ci_mapper_impl import rewrite_run_cmd
 
 
 def test_ci_mapper_impl_build_plan_with_env_inheritance(tmp_path):
@@ -24,7 +25,7 @@ def test_ci_mapper_impl_build_plan_with_env_inheritance(tmp_path):
                   MID: "B"
               - name: Test
                 run: pytest -q
-        """
+        """,
     )
     (wf_dir / "ci.yml").write_text(yaml_text, encoding="utf-8")
 

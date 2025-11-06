@@ -1,6 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Dict, List, Set
+
+from dataclasses import dataclass
+from dataclasses import field
+
 from ..twin.graph import CodebaseTwin
 
 
@@ -8,17 +10,17 @@ from ..twin.graph import CodebaseTwin
 class Task:
     id: str  # e.g., "ruff:api", "pytest:app"
     check_id: str  # e.g., "ruff", "pytest", "npm-lint"
-    targets: List[str]  # intent: project root(s) or precise file lists
-    flags: List[str]
-    deps: Set[str] = field(default_factory=set)
+    targets: list[str]  # intent: project root(s) or precise file lists
+    flags: list[str]
+    deps: set[str] = field(default_factory=set)
 
 
 @dataclass
 class Plan:
-    tasks: Dict[str, Task] = field(default_factory=dict)
+    tasks: dict[str, Task] = field(default_factory=dict)
 
 
-def _project_files(twin: CodebaseTwin, proj: str) -> Set[str]:
+def _project_files(twin: CodebaseTwin, proj: str) -> set[str]:
     p = twin.projects.get(proj)
     return set(p.files) if p else set()
 
@@ -29,10 +31,11 @@ def _project_root(twin: CodebaseTwin, proj: str) -> str:
 
 
 def _group_impacted_by_project(
-    twin: CodebaseTwin, changed: List[str]
-) -> Dict[str, Set[str]]:
+    twin: CodebaseTwin,
+    changed: list[str],
+) -> dict[str, set[str]]:
     impacted = twin.impacted_files(changed) if changed else set(twin.files.keys())
-    out: Dict[str, Set[str]] = {}
+    out: dict[str, set[str]] = {}
     for f in impacted:
         proj = twin.project_of_file(f) or "_root"
         out.setdefault(proj, set()).add(f)
@@ -43,16 +46,15 @@ def build_plan_from_twin(
     twin: CodebaseTwin,
     *,
     tier: str,
-    changed: List[str],
-    workflow_requires: List[str] | None = None,
+    changed: list[str],
+    workflow_requires: list[str] | None = None,
     pytest_shards: int = 1,
 ) -> Plan:
-    """
-    Polyglot planning:
-      - Iterate projects from the twin
-      - Add language-appropriate tasks
-      - Scope targets to project roots (or narrowed files if you want later)
-      - Add DAG deps from workflow policy
+    """Polyglot planning:
+    - Iterate projects from the twin
+    - Add language-appropriate tasks
+    - Scope targets to project roots (or narrowed files if you want later)
+    - Add DAG deps from workflow policy
     """
     workflow_requires = workflow_requires or []
     per_proj_impacted = _group_impacted_by_project(twin, changed)
@@ -70,7 +72,7 @@ def build_plan_from_twin(
         if lang == "python":
             py_changed = any(f.endswith(".py") for f in files) or proj_name == "_root"
             test_targets = sorted(
-                [f for f in files if f.startswith("tests/") or "/tests/" in f]
+                [f for f in files if f.startswith("tests/") or "/tests/" in f],
             )
 
             if py_changed:
@@ -80,11 +82,7 @@ def build_plan_from_twin(
                 add(Task(id=mypy_id, check_id="mypy", targets=[root], flags=[]))
 
                 # pytest depends on ruff/mypy if configured
-                deps = {
-                    f"{d}:{proj_name}"
-                    for d in workflow_requires
-                    if d in {"ruff", "mypy"}
-                }
+                deps = {f"{d}:{proj_name}" for d in workflow_requires if d in {"ruff", "mypy"}}
                 pt_id = f"pytest:{proj_name}"
                 add(
                     Task(
@@ -93,7 +91,7 @@ def build_plan_from_twin(
                         targets=test_targets or [root],
                         flags=["-q"],
                         deps=deps,
-                    )
+                    ),
                 )
 
             if tier in {"pro", "promax"}:
@@ -103,20 +101,14 @@ def build_plan_from_twin(
 
         elif lang == "node":
             js_changed = (
-                any(
-                    f.endswith(suf)
-                    for f in files
-                    for suf in (".js", ".jsx", ".ts", ".tsx")
-                )
+                any(f.endswith(suf) for f in files for suf in (".js", ".jsx", ".ts", ".tsx"))
                 or proj_name == "_root"
             )
             if js_changed:
                 lint_id = f"npm-lint:{proj_name}"
                 test_id = f"npm-test:{proj_name}"
                 add(Task(id=lint_id, check_id="npm-lint", targets=[root], flags=[]))
-                deps = {
-                    f"{d}:{proj_name}" for d in workflow_requires if d in {"npm-lint"}
-                }
+                deps = {f"{d}:{proj_name}" for d in workflow_requires if d == "npm-lint"}
                 add(
                     Task(
                         id=test_id,
@@ -124,7 +116,7 @@ def build_plan_from_twin(
                         targets=[root],
                         flags=[],
                         deps=deps,
-                    )
+                    ),
                 )
 
         else:

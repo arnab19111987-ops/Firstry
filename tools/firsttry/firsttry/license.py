@@ -2,4 +2,4 @@
 Re-export the canonical implementation from the root package.
 """
 
-from firsttry.license import *  # noqa: F401,F403
+from firsttry.license import *  # noqa: F403

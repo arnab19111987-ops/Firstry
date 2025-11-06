@@ -1,18 +1,19 @@
 # src/firsttry/checks_orchestrator.py
 from __future__ import annotations
+
 import asyncio
 import os
 import time
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Any
 
-from .check_registry import CHECK_REGISTRY
 from . import cache as ft_cache
+from .check_registry import CHECK_REGISTRY
 
 MAX_WORKERS = min(4, os.cpu_count() or 2)
 
 
-async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int | None, str]:
+async def run_subprocess(cmd: list[str], cwd: str | None = None) -> tuple[int | None, str]:
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         cwd=cwd,
@@ -23,14 +24,13 @@ async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int | 
     return proc.returncode, stdout.decode("utf-8", "replace")
 
 
-async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):
+async def _bounded_run(cmd: list[str], sem: asyncio.Semaphore, cwd: str | None = None):
     async with sem:
         return await run_subprocess(cmd, cwd=cwd)
 
 
-def _glob_inputs(repo_root: Path, patterns: List[str]) -> List[Path]:
-    """
-    Turn registry input patterns into concrete files.
+def _glob_inputs(repo_root: Path, patterns: list[str]) -> list[Path]:
+    """Turn registry input patterns into concrete files.
     Current version is naive (repo_root.glob).
     TODO: for very large repos, consider:
       - `git ls-files` + fnmatch
@@ -38,7 +38,7 @@ def _glob_inputs(repo_root: Path, patterns: List[str]) -> List[Path]:
     """
     if not patterns:
         return []
-    out: List[Path] = []
+    out: list[Path] = []
     for pat in patterns:
         out.extend(repo_root.glob(pat))
     return out
@@ -51,7 +51,7 @@ def _tool_input_hash(repo_root: Path, tool_name: str) -> str:
     return ft_cache.sha256_of_paths(files)
 
 
-def _tool_to_cmd(tool_name: str) -> List[str]:
+def _tool_to_cmd(tool_name: str) -> list[str]:
     # map logical tool → actual command
     if tool_name == "ruff":
         return ["ruff", "."]
@@ -73,17 +73,16 @@ def _tool_to_cmd(tool_name: str) -> List[str]:
 
 async def run_checks_for_profile(
     repo_root: str,
-    checks: List[str],
+    checks: list[str],
     use_cache: bool = True,
-) -> Dict[str, Any]:
-    """
-    Run checks in 3 buckets:
-      1) fast (parallel)
-      2) mutating (serial)
-      3) slow (parallel, cache disabled if a mutator ran)
+) -> dict[str, Any]:
+    """Run checks in 3 buckets:
+    1) fast (parallel)
+    2) mutating (serial)
+    3) slow (parallel, cache disabled if a mutator ran)
     """
     root = Path(repo_root)
-    results: Dict[str, Any] = {}
+    results: dict[str, Any] = {}
 
     # ─────────────────────────────
     # 1) FAST
@@ -108,12 +107,20 @@ async def run_checks_for_profile(
         elapsed = time.monotonic() - start
         if rc == 0:
             ft_cache.write_tool_cache(
-                repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+                repo_root,
+                chk,
+                inp_hash,
+                "ok",
+                {"elapsed": elapsed},
             )
             print(f"  ✅ {chk} ({elapsed:.2f}s)")
         else:
             ft_cache.write_tool_cache(
-                repo_root, chk, inp_hash, "fail", {"elapsed": elapsed, "output": out}
+                repo_root,
+                chk,
+                inp_hash,
+                "fail",
+                {"elapsed": elapsed, "output": out},
             )
             print(f"  ❌ {chk} ({elapsed:.2f}s)")
         results[chk] = {
@@ -139,12 +146,20 @@ async def run_checks_for_profile(
         if rc == 0:
             mutating_ran = True
             ft_cache.write_tool_cache(
-                repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+                repo_root,
+                chk,
+                inp_hash,
+                "ok",
+                {"elapsed": elapsed},
             )
             print(f"  ✅ {chk} ({elapsed:.2f}s)")
         else:
             ft_cache.write_tool_cache(
-                repo_root, chk, inp_hash, "fail", {"elapsed": elapsed, "output": out}
+                repo_root,
+                chk,
+                inp_hash,
+                "fail",
+                {"elapsed": elapsed, "output": out},
             )
             print(f"  ❌ {chk} ({elapsed:.2f}s)")
         results[chk] = {
@@ -168,7 +183,9 @@ async def run_checks_for_profile(
     for chk in slow_checks:
         inp_hash = _tool_input_hash(root, chk)
         if use_cache_for_slow and ft_cache.is_tool_cache_valid(
-            repo_root, chk, inp_hash
+            repo_root,
+            chk,
+            inp_hash,
         ):
             print(f"  ✅ {chk} (cached)")
             results[chk] = {"status": "ok", "cached": True, "elapsed": 0.0}
@@ -182,12 +199,20 @@ async def run_checks_for_profile(
         elapsed = time.monotonic() - start
         if rc == 0:
             ft_cache.write_tool_cache(
-                repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+                repo_root,
+                chk,
+                inp_hash,
+                "ok",
+                {"elapsed": elapsed},
             )
             print(f"  ✅ {chk} ({elapsed:.2f}s)")
         else:
             ft_cache.write_tool_cache(
-                repo_root, chk, inp_hash, "fail", {"elapsed": elapsed, "output": out}
+                repo_root,
+                chk,
+                inp_hash,
+                "fail",
+                {"elapsed": elapsed, "output": out},
             )
             print(f"  ❌ {chk} ({elapsed:.2f}s)")
         results[chk] = {
@@ -201,7 +226,7 @@ async def run_checks_for_profile(
     # ─────────────────────────────
     total_elapsed = sum(r.get("elapsed", 0.0) for r in results.values())
     print(
-        f"\n⏱  Total active check time (not counting cache hits): {total_elapsed:.2f}s"
+        f"\n⏱  Total active check time (not counting cache hits): {total_elapsed:.2f}s",
     )
 
     return results

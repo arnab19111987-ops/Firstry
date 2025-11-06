@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Dict, List, Set, Any, Optional, Tuple
+
 from dataclasses import dataclass
+from typing import Any
 
 from .check_registry import CHECK_REGISTRY
 
@@ -16,7 +17,7 @@ class DependencyRule:
 
 
 # Define logical dependencies between checks
-DEPENDENCY_RULES: List[DependencyRule] = [
+DEPENDENCY_RULES: list[DependencyRule] = [
     # Syntax checks must pass before type checking
     DependencyRule(
         dependent="mypy",
@@ -48,9 +49,9 @@ DEPENDENCY_RULES: List[DependencyRule] = [
 ]
 
 
-def get_dependency_graph() -> Dict[str, List[str]]:
+def get_dependency_graph() -> dict[str, list[str]]:
     """Build a dependency graph from rules"""
-    graph: Dict[str, List[str]] = {}
+    graph: dict[str, list[str]] = {}
     for rule in DEPENDENCY_RULES:
         if rule.dependent not in graph:
             graph[rule.dependent] = []
@@ -58,19 +59,19 @@ def get_dependency_graph() -> Dict[str, List[str]]:
     return graph
 
 
-def get_prerequisites(check_name: str) -> List[DependencyRule]:
+def get_prerequisites(check_name: str) -> list[DependencyRule]:
     """Get all dependency rules for a specific check"""
     return [rule for rule in DEPENDENCY_RULES if rule.dependent == check_name]
 
 
 def should_skip_due_to_dependencies(
-    check_name: str, failed_checks: Set[str], profile: str = "dev"
-) -> Optional[DependencyRule]:
-    """
-    Determine if a check should be skipped due to failed prerequisites.
+    check_name: str,
+    failed_checks: set[str],
+    profile: str = "dev",
+) -> DependencyRule | None:
+    """Determine if a check should be skipped due to failed prerequisites.
     Returns the blocking rule if skip is needed, None otherwise.
     """
-
     prerequisites = get_prerequisites(check_name)
 
     for rule in prerequisites:
@@ -78,23 +79,20 @@ def should_skip_due_to_dependencies(
 
         if prerequisite_failed:
             # In strict profile, honor all dependencies
-            if profile == "strict":
-                return rule
-            # In other profiles, only honor strict dependencies
-            elif rule.strict:
+            if profile == "strict" or rule.strict:
                 return rule
 
     return None
 
 
 def analyze_dependency_impact(
-    checks: List[str], failed_checks: Set[str], profile: str = "dev"
-) -> Dict[str, Any]:
-    """
-    Analyze how many checks would be skipped due to dependencies.
+    checks: list[str],
+    failed_checks: set[str],
+    profile: str = "dev",
+) -> dict[str, Any]:
+    """Analyze how many checks would be skipped due to dependencies.
     Returns impact analysis for optimization insights.
     """
-
     skipped_checks = {}
     total_skipped = 0
 
@@ -117,12 +115,10 @@ def analyze_dependency_impact(
     }
 
 
-def get_execution_order(checks: List[str]) -> List[List[str]]:
-    """
-    Calculate optimal execution order based on dependencies.
+def get_execution_order(checks: list[str]) -> list[list[str]]:
+    """Calculate optimal execution order based on dependencies.
     Returns list of check groups that can run in parallel.
     """
-
     # Build dependency graph
     graph = get_dependency_graph()
 
@@ -138,7 +134,7 @@ def get_execution_order(checks: List[str]) -> List[List[str]]:
         execution_levels.append(independent_checks)
 
     # Group dependent checks by their prerequisites
-    prerequisite_groups: Dict[Tuple[str, ...], List[str]] = {}
+    prerequisite_groups: dict[tuple[str, ...], list[str]] = {}
     for check in checks:
         if check in dependent_checks:
             prerequisites = graph[check]
@@ -155,12 +151,10 @@ def get_execution_order(checks: List[str]) -> List[List[str]]:
     return execution_levels
 
 
-def validate_dependency_rules() -> List[str]:
-    """
-    Validate that all dependency rules reference valid checks.
+def validate_dependency_rules() -> list[str]:
+    """Validate that all dependency rules reference valid checks.
     Returns list of validation errors.
     """
-
     errors = []
     valid_checks = set(CHECK_REGISTRY.keys())
 
@@ -204,9 +198,8 @@ def validate_dependency_rules() -> List[str]:
     return errors
 
 
-def get_dependency_insights(checks: List[str]) -> Dict[str, Any]:
+def get_dependency_insights(checks: list[str]) -> dict[str, Any]:
     """Get comprehensive insights about dependency relationships"""
-
     graph = get_dependency_graph()
     execution_order = get_execution_order(checks)
 
@@ -215,15 +208,13 @@ def get_dependency_insights(checks: List[str]) -> Dict[str, Any]:
     strict_dependencies = len([r for r in DEPENDENCY_RULES if r.strict])
 
     # Find most critical prerequisites (most depended upon)
-    prerequisite_counts: Dict[str, int] = {}
+    prerequisite_counts: dict[str, int] = {}
     for rule in DEPENDENCY_RULES:
         prereq = rule.prerequisite
         prerequisite_counts[prereq] = prerequisite_counts.get(prereq, 0) + 1
 
     most_critical = (
-        max(prerequisite_counts.items(), key=lambda x: x[1])
-        if prerequisite_counts
-        else None
+        max(prerequisite_counts.items(), key=lambda x: x[1]) if prerequisite_counts else None
     )
 
     return {

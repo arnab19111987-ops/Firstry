@@ -1,8 +1,9 @@
 from __future__ import annotations
-from pathlib import Path
-import json
+
 import html
+import json
 import time
+from pathlib import Path
 
 
 def _load_json(p: Path) -> dict:
@@ -16,16 +17,18 @@ def write_html_report(repo_root: Path, results: dict, out: str = ".firsttry/repo
     rows = []
     for tid, r in results.items():
         # prefer explicit cache_status; otherwise use is_cache_hit when available
-        cache = getattr(r, 'cache_status', None)
+        cache = getattr(r, "cache_status", None)
         if cache is None:
             # If object exposes is_cache_hit, use that to indicate a local hit.
-            if getattr(r, 'is_cache_hit', False):
+            if getattr(r, "is_cache_hit", False):
                 # try to preserve remote hint if present on status
-                cache = "hit-remote" if getattr(r, 'status', '') == 'hit-remote' else "hit-local"
+                cache = "hit-remote" if getattr(r, "status", "") == "hit-remote" else "hit-local"
             else:
                 cache = "miss-run"
-        status = getattr(r, 'status', '')
-        rows.append(f"<tr><td>{html.escape(tid)}</td><td>{html.escape(status)}</td><td>{getattr(r,'duration_ms',0)}</td><td>{cache}</td></tr>")
+        status = getattr(r, "status", "")
+        rows.append(
+            f"<tr><td>{html.escape(tid)}</td><td>{html.escape(status)}</td><td>{getattr(r, 'duration_ms', 0)}</td><td>{cache}</td></tr>",
+        )
     html_doc = f"""<!doctype html><meta charset="utf-8">
     <title>FirstTry Report</title>
     <style>body{{font:14px system-ui}}td,th{{border:1px solid #ddd;padding:6px}}table{{border-collapse:collapse}}</style>
@@ -48,29 +51,35 @@ def write_html_dashboard(repo_root: Path, out: str = ".firsttry/dashboard.html")
         return
 
     total_hits = total_runs = total_saved = 0
-    top_fail = {}
-    flaky = {}
-    prev = {}
+    top_fail: dict[str, int] = {}
+    flaky: dict[str, int] = {}
+    prev: dict[str, int] = {}
 
     rows = []
     for name, ts, data in reports:
         checks = data.get("checks", {})
-        hits = sum(1 for c in checks.values() if c.get("cache_status") in {"hit-local","hit-remote"})
-        runs = sum(1 for c in checks.values() if c.get("cache_status","miss-run") == "miss-run")
-        saved = sum(int(c.get("duration_ms",0)) for c in checks.values() if c.get("cache_status") in {"hit-local","hit-remote"})
+        hits = sum(
+            1 for c in checks.values() if c.get("cache_status") in {"hit-local", "hit-remote"}
+        )
+        runs = sum(1 for c in checks.values() if c.get("cache_status", "miss-run") == "miss-run")
+        saved = sum(
+            int(c.get("duration_ms", 0))
+            for c in checks.values()
+            if c.get("cache_status") in {"hit-local", "hit-remote"}
+        )
         total_hits += hits
         total_runs += runs
         total_saved += saved
         rows.append(
-            f"<tr><td>{html.escape(name)}</td><td>{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))}</td><td>{hits}</td><td>{runs}</td><td>{saved}</td></tr>"
+            f"<tr><td>{html.escape(name)}</td><td>{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))}</td><td>{hits}</td><td>{runs}</td><td>{saved}</td></tr>",
         )
 
         for k, c in checks.items():
-            st = c.get("status","")
+            st = c.get("status", "")
             if st != "ok":
-                top_fail[k] = top_fail.get(k,0) + 1
-            if k in prev and ((prev[k]=="ok") ^ (st=="ok")):
-                flaky[k] = flaky.get(k,0) + 1
+                top_fail[k] = top_fail.get(k, 0) + 1
+            if k in prev and ((prev[k] == "ok") ^ (st == "ok")):
+                flaky[k] = flaky.get(k, 0) + 1
             prev[k] = st
 
     def _ol(d):
@@ -86,7 +95,7 @@ def write_html_dashboard(repo_root: Path, out: str = ".firsttry/dashboard.html")
     <title>FirstTry Dashboard</title>
     <style>body{{font:14px system-ui}}td,th{{border:1px solid #ddd;padding:6px}}table{{border-collapse:collapse}}</style>
     <h2>FirstTry ROI Dashboard</h2>
-    <p><b>Total cache hits:</b> {total_hits} &nbsp; <b>Total local runs:</b> {total_runs} &nbsp; <b>Estimated time saved:</b> {total_saved/1000:.2f}s</p>
+    <p><b>Total cache hits:</b> {total_hits} &nbsp; <b>Total local runs:</b> {total_runs} &nbsp; <b>Estimated time saved:</b> {total_saved / 1000:.2f}s</p>
     <h3>Run History</h3>
     <table><thead><tr><th>Report</th><th>When</th><th>Cache Hits</th><th>Local Runs</th><th>Saved (ms)</th></tr></thead>
     <tbody>{''.join(rows)}</tbody></table>

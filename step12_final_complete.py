@@ -75,9 +75,7 @@ async def validate_final_performance():
     # Analyze cache behavior
     cache_hits = sum(1 for r in results2.values() if r.get("cached"))
     policy_reruns = sum(
-        1
-        for r in results2.values()
-        if r.get("status") == "fail" and not r.get("cached")
+        1 for r in results2.values() if r.get("status") == "fail" and not r.get("cached")
     )
 
     cache_stats.total_tools = len(results2)

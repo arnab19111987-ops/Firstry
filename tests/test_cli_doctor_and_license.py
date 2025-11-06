@@ -4,10 +4,9 @@ import types
 
 def test_cli_doctor_uses_report(monkeypatch):
     """Test that CLI doctor command executes and produces output."""
-    from tests.cli_utils import run_cli
-
     # Import from the ROOT firsttry package (not tools/firsttry)
     import firsttry.doctor as doctor_mod
+    from tests.cli_utils import run_cli
 
     fake_report = types.SimpleNamespace(
         passed_count=2,
@@ -34,8 +33,8 @@ def test_cli_doctor_uses_report(monkeypatch):
 
 def test_cli_doctor_exitcode_nonzero(monkeypatch):
     """Test that CLI doctor command executes when some checks fail."""
-    from tests.cli_utils import run_cli
     import firsttry.doctor as doctor_mod
+    from tests.cli_utils import run_cli
 
     fake_report = types.SimpleNamespace(
         passed_count=1,
@@ -79,7 +78,9 @@ def test_cli_license_verify_nonvalid_exitcode(monkeypatch):
     # Mock license verification to return invalid license
     def fake_verify(key=None):
         return types.SimpleNamespace(
-            valid=False, tier="free-lite", message="Invalid license"
+            valid=False,
+            tier="free-lite",
+            message="Invalid license",
         )
 
     # Note: This test is simplified because license verification has complex dependencies

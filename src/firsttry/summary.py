@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 import os
 import sys
-from typing import Any, Dict, List
-
+from typing import Any
 
 LEVEL_NAME_MAP = {
     1: "Developers — Fast",
@@ -14,7 +14,11 @@ LEVEL_NAME_MAP = {
 
 class SummaryPrinter:
     def __init__(
-        self, *, tier: str, results: List[Dict[str, Any]], meta: Dict[str, Any]
+        self,
+        *,
+        tier: str,
+        results: list[dict[str, Any]],
+        meta: dict[str, Any],
     ):
         # tier: "free" | "pro"
         self.tier = (tier or "free").lower()
@@ -52,7 +56,8 @@ class SummaryPrinter:
             cfg = self.meta.get("config", {})
             level = cfg.get("level")
             level_name = LEVEL_NAME_MAP.get(
-                level, f"Level {level}" if level else "Default"
+                level,
+                f"Level {level}" if level else "Default",
             )
             drift = "Yes" if cfg.get("fail_on_drift") else "No"
             print(f"  Config:  {level_name} (Enforcing drift: {drift})")
@@ -90,11 +95,11 @@ class SummaryPrinter:
                 # Teaser for free tier
                 if "mypy" in name:
                     print(
-                        "      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this."
+                        "      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this.",
                     )
                 elif "ci-parity" in name or "ci_parity" in name:
                     print(
-                        "      🔒 Upgrade to Pro to see the full drift report (tools, env, deps)."
+                        "      🔒 Upgrade to Pro to see the full drift report (tools, env, deps).",
                     )
 
         print("\n--- Summary ---")
@@ -154,7 +159,9 @@ class SummaryPrinter:
 
 
 def print_run_summary(
-    results: List[Dict[str, Any]], meta: Dict[str, Any], tier: str | None = None
+    results: list[dict[str, Any]],
+    meta: dict[str, Any],
+    tier: str | None = None,
 ) -> int:
     if not tier:
         tier = os.getenv("FIRSTTRY_TIER", "free")
@@ -189,7 +196,7 @@ def print_run_summary(
         """Handles the interactive prompt and non-interactive detection."""
         if not sys.stdin.isatty():
             print(
-                "⚠️ Non-interactive environment detected. Printing full error report."
+                "⚠️ Non-interactive environment detected. Printing full error report.",
             )
             if self.tier == "teams":
                 self._print_detailed_report_teams()
@@ -207,11 +214,10 @@ def print_run_summary(
                     else:
                         self._print_detailed_report_developer()
                     break
-                elif user_input == "N":
+                if user_input == "N":
                     print("\nDetailed report skipped.")
                     break
-                else:
-                    print("Invalid input. Please enter 'Y' or 'N'.")
+                print("Invalid input. Please enter 'Y' or 'N'.")
         except EOFError:
             print("\nDetailed report skipped (EOF detected).")
         except KeyboardInterrupt:
@@ -300,11 +306,11 @@ def print_run_summary(
                 # The lock messages remain in the main report block
                 if name == "mypy":
                     print(
-                        "      🔒 Upgrade to FirstTry Teams to get a plain-English fix for this."
+                        "      🔒 Upgrade to FirstTry Teams to get a plain-English fix for this.",
                     )
                 elif name in ("ci-parity", "ci_parity"):
                     print(
-                        "      🔒 Upgrade to Teams to see the full drift report (tools, env, deps)."
+                        "      🔒 Upgrade to Teams to see the full drift report (tools, env, deps).",
                     )
 
         print("\n--- Summary ---")
@@ -335,13 +341,13 @@ def print_run_summary(
                 print("  Details: Full drift report is locked. Upgrade to Teams.")
             else:
                 print(
-                    "  Details: No further details available. Upgrade to Teams for assistance."
+                    "  Details: No further details available. Upgrade to Teams for assistance.",
                 )
 
         print("\n--- Upgrade Information ---")
         print("💡 Upgrade to FirstTry Teams to:")
         print(
-            "   • Get detailed, actionable fix suggestions instead of this placeholder."
+            "   • Get detailed, actionable fix suggestions instead of this placeholder.",
         )
         print("   • See full CI Parity (tools, env, deps, score).")
         print("   • Enforce team-wide consistency via firsttry.toml.")
@@ -373,11 +379,11 @@ def print_run_summary(
                 # Teaser for free tier
                 if name == "mypy":
                     print(
-                        "      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this."
+                        "      🔒 Upgrade to FirstTry Pro to get a plain-English fix for this.",
                     )
                 elif name in ("ci-parity", "ci_parity"):
                     print(
-                        "      � Upgrade to Pro to see the full drift report (tools, env, deps)."
+                        "      � Upgrade to Pro to see the full drift report (tools, env, deps).",
                     )
 
         print("\n--- Summary ---")

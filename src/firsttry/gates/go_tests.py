@@ -1,8 +1,10 @@
 """Go test gate implementation."""
 
 import subprocess
-from typing import Optional, Any
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class GoTestGate(Gate):
@@ -10,7 +12,7 @@ class GoTestGate(Gate):
 
     gate_id = "go_tests"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Run Go tests."""
         try:
             result = subprocess.run(
@@ -19,6 +21,7 @@ class GoTestGate(Gate):
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -28,13 +31,12 @@ class GoTestGate(Gate):
                     skipped=False,
                     reason="Go tests passed",
                 )
-            else:
-                return GateResult(
-                    gate_id=self.gate_id,
-                    ok=False,
-                    skipped=False,
-                    reason=f"Go tests failed:\n{result.stdout}\n{result.stderr}",
-                )
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"Go tests failed:\n{result.stdout}\n{result.stderr}",
+            )
 
         except FileNotFoundError:
             return GateResult(

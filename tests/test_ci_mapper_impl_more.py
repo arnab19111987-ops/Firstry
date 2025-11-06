@@ -1,4 +1,5 @@
 import textwrap
+
 from firsttry import ci_mapper_impl as impl
 
 
@@ -14,7 +15,7 @@ def test_impl_collect_when_root_is_workflows_dir(tmp_path):
                 steps:
                   - name: Echo
                     run: echo hi
-            """
+            """,
         ),
         encoding="utf-8",
     )

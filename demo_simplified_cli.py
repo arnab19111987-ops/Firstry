@@ -64,9 +64,7 @@ def main():
     run_command("python -m firsttry run q", "Shortcut: q = fast")
 
     # Demo 5: Debug phases (shows internal buckets)
-    run_command(
-        "python -m firsttry run fast --debug-phases", "Debug mode: shows phase buckets"
-    )
+    run_command("python -m firsttry run fast --debug-phases", "Debug mode: shows phase buckets")
 
     print("\n🎯 CLI Simplification Summary")
     print("=" * 60)

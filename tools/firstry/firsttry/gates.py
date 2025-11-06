@@ -1,5 +1,4 @@
-"""
-Day 7 gates:
+"""Day 7 gates:
 - pre_commit gate: fast checks
 - pre_push gate: heavier checks (docker, PG drift, hadolint, actionlint)
 
@@ -11,10 +10,9 @@ Public API:
 from __future__ import annotations
 
 import sys
-from typing import List
 
 
-def run_pre_commit_gate() -> List[str]:
+def run_pre_commit_gate() -> list[str]:
     """Return a list of shell commands for a fast pre-commit gate.
 
     Commands are safe to run locally; some may soft-fail in dev.
@@ -35,10 +33,10 @@ def run_pre_commit_gate() -> List[str]:
     ]
 
 
-def run_pre_push_gate() -> List[str]:
+def run_pre_push_gate() -> list[str]:
     """Return a list of shell commands for a heavier pre-push gate."""
     python_exe = sys.executable
-    cmds: List[str] = []
+    cmds: list[str] = []
 
     # start with the pre-commit set
     cmds.extend(run_pre_commit_gate())
@@ -49,20 +47,16 @@ def run_pre_push_gate() -> List[str]:
 
     # docker smoke test
     cmds.append(
-        (
-            f'{python_exe} -c "from firsttry.docker_smoke import run_docker_smoke; '
-            'print(run_docker_smoke())"'
-        )
+        f'{python_exe} -c "from firsttry.docker_smoke import run_docker_smoke; '
+        'print(run_docker_smoke())"',
     )
 
     # PG drift check (will exit non-zero if destructive drift detected)
     cmds.append(
-        (
-            f'{python_exe} -c "from firsttry.db_pg import run_pg_probe; '
-            "import os,sys; "
-            "try: res=run_pg_probe(allow_destructive=False); print('pg drift:', res); "
-            "except RuntimeError as e: print('PG DRIFT BLOCKER:', e); sys.exit(1)\""
-        )
+        f'{python_exe} -c "from firsttry.db_pg import run_pg_probe; '
+        "import os,sys; "
+        "try: res=run_pg_probe(allow_destructive=False); print('pg drift:', res); "
+        "except RuntimeError as e: print('PG DRIFT BLOCKER:', e); sys.exit(1)\"",
     )
 
     # hadolint and actionlint (external binaries; soft-fail locally)

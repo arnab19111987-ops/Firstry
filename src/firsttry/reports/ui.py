@@ -1,26 +1,28 @@
 # src/firsttry/reports/ui.py
 from __future__ import annotations
+
 import os
 import sys
 import time
-from typing import Dict, Any, List
+from typing import Any
 
 # try to use rich if present
+# console may be a rich Console or None when rich isn't available
+_console: Any = None
+_HAS_RICH: bool = False
 try:
     from rich.console import Console
-    from rich.progress import (
-        Progress,
-        SpinnerColumn,
-        TextColumn,
-        BarColumn,
-        TimeElapsedColumn,
-    )
+    from rich.progress import BarColumn
+    from rich.progress import Progress
+    from rich.progress import SpinnerColumn
+    from rich.progress import TextColumn
+    from rich.progress import TimeElapsedColumn
 
     _HAS_RICH = True
     _console = Console()
 except Exception:  # pragma: no cover
     _HAS_RICH = False
-    _console = None  # type: ignore[assignment]
+    _console = None
 
 
 def _supports_color() -> bool:
@@ -48,9 +50,8 @@ def c(text: str, color: str) -> str:
     return f"{colors.get(color, '')}{text}{reset}"
 
 
-def render_run_progress(checks: List[str]):
-    """
-    Show a short 'running checks' progress. Call this BEFORE you actually run
+def render_run_progress(checks: list[str]):
+    """Show a short 'running checks' progress. Call this BEFORE you actually run
     or simulate running while orchestrator is doing work.
     """
     if _HAS_RICH:
@@ -78,15 +79,13 @@ def render_run_progress(checks: List[str]):
 
 
 def interactive_menu(
-    results: Dict[str, Any],
-    allowed_checks: List[str],
+    results: dict[str, Any],
+    allowed_checks: list[str],
     locked_msg: str,
     on_detail,
     on_locked,
 ):
-    """
-    Show a small interactive menu AFTER summary.
-    """
+    """Show a small interactive menu AFTER summary."""
     while True:
         print()
         print(c("What would you like to do next?", "bold"))

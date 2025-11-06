@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import sys
+import asyncio
 import json
 import os
+import sys
 from pathlib import Path
-import asyncio
-from typing import List, Dict, Any
+from typing import Any
 
 # Import the GateResult from gates.base
 from .gates.base import GateResult
@@ -43,7 +43,7 @@ def print_report(report: dict):
             print(color(f"  • autofix applied ({len(step['fixed'])})", GREEN))
 
 
-def print_summary(results: List[GateResult]) -> None:
+def print_summary(results: list[GateResult]) -> None:
     print("\n=== FirstTry Summary ===")
     ok_count = 0
     skip_count = 0
@@ -70,9 +70,8 @@ def print_summary(results: List[GateResult]) -> None:
     print(f"\nOK: {ok_count}  Skipped: {skip_count}  Failed: {fail_count}")
 
 
-def normalize_cache_state(tool_result: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Normalize cache state for honest reporting.
+def normalize_cache_state(tool_result: dict[str, Any]) -> dict[str, Any]:
+    """Normalize cache state for honest reporting.
 
     tool_result {
       "name": ...,
@@ -94,13 +93,13 @@ def normalize_cache_state(tool_result: Dict[str, Any]) -> Dict[str, Any]:
     return tool_result
 
 
-def format_cache_summary(results: List[Dict[str, Any]]) -> str:
+def format_cache_summary(results: list[dict[str, Any]]) -> str:
     """Format cache statistics with honest hit rate reporting."""
     normalized = [normalize_cache_state(r) for r in results]
 
     hits = len([r for r in normalized if r.get("cache_bucket") == "hit"])
     policy_reruns = len(
-        [r for r in normalized if r.get("cache_bucket") == "hit-policy"]
+        [r for r in normalized if r.get("cache_bucket") == "hit-policy"],
     )
     misses = len([r for r in normalized if r.get("cache_bucket") == "miss"])
 
@@ -110,12 +109,12 @@ def format_cache_summary(results: List[Dict[str, Any]]) -> str:
 
     structural_hits = hits + policy_reruns
 
-    summary_parts: List[str] = []
+    summary_parts: list[str] = []
     if structural_hits > 0:
         summary_parts.append(f"Cache (structural): {structural_hits}/{total}")
     if policy_reruns > 0:
         summary_parts.append(
-            f"Cache (policy-respected): {policy_reruns} re-run (failed tools)"
+            f"Cache (policy-respected): {policy_reruns} re-run (failed tools)",
         )
     if misses > 0:
         summary_parts.append(f"Cache misses: {misses}")
@@ -133,7 +132,7 @@ def _ensure_dir() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def write_report_sync(payload: Dict[str, Any]) -> None:
+def write_report_sync(payload: dict[str, Any]) -> None:
     _ensure_dir()
     # write to tmp first, then move = atomic-ish
     tmp_path = REPORT_FILE.with_suffix(".json.tmp")
@@ -144,7 +143,7 @@ def write_report_sync(payload: Dict[str, Any]) -> None:
     tmp_path.replace(REPORT_FILE)
 
 
-def write_report_sync_to_path(path: Path, payload: Dict[str, Any]) -> None:
+def write_report_sync_to_path(path: Path, payload: dict[str, Any]) -> None:
     """Write report to specific path synchronously."""
     path.parent.mkdir(parents=True, exist_ok=True)
     # write to tmp first, then move = atomic-ish
@@ -157,10 +156,11 @@ def write_report_sync_to_path(path: Path, payload: Dict[str, Any]) -> None:
 
 
 async def write_report_async(
-    path: Path, payload: Dict[str, Any], enabled: bool = True
+    path: Path,
+    payload: dict[str, Any],
+    enabled: bool = True,
 ) -> None:
-    """
-    Fire-and-forget style, but still durable.
+    """Fire-and-forget style, but still durable.
     If anything goes wrong in async context, fall back to sync.
     Compatible with old telemetry interface.
     """
@@ -180,17 +180,21 @@ async def write_report_async(
         write_report_sync_to_path(path, payload)
 
 
-def render_tty(results: Dict[str, Any]) -> None:
+def render_tty(results: dict[str, Any]) -> None:
     """Render a compact cache vs run summary for TaskResult-like dicts.
 
     Accepts a mapping of id -> object with fields `.status` and `.duration_ms`.
     """
     for tid, r in results.items():
         status = getattr(
-            r, "status", r.get("status") if isinstance(r, dict) else "unknown"
+            r,
+            "status",
+            r.get("status") if isinstance(r, dict) else "unknown",
         )
         dur = getattr(
-            r, "duration_ms", r.get("duration_ms") if isinstance(r, dict) else 0
+            r,
+            "duration_ms",
+            r.get("duration_ms") if isinstance(r, dict) else 0,
         )
         prefix = "[CACHE]" if str(status).startswith("hit-") else "[ RUN ]"
         print(f"{prefix} {str(status).upper():10s} {tid} ({dur}ms)")
@@ -198,27 +202,29 @@ def render_tty(results: Dict[str, Any]) -> None:
         1
         for r in results.values()
         if str(
-            getattr(r, "status", r.get("status") if isinstance(r, dict) else "")
+            getattr(r, "status", r.get("status") if isinstance(r, dict) else ""),
         ).startswith("hit-")
     )
     runs = sum(
         1
         for r in results.values()
         if not str(
-            getattr(r, "status", r.get("status") if isinstance(r, dict) else "")
+            getattr(r, "status", r.get("status") if isinstance(r, dict) else ""),
         ).startswith("hit-")
     )
     print(f"\n{hits} checks verified from cache, {runs} run locally.\n")
 
 
 def write_json(
-    repo_root: Path, results: Dict[str, Any], out: str = ".firsttry/report.json"
+    repo_root: Path,
+    results: dict[str, Any],
+    out: str = ".firsttry/report.json",
 ) -> None:
     payload = {
         "checks": {
             tid: (r.to_report_json() if hasattr(r, "to_report_json") else r)
             for tid, r in results.items()
-        }
+        },
     }
     p = repo_root / out
     p.parent.mkdir(parents=True, exist_ok=True)

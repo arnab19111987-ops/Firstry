@@ -1,5 +1,4 @@
-"""
-Day 6 PG drift:
+"""Day 6 PG drift:
 - If DATABASE_URL (or provided db_url) looks like Postgres,
   run Alembic autogen in temp dir.
 - Parse resulting revision for destructive ops.
@@ -12,13 +11,12 @@ Public API:
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Optional, Dict, Any, List
 import tempfile
 import time
+from pathlib import Path
+from typing import Any
 
 from .db_sqlite import _write_temp_alembic_env  # reuse env writer from Day 4
-
 
 DESTRUCTIVE_PATTERNS = (
     "op.drop_table",
@@ -30,17 +28,18 @@ DESTRUCTIVE_PATTERNS = (
 )
 
 
-def parse_destructive_ops(script_text: str) -> Dict[str, List[str]]:
-    """
-    Heuristic parser for destructive operations in an Alembic revision script.
+def parse_destructive_ops(script_text: str) -> dict[str, list[str]]:
+    """Heuristic parser for destructive operations in an Alembic revision script.
+
     Returns:
         {
           "destructive": [...lines...],
           "non_destructive": [...lines...],
         }
+
     """
-    destructive: List[str] = []
-    non_destructive: List[str] = []
+    destructive: list[str] = []
+    non_destructive: list[str] = []
 
     for line in script_text.splitlines():
         stripped = line.strip()
@@ -48,10 +47,9 @@ def parse_destructive_ops(script_text: str) -> Dict[str, List[str]]:
             continue
         if any(pat in stripped for pat in DESTRUCTIVE_PATTERNS):
             destructive.append(stripped)
-        else:
-            # ignore comments, metadata lines, etc. but keep ops.* create/alter
-            if stripped.startswith("op.") or "CREATE TABLE" in stripped:
-                non_destructive.append(stripped)
+        # ignore comments, metadata lines, etc. but keep ops.* create/alter
+        elif stripped.startswith("op.") or "CREATE TABLE" in stripped:
+            non_destructive.append(stripped)
 
     return {
         "destructive": destructive,
@@ -64,13 +62,12 @@ def _is_postgres_url(url: str) -> bool:
 
 
 def _alembic_autogen_pg(import_target: str, db_url: str) -> dict:
-    """
-    Almost identical to sqlite autogen, but we inline it here so we can
+    """Almost identical to sqlite autogen, but we inline it here so we can
     enrich output for PG.
     """
     try:
-        from alembic.config import Config
         from alembic import command
+        from alembic.config import Config
     except ImportError as e:
         return {
             "skipped": True,
@@ -120,10 +117,9 @@ def _alembic_autogen_pg(import_target: str, db_url: str) -> dict:
 def run_pg_probe(
     import_target: str = "backend",
     allow_destructive: bool = False,
-    db_url: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    Returns dict with keys:
+    db_url: str | None = None,
+) -> dict[str, Any]:
+    """Returns dict with keys:
     {
       "skipped": bool,
       "reason": str | None,
@@ -159,7 +155,7 @@ def run_pg_probe(
     if destructive_ops and not allow_destructive:
         # Hard fail
         raise RuntimeError(
-            "Destructive migration ops detected: " + "; ".join(destructive_ops)
+            "Destructive migration ops detected: " + "; ".join(destructive_ops),
         )
 
     return {

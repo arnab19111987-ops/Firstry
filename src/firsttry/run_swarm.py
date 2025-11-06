@@ -1,11 +1,27 @@
 from __future__ import annotations
+
 from pathlib import Path
-from .planner.dag import Plan, build_plan_from_twin
-from .executor.dag import DagExecutor, default_caches
-from .config import load_config, timeout_for, workflow_requires
+
+from .config import load_config
+from .config import timeout_for
+from .config import workflow_requires
+from .executor.dag import DagExecutor
+from .executor.dag import default_caches
+from .planner.dag import Plan
+from .planner.dag import build_plan_from_twin
 
 
-def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int = 8, *, tier: str | None = None, twin=None, changed_paths: list[str] | None = None, remote_cache_flag: bool = False):
+def run_plan(
+    repo_root: Path,
+    plan: Plan,
+    use_remote_cache: bool,
+    workers: int = 8,
+    *,
+    tier: str | None = None,
+    twin=None,
+    changed_paths: list[str] | None = None,
+    remote_cache_flag: bool = False,
+):
     """Run a DAG Plan with config wiring.
 
     This function will:
@@ -19,12 +35,11 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
     provided (and `plan` is None) this will build the plan from the twin using
     config-derived `workflow_requires`.
     """
-
     repo_root = Path(repo_root).resolve()
     cfg = load_config(repo_root)
 
     # If caller passed a twin but not an explicit Plan, build the plan here
-    if (not plan or (getattr(plan, 'tasks', None) is None)) and twin is not None:
+    if (not plan or (getattr(plan, "tasks", None) is None)) and twin is not None:
         plan = build_plan_from_twin(
             twin,
             tier=tier or "",
@@ -45,7 +60,7 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
     caches = default_caches(repo_root, use_remote)
 
     # Timeouts: pull from config per check
-    def timeout_fn(check_id: str) -> float:
+    def timeout_fn(check_id: str) -> int:
         return timeout_for(cfg, check_id)
 
     executor = DagExecutor(
@@ -70,9 +85,10 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
     try:
         import json
         import time
+
         rec = {
             "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "tier": tier if 'tier' in locals() else None,
+            "tier": tier if "tier" in locals() else None,
             "checks": {
                 k: {
                     "status": v.status,

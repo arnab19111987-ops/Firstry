@@ -80,9 +80,7 @@ def demo_system_architecture():
     # Dependency system
     insights = get_dependency_insights(["ruff", "mypy", "pytest", "black", "npm test"])
     print("\n🔗 Dependency System:")
-    print(
-        f"   • Rules: {insights['total_rules']} total ({insights['strict_rules']} strict)"
-    )
+    print(f"   • Rules: {insights['total_rules']} total ({insights['strict_rules']} strict)")
     print(f"   • Execution levels: {insights['execution_levels']}")
     print(
         f"   • Most critical: {insights['most_critical_prerequisite'][0] if insights['most_critical_prerequisite'] else 'None'}"

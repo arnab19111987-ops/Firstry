@@ -1,13 +1,14 @@
 # firsttry/orchestrator.py
 from pathlib import Path
 from typing import Any
+
+from .detectors import detect_languages
+from .executor import execute_plan  # old/stable engine
+from .gates import core_checks as g
 from .licensing import ensure_license_interactive
 from .planner import build_plan  # new/pipeline engine
-from .executor import execute_plan  # old/stable engine
 from .reporting import print_report  # enhanced reporting
 from .setup_wizard import run_setup as wizard_run
-from .detectors import detect_languages
-from .gates import core_checks as g
 
 LAST_REPORT: dict | None = None  # simple in-memory; later can write to ~/.firsttry
 
@@ -34,8 +35,7 @@ def print_ci_like_conclusion(report: dict):
         autofix_available = any(
             s
             for s in report["summary"]
-            if not s["ok"]
-            and any(step.get("autofix", []) for step in [s] if "autofix" in s)
+            if not s["ok"] and any(step.get("autofix", []) for step in [s] if "autofix" in s)
         )
 
         if autofix_available:
@@ -45,10 +45,12 @@ def print_ci_like_conclusion(report: dict):
 
 
 def run_unified(
-    gates_or_root=".", autofix=False, no_license_prompt=False, profile=None
+    gates_or_root=".",
+    autofix=False,
+    no_license_prompt=False,
+    profile=None,
 ):
     """Main unified run command - supports both list of gates and legacy interface."""
-
     # Check if first argument is a list of gates (new interface)
     if isinstance(gates_or_root, list):
         return run_unified_gates(gates_or_root)
@@ -74,20 +76,29 @@ def run_unified(
         # "fast but useful": run only tier 1 (≤5s)
         print("🚀 Running fast checks (tier 1)...")
         report = execute_plan(
-            plan, max_tier=1, autofix=autofix, interactive_autofix=not autofix
+            plan,
+            max_tier=1,
+            autofix=autofix,
+            interactive_autofix=not autofix,
         )
     elif profile == "strict":
         # "full / strict": run all tiers
         print("🚀 Running all checks (full validation)...")
         # First run tier 1
         report = execute_plan(
-            plan, max_tier=1, autofix=autofix, interactive_autofix=not autofix
+            plan,
+            max_tier=1,
+            autofix=autofix,
+            interactive_autofix=not autofix,
         )
         if report["ok"]:
             print("⏱  Fast checks passed. Running slower checks now...", flush=True)
             # Then run tier 2
             report = execute_plan(
-                plan, max_tier=None, autofix=autofix, interactive_autofix=not autofix
+                plan,
+                max_tier=None,
+                autofix=autofix,
+                interactive_autofix=not autofix,
             )
         else:
             print("❌ Fast checks failed. Skipping slower checks.")
@@ -95,7 +106,10 @@ def run_unified(
         # unknown profile → be nice, default to fast
         print(f"🚀 Running fast checks (tier 1, unknown profile '{profile}')...")
         report = execute_plan(
-            plan, max_tier=1, autofix=autofix, interactive_autofix=not autofix
+            plan,
+            max_tier=1,
+            autofix=autofix,
+            interactive_autofix=not autofix,
         )
 
     # 3) REPORT (enhanced/pretty output)
@@ -162,20 +176,19 @@ def run_unified_gates(gates: list[str]) -> dict[str, Any]:
         if ok:
             summary["passed"] += 1
             summary["details"].append(
-                {"name": gate, "status": "passed", "errors": errors}
+                {"name": gate, "status": "passed", "errors": errors},
             )
         else:
             summary["failed"] += 1
             summary["details"].append(
-                {"name": gate, "status": "failed", "errors": errors}
+                {"name": gate, "status": "failed", "errors": errors},
             )
 
     return summary
 
 
 def _run_gate_with_errors(func):
-    """
-    Expect gate functions to either:
+    """Expect gate functions to either:
     - return True/False
     - or return (True/False, error_count)
     We normalize to (bool, int).
@@ -236,7 +249,7 @@ def show_status():
     print("=" * 20)
     print(f"📁 Project root: {cwd}")
     print(
-        f"🔎 Detected languages: {', '.join(sorted(root_langs)) if root_langs else 'none'}"
+        f"🔎 Detected languages: {', '.join(sorted(root_langs)) if root_langs else 'none'}",
     )
 
     # Show git status

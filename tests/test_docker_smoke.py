@@ -1,7 +1,9 @@
 import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
 
-from firsttry.docker_smoke import build_compose_cmds, check_health
+from firsttry.docker_smoke import build_compose_cmds
+from firsttry.docker_smoke import check_health
 
 
 def test_build_compose_cmds_default():

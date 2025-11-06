@@ -10,7 +10,9 @@ from importlib import import_module
 _lic_app = import_module("licensing.app")
 
 # Re-export any public attributes from licensing.app
-for _name in getattr(_lic_app, "__all__", []) or [n for n in dir(_lic_app) if not n.startswith("_")]:
+for _name in getattr(_lic_app, "__all__", []) or [
+    n for n in dir(_lic_app) if not n.startswith("_")
+]:
     globals()[_name] = getattr(_lic_app, _name)
 
 # Also expose the licensing implementation module as `app.licensing`

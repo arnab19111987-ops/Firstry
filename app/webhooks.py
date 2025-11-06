@@ -1,4 +1,5 @@
 """Shim module re-exporting licensing.app.webhooks as app.webhooks for tests."""
+
 from importlib import import_module
 
 _m = import_module("licensing.app.webhooks")

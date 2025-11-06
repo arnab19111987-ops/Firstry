@@ -1,9 +1,10 @@
 """FirstTry gate implementations."""
 
-from typing import List, Any, Dict
+import subprocess
+from typing import Any
+
 from .base import GateResult
 from .utils import _safe_gate
-import subprocess
 
 
 # Compatibility functions for old test suite
@@ -32,7 +33,7 @@ def run_gate(gate_name: str):
     valid_gates = ["pre-commit", "pre-push"]
     if gate_name not in valid_gates:
         raise ValueError(
-            f"Unknown gate: {gate_name}. Valid gates are: {', '.join(valid_gates)}"
+            f"Unknown gate: {gate_name}. Valid gates are: {', '.join(valid_gates)}",
         )
 
     # Try to provide more realistic results based on gate name
@@ -58,7 +59,7 @@ def run_gate(gate_name: str):
     return serializable_results, ok
 
 
-def format_summary(gate_name: str, results: List[Any], overall_ok: bool = True) -> str:
+def format_summary(gate_name: str, results: list[Any], overall_ok: bool = True) -> str:
     """Compatibility function for formatting gate results."""
     status = "✓" if overall_ok else "✗"
     verdict = "SAFE TO COMMIT" if overall_ok else "BLOCKED"
@@ -94,9 +95,7 @@ def print_verbose(message: Any):
                     status = (
                         "PASS"
                         if result.ok
-                        else "FAIL"
-                        if not getattr(result, "skipped", False)
-                        else "SKIPPED"
+                        else "FAIL" if not getattr(result, "skipped", False) else "SKIPPED"
                     )
                 else:
                     status = "UNKNOWN"
@@ -109,9 +108,7 @@ def print_verbose(message: Any):
                     status = (
                         "PASS"
                         if result.ok
-                        else "FAIL"
-                        if not getattr(result, "skipped", False)
-                        else "SKIPPED"
+                        else "FAIL" if not getattr(result, "skipped", False) else "SKIPPED"
                     )
                 else:
                     status = "UNKNOWN"
@@ -142,11 +139,14 @@ def check_tests():
     try:
         try:
             result = subprocess.run(
-                ["pytest", "-q"], capture_output=True, text=True, check=False
+                ["pytest", "-q"],
+                capture_output=True,
+                text=True,
+                check=False,
             )
         except TypeError:
             # Monkeypatch doesn't accept check parameter
-            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True)
+            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True, check=False)
 
         # Parse test count from output like "23 passed in 1.5s"
         info = "pytest tests"
@@ -161,9 +161,7 @@ def check_tests():
             gate_id="tests",
             ok=result.returncode == 0,
             output=result.stdout,
-            reason=info
-            if result.returncode == 0
-            else f"pytest failures: {result.stdout}",
+            reason=info if result.returncode == 0 else f"pytest failures: {result.stdout}",
         )
     except FileNotFoundError:
         return GateResult(
@@ -175,7 +173,10 @@ def check_tests():
         )
     except Exception as e:
         return GateResult(
-            gate_id="tests", ok=False, output=str(e), reason=f"Error running tests: {e}"
+            gate_id="tests",
+            ok=False,
+            output=str(e),
+            reason=f"Error running tests: {e}",
         )
 
 
@@ -192,14 +193,20 @@ def check_sqlite_drift():
 def check_pg_drift():
     """Compatibility function for check_pg_drift."""
     return GateResult(
-        gate_id="pg_drift", ok=True, skipped=True, reason="no Postgres configured"
+        gate_id="pg_drift",
+        ok=True,
+        skipped=True,
+        reason="no Postgres configured",
     )
 
 
 def check_docker_smoke():
     """Compatibility function for check_docker_smoke."""
     return GateResult(
-        gate_id="docker_smoke", ok=True, skipped=True, reason="no Docker runtime"
+        gate_id="docker_smoke",
+        ok=True,
+        skipped=True,
+        reason="no Docker runtime",
     )
 
 
@@ -213,14 +220,14 @@ def check_ci_mirror():
     )
 
 
-def run_all_gates(project_root: Any) -> List[GateResult]:
+def run_all_gates(project_root: Any) -> list[GateResult]:
     """Compatibility function for run_all_gates."""
     # Mock implementation
     results = [check_lint(), check_types(), check_tests()]
     return results
 
 
-def gate_result_to_dict(gate_result: Any) -> Dict[str, Any]:
+def gate_result_to_dict(gate_result: Any) -> dict[str, Any]:
     """Compatibility function to convert GateResult to dict."""
     return {
         "gate": getattr(gate_result, "gate_id", "unknown"),

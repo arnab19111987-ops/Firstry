@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -19,8 +20,7 @@ class DetectedEnv:
 
 
 def detect_environment(root: Path) -> DetectedEnv:
-    """
-    Very lightweight repo scan.
+    """Very lightweight repo scan.
     - Python: any *.py
     - Node: any package.json
     - Go: any *.go

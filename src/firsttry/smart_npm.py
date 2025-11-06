@@ -1,14 +1,15 @@
 from __future__ import annotations
+
 import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Set, Any
+from typing import Any
 
 from . import cache as ft_cache
 
 
-def detect_js_project_type(repo_root: str) -> Dict[str, Any]:
+def detect_js_project_type(repo_root: str) -> dict[str, Any]:
     """Detect JavaScript/Node.js project type and configuration"""
     repo_path = Path(repo_root)
 
@@ -41,7 +42,7 @@ def detect_js_project_type(repo_root: str) -> Dict[str, Any]:
     package_json_info = {}
     if "package.json" in found_files:
         try:
-            with open(found_files["package.json"], "r") as f:
+            with open(found_files["package.json"]) as f:
                 package_json_info = json.load(f)
         except Exception:
             package_json_info = {}
@@ -69,7 +70,7 @@ def detect_js_project_type(repo_root: str) -> Dict[str, Any]:
     }
 
     for framework, patterns in framework_patterns.items():
-        if any(pattern in dep for dep in deps.keys() for pattern in patterns):
+        if any(pattern in dep for dep in deps for pattern in patterns):
             test_frameworks.append(framework)
 
     return {
@@ -84,7 +85,7 @@ def detect_js_project_type(repo_root: str) -> Dict[str, Any]:
     }
 
 
-def get_js_related_files(repo_root: str, changed_files: List[str] = None) -> Set[str]:
+def get_js_related_files(repo_root: str, changed_files: list[str] = None) -> set[str]:
     """Get JavaScript/TypeScript related files from changed files or discover all"""
     repo_path = Path(repo_root)
     js_files = set()
@@ -138,8 +139,7 @@ def get_js_related_files(repo_root: str, changed_files: List[str] = None) -> Set
             # Check config patterns
             filename = path.name
             if any(
-                filename == pattern
-                or (pattern.endswith("*") and filename.startswith(pattern[:-1]))
+                filename == pattern or (pattern.endswith("*") and filename.startswith(pattern[:-1]))
                 for pattern in js_config_patterns
             ):
                 js_files.add(file_path)
@@ -176,13 +176,13 @@ def get_js_related_files(repo_root: str, changed_files: List[str] = None) -> Set
 
 
 def should_skip_npm_tests(
-    repo_root: str, changed_files: List[str] = None, force_run: bool = False
-) -> Dict[str, Any]:
-    """
-    Determine if npm tests should be skipped based on changed files and project state.
+    repo_root: str,
+    changed_files: list[str] = None,
+    force_run: bool = False,
+) -> dict[str, Any]:
+    """Determine if npm tests should be skipped based on changed files and project state.
     Returns decision info and reasoning.
     """
-
     if force_run:
         return {
             "should_skip": False,
@@ -238,7 +238,7 @@ def should_skip_npm_tests(
     }
 
 
-def get_npm_test_command(repo_root: str) -> List[str]:
+def get_npm_test_command(repo_root: str) -> list[str]:
     """Get the appropriate npm test command based on project configuration"""
     project_info = detect_js_project_type(repo_root)
 
@@ -247,25 +247,22 @@ def get_npm_test_command(repo_root: str) -> List[str]:
     # Build command based on package manager
     if package_manager == "yarn":
         return ["yarn", "test"]
-    elif package_manager == "pnpm":
+    if package_manager == "pnpm":
         return ["pnpm", "test"]
-    elif package_manager == "bun":
+    if package_manager == "bun":
         return ["bun", "test"]
-    else:
-        return ["npm", "test"]
+    return ["npm", "test"]
 
 
 async def run_smart_npm_test(
     repo_root: str,
-    changed_files: List[str] = None,
+    changed_files: list[str] = None,
     force_run: bool = False,
     use_cache: bool = True,
-) -> Dict[str, Any]:
-    """
-    Run npm tests with intelligent skipping based on changes.
+) -> dict[str, Any]:
+    """Run npm tests with intelligent skipping based on changes.
     Mirrors the smart pytest patterns.
     """
-
     # Check if we should skip
     skip_decision = should_skip_npm_tests(repo_root, changed_files, force_run)
 
@@ -284,9 +281,7 @@ async def run_smart_npm_test(
         js_files = get_js_related_files(repo_root)
         if js_files:
             repo_path = Path(repo_root)
-            js_file_paths = [
-                repo_path / f for f in js_files if (repo_path / f).exists()
-            ]
+            js_file_paths = [repo_path / f for f in js_files if (repo_path / f).exists()]
             input_hash = ft_cache.sha256_of_paths(js_file_paths)
 
             if ft_cache.is_tool_cache_valid(repo_root, "npm_test", input_hash):
@@ -309,7 +304,8 @@ async def run_smart_npm_test(
             cwd=repo_root,
             capture_output=True,
             text=True,
-            timeout=120,  # 2 minute timeout
+            timeout=120,
+            check=False,  # 2 minute timeout
         )
 
         duration = time.time() - start_time
@@ -318,9 +314,7 @@ async def run_smart_npm_test(
         # Cache successful results
         if use_cache and success and js_files:
             repo_path = Path(repo_root)
-            js_file_paths = [
-                repo_path / f for f in js_files if (repo_path / f).exists()
-            ]
+            js_file_paths = [repo_path / f for f in js_files if (repo_path / f).exists()]
             input_hash = ft_cache.sha256_of_paths(js_file_paths)
 
             ft_cache.write_tool_cache(
@@ -331,9 +325,7 @@ async def run_smart_npm_test(
                 {
                     "duration": duration,
                     "js_files_count": len(js_files),
-                    "package_manager": detect_js_project_type(repo_root)[
-                        "package_manager"
-                    ],
+                    "package_manager": detect_js_project_type(repo_root)["package_manager"],
                 },
             )
 
@@ -369,9 +361,8 @@ async def run_smart_npm_test(
         }
 
 
-def analyze_npm_project(repo_root: str) -> Dict[str, Any]:
+def analyze_npm_project(repo_root: str) -> dict[str, Any]:
     """Comprehensive analysis of NPM project for optimization insights"""
-
     project_info = detect_js_project_type(repo_root)
     js_files = get_js_related_files(repo_root)
 
@@ -387,8 +378,7 @@ def analyze_npm_project(repo_root: str) -> Dict[str, Any]:
             test_complexity = "high"  # E2E tests
             estimated_duration = "60-180s"
         elif (
-            "jest" in project_info["test_frameworks"]
-            or "vitest" in project_info["test_frameworks"]
+            "jest" in project_info["test_frameworks"] or "vitest" in project_info["test_frameworks"]
         ):
             test_complexity = "medium"  # Unit tests
             estimated_duration = "10-60s"

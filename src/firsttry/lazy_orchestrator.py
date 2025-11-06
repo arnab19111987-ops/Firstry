@@ -2,18 +2,20 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
-from .run_profiles import RunProfile, dev_profile
-from .cache import load_tool_cache_entry, save_tool_cache_entry
-from .cache_utils import collect_input_stats, input_stats_match
+from .cache import load_tool_cache_entry
+from .cache import save_tool_cache_entry
 from .cache_models import ToolCacheEntry
+from .cache_utils import collect_input_stats
+from .cache_utils import input_stats_match
 from .detectors import detect_stack
+from .run_profiles import RunProfile
+from .run_profiles import dev_profile
 
 
-def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
-    """
-    Uses stat-first cache and replays failed results for demo visibility.
+def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
+    """Uses stat-first cache and replays failed results for demo visibility.
     Fixed to show 0.0s for cached tools and preserve old durations for analytics.
     """
     input_paths = tool.input_paths()
@@ -76,8 +78,8 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
     }
 
 
-def _run_tools(repo_root: Path, tools: List[Any]) -> List[Dict[str, Any]]:
-    results: List[Dict[str, Any]] = []
+def _run_tools(repo_root: Path, tools: list[Any]) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
     for t in tools:
         res = run_tool_with_smart_cache(repo_root, t)
         results.append(res)
@@ -88,9 +90,8 @@ def run_profile_for_repo(
     repo_root: Path,
     profile: RunProfile | None = None,
     report_path: Path | None = None,
-) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-    """
-    Main orchestrator with LAZY bucket build.
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Main orchestrator with LAZY bucket build.
     Only builds and runs what's needed when it's needed.
     """
     start_time = time.monotonic()
@@ -110,7 +111,7 @@ def run_profile_for_repo(
     fast_results = _run_tools(repo_root, fast_tools)
     t_fast_end = time.monotonic()
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     results.extend(fast_results)
 
     # 4) decide if we need MUTATING - lazy build
@@ -138,7 +139,7 @@ def run_profile_for_repo(
     total_time = time.monotonic() - start_time
 
     # Build comprehensive report
-    report: Dict[str, Any] = {
+    report: dict[str, Any] = {
         "repo": str(repo_root),
         "detect": detect_info,
         "results": results,

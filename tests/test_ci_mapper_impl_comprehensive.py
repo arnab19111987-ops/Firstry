@@ -1,9 +1,7 @@
-from firsttry.ci_mapper_impl import (
-    build_ci_plan,
-    rewrite_run_cmd,
-    _collect_workflow_files,
-    _extract_steps_from_job,
-)
+from firsttry.ci_mapper_impl import _collect_workflow_files
+from firsttry.ci_mapper_impl import _extract_steps_from_job
+from firsttry.ci_mapper_impl import build_ci_plan
+from firsttry.ci_mapper_impl import rewrite_run_cmd
 
 
 def test_collect_workflow_files_from_workflows_dir(tmp_path):
@@ -52,7 +50,7 @@ def test_extract_steps_skips_uses_only():
         "steps": [
             {"uses": "actions/checkout@v4"},
             {"name": "Real", "run": "echo hi"},
-        ]
+        ],
     }
     job_plan = _extract_steps_from_job("job", job_dict)
     # Should only extract the run step

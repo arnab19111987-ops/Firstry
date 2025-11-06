@@ -1,5 +1,4 @@
-"""
-Thin shim package that aliases to the root-level `firsttry` package.
+"""Thin shim package that aliases to the root-level `firsttry` package.
 
 This ensures that imports like `import firsttry` or `from firsttry import cli`
 resolve to the single, authoritative implementation under the repository root,
@@ -26,7 +25,7 @@ def _alias_to_root_package() -> None:
 
     if not root_init.exists():
         raise FileNotFoundError(
-            f"Could not locate root package 'firsttry' in repo root or src/: expected one of {repo_root/'firsttry'} or {repo_root/'src'/'firsttry'}"
+            f"Could not locate root package 'firsttry' in repo root or src/: expected one of {repo_root / 'firsttry'} or {repo_root / 'src' / 'firsttry'}",
         )
 
     # Load the root package with proper submodule search locations so that

@@ -5,12 +5,10 @@ from pathlib import Path
 
 
 def test_import_firsttry_as_if_installed(tmp_path, monkeypatch):
-    """
-    Simulate a real install by copying the canonical firsttry/ package
+    """Simulate a real install by copying the canonical firsttry/ package
     into a fake site-packages dir, then importing it with ONLY that dir
     on sys.path. This makes sure the package is self-contained.
     """
-
     repo_root = Path.cwd()
     src_pkg = repo_root / "src" / "firsttry"
     assert src_pkg.is_dir(), "expected ./src/firsttry to be the canonical package"

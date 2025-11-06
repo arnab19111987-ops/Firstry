@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import List, Literal, Optional, Dict
-
+from dataclasses import dataclass
+from dataclasses import field
+from typing import Literal
 
 IssueType = Literal[
     "lint-fixable",
@@ -19,7 +19,7 @@ class Issue:
     # one row in the “Detailed Issues” table
     kind: IssueType  # e.g. "lint-fixable", "type-error"
     file: str  # filename or pseudo ("(pytest)")
-    line: Optional[int]  # line number if known
+    line: int | None  # line number if known
     message: str  # human-readable message
     autofixable: bool  # True if safe tooling can fix automatically
 
@@ -30,15 +30,15 @@ class SectionSummary:
     name: str  # "Lint / Style", "Types", "Security / Secrets", "Tests & Coverage"
     autofixable_count: int  # how many issues in this section are autofixable
     manual_count: int  # how many issues in this section require human attention
-    notes: List[str]  # extra info (e.g. "0 type errors." / "HIGH severity present.")
+    notes: list[str]  # extra info (e.g. "0 type errors." / "HIGH severity present.")
     ci_blocking: bool  # does CI block on this category?
 
 
 @dataclass
 class ScanResult:
     # full scan output that gets printed in the summary and detail views
-    sections: List[SectionSummary] = field(default_factory=list)
-    issues: List[Issue] = field(default_factory=list)
+    sections: list[SectionSummary] = field(default_factory=list)
+    issues: list[Issue] = field(default_factory=list)
 
     total_autofixable: int = 0
     total_manual: int = 0
@@ -54,18 +54,16 @@ class ScanResult:
     # list of shell commands the scanner recommends to autofix issues
     # scanner.py may also set this attribute at runtime; declare it here
     # so static type checking (mypy) and consumers can rely on the attribute.
-    autofix_cmds: List[str] = field(default_factory=list)
+    autofix_cmds: list[str] = field(default_factory=list)
     # Security grouping counts (scanner will populate these when available)
     high_risk_unreviewed: int = 0
     known_risky_but_baselined: int = 0
     # File-level lists for quick triage
-    high_risk_unreviewed_files: List[str] = field(default_factory=list)
-    known_risky_but_baselined_files: List[str] = field(default_factory=list)
+    high_risk_unreviewed_files: list[str] = field(default_factory=list)
+    known_risky_but_baselined_files: list[str] = field(default_factory=list)
 
-    def as_dict(self) -> Dict[str, object]:
-        """
-        Structured form that could be JSON dumped or logged.
-        """
+    def as_dict(self) -> dict[str, object]:
+        """Structured form that could be JSON dumped or logged."""
         return {
             "gate_name": self.gate_name,
             "files_scanned": self.files_scanned,
@@ -99,9 +97,13 @@ class ScanResult:
             "high_risk_unreviewed": getattr(self, "high_risk_unreviewed", 0),
             "known_risky_but_baselined": getattr(self, "known_risky_but_baselined", 0),
             "high_risk_unreviewed_files": getattr(
-                self, "high_risk_unreviewed_files", []
+                self,
+                "high_risk_unreviewed_files",
+                [],
             ),
             "known_risky_but_baselined_files": getattr(
-                self, "known_risky_but_baselined_files", []
+                self,
+                "known_risky_but_baselined_files",
+                [],
             ),
         }

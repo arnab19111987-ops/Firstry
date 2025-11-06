@@ -1,11 +1,10 @@
 import json
-from typing import List
 
 import firsttry.doctor as doc
 
 
 class FakeRunner:
-    def run(self, cmd: List[str]):
+    def run(self, cmd: list[str]):
         # Make mypy fail to trigger quickfix; others pass
         if cmd and cmd[0] == "mypy":
             return 1, "mypy: error: Something bad"

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Type, List
 
 
 # Safe Gate class that works without complex imports
 class Gate:
-    def run(self, root: Path) -> "GateResult":
+    def run(self, root: Path) -> GateResult:
         return GateResult(gate_id="unknown", ok=True)
 
-    def should_run_for(self, changed_files: List[str]) -> bool:
+    def should_run_for(self, changed_files: list[str]) -> bool:
         return True
 
 
@@ -20,7 +19,7 @@ class GateResult:
         ok: bool,
         skipped: bool = False,
         reason: str = "",
-        watched_files: List[str] | None = None,
+        watched_files: list[str] | None = None,
     ):
         self.gate_id = gate_id
         self.ok = ok
@@ -32,10 +31,13 @@ class GateResult:
 # Legacy runner class for backward compatibility
 class LegacyRunner:
     def __init__(self) -> None:
-        self.gate_registry: Dict[str, Type[Gate]] = {}
+        self.gate_registry: dict[str, type[Gate]] = {}
 
     def run_profile(
-        self, root: Path, profile_name: str = "fast", since_ref: str | None = None
+        self,
+        root: Path,
+        profile_name: str = "fast",
+        since_ref: str | None = None,
     ) -> int:
         """Simplified runner that returns success."""
         return 0
@@ -43,7 +45,9 @@ class LegacyRunner:
 
 # Backward compatibility functions
 def run_profile(
-    root: Path, profile_name: str = "fast", since_ref: str | None = None
+    root: Path,
+    profile_name: str = "fast",
+    since_ref: str | None = None,
 ) -> int:
     """Simplified profile runner that always succeeds."""
     return 0

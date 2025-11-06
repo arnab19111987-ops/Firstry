@@ -1,5 +1,6 @@
-import io
 import builtins
+import io
+
 import pytest
 
 import firsttry.docker_smoke as ds
@@ -11,7 +12,9 @@ def test_run_docker_smoke_ok(monkeypatch):
     # Capture stdout
     buf = io.StringIO()
     monkeypatch.setattr(
-        builtins, "print", lambda *a, **k: buf.write(" ".join(map(str, a)) + "\n")
+        builtins,
+        "print",
+        lambda *a, **k: buf.write(" ".join(map(str, a)) + "\n"),
     )
 
     ds.run_docker_smoke()

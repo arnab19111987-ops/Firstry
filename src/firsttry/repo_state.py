@@ -1,14 +1,17 @@
-from pathlib import Path
-import json
 import hashlib
+import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
+from pathlib import Path
 
 
 def repo_root_cwd(cwd):
     try:
         out = subprocess.check_output(
-            ["git", "rev-parse", "--show-toplevel"], cwd=cwd, stderr=subprocess.DEVNULL
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=cwd,
+            stderr=subprocess.DEVNULL,
         )
         return out.decode().strip()
     except Exception:

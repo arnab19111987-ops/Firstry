@@ -1,17 +1,16 @@
 # src/firsttry/reporting/__init__.py
 """FirstTry reporting modules."""
 
-from typing import List
 from ..gates.base import GateResult
+from .renderer import write_json
 
 # Re-export from local modules
 from .tty import render_tty
-from .renderer import write_json
 
 __all__ = ["print_summary", "render_tty", "write_json"]
 
 
-def print_summary(results: List[GateResult]) -> None:
+def print_summary(results: list[GateResult]) -> None:
     """Print a summary of gate results (re-exported for backward compatibility)."""
     print("\n=== FirstTry Summary ===")
     ok_count = 0

@@ -1,7 +1,9 @@
 """Pre-commit all gate implementation."""
-from typing import Optional, Any
 
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class PreCommitAllGate(Gate):
@@ -9,7 +11,7 @@ class PreCommitAllGate(Gate):
 
     gate_id = "precommit_all"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Run all pre-commit checks."""
         # This is a placeholder implementation
         return GateResult(

@@ -1,11 +1,12 @@
 from __future__ import annotations
-from subprocess import run, PIPE
-from typing import Iterable, List
+
+from collections.abc import Iterable
+from subprocess import PIPE
+from subprocess import run
 
 
-def get_changed_files(base_ref: str = "HEAD") -> List[str]:
-    """
-    Returns a list of changed file paths since base_ref (ACMRT changes).
+def get_changed_files(base_ref: str = "HEAD") -> list[str]:
+    """Returns a list of changed file paths since base_ref (ACMRT changes).
     Falls back to [] if git is unavailable.
     """
     try:
@@ -24,5 +25,5 @@ def get_changed_files(base_ref: str = "HEAD") -> List[str]:
         return []
 
 
-def filter_python(files: Iterable[str]) -> List[str]:
+def filter_python(files: Iterable[str]) -> list[str]:
     return [f for f in files if f.endswith(".py")]

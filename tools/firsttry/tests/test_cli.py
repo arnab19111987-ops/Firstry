@@ -1,19 +1,27 @@
-from click.testing import CliRunner
-from firsttry.cli import main
 import types
+
+from click.testing import CliRunner
+
+from firsttry.cli import main
 
 
 def test_cli_runs_and_summarizes(monkeypatch, tmp_path):
     # prevent real subprocess calls by stubbing runner functions
     fake_ok = types.SimpleNamespace(
-        ok=True, name="fake", duration_s=0.01, stdout="ok", stderr="", cmd=("x",)
+        ok=True,
+        name="fake",
+        duration_s=0.01,
+        stdout="ok",
+        stderr="",
+        cmd=("x",),
     )
 
     def ok_step(*a, **k):
         return fake_ok
 
     monkeypatch.setattr(
-        "firsttry.cli.install_pre_commit_hook", lambda *a, **k: tmp_path / "pc"
+        "firsttry.cli.install_pre_commit_hook",
+        lambda *a, **k: tmp_path / "pc",
     )
     monkeypatch.setattr(
         "firsttry.cli.get_changed_files",

@@ -1,5 +1,6 @@
 # firsttry/planner.py
 from pathlib import Path
+
 from .detectors import detect_languages
 from .pipelines import LANGUAGE_PIPELINES
 
@@ -20,7 +21,7 @@ def build_plan(root: str = ".") -> dict:
                     "autofix": step.get("autofix", []),
                     "optional": step.get("optional", False),
                     "tier": step.get("tier", 1),
-                }
+                },
             )
 
     return {

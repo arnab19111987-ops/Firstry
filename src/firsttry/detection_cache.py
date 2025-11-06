@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 # we keep this in the repo, not in $HOME, so it's per-repo
 DETECT_CACHE_FILENAME = ".firsttry_detect_cache.json"
@@ -15,8 +15,9 @@ def _cache_path(repo_root: Path) -> Path:
 
 
 def load_detect_cache(
-    repo_root: Path, ttl_seconds: int = DEFAULT_TTL_SECONDS
-) -> Optional[Dict[str, Any]]:
+    repo_root: Path,
+    ttl_seconds: int = DEFAULT_TTL_SECONDS,
+) -> dict[str, Any] | None:
     path = _cache_path(repo_root)
     if not path.exists():
         return None
@@ -36,7 +37,7 @@ def load_detect_cache(
     return data.get("payload")
 
 
-def save_detect_cache(repo_root: Path, payload: Dict[str, Any]) -> None:
+def save_detect_cache(repo_root: Path, payload: dict[str, Any]) -> None:
     path = _cache_path(repo_root)
     data = {
         "ts": time.time(),

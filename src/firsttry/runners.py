@@ -1,10 +1,12 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from time import perf_counter
+
 import subprocess
-from typing import Iterable, Sequence
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
+from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from time import perf_counter
 
 # Optional compatibility alias; keep after other imports so linters don't
 # complain about non-top-level imports. Tests should patch `subprocess.run`
@@ -37,6 +39,7 @@ def _exec(name: str, args: Sequence[str], cwd: Path | None = None) -> StepResult
         stderr=subprocess.PIPE,
         text=True,
         cwd=str(cwd) if cwd else None,
+        check=False,
     )
     dt = perf_counter() - t0
     return StepResult(
@@ -62,7 +65,8 @@ def run_mypy(paths: Iterable[str]) -> StepResult:
 
 
 def run_pytest_kexpr(
-    kexpr: str | None, base_args: Sequence[str] = ("-q",)
+    kexpr: str | None,
+    base_args: Sequence[str] = ("-q",),
 ) -> StepResult:
     args = ["pytest", *base_args]
     if kexpr:
@@ -71,7 +75,8 @@ def run_pytest_kexpr(
 
 
 def run_coverage_xml(
-    kexpr: str | None, base_args: Sequence[str] = ("-q",)
+    kexpr: str | None,
+    base_args: Sequence[str] = ("-q",),
 ) -> StepResult:
     args = ["coverage", "run", "-m", "pytest", *base_args]
     if kexpr:
@@ -97,10 +102,13 @@ def coverage_gate(threshold: int) -> StepResult:
     rate = parse_cobertura_line_rate()
     ok = (rate is not None) and (rate >= threshold)
     stdout = (
-        f"coverage: {rate:.2f}% (threshold {threshold}%)"
-        if rate is not None
-        else "no coverage.xml"
+        f"coverage: {rate:.2f}% (threshold {threshold}%)" if rate is not None else "no coverage.xml"
     )
     return StepResult(
-        "coverage_gate", ok, 0.0, stdout, "", ("coverage_gate", str(threshold))
+        "coverage_gate",
+        ok,
+        0.0,
+        stdout,
+        "",
+        ("coverage_gate", str(threshold)),
     )

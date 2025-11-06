@@ -1,12 +1,15 @@
 from __future__ import annotations
+
 import hashlib
 import json
 import os
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Any, Iterable, Optional
+from typing import Any
 
-from .cache_models import ToolCacheEntry, InputFileMeta
+from .cache_models import InputFileMeta
+from .cache_models import ToolCacheEntry
 from .cache_utils import get_cache_state
 
 # Global cache file (can be monkeypatched in tests)
@@ -37,7 +40,7 @@ def _get_cache_file_path() -> Path:
     return _DEFAULT_CACHE_FILE
 
 
-def load_cache() -> Dict[str, Any]:
+def load_cache() -> dict[str, Any]:
     """Load global cache from home directory
 
     Compute the cache path first so tests can monkeypatch `CACHE_FILE` to
@@ -67,7 +70,7 @@ def load_cache() -> Dict[str, Any]:
     return data
 
 
-def save_cache(data: Dict[str, Any]) -> None:
+def save_cache(data: dict[str, Any]) -> None:
     """Save global cache to home directory"""
     _ensure_dir()
     p = _get_cache_file_path()
@@ -95,11 +98,11 @@ def sha256_of_paths(paths: Iterable[Path]) -> str:
                     h.update(chunk)
         elif p.exists() and p.is_dir():
             # For directories, just hash the path name
-            h.update(f"dir:{p}".encode("utf-8"))
+            h.update(f"dir:{p}".encode())
     return h.hexdigest()
 
 
-def get_repo_cache(repo_root: str) -> Dict[str, Any]:
+def get_repo_cache(repo_root: str) -> dict[str, Any]:
     """Get cache data for a specific repository"""
     data = load_cache()
     if "repos" not in data:
@@ -107,7 +110,7 @@ def get_repo_cache(repo_root: str) -> Dict[str, Any]:
     return data["repos"].get(repo_root, {"tools": {}})
 
 
-def update_repo_cache(repo_root: str, repo_data: Dict[str, Any]) -> None:
+def update_repo_cache(repo_root: str, repo_data: dict[str, Any]) -> None:
     """Update cache data for a specific repository"""
     data = load_cache()
     data["repos"][repo_root] = repo_data
@@ -132,7 +135,7 @@ def write_tool_cache(
     tool_name: str,
     input_hash: str,
     status: str,
-    extra: Dict[str, Any] | None = None,
+    extra: dict[str, Any] | None = None,
 ) -> None:
     """Write tool result to cache"""
     repo_data = get_repo_cache(repo_root)
@@ -154,7 +157,7 @@ def _cache_file(root: Path) -> Path:
     return d / CACHE_FILENAME
 
 
-def load_cache_legacy(root: Path) -> Dict[str, Any]:
+def load_cache_legacy(root: Path) -> dict[str, Any]:
     p = _cache_file(root)
     if not p.exists():
         return {}
@@ -165,15 +168,14 @@ def load_cache_legacy(root: Path) -> Dict[str, Any]:
         return {}
 
 
-def save_cache_legacy(root: Path, data: Dict[str, Any]) -> None:
+def save_cache_legacy(root: Path, data: dict[str, Any]) -> None:
     p = _cache_file(root)
     data["updated_at"] = time.time()
     p.write_text(json.dumps(data, indent=2))
 
 
 def should_skip_gate(cache: dict, gate_id: str, changed_files: list[str]) -> bool:
-    """
-    Return True if we can safely skip this gate because:
+    """Return True if we can safely skip this gate because:
     - we have previous run info
     - and none of the changed files are in the watched list
     """
@@ -198,7 +200,7 @@ def update_gate_cache(cache: dict, gate_id: str, watched_files: list[str]) -> No
 # Enhanced cache functions using stat-first validation
 
 
-def load_tool_cache_entry(repo_root: str, tool_name: str) -> Optional[ToolCacheEntry]:
+def load_tool_cache_entry(repo_root: str, tool_name: str) -> ToolCacheEntry | None:
     """Load enhanced cache entry with stat-first validation support."""
     repo_data = get_repo_cache(repo_root)
     tools = repo_data.get("tools", {})
@@ -250,10 +252,11 @@ def save_tool_cache_entry(repo_root: str, entry: ToolCacheEntry) -> None:
 
 
 def is_tool_cache_valid_fast(
-    repo_root: str, tool_name: str, input_paths: list[str]
+    repo_root: str,
+    tool_name: str,
+    input_paths: list[str],
 ) -> tuple[bool, str]:
-    """
-    Fast cache validation using stat-first approach.
+    """Fast cache validation using stat-first approach.
 
     Returns (is_valid, cache_state) where cache_state is:
     - "hit": Valid cache, use result
@@ -263,7 +266,9 @@ def is_tool_cache_valid_fast(
     """
     entry = load_tool_cache_entry(repo_root, tool_name)
     cache_state, use_cache = get_cache_state(
-        entry, input_paths, policy_rerun_failures=True
+        entry,
+        input_paths,
+        policy_rerun_failures=True,
     )
     return use_cache, cache_state
 

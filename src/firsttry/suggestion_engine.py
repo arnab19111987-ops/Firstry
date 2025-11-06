@@ -1,7 +1,7 @@
 # src/firsttry/suggestion_engine.py
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 RUFF_HINTS = {
     "F401": "Remove the unused import, or use it, or add it to __all__.",
@@ -30,7 +30,7 @@ GENERIC_HINTS = {
 }
 
 
-def suggest(tool: str, code: Optional[str], message: str) -> Optional[str]:
+def suggest(tool: str, code: str | None, message: str) -> str | None:
     tool = (tool or "").lower()
 
     if tool == "ruff" and code and code in RUFF_HINTS:
@@ -57,8 +57,11 @@ def suggest(tool: str, code: Optional[str], message: str) -> Optional[str]:
 
 
 def decorate_result(
-    result: Dict[str, Any], tool: str, code: Optional[str], message: str
-) -> Dict[str, Any]:
+    result: dict[str, Any],
+    tool: str,
+    code: str | None,
+    message: str,
+) -> dict[str, Any]:
     hint = suggest(tool, code, message)
     if hint:
         result["hint"] = hint

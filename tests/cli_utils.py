@@ -1,12 +1,11 @@
 """Test utilities for argparse-based CLI testing."""
 
-from io import StringIO
 import contextlib
+from io import StringIO
 
 
 def run_cli(args):
-    """
-    Run the firsttry CLI with given arguments and capture output.
+    """Run the firsttry CLI with given arguments and capture output.
 
     Args:
         args: List of command-line arguments (e.g., ["doctor", "--json"])
@@ -18,6 +17,7 @@ def run_cli(args):
         code, out, err = run_cli(["doctor"])
         assert code == 0
         assert "Doctor" in out
+
     """
     from firsttry import cli
 

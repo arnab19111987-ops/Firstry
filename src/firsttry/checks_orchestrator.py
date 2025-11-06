@@ -2,14 +2,17 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .profiler import get_profiler
 
 
 async def _timed_runner_execution(
-    runner, worker_id: int, ctx: Dict[str, Any], item: Dict[str, Any]
-) -> Dict[str, Any]:
+    runner,
+    worker_id: int,
+    ctx: dict[str, Any],
+    item: dict[str, Any],
+) -> dict[str, Any]:
     """Execute a runner with timing instrumentation."""
     profiler = get_profiler()
     family = _family_of(item)
@@ -89,17 +92,16 @@ def _family_of(item: Any) -> str:
     """Extract family/tool name from item (supports both dict and string)."""
     if isinstance(item, str):
         return item
-    elif isinstance(item, dict):
+    if isinstance(item, dict):
         return item.get("family") or item.get("tool") or item.get("name") or ""
-    else:
-        return str(item)
+    return str(item)
 
 
-def _bucketize(plan: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-    fast: List[Dict[str, Any]] = []
-    mutating: List[Dict[str, Any]] = []
-    slow: List[Dict[str, Any]] = []
-    other: List[Dict[str, Any]] = []
+def _bucketize(plan: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    fast: list[dict[str, Any]] = []
+    mutating: list[dict[str, Any]] = []
+    slow: list[dict[str, Any]] = []
+    other: list[dict[str, Any]] = []
 
     for item in plan:
         family = _family_of(item)
@@ -124,15 +126,14 @@ def _bucketize(plan: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
 
 
 async def _run_bucket_with_timeout(
-    bucket: List[Dict[str, Any]],
-    allocation: Dict[str, int],
-    ctx: Dict[str, Any],
-    tier: Optional[str],
-    config: Optional[Dict[str, Any]],
+    bucket: list[dict[str, Any]],
+    allocation: dict[str, int],
+    ctx: dict[str, Any],
+    tier: str | None,
+    config: dict[str, Any] | None,
     timeout_seconds: float = 30.0,
-) -> List[Dict[str, Any]]:
-    """
-    Run a bucket of checks with individual timeouts.
+) -> list[dict[str, Any]]:
+    """Run a bucket of checks with individual timeouts.
     Uses asyncio with timeout instead of ProcessPoolExecutor for simpler implementation.
     """
     if not bucket:
@@ -168,7 +169,10 @@ async def _run_bucket_with_timeout(
                 try:
                     return await asyncio.wait_for(
                         _timed_runner_execution(
-                            captured_runner, worker_id, ctx, captured_item
+                            captured_runner,
+                            worker_id,
+                            ctx,
+                            captured_item,
                         ),
                         timeout=timeout_seconds,
                     )
@@ -190,7 +194,7 @@ async def _run_bucket_with_timeout(
     finished = await asyncio.gather(*tasks, return_exceptions=True)
 
     results = []
-    for task, out in zip(tasks, finished):
+    for task, out in zip(tasks, finished, strict=False):
         item = task_to_item[task]
         family = _family_of(item)
 
@@ -201,7 +205,7 @@ async def _run_bucket_with_timeout(
                     "family": family,
                     "tool": item.get("tool") or family,
                     "error": str(out),
-                }
+                },
             )
         else:
             # ensure the runner result is a dict and contains family/tool
@@ -215,15 +219,13 @@ async def _run_bucket_with_timeout(
 
 
 async def _run_bucket(
-    bucket: List[Dict[str, Any]],
-    allocation: Dict[str, int],
-    ctx: Dict[str, Any],
-    tier: Optional[str],
-    config: Optional[Dict[str, Any]],
-) -> List[Dict[str, Any]]:
-    """
-    Run bucket with timeout support.
-    """
+    bucket: list[dict[str, Any]],
+    allocation: dict[str, int],
+    ctx: dict[str, Any],
+    tier: str | None,
+    config: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Run bucket with timeout support."""
     # Different timeout for different bucket types
     family_names = [_family_of(item) for item in bucket]
 
@@ -235,7 +237,12 @@ async def _run_bucket(
         timeout = 30.0  # 30s for fast checks
 
     return await _run_bucket_with_timeout(
-        bucket, allocation, ctx, tier, config, timeout
+        bucket,
+        allocation,
+        ctx,
+        tier,
+        config,
+        timeout,
     )
 
 
@@ -243,15 +250,14 @@ async def _run_bucket(
 
 
 async def run_orchestrator(
-    allocation: Dict[str, int],
-    plan: List[Dict[str, Any]],
-    ctx: Dict[str, Any],
-    tier: Optional[str] = None,
-    config: Optional[Dict[str, Any]] = None,
+    allocation: dict[str, int],
+    plan: list[dict[str, Any]],
+    ctx: dict[str, Any],
+    tier: str | None = None,
+    config: dict[str, Any] | None = None,
     show_phases: bool = False,
-) -> Dict[str, Any]:
-    """
-    Bucketed orchestrator.
+) -> dict[str, Any]:
+    """Bucketed orchestrator.
     Runs checks in phases:
     1) FAST (parallel)
     2) MUTATING (serial, conflict-avoidance)
@@ -267,7 +273,7 @@ async def run_orchestrator(
         return {"ok": True, "checks": []}
 
     buckets = _bucketize(plan)
-    all_results: List[Dict[str, Any]] = []
+    all_results: list[dict[str, Any]] = []
 
     # 1) fast → parallel (gives immediate feedback)
     if buckets["fast"]:
@@ -298,7 +304,11 @@ async def run_orchestrator(
                 ", ".join(_family_of(i) for i in buckets["other"]),
             )
         other_results = await _run_bucket(
-            buckets["other"], allocation, ctx, tier, config
+            buckets["other"],
+            allocation,
+            ctx,
+            tier,
+            config,
         )
         all_results.extend(other_results)
 

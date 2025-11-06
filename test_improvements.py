@@ -42,9 +42,7 @@ async def main():
 
     # Check if any results have cache_state indicating smart cache usage
     cache_states = [
-        r.get("cache_state")
-        for r in results.values()
-        if isinstance(r, dict) and "cache_state" in r
+        r.get("cache_state") for r in results.values() if isinstance(r, dict) and "cache_state" in r
     ]
     if cache_states:
         print(f"\n💾 Cache states observed: {set(cache_states)}")

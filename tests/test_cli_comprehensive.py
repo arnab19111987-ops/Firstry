@@ -5,7 +5,7 @@ def test_cli_install_hooks(monkeypatch):
     import pytest
 
     pytest.skip(
-        "install-hooks functionality has been removed in favor of new CLI structure"
+        "install-hooks functionality has been removed in favor of new CLI structure",
     )
 
 
@@ -25,7 +25,7 @@ def test_run_gate_via_runners_failure(monkeypatch):
     import pytest
 
     pytest.skip(
-        "run_gate_via_runners functionality has been refactored into the new CLI structure"
+        "run_gate_via_runners functionality has been refactored into the new CLI structure",
     )
 
 
@@ -53,10 +53,10 @@ def test_cli_mirror_ci_legacy_plan_shape(monkeypatch, capsys, tmp_path):
                         {
                             "job_id": "test",
                             "steps": [{"name": "Run", "run": "pytest", "env": {}}],
-                        }
+                        },
                     ],
-                }
-            ]
+                },
+            ],
         }
 
     monkeypatch.setattr("firsttry.ci_mapper.build_ci_plan", fake_build)

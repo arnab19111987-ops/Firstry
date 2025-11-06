@@ -17,7 +17,7 @@ def test_build_ci_plan_multiple_workflows(tmp_path):
             runs-on: ubuntu-latest
             steps:
               - run: pytest
-        """
+        """,
         ),
         encoding="utf-8",
     )
@@ -30,7 +30,7 @@ def test_build_ci_plan_multiple_workflows(tmp_path):
             runs-on: ubuntu-latest
             steps:
               - run: ruff check .
-        """
+        """,
         ),
         encoding="utf-8",
     )
@@ -57,7 +57,7 @@ def test_build_ci_plan_skip_uses_steps(tmp_path):
               - uses: actions/checkout@v4
               - uses: actions/setup-python@v4
               - run: echo "real step"
-        """
+        """,
         ),
         encoding="utf-8",
     )
@@ -84,7 +84,7 @@ def test_build_ci_plan_install_hints(tmp_path):
               - run: pip install -r requirements.txt
               - run: npm ci
               - run: pytest -q
-        """
+        """,
         ),
         encoding="utf-8",
     )

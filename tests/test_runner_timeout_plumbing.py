@@ -14,10 +14,12 @@ def test_pytest_runner_receives_timeout_arg(tmp_path: Path):
 
     def fake_run(cmd, cwd=None, capture_output=True, text=True, timeout=None):
         called.update({"cmd": cmd, "cwd": cwd, "timeout": timeout})
+
         class P:
             returncode = 0
             stdout = ""
             stderr = ""
+
         return P()
 
     with patch("subprocess.run", side_effect=fake_run):

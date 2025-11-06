@@ -13,11 +13,10 @@ def test_cli_mirror_ci_parses_basic(tmp_path):
     import pytest
 
     pytest.skip("Legacy test disabled - functionality removed")
-    return
 
 
 @pytest.mark.skip(
-    reason="mirror-ci functionality has been removed in favor of new CLI structure"
+    reason="mirror-ci functionality has been removed in favor of new CLI structure",
 )
 def disabled_test_cli_mirror_ci_parses_basic(tmp_path):
     pass
@@ -27,17 +26,13 @@ def test_cli_mirror_ci_json_and_license_env(monkeypatch, tmp_path):
     import pytest
 
     pytest.skip("Legacy test disabled - functionality removed")
-    return
 
 
 @pytest.mark.skip(
-    reason="mirror-ci functionality has been removed in favor of new CLI structure"
+    reason="mirror-ci functionality has been removed in favor of new CLI structure",
 )
 def disabled_test_cli_mirror_ci_json_and_license_env(monkeypatch, tmp_path):
-    """
-    Simulate `mirror-ci --run --json` with only env key set.
-    """
-
+    """Simulate `mirror-ci --run --json` with only env key set."""
     fake_summary = {
         "ok": True,
         "results": [
@@ -49,12 +44,12 @@ def disabled_test_cli_mirror_ci_json_and_license_env(monkeypatch, tmp_path):
                 "returncode": 0,
                 "stdout": "clean\n",
                 "stderr": "",
-            }
+            },
         ],
     }
 
     # monkeypatch the pro runner
-    import firsttry.pro_features as pro_features
+    from firsttry import pro_features
 
     monkeypatch.setattr(
         pro_features,
@@ -73,7 +68,7 @@ def disabled_test_cli_mirror_ci_json_and_license_env(monkeypatch, tmp_path):
             str(tmp_path),
             "--run",
             "--json",
-        ]
+        ],
     )
 
     # Capture stdout of cmd_mirror_ci
@@ -98,17 +93,13 @@ def test_cli_mirror_ci_json_and_license_arg(monkeypatch, tmp_path):
     import pytest
 
     pytest.skip("Legacy test disabled - functionality removed")
-    return
 
 
 @pytest.mark.skip(
-    reason="mirror-ci functionality has been removed in favor of new CLI structure"
+    reason="mirror-ci functionality has been removed in favor of new CLI structure",
 )
 def disabled_test_cli_mirror_ci_json_and_license_arg(monkeypatch, tmp_path):
-    """
-    Passing --license-key should override env var.
-    """
-
+    """Passing --license-key should override env var."""
     captured = {}
 
     def fake_runner(plan, license_key=None):
@@ -116,7 +107,7 @@ def disabled_test_cli_mirror_ci_json_and_license_arg(monkeypatch, tmp_path):
         captured["payload"] = license_key
         return {"ok": True, "results": []}
 
-    import firsttry.pro_features as pro_features
+    from firsttry import pro_features
 
     monkeypatch.setattr(pro_features, "run_ci_steps_locally", fake_runner)
 
@@ -133,7 +124,7 @@ def disabled_test_cli_mirror_ci_json_and_license_arg(monkeypatch, tmp_path):
             "--json",
             "--license-key",
             "ARG-KEY-999",
-        ]
+        ],
     )
 
     buf = io.StringIO()

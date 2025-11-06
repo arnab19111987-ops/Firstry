@@ -3,7 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 # These are the tools FirstTry depends on to judge repo health.
 # Pin versions you trust in CI so that local == CI.
 REQUIRED_PACKAGES = [
@@ -18,8 +17,7 @@ REQUIRED_PACKAGES = [
 
 
 def _have_module(mod_name: str) -> bool:
-    """
-    Return True if we can import this module.
+    """Return True if we can import this module.
     This DOESN'T guarantee exact version, just existence.
     """
     try:
@@ -30,8 +28,7 @@ def _have_module(mod_name: str) -> bool:
 
 
 def _pip_install(pkg: str) -> None:
-    """
-    Try to install/upgrade a package in the current interpreter environment.
+    """Try to install/upgrade a package in the current interpreter environment.
     We do not hard fail here -- we try and continue.
     """
     try:
@@ -47,8 +44,7 @@ def _pip_install(pkg: str) -> None:
 
 
 def self_repair() -> None:
-    """
-    Ensure this environment has what FirstTry needs to run honest checks.
+    """Ensure this environment has what FirstTry needs to run honest checks.
 
     Behavior:
     - For each REQUIRED_PACKAGES entry, if we can't import it, we attempt to pip install it.
@@ -85,15 +81,14 @@ def self_repair() -> None:
         for pkg in still_missing:
             print(f"[firsttry]   - {pkg}")
         print(
-            "[firsttry] You may need to activate a virtualenv and re-run `firsttry init`."
+            "[firsttry] You may need to activate a virtualenv and re-run `firsttry init`.",
         )
     else:
         print("[firsttry] ✅ All required tooling installed.")
 
 
 def ensure_dev_support_files(base_dir: Path | None = None) -> bool:
-    """
-    Ensure the repo has the basic support files FirstTry expects.
+    """Ensure the repo has the basic support files FirstTry expects.
 
     - requirements-dev.txt
     - Makefile with `check` and `ruff-fix`
@@ -119,9 +114,9 @@ def ensure_dev_support_files(base_dir: Path | None = None) -> bool:
                         "click",
                         "pyyaml",
                         "types-PyYAML",
-                    ]
+                    ],
                 )
-                + "\n"
+                + "\n",
             )
             print("[firsttry] wrote requirements-dev.txt")
     except Exception:
@@ -145,7 +140,7 @@ check:
 ruff-fix:
 	ruff check . --fix
 	black .
-"""
+""",
             )
             print("[firsttry] wrote Makefile with `check` and `ruff-fix` targets")
     except Exception:

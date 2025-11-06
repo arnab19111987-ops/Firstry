@@ -1,28 +1,32 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any
 
 
 class PytestTool:
     name = "pytest"
     phase = "slow"
 
-    def __init__(self, repo_root: Path, extra_args: List[str] | None = None):
+    def __init__(self, repo_root: Path, extra_args: list[str] | None = None):
         self.repo_root = repo_root
         self.extra_args = extra_args or []
 
-    def input_paths(self) -> List[str]:
+    def input_paths(self) -> list[str]:
         return [str(self.repo_root / "src"), str(self.repo_root / "tests")]
 
-    def run(self) -> Tuple[str, Dict[str, Any]]:
+    def run(self) -> tuple[str, dict[str, Any]]:
         # 🔥 heavy import lives here
         import subprocess
 
         cmd = ["pytest"] + self.extra_args
         try:
             proc = subprocess.run(
-                cmd, cwd=self.repo_root, capture_output=True, text=True
+                cmd,
+                cwd=self.repo_root,
+                capture_output=True,
+                text=True,
+                check=False,
             )
         except FileNotFoundError:
             return "ok", {

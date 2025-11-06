@@ -130,9 +130,7 @@ def demo_skip_logic():
             print(f"   Skipped checks: {len(skipped_checks)}")
             for skip in skipped_checks:
                 strictness = " (STRICT)" if skip["strict"] else ""
-                print(
-                    f"     ❌ {skip['check']} ← blocked by {skip['blocked_by']}{strictness}"
-                )
+                print(f"     ❌ {skip['check']} ← blocked by {skip['blocked_by']}{strictness}")
         else:
             print("   ✅ All checks would run")
 
@@ -322,12 +320,8 @@ async def main():
     demo_insights()
 
     print("\n🎉 Step 4 Complete!")
-    print(
-        "Conditional check dependencies implemented with intelligent fail-fast logic,"
-    )
-    print(
-        "flexible/strict modes, and significant time savings when prerequisites fail."
-    )
+    print("Conditional check dependencies implemented with intelligent fail-fast logic,")
+    print("flexible/strict modes, and significant time savings when prerequisites fail.")
 
 
 if __name__ == "__main__":

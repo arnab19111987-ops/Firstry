@@ -36,8 +36,8 @@ def test_cli_mirror_ci_run_integration(monkeypatch, capsys, tmp_path):
                             },
                         },
                     ],
-                }
-            ]
+                },
+            ],
         }
 
     monkeypatch.setattr(ci_mapper, "build_ci_plan", fake_build)

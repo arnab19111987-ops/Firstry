@@ -1,8 +1,10 @@
 """Python linting gate implementation."""
 
 import subprocess
-from typing import Optional, Any
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class PythonRuffGate(Gate):
@@ -10,7 +12,7 @@ class PythonRuffGate(Gate):
 
     gate_id = "python_lint"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Run ruff linting."""
         try:
             result = subprocess.run(
@@ -19,6 +21,7 @@ class PythonRuffGate(Gate):
                 capture_output=True,
                 text=True,
                 timeout=30,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -28,13 +31,12 @@ class PythonRuffGate(Gate):
                     skipped=False,
                     reason="Ruff linting passed",
                 )
-            else:
-                return GateResult(
-                    gate_id=self.gate_id,
-                    ok=False,
-                    skipped=False,
-                    reason=f"Ruff found issues:\n{result.stdout}",
-                )
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"Ruff found issues:\n{result.stdout}",
+            )
 
         except FileNotFoundError:
             return GateResult(

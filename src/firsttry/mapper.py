@@ -5,8 +5,7 @@ import typing as t
 
 
 def guess_test_kexpr(changed_paths: t.Iterable[str]) -> str:
-    """
-    Heuristic: convert changed file paths into a pytest -k expression.
+    """Heuristic: convert changed file paths into a pytest -k expression.
 
     - For each changed .py file, take the stem ("foo" from foo.py)
       and its parent directory ("auth" from auth/foo.py).

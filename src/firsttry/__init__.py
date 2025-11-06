@@ -1,5 +1,4 @@
-"""
-FirstTry package init.
+"""FirstTry package init.
 
 We intentionally keep this file minimal to avoid circular imports:
 tests create a temporary firsttry/runners.py, then reload firsttry.cli

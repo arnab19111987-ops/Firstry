@@ -12,15 +12,14 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from typing import List
 
 
-def collect_tests() -> List[str]:
+def collect_tests() -> list[str]:
     out = subprocess.check_output(["pytest", "--collect-only", "-q"])
     return [line.strip() for line in out.decode().splitlines() if line.strip()]
 
 
-def run_nodes(nodes: List[str], timeout: int = 20) -> bool:
+def run_nodes(nodes: list[str], timeout: int = 20) -> bool:
     if not nodes:
         return True
     cmd = ["pytest", "-q"] + nodes
@@ -36,7 +35,7 @@ def run_nodes(nodes: List[str], timeout: int = 20) -> bool:
         return False
 
 
-def bisect_find(nodes: List[str]) -> str | None:
+def bisect_find(nodes: list[str]) -> str | None:
     # if the whole slice is OK, return None
     if run_nodes(nodes):
         return None
@@ -63,9 +62,8 @@ def main() -> int:
     if culprit:
         print("\nHANGING TEST FOUND:", culprit)
         return 0
-    else:
-        print("\nNo hanging test found (all slices completed).")
-        return 0
+    print("\nNo hanging test found (all slices completed).")
+    return 0
 
 
 if __name__ == "__main__":

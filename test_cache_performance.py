@@ -29,25 +29,19 @@ async def test_cache_performance():
     # First run - cache miss
     print("\n--- First run (populating cache) ---")
     start = time.time()
-    results1 = await run_checks_for_profile(
-        repo_root=repo_root, checks=checks, use_cache=True
-    )
+    results1 = await run_checks_for_profile(repo_root=repo_root, checks=checks, use_cache=True)
     first_time = time.time() - start
 
     # Second run - cache hit
     print("\n--- Second run (using cache) ---")
     start = time.time()
-    results2 = await run_checks_for_profile(
-        repo_root=repo_root, checks=checks, use_cache=True
-    )
+    results2 = await run_checks_for_profile(repo_root=repo_root, checks=checks, use_cache=True)
     second_time = time.time() - start
 
     # Third run - cache disabled
     print("\n--- Third run (cache disabled) ---")
     start = time.time()
-    results3 = await run_checks_for_profile(
-        repo_root=repo_root, checks=checks, use_cache=False
-    )
+    results3 = await run_checks_for_profile(repo_root=repo_root, checks=checks, use_cache=False)
     third_time = time.time() - start
 
     print("\n📊 Performance Results:")

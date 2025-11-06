@@ -3,12 +3,13 @@ from __future__ import annotations
 import os
 import sys
 from importlib.machinery import SourceFileLoader
-from importlib.util import spec_from_loader, module_from_spec
+from importlib.util import module_from_spec
+from importlib.util import spec_from_loader
 
 
 def _locate_and_load():
     repo_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "..")
+        os.path.join(os.path.dirname(__file__), "..", "..", ".."),
     )
     candidates = [
         os.path.join(repo_root, "firsttry", "db_sqlite.py"),
@@ -28,7 +29,7 @@ def _locate_and_load():
 
 _impl = _locate_and_load()
 
-run_sqlite_probe = getattr(_impl, "run_sqlite_probe")
+run_sqlite_probe = _impl.run_sqlite_probe
 _extract_upgrade_body = getattr(_impl, "_extract_upgrade_body", lambda s: "")
 
-__all__ = ["run_sqlite_probe", "_extract_upgrade_body"]
+__all__ = ["_extract_upgrade_body", "run_sqlite_probe"]

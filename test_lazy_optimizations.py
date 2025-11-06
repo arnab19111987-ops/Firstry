@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""
-Test the lazy orchestrator optimizations that should address the "hidden 11 seconds".
+"""Test the lazy orchestrator optimizations that should address the "hidden 11 seconds".
 
 This demonstrates:
 1. Detection cache (10 minute TTL)
-2. Sentinel file detection (cheap before expensive rglob)  
+2. Sentinel file detection (cheap before expensive rglob)
 3. Lazy bucket building (fast → mutating → slow)
 4. Lazy imports (heavy modules loaded only when needed)
 5. Deferred reporting (async JSON writing)
@@ -17,9 +16,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from firsttry.detectors import detect_stack
 from firsttry.lazy_orchestrator import run_profile_for_repo
 from firsttry.run_profiles import dev_profile
-from firsttry.detectors import detect_stack
 
 
 def test_detection_cache():
@@ -41,7 +40,7 @@ def test_detection_cache():
 
     print(f"📊 First detection: {first_time:.3f}s")
     print(f"📊 Cached detection: {second_time:.3f}s")
-    print(f"🚀 Speedup: {first_time/second_time:.1f}x")
+    print(f"🚀 Speedup: {first_time / second_time:.1f}x")
     print(f"📋 Detected: {result1}")
 
     assert result1 == result2, "Cache should return same result"
@@ -63,7 +62,9 @@ def test_lazy_orchestrator():
     # Run with dev profile
     start = time.monotonic()
     results = run_profile_for_repo(
-        repo_root=repo_root, profile=dev_profile(), report_path=report_path
+        repo_root=repo_root,
+        profile=dev_profile(),
+        report_path=report_path,
     )
     total_time = time.monotonic() - start
 
@@ -114,7 +115,7 @@ def main():
     print("\n📊 Performance Summary:")
     print(f"  • First run: {first_run_time:.3f}s")
     print(f"  • Second run: {second_run_time:.3f}s")
-    print(f"  • Improvement: {(1 - second_run_time/first_run_time)*100:.1f}%")
+    print(f"  • Improvement: {(1 - second_run_time / first_run_time) * 100:.1f}%")
 
     print("\n🎯 Optimizations Applied:")
     print("  ✅ Detection cache (10-minute TTL)")

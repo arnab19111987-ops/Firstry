@@ -1,5 +1,5 @@
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,7 +11,9 @@ def test_check_lint_pass(monkeypatch):
     def fake_run(cmd, capture_output, text):
         assert cmd[0] == "ruff"
         return type(
-            "P", (), {"returncode": 0, "stdout": "All checks passed", "stderr": ""}
+            "P",
+            (),
+            {"returncode": 0, "stdout": "All checks passed", "stderr": ""},
         )()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -22,7 +24,9 @@ def test_check_lint_pass(monkeypatch):
 def test_check_lint_fail(monkeypatch):
     def fake_run(cmd, capture_output, text):
         return type(
-            "P", (), {"returncode": 1, "stdout": "", "stderr": "F401 unused import"}
+            "P",
+            (),
+            {"returncode": 1, "stdout": "", "stderr": "F401 unused import"},
         )()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -52,7 +56,9 @@ def test_check_types_skipped(monkeypatch):
 def test_check_tests_pass(monkeypatch):
     def fake_run(cmd, capture_output, text):
         return type(
-            "P", (), {"returncode": 0, "stdout": "23 passed in 1.5s", "stderr": ""}
+            "P",
+            (),
+            {"returncode": 0, "stdout": "23 passed in 1.5s", "stderr": ""},
         )()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -154,7 +160,7 @@ def test_run_all_gates(monkeypatch):
         return type("P", (), {"returncode": 0, "stdout": "ok", "stderr": ""})()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    summary = gates.run_all_gates(Path("."))
+    summary = gates.run_all_gates(Path())
     # run_all_gates returns a list of GateResult objects
     assert isinstance(summary, list)
     assert len(summary) >= 1

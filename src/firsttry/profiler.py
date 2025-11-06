@@ -1,11 +1,11 @@
-"""
-Performance profiler for FirstTry checks.
+"""Performance profiler for FirstTry checks.
 Tracks timing and exit codes for all check executions.
 """
+
 import time
-from typing import Dict, List, Any
-from dataclasses import dataclass
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -25,8 +25,8 @@ class CheckProfiler:
     """Profiler that tracks timing for all check executions."""
 
     def __init__(self):
-        self.timings: List[CheckTiming] = []
-        self._active_checks: Dict[str, float] = {}
+        self.timings: list[CheckTiming] = []
+        self._active_checks: dict[str, float] = {}
 
     def start_check(self, check_name: str, family: str) -> None:
         """Start timing a check."""
@@ -34,7 +34,11 @@ class CheckProfiler:
         self._active_checks[key] = time.monotonic()
 
     def end_check(
-        self, check_name: str, family: str, exit_code: int, success: bool
+        self,
+        check_name: str,
+        family: str,
+        exit_code: int,
+        success: bool,
     ) -> float:
         """End timing a check and record the result."""
         key = f"{family}:{check_name}"
@@ -55,7 +59,7 @@ class CheckProfiler:
         self.timings.append(timing)
         return duration
 
-    def get_timing_summary(self) -> Dict[str, Any]:
+    def get_timing_summary(self) -> dict[str, Any]:
         """Generate a timing summary by bucket/family."""
         if not self.timings:
             return {}
@@ -64,7 +68,7 @@ class CheckProfiler:
         fast_families = {"ruff", "mypy", "black"}
         slow_families = {"pytest", "npm test", "ci-parity"}
 
-        buckets: Dict[str, List[Any]] = {"fast": [], "slow": [], "other": []}
+        buckets: dict[str, list[Any]] = {"fast": [], "slow": [], "other": []}
 
         for timing in self.timings:
             if timing.family in fast_families or timing.check_name in fast_families:
@@ -112,9 +116,11 @@ class CheckProfiler:
                     [
                         f"{name}={dur:.1f}s"
                         for name, dur in sorted(
-                            details.items(), key=lambda x: x[1], reverse=True
+                            details.items(),
+                            key=lambda x: x[1],
+                            reverse=True,
                         )
-                    ]
+                    ],
                 )
 
                 print(f"  {bucket_name}: {total:.1f}s ({details_str})")

@@ -64,8 +64,8 @@ def test_run_ci_plan_locally_early_stop_and_quickfix_fallback(monkeypatch):
                         },
                     },
                 ],
-            }
-        ]
+            },
+        ],
     }
 
     # Force quickfix path to raise to hit fallback generic hint

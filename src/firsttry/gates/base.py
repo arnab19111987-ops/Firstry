@@ -1,7 +1,9 @@
 """Compatibility base classes and types for FirstTry gates."""
+
 from __future__ import annotations
 
-from typing import List, Sequence, Optional, Any
+from collections.abc import Sequence
+from typing import Any
 
 
 class GateResult:
@@ -86,10 +88,9 @@ class GateResult:
         """Return status string for compatibility."""
         if self.skipped:
             return "SKIPPED"
-        elif self.ok:
+        if self.ok:
             return "PASS"
-        else:
-            return "FAIL"
+        return "FAIL"
 
     @property
     def info(self):
@@ -127,11 +128,11 @@ class Gate:
     # which patterns this gate is interested in
     patterns: Sequence[str] = ("*.py",)
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Override in subclasses."""
         return GateResult(gate_id=self.gate_id, ok=True, output="")
 
-    def should_run_for(self, files: List[str]) -> bool:
+    def should_run_for(self, files: list[str]) -> bool:
         """Check if gate should run for given files (compatibility)."""
         if not files:
             return False

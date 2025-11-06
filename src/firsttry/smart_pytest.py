@@ -1,12 +1,14 @@
 from __future__ import annotations
+
 import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Dict, List, Set, Any
+from typing import Any
 
 from . import cache as ft_cache
-from .parallel_pytest import run_parallel_pytest, analyze_test_suite
+from .parallel_pytest import analyze_test_suite
+from .parallel_pytest import run_parallel_pytest
 
 
 def get_pytest_cache_dir(repo_root: str) -> Path:
@@ -14,7 +16,7 @@ def get_pytest_cache_dir(repo_root: str) -> Path:
     return Path(repo_root) / ".pytest_cache"
 
 
-def get_failed_tests(repo_root: str) -> List[str]:
+def get_failed_tests(repo_root: str) -> list[str]:
     """Get list of previously failed tests from pytest cache"""
     cache_dir = get_pytest_cache_dir(repo_root)
     failed_file = cache_dir / "v" / "cache" / "lastfailed"
@@ -31,7 +33,7 @@ def get_failed_tests(repo_root: str) -> List[str]:
         return []
 
 
-def get_test_files_for_changes(repo_root: str, changed_files: List[str]) -> Set[str]:
+def get_test_files_for_changes(repo_root: str, changed_files: list[str]) -> set[str]:
     """Map changed source files to relevant test files"""
     repo_path = Path(repo_root)
     test_files = set()
@@ -79,7 +81,7 @@ def get_test_files_for_changes(repo_root: str, changed_files: List[str]) -> Set[
     return test_files
 
 
-def get_smoke_tests(repo_root: str) -> List[str]:
+def get_smoke_tests(repo_root: str) -> list[str]:
     """Get smoke tests - fast tests that validate basic functionality"""
     repo_path = Path(repo_root)
     smoke_tests = []
@@ -125,6 +127,7 @@ def has_pytest_xdist(repo_root: str) -> bool:
             cwd=repo_root,
             capture_output=True,
             timeout=5,
+            check=False,
         )
         return result.returncode == 0
     except Exception:
@@ -133,13 +136,12 @@ def has_pytest_xdist(repo_root: str) -> bool:
 
 def build_pytest_command(
     repo_root: str,
-    test_files: List[str] = None,
+    test_files: list[str] = None,
     failed_only: bool = False,
     parallel: bool = True,
     mode: str = "smart",  # smart, smoke, full, failed
-) -> List[str]:
+) -> list[str]:
     """Build optimized pytest command based on mode and available features"""
-
     cmd = ["python", "-m", "pytest"]
 
     # Base flags for better output
@@ -192,18 +194,16 @@ def build_pytest_command(
 
 async def run_smart_pytest(
     repo_root: str,
-    changed_files: List[str] | None = None,
+    changed_files: list[str] | None = None,
     mode: str = "smart",
     use_cache: bool = True,
-) -> Dict[str, Any]:
-    """
-    Run pytest with smart optimizations:
+) -> dict[str, Any]:
+    """Run pytest with smart optimizations:
     - Cache-aware execution
     - Failed test prioritization
     - Change-based test targeting
     - Parallel execution when beneficial
     """
-
     # Check cache first if enabled
     if use_cache:
         # Build input hash from relevant test files and source files
@@ -229,7 +229,10 @@ async def run_smart_pytest(
 
     # Build optimized pytest command
     cmd = build_pytest_command(
-        repo_root=repo_root, test_files=target_test_files, mode=mode, parallel=True
+        repo_root=repo_root,
+        test_files=target_test_files,
+        mode=mode,
+        parallel=True,
     )
 
     # Decide whether to use parallel execution
@@ -241,7 +244,7 @@ async def run_smart_pytest(
             # Use parallel execution for large test suites
             return await run_parallel_pytest(
                 repo_root=repo_root,
-                test_files=target_test_files if target_test_files else None,
+                test_files=target_test_files or None,
                 use_cache=use_cache,
                 extra_args=[],
             )
@@ -254,7 +257,8 @@ async def run_smart_pytest(
             cwd=repo_root,
             capture_output=True,
             text=True,
-            timeout=120,  # 2 minute timeout
+            timeout=120,
+            check=False,  # 2 minute timeout
         )
 
         duration = time.time() - start_time

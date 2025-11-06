@@ -1,5 +1,5 @@
-import firsttry.quickfix as qf
 import firsttry.doctor as doc
+import firsttry.quickfix as qf
 
 
 def test_suggest_fix_tool_not_found_messages():

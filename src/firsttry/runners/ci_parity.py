@@ -1,20 +1,24 @@
 # src/firsttry/runners/ci_parity.py
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
-from ..agents.ci.validation_parity import ValidationParityAgent
-from ..agents.ci.env_parity import EnvParityAgent
 from ..agents.ci.deps_parity import DependencyParityAgent
+from ..agents.ci.env_parity import EnvParityAgent
+from ..agents.ci.validation_parity import ValidationParityAgent
 from ..ci_parser import resolve_ci_plan
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 
 class CiParityRunner(BaseRunner):
     tool = "ci-parity"
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
     ) -> RunnerResult:
         # make sure ctx has ci_plan
         if "ci_plan" not in ctx:

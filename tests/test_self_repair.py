@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 from firsttry import self_repair
 
 
@@ -13,9 +12,7 @@ def test_ensure_dev_support_files_writes_files(tmp_path):
     ok = self_repair.ensure_dev_support_files(base_dir=base)
     assert ok is True
 
-    assert (
-        base / "requirements-dev.txt"
-    ).exists(), "requirements-dev.txt should be created"
+    assert (base / "requirements-dev.txt").exists(), "requirements-dev.txt should be created"
     assert (base / "Makefile").exists(), "Makefile should be created"
 
     # basic content checks

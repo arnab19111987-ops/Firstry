@@ -1,12 +1,9 @@
 # src/firsttry/legacy_checks.py
 from __future__ import annotations
 
-from typing import Tuple
 
-
-def run_legacy_gate(name: str) -> Tuple[bool, str]:
-    """
-    Attempt to call the old FirstTry engine if present.
+def run_legacy_gate(name: str) -> tuple[bool, str]:
+    """Attempt to call the old FirstTry engine if present.
     If not present, return success so the new engine doesn't break.
     """
     try:

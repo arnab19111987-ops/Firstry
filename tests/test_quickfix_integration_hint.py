@@ -13,7 +13,9 @@ def test_failed_at_includes_quickfix_hint(monkeypatch):
     monkeypatch.setattr("firsttry.pro_features.quickfix", DummyQuickfix, raising=True)
     # Also patch the package quickfix's suggest_fix in case pro_features kept the module reference.
     monkeypatch.setattr(
-        "firsttry.quickfix.suggest_fix", DummyQuickfix.suggest_fix, raising=False
+        "firsttry.quickfix.suggest_fix",
+        DummyQuickfix.suggest_fix,
+        raising=False,
     )
 
     plan = {
@@ -34,8 +36,8 @@ def test_failed_at_includes_quickfix_hint(monkeypatch):
                         },
                     },
                 ],
-            }
-        ]
+            },
+        ],
     }
 
     res = pro_features.run_ci_plan_locally(plan, license_key="TEST-KEY-OK")

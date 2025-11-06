@@ -1,13 +1,13 @@
 # src/firsttry/cache_models.py
-"""
-Advanced cache models using stat-first validation for maximum performance.
+"""Advanced cache models using stat-first validation for maximum performance.
 Avoids expensive file hashing when file metadata (size, mtime) hasn't changed.
 """
 
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Any
 import json
 import time
+from dataclasses import asdict
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -24,11 +24,11 @@ class ToolCacheEntry:
     """Complete cache entry for a tool execution with stat-first validation."""
 
     tool_name: str
-    input_files: List[InputFileMeta]
+    input_files: list[InputFileMeta]
     input_hash: str  # sha256 of concatenated file hashes (fallback only)
     status: str  # "ok" | "fail"
     created_at: float
-    extra: Dict[str, Any]  # timing, output, etc.
+    extra: dict[str, Any]  # timing, output, etc.
 
     def to_json(self) -> str:
         """Serialize cache entry to JSON string."""
@@ -93,7 +93,7 @@ class CacheStats:
             return 0.0
         return (self.stat_checks / total_checks) * 100
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return {
             "total_tools": self.total_tools,

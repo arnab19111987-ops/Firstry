@@ -1,7 +1,9 @@
 """CI files changed gate implementation."""
-from typing import Optional, Any
 
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class CiFilesChangedGate(Gate):
@@ -9,7 +11,7 @@ class CiFilesChangedGate(Gate):
 
     gate_id = "ci_files_changed"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Check if CI files have changed."""
         # This is a placeholder implementation
         return GateResult(

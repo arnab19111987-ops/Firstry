@@ -1,14 +1,14 @@
 # src/firsttry/ci_parser.py
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Dict, List, Set, Generator
-import shlex
 import re
+import shlex
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
 
 # hard dependency — tests run mypy on this file
-import yaml
-
+import yaml  # type: ignore[import-untyped]
 
 # -------------------- helpers -------------------- #
 
@@ -36,20 +36,20 @@ def _iter_ci_files(root: Path) -> Generator[Path, None, None]:
         yield jk
 
 
-def _safe_load_yaml(path: Path) -> Dict[str, Any]:
+def _safe_load_yaml(path: Path) -> dict[str, Any]:
     try:
         return yaml.safe_load(path.read_text()) or {}
     except Exception:
         return {}
 
 
-def _extract_run_commands(step: Any) -> List[str]:
+def _extract_run_commands(step: Any) -> list[str]:
     if not isinstance(step, dict):
         return []
     run = step.get("run")
     if not run:
         return []
-    lines: List[str] = []
+    lines: list[str] = []
     for line in str(run).splitlines():
         line = line.replace("&&", ";")
         for part in line.split(";"):
@@ -75,17 +75,16 @@ def _family_from_tool(tool: str) -> str:
     return "custom"
 
 
-def _resolve_tox(root: Path) -> List[Dict[str, str]]:
-    """
-    Try to read tox.ini and export real commands.
+def _resolve_tox(root: Path) -> list[dict[str, str]]:
+    """Try to read tox.ini and export real commands.
     If we can't, emit a generic tox step so parity can say
     "CI uses tox but we didn't mirror it".
     """
     tox_ini = root / "tox.ini"
-    results: List[Dict[str, str]] = []
+    results: list[dict[str, str]] = []
     if tox_ini.exists():
         text = tox_ini.read_text()
-        cmd_lines: List[str] = []
+        cmd_lines: list[str] = []
         capture = False
         for line in text.splitlines():
             if line.strip().startswith("commands"):
@@ -109,10 +108,10 @@ def _resolve_tox(root: Path) -> List[Dict[str, str]]:
                     "tool": _tool_from_command(cl, root) or "pytest",
                     "cmd": cl,
                     "family": _family_from_tool(
-                        _tool_from_command(cl, root) or "pytest"
+                        _tool_from_command(cl, root) or "pytest",
                     ),
                     "source": "ci:tox",
-                }
+                },
             )
         if results:
             return results
@@ -124,12 +123,12 @@ def _resolve_tox(root: Path) -> List[Dict[str, str]]:
             "cmd": "tox",
             "family": "tests",
             "source": "ci:tox",
-        }
+        },
     )
     return results
 
 
-def _resolve_make_test(root: Path) -> List[Dict[str, str]]:
+def _resolve_make_test(root: Path) -> list[dict[str, str]]:
     mk = root / "Makefile"
     if not mk.exists():
         return [
@@ -138,12 +137,12 @@ def _resolve_make_test(root: Path) -> List[Dict[str, str]]:
                 "cmd": "make test",
                 "family": "tests",
                 "source": "ci:make",
-            }
+            },
         ]
     text = mk.read_text()
     lines = text.splitlines()
     in_test = False
-    cmds: List[str] = []
+    cmds: list[str] = []
     for line in lines:
         if line.strip().startswith("test:"):
             in_test = True
@@ -155,7 +154,7 @@ def _resolve_make_test(root: Path) -> List[Dict[str, str]]:
             if not cmd:
                 continue
             cmds.append(cmd)
-    out: List[Dict[str, str]] = []
+    out: list[dict[str, str]] = []
     for c in cmds:
         tool = _tool_from_command(c, root) or "custom"
         out.append(
@@ -164,7 +163,7 @@ def _resolve_make_test(root: Path) -> List[Dict[str, str]]:
                 "cmd": c,
                 "family": _family_from_tool(tool),
                 "source": "ci:make",
-            }
+            },
         )
     return out or [
         {
@@ -172,13 +171,12 @@ def _resolve_make_test(root: Path) -> List[Dict[str, str]]:
             "cmd": "make test",
             "family": "tests",
             "source": "ci:make",
-        }
+        },
     ]
 
 
 def _tool_from_command(cmd: str, root: Path) -> str | None:
-    """
-    Old detect_ci_tools used to stop here.
+    """Old detect_ci_tools used to stop here.
     We now keep the full command at higher level.
     """
     try:
@@ -230,9 +228,8 @@ def _tool_from_command(cmd: str, root: Path) -> str | None:
 # -------------------- PUBLIC API -------------------- #
 
 
-def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
-    """
-    Return a CI-derived plan:
+def resolve_ci_plan(repo_root: str) -> list[dict[str, str]] | None:
+    """Return a CI-derived plan:
     [
       {"tool": "pytest", "cmd": "pytest -m 'not slow'", "family": "tests", "source": "ci:tox"},
       {"tool": "ruff", "cmd": "ruff .", "family": "lint", "source": "ci:gh-actions"},
@@ -240,7 +237,7 @@ def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
     If no CI files, return None.
     """
     root = Path(repo_root)
-    items: List[Dict[str, str]] = []
+    items: list[dict[str, str]] = []
 
     for path in _iter_ci_files(root):
         data = _safe_load_yaml(path)
@@ -261,12 +258,7 @@ def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
                         if parts and parts[0] == "tox":
                             items.extend(_resolve_tox(root))
                             continue
-                        if (
-                            parts
-                            and parts[0] == "make"
-                            and len(parts) >= 2
-                            and parts[1] == "test"
-                        ):
+                        if parts and parts[0] == "make" and len(parts) >= 2 and parts[1] == "test":
                             items.extend(_resolve_make_test(root))
                             continue
 
@@ -278,7 +270,7 @@ def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
                                     "cmd": cmd,
                                     "family": _family_from_tool(tool),
                                     "source": f"ci:{path.name}",
-                                }
+                                },
                             )
             continue
 
@@ -295,21 +287,21 @@ def resolve_ci_plan(repo_root: str) -> List[Dict[str, str]] | None:
                                 "cmd": cmd,
                                 "family": _family_from_tool(tool),
                                 "source": f"ci:{path.name}",
-                            }
+                            },
                         )
 
     return items or None
 
 
 # backward compatibility (for anything still calling the old name)
-def detect_ci_tools(repo_root: str) -> Set[str]:
+def detect_ci_tools(repo_root: str) -> set[str]:
     plan = resolve_ci_plan(repo_root) or []
     return {item["tool"] for item in plan}
 
 
-def detect_ci_runtime(repo_root: str) -> Dict[str, str]:
+def detect_ci_runtime(repo_root: str) -> dict[str, str]:
     root = Path(repo_root)
-    runtime: Dict[str, str] = {}
+    runtime: dict[str, str] = {}
 
     for path in _iter_ci_files(root):
         data = _safe_load_yaml(path)
@@ -335,9 +327,8 @@ def detect_ci_runtime(repo_root: str) -> Dict[str, str]:
     return runtime
 
 
-def detect_ci_deps(repo_root: str) -> Dict[str, str]:
-    """
-    Real CI often installs with: pip install -r requirements.txt
+def detect_ci_deps(repo_root: str) -> dict[str, str]:
+    """Real CI often installs with: pip install -r requirements.txt
     We'll just detect the presence, and let deps_parity compare files.
     """
     root = Path(repo_root)

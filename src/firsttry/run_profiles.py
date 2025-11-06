@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import List, Callable, Any
+from typing import Any
 
-from .tools.ruff_tool import RuffTool
+from .license_guard import get_tier
 from .tools.mypy_tool import MypyTool
 from .tools.pytest_tool import PytestTool
-from .license_guard import get_tier
-
+from .tools.ruff_tool import RuffTool
 
 ToolFactory = Callable[[Path], Any]
 
@@ -16,9 +16,9 @@ class RunProfile:
     def __init__(
         self,
         name: str,
-        fast_tools: List[ToolFactory],
-        mutating_tools: List[ToolFactory] | None = None,
-        slow_tools: List[ToolFactory] | None = None,
+        fast_tools: list[ToolFactory],
+        mutating_tools: list[ToolFactory] | None = None,
+        slow_tools: list[ToolFactory] | None = None,
     ):
         self.name = name
         self._fast_tools = fast_tools
@@ -60,9 +60,8 @@ def dev_profile() -> RunProfile:
 
 
 # Legacy compatibility function
-def select_checks(profile: str, changed: list[str] | None = None) -> List[str]:
-    """
-    Map CLI profile to the actual checks we want to run.
+def select_checks(profile: str, changed: list[str] | None = None) -> list[str]:
+    """Map CLI profile to the actual checks we want to run.
     Profiles:
       - fast  -> only quick, non-mutating, sub-5s
       - dev   -> what a solo dev can run often

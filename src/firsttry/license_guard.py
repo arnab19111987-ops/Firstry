@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 # ---------------------------------------------------------------------------
 # Canonical tier names (new)
@@ -44,10 +43,8 @@ TIER_SYNONYMS = {
 class LicenseError(RuntimeError):
     """Raised when a paid tier is used without a valid license."""
 
-    pass
 
-
-def normalize_tier(raw: Optional[str]) -> str:
+def normalize_tier(raw: str | None) -> str:
     if not raw:
         return "free-lite"
     return TIER_SYNONYMS.get(raw.strip().lower(), "free-lite")
@@ -58,17 +55,17 @@ def get_tier() -> str:
     return normalize_tier(os.getenv("FIRSTTRY_TIER"))
 
 
-def is_free_tier(tier: Optional[str] = None) -> bool:
+def is_free_tier(tier: str | None = None) -> bool:
     t = tier or get_tier()
     return t in FREE_TIERS
 
 
-def is_paid_tier(tier: Optional[str] = None) -> bool:
+def is_paid_tier(tier: str | None = None) -> bool:
     t = tier or get_tier()
     return t in PAID_TIERS
 
 
-def _get_license_key_from_env() -> Optional[str]:
+def _get_license_key_from_env() -> str | None:
     return (
         os.getenv("FIRSTTRY_LICENSE_KEY")
         or os.getenv("FIRSTTRY_LICENSE")
@@ -77,8 +74,7 @@ def _get_license_key_from_env() -> Optional[str]:
 
 
 def _validate_license_max_security(license_key: str, tier: str) -> None:
-    """
-    "Max security" = ALWAYS validate + ALWAYS fail closed.
+    """ "Max security" = ALWAYS validate + ALWAYS fail closed.
 
     We keep it defensive, so it won't crash if license_cache is absent,
     but if validation exists and fails → raise.
@@ -88,23 +84,25 @@ def _validate_license_max_security(license_key: str, tier: str) -> None:
     except Exception:
         # if license_cache isn't there, we still allow free tiers but **not** paid ones
         raise LicenseError(
-            f"Tier '{tier}' is locked and license validation backend is missing."
+            f"Tier '{tier}' is locked and license validation backend is missing.",
         )
 
     # common patterns this repo used earlier
     if hasattr(license_cache, "validate_license_key"):
         ok, meta = license_cache.validate_license_key(
-            license_key, tier=tier, strict=True
+            license_key,
+            tier=tier,
+            strict=True,
         )
         if not ok:
             raise LicenseError(
-                f"License not valid for tier '{tier}'. Please run `firsttry license activate`."
+                f"License not valid for tier '{tier}'. Please run `firsttry license activate`.",
             )
     elif hasattr(license_cache, "validate"):
         ok = license_cache.validate(license_key, tier=tier)
         if not ok:
             raise LicenseError(
-                f"License not valid for tier '{tier}'. Please run `firsttry license activate`."
+                f"License not valid for tier '{tier}'. Please run `firsttry license activate`.",
             )
     else:
         # backend is present but unknown interface → fail closed
@@ -119,7 +117,7 @@ def ensure_license_for_current_tier() -> None:
     license_key = _get_license_key_from_env()
     if not license_key:
         raise LicenseError(
-            f"Tier '{tier}' is locked. Set FIRSTTRY_LICENSE_KEY=... or run `firsttry license activate`."
+            f"Tier '{tier}' is locked. Set FIRSTTRY_LICENSE_KEY=... or run `firsttry license activate`.",
         )
     _validate_license_max_security(license_key, tier)
 

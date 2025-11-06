@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
 import asyncio
 import json
 import sys
+from pathlib import Path
 
 from .lazy_orchestrator import run_profile_for_repo
 from .reporting import write_report_async
@@ -19,7 +19,9 @@ def main():
         help="Where to write telemetry report",
     )
     parser.add_argument(
-        "--debug-report", action="store_true", help="Print report JSON before writing"
+        "--debug-report",
+        action="store_true",
+        help="Print report JSON before writing",
     )
     args = parser.parse_args()
 
@@ -28,11 +30,14 @@ def main():
 
     # First get the raw results without writing the report
     results, report = run_profile_for_repo(
-        repo_root, profile=None, report_path=report_path
+        repo_root,
+        profile=None,
+        report_path=report_path,
     )
 
     # Build comprehensive report payload from orchestrator report with locked schema
-    from datetime import datetime, timezone
+    from datetime import datetime
+    from datetime import timezone
 
     payload = {
         "schema_version": 1,
@@ -44,9 +49,7 @@ def main():
 
     # Convert results to check format with timing info
     for result in results:
-        status = (
-            "cached" if result.get("from_cache") else result.get("status", "unknown")
-        )
+        status = "cached" if result.get("from_cache") else result.get("status", "unknown")
         duration = result.get("duration_s", result.get("elapsed", 0.0))
         last_duration = result.get("last_duration_s")
 

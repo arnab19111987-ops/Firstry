@@ -1,5 +1,6 @@
 import importlib
-import yaml
+
+import yaml  # type: ignore[import-untyped]
 
 
 def test_rewrite_run_cmd_replacements():
@@ -33,7 +34,7 @@ def test_build_ci_plan_parses_workflow(tmp_path):
                     },
                     {"name": "Test", "run": "pytest -q"},
                 ],
-            }
+            },
         },
     }
 

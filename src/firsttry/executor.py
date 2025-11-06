@@ -1,6 +1,6 @@
 # firsttry/executor.py
-import subprocess
 import shutil
+import subprocess
 from typing import Any
 
 
@@ -12,6 +12,7 @@ def run_command(cmd: str, cwd: str) -> dict:
             cwd=cwd,
             capture_output=True,
             text=True,
+            check=False,
         )
         return {
             "ok": proc.returncode == 0,
@@ -29,7 +30,10 @@ def run_command(cmd: str, cwd: str) -> dict:
 
 
 def execute_plan(
-    plan: dict, autofix: bool = False, interactive_autofix: bool = True, max_tier=None
+    plan: dict,
+    autofix: bool = False,
+    interactive_autofix: bool = True,
+    max_tier=None,
 ) -> dict:
     root = plan["root"]
     summary: list[dict[str, Any]] = []
@@ -58,7 +62,7 @@ def execute_plan(
                         "cmd": cmd,
                         "stderr": f"⚠️ Tool {tool} not found. Please install it.",
                         "stdout": "",
-                    }
+                    },
                 )
                 step_ok = False
                 continue
@@ -79,9 +83,7 @@ def execute_plan(
                         step_ok = False
             elif interactive_autofix:
                 ans = (
-                    input(f"⚠️ {step['id']} failed. Apply autofix commands? [Y/n]: ")
-                    .strip()
-                    .lower()
+                    input(f"⚠️ {step['id']} failed. Apply autofix commands? [Y/n]: ").strip().lower()
                 )
                 if ans in ("", "y", "yes"):
                     for fix_cmd in step["autofix"]:
@@ -97,7 +99,7 @@ def execute_plan(
                 "ok": step_ok,
                 "results": step_results,
                 "fixed": fixed,
-            }
+            },
         )
 
         if not step_ok and not step.get("optional", False):

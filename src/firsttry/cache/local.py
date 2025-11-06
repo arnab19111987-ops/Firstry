@@ -1,14 +1,16 @@
 from __future__ import annotations
-from pathlib import Path
-from typing import Optional, Dict, Any
+
 import json
 import time
-from .base import BaseCache, CacheHit
+from pathlib import Path
+from typing import Any
+
+from .base import BaseCache
+from .base import CacheHit
 
 
 class LocalCache(BaseCache):
-    """
-    Simple on-disk cache under .firsttry/cache/.
+    """Simple on-disk cache under .firsttry/cache/.
     Stores one JSON file per key. Optional size cap via LRU timestamps.
     """
 
@@ -24,7 +26,7 @@ class LocalCache(BaseCache):
         p.mkdir(parents=True, exist_ok=True)
         return p / f"{key}.json"
 
-    def get(self, key: str) -> Optional[CacheHit]:
+    def get(self, key: str) -> CacheHit | None:
         p = self._path_for(key)
         if not p.exists():
             return None
@@ -42,7 +44,7 @@ class LocalCache(BaseCache):
 
     def put(self, key: str, result: CacheHit) -> None:
         p = self._path_for(key)
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "stdout": result.stdout,
             "stderr": result.stderr,
             "meta": result.meta or {},
@@ -54,7 +56,9 @@ class LocalCache(BaseCache):
     def _maybe_evict(self) -> None:
         # cheap LRU by modified time across all shards
         files = sorted(
-            self.root.rglob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True
+            self.root.rglob("*.json"),
+            key=lambda f: f.stat().st_mtime,
+            reverse=True,
         )
         if len(files) <= self.max_entries:
             return

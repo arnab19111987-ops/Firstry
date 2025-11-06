@@ -5,6 +5,7 @@ Scans for files under `tests/`, `licensing/tests/`, and `tools/**/tests/`.
 If a file starts with a line that begins with ``` and ends with ``` then the
 script removes the first and last such fence lines.
 """
+
 import pathlib
 
 root = pathlib.Path.cwd()

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
-from typing import Dict
 
 try:
     import tomllib  # 3.11+
@@ -12,7 +13,7 @@ except Exception:  # py<3.11
 @dataclass
 class Timeouts:
     default: int = 300
-    per_check: Dict[str, int] = field(default_factory=dict)
+    per_check: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -27,7 +28,7 @@ class Config:
     remote_cache: bool = False
     workers: int = 8
     timeouts: Timeouts = field(default_factory=Timeouts)
-    checks_flags: Dict[str, list[str]] = field(default_factory=dict)
+    checks_flags: dict[str, list[str]] = field(default_factory=dict)
     # workflow section (pytest/npm dependencies)
     workflow: Workflow = field(default_factory=Workflow)
 

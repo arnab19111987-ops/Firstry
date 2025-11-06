@@ -1,16 +1,20 @@
 # src/firsttry/runners/custom.py
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 
 class CustomRunner(BaseRunner):
     tool = "custom"
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
     ) -> RunnerResult:
         display_name = item.get("tool") or item.get("name") or "custom"
         name = f"{display_name}[{idx}]"

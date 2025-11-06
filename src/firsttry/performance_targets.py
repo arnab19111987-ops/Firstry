@@ -1,11 +1,10 @@
 # src/firsttry/performance_targets.py
-"""
-Realistic performance targets for FirstTry based on actual usage patterns.
+"""Realistic performance targets for FirstTry based on actual usage patterns.
 Replaces the unrealistic "2x speedup" target with physics-friendly goals.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -31,10 +30,10 @@ class PerformanceTargets:
 
 
 def validate_performance_results(
-    results: Dict[str, Any], targets: PerformanceTargets = None
-) -> Dict[str, bool]:
-    """
-    Validate performance results against realistic targets.
+    results: dict[str, Any],
+    targets: PerformanceTargets = None,
+) -> dict[str, bool]:
+    """Validate performance results against realistic targets.
 
     Args:
         results: Performance benchmark results
@@ -42,6 +41,7 @@ def validate_performance_results(
 
     Returns:
         Dictionary of target_name -> achieved boolean
+
     """
     if targets is None:
         targets = PerformanceTargets()
@@ -52,16 +52,12 @@ def validate_performance_results(
     orchestrator_time = results.get("orchestrator_test", {}).get("total_time", 0)
     cache_stats = results.get("cache_test", {})
     cache_efficiency = (
-        cache_stats.get("cache_hits", 0)
-        / max(cache_stats.get("total_checks", 1), 1)
-        * 100
+        cache_stats.get("cache_hits", 0) / max(cache_stats.get("total_checks", 1), 1) * 100
     )
 
     # Profile-based time targets
     validation["dev_profile_time"] = orchestrator_time <= targets.dev_profile_max
-    validation["fast_enough_for_daily_use"] = (
-        orchestrator_time <= targets.subsequent_run_max
-    )
+    validation["fast_enough_for_daily_use"] = orchestrator_time <= targets.subsequent_run_max
 
     # Cache efficiency targets
     validation["cache_efficiency"] = cache_efficiency >= targets.min_cache_efficiency
@@ -74,10 +70,10 @@ def validate_performance_results(
 
 
 def format_performance_report(
-    results: Dict[str, Any], validation: Dict[str, bool]
+    results: dict[str, Any],
+    validation: dict[str, bool],
 ) -> str:
     """Generate human-readable performance report with realistic context."""
-
     lines = [
         "🎯 REALISTIC PERFORMANCE ASSESSMENT",
         "=" * 50,
@@ -91,9 +87,9 @@ def format_performance_report(
         [
             "📊 CURRENT PERFORMANCE:",
             f"  • Execution time: {orchestrator_time:.2f}s",
-            f"  • vs 120s baseline: {120/orchestrator_time:.0f}x faster",
+            f"  • vs 120s baseline: {120 / orchestrator_time:.0f}x faster",
             f"  • Cache efficiency: {cache_stats.get('cache_hits', 0)}/{cache_stats.get('total_checks', 1)} tools",
-        ]
+        ],
     )
 
     # Target validation
@@ -101,7 +97,7 @@ def format_performance_report(
         [
             "",
             "🎯 TARGET VALIDATION:",
-        ]
+        ],
     )
 
     target_descriptions = {
@@ -126,7 +122,7 @@ def format_performance_report(
             "",
             "🏁 OVERALL RESULT:",
             f"  • Targets met: {achieved_count}/{total_targets}",
-        ]
+        ],
     )
 
     if achieved_count >= total_targets * 0.8:  # 80% threshold
@@ -134,21 +130,21 @@ def format_performance_report(
             [
                 "  • Status: ✅ EXCELLENT PERFORMANCE",
                 "  • Ready for production deployment",
-            ]
+            ],
         )
     elif achieved_count >= total_targets * 0.6:  # 60% threshold
         lines.extend(
             [
                 "  • Status: ⚠️  GOOD PERFORMANCE",
                 "  • Minor optimizations recommended",
-            ]
+            ],
         )
     else:
         lines.extend(
             [
                 "  • Status: 🔧 NEEDS IMPROVEMENT",
                 "  • Significant optimizations needed",
-            ]
+            ],
         )
 
     lines.extend(
@@ -157,9 +153,9 @@ def format_performance_report(
             "💡 CONTEXT:",
             "  • Original FirstTry: ~120s+ execution",
             f"  • Current FirstTry: {orchestrator_time:.1f}s execution",
-            f"  • Performance improvement: {120/orchestrator_time:.0f}x faster",
-            f"  • This is a {120-orchestrator_time:.0f}s time saving per run",
-        ]
+            f"  • Performance improvement: {120 / orchestrator_time:.0f}x faster",
+            f"  • This is a {120 - orchestrator_time:.0f}s time saving per run",
+        ],
     )
 
     return "\n".join(lines)

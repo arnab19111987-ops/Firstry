@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
 
 try:
     import tomllib
@@ -13,8 +12,8 @@ except ImportError:
         tomllib = None  # type: ignore
 
 
-def _read_requirements_txt(path: Path) -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def _read_requirements_txt(path: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
     if not path.exists():
         return out
     for line in path.read_text().splitlines():
@@ -29,8 +28,8 @@ def _read_requirements_txt(path: Path) -> Dict[str, str]:
     return out
 
 
-def _read_pyproject_toml(path: Path) -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def _read_pyproject_toml(path: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
     if not path.exists() or tomllib is None:
         return out
     data = tomllib.loads(path.read_text())
@@ -56,8 +55,8 @@ def _read_pyproject_toml(path: Path) -> Dict[str, str]:
     return out
 
 
-def _read_pipfile(path: Path) -> Dict[str, str]:
-    out: Dict[str, str] = {}
+def _read_pipfile(path: Path) -> dict[str, str]:
+    out: dict[str, str] = {}
     if not path.exists() or tomllib is None:
         return out
     data = tomllib.loads(path.read_text())
@@ -73,9 +72,9 @@ def _read_pipfile(path: Path) -> Dict[str, str]:
     return out
 
 
-def read_local_deps(repo_root: str) -> Dict[str, str]:
+def read_local_deps(repo_root: str) -> dict[str, str]:
     root = Path(repo_root)
-    deps: Dict[str, str] = {}
+    deps: dict[str, str] = {}
     deps.update(_read_pyproject_toml(root / "pyproject.toml"))
     deps.update(_read_pipfile(root / "Pipfile"))
     deps.update(_read_requirements_txt(root / "requirements.txt"))

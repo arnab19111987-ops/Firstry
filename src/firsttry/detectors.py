@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
-from .detection_cache import load_detect_cache, save_detect_cache
+from .detection_cache import load_detect_cache
+from .detection_cache import save_detect_cache
 
 
 def detect_languages(root: Path) -> set[str]:
@@ -21,12 +22,11 @@ def detect_languages(root: Path) -> set[str]:
     return langs
 
 
-def _real_detect_stack(repo_root: Path) -> Dict[str, Any]:
-    """
-    Fast detection logic using sentinel files first.
+def _real_detect_stack(repo_root: Path) -> dict[str, Any]:
+    """Fast detection logic using sentinel files first.
     This replaces expensive rglob operations with cheap file existence checks.
     """
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "python": False,
         "node": False,
         "go": False,
@@ -65,10 +65,8 @@ def _real_detect_stack(repo_root: Path) -> Dict[str, Any]:
     return payload
 
 
-def detect_stack(repo_root: Path) -> Dict[str, Any]:
-    """
-    Cached detect with 10-minute TTL.
-    """
+def detect_stack(repo_root: Path) -> dict[str, Any]:
+    """Cached detect with 10-minute TTL."""
     cached = load_detect_cache(repo_root)
     if cached:
         return cached

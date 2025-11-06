@@ -1,6 +1,5 @@
 # src/firsttry/cli_aliases.py
-"""
-Lightweight alias entrypoint for FirstTry.
+"""Lightweight alias entrypoint for FirstTry.
 
 We only expose aliases for flows that are expected to be
 FASTER than running the underlying tool directly.
@@ -24,13 +23,13 @@ Usage:
 from __future__ import annotations
 
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 
 def _run(cmd: list[str]) -> int:
-    proc = subprocess.run(cmd)
+    proc = subprocess.run(cmd, check=False)
     return proc.returncode
 
 
@@ -157,6 +156,11 @@ def main() -> None:
         )
         raise SystemExit(_run(cmd))
 
+    if sub == "pre-commit":
+        # Run pre-commit hooks with strict Ruff config
+        cmd = ["pre-commit", "run", "--all-files"] + extra
+        raise SystemExit(_run(cmd))
+
     # 3) tool-focused fast paths
     #
     # NOTE: FirstTry doesn't currently have an --only flag.
@@ -255,6 +259,8 @@ Maintenance / visibility:
       -> python -m firsttry doctor --check report-json --check telemetry
   {prog} setup
       -> python -m firsttry setup --install-hooks
+  {prog} pre-commit
+      -> pre-commit run --all-files (strict Ruff gate)
   {prog} dash
       -> python -m firsttry inspect dashboard --json .firsttry/report.json
   {prog} lock
@@ -274,7 +280,7 @@ Extra flags still work, e.g.:
   {prog} lite --show-report
   {prog} strict --send-telemetry
   {prog} pytest --changed-only
-"""
+""",
     )
 
 

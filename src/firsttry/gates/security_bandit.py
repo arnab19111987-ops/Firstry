@@ -1,8 +1,10 @@
 """Security bandit gate implementation."""
 
 import subprocess
-from typing import Optional, Any
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class SecurityBanditGate(Gate):
@@ -10,7 +12,7 @@ class SecurityBanditGate(Gate):
 
     gate_id = "security_bandit"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Run bandit security scanning."""
         try:
             result = subprocess.run(
@@ -19,6 +21,7 @@ class SecurityBanditGate(Gate):
                 capture_output=True,
                 text=True,
                 timeout=60,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -28,13 +31,12 @@ class SecurityBanditGate(Gate):
                     skipped=False,
                     reason="bandit security scan passed",
                 )
-            else:
-                return GateResult(
-                    gate_id=self.gate_id,
-                    ok=False,
-                    skipped=False,
-                    reason=f"bandit found security issues:\n{result.stdout}\n{result.stderr}",
-                )
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"bandit found security issues:\n{result.stdout}\n{result.stderr}",
+            )
 
         except FileNotFoundError:
             return GateResult(

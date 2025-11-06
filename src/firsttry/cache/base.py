@@ -1,7 +1,9 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+
+from abc import ABC
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -10,14 +12,14 @@ class CacheHit:
     # subprocess.run (text=True vs bytes). Accept both to reduce friction.
     stdout: str | bytes = ""
     stderr: str | bytes = ""
-    meta: Dict[str, Any] | None = None  # freeform (e.g., tool versions, timings)
+    meta: dict[str, Any] | None = None  # freeform (e.g., tool versions, timings)
 
 
 class BaseCache(ABC):
     """Abstract cache interface."""
 
     @abstractmethod
-    def get(self, key: str) -> Optional[CacheHit]:
+    def get(self, key: str) -> CacheHit | None:
         raise NotImplementedError
 
     @abstractmethod

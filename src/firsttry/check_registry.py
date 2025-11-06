@@ -1,5 +1,4 @@
-"""
-DEPRECATED: This module is deprecated in favor of runners.registry.
+"""DEPRECATED: This module is deprecated in favor of runners.registry.
 
 Legacy orchestrators (cached_orchestrator, checks_orchestrator_optimized, check_dependencies)
 still use this dict-based registry. New code should use runners.registry.default_registry()
@@ -7,11 +6,13 @@ which returns CheckRunner objects instead.
 
 This file is kept for backward compatibility with demo scripts and legacy orchestrators.
 """
+
 from __future__ import annotations
-from typing import Dict, Any, List
+
+from typing import Any
 
 # Single source of truth for check definitions
-CHECK_REGISTRY: Dict[str, Dict[str, Any]] = {
+CHECK_REGISTRY: dict[str, dict[str, Any]] = {
     # FAST checks - quick static analysis
     "ruff": {
         "bucket": "fast",
@@ -91,17 +92,17 @@ CHECK_REGISTRY: Dict[str, Dict[str, Any]] = {
 }
 
 
-def get_checks_for_bucket(bucket: str) -> List[str]:
+def get_checks_for_bucket(bucket: str) -> list[str]:
     """Get all check names for a specific bucket"""
     return [name for name, meta in CHECK_REGISTRY.items() if meta["bucket"] == bucket]
 
 
-def all_checks() -> List[str]:
+def all_checks() -> list[str]:
     """Get all available check names"""
     return list(CHECK_REGISTRY.keys())
 
 
-def get_check_info(check_name: str) -> Dict[str, Any]:
+def get_check_info(check_name: str) -> dict[str, Any]:
     """Get metadata for a specific check"""
     return CHECK_REGISTRY.get(check_name, {})
 
@@ -111,6 +112,6 @@ def is_check_mutating(check_name: str) -> bool:
     return CHECK_REGISTRY.get(check_name, {}).get("mutates", False)
 
 
-def get_check_inputs(check_name: str) -> List[str]:
+def get_check_inputs(check_name: str) -> list[str]:
     """Get input file patterns for a check"""
     return CHECK_REGISTRY.get(check_name, {}).get("inputs", [])

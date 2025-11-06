@@ -1,14 +1,14 @@
 # src/firsttry/license_fast.py
-"""
-Non-blocking license check system for FirstTry CLI.
+"""Non-blocking license check system for FirstTry CLI.
 Prevents 10-second hangs during git hooks.
 """
+
 from __future__ import annotations
 
+import os
 import threading
 import time
-import os
-from typing import Tuple, Any
+from typing import Any
 
 # Simple in-memory cache
 _LICENSE_CACHE: dict[str, Any] = {
@@ -20,8 +20,7 @@ _LICENSE_CACHE: dict[str, Any] = {
 
 
 def _fetch_remote_license(timeout: float = 1.0) -> dict | None:
-    """
-    Fetch license from remote server with short timeout.
+    """Fetch license from remote server with short timeout.
     Returns None on any failure (network, timeout, etc.)
     """
     try:
@@ -67,8 +66,7 @@ def _update_cache_from_remote():
 
 
 def check_license_async() -> None:
-    """
-    Fire-and-forget license check.
+    """Fire-and-forget license check.
     Must NEVER block a git hook.
     """
     t = threading.Thread(target=_update_cache_from_remote, daemon=True)
@@ -76,8 +74,7 @@ def check_license_async() -> None:
 
 
 def is_license_ok() -> bool:
-    """
-    Fast, synchronous read — what hooks should call.
+    """Fast, synchronous read — what hooks should call.
     Always returns True (fail-open) unless explicitly denied.
     """
     return bool(_LICENSE_CACHE.get("ok", True))
@@ -89,9 +86,8 @@ def get_license_features() -> list[str]:
     return list(features) if isinstance(features, list) else []
 
 
-def get_license_status() -> Tuple[bool, list[str], str]:
-    """
-    Get license status compatible with existing assert_license interface.
+def get_license_status() -> tuple[bool, list[str], str]:
+    """Get license status compatible with existing assert_license interface.
     Returns (ok, features, reason)
     """
     # Check if we should bypass license checks entirely
@@ -108,10 +104,6 @@ def get_license_status() -> Tuple[bool, list[str], str]:
     ok = is_license_ok()
     features = get_license_features()
     checked_at = _LICENSE_CACHE.get("checked_at", 0)
-    reason = (
-        "cache"
-        if isinstance(checked_at, (int, float)) and checked_at > 0
-        else "default"
-    )
+    reason = "cache" if isinstance(checked_at, (int, float)) and checked_at > 0 else "default"
 
     return ok, features, reason

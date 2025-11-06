@@ -3,7 +3,7 @@
 __all__ = [
     "graph",
     "hashers",
-    "scanner_python",
     "scanner_node",
+    "scanner_python",
     "store",
 ]

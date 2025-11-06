@@ -58,16 +58,10 @@ async def test_honest_performance_claims():
     if warm_duration <= targets.dev_profile_max:
         print(f"✅ Warm performance meets target (≤{targets.dev_profile_max}s)")
     else:
-        print(
-            f"⚠️  Warm performance: {warm_duration:.2f}s > {targets.dev_profile_max}s target"
-        )
+        print(f"⚠️  Warm performance: {warm_duration:.2f}s > {targets.dev_profile_max}s target")
 
-    print(
-        f"📝 Honest claim: 'On reference dev repo, warm runs complete in {warm_duration:.1f}s'"
-    )
-    print(
-        "📝 For larger repos: 'Warm path stays under ~1-1.5s thanks to stat-first cache'"
-    )
+    print(f"📝 Honest claim: 'On reference dev repo, warm runs complete in {warm_duration:.1f}s'")
+    print("📝 For larger repos: 'Warm path stays under ~1-1.5s thanks to stat-first cache'")
 
     return {
         "first_duration": first_duration,
@@ -105,9 +99,7 @@ def test_cache_normalization():
 
     # Verify proper categorization
     hits = len([r for r in normalized if r.get("cache_bucket") == "hit"])
-    policy_reruns = len(
-        [r for r in normalized if r.get("cache_bucket") == "hit-policy"]
-    )
+    policy_reruns = len([r for r in normalized if r.get("cache_bucket") == "hit-policy"])
     misses = len([r for r in normalized if r.get("cache_bucket") == "miss"])
 
     print("📊 Validation:")
@@ -206,9 +198,7 @@ def test_mutating_invalidation():
 
     print("📝 Expected behavior:")
     print("  • After black runs successfully, ruff/mypy/pytest caches are invalidated")
-    print(
-        "  • Subsequent runs of those tools will re-execute rather than use stale cache"
-    )
+    print("  • Subsequent runs of those tools will re-execute rather than use stale cache")
 
     return {"invalidation_logic_present": True}
 

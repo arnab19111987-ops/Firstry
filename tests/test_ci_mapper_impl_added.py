@@ -1,5 +1,5 @@
-from pathlib import Path
 import textwrap
+from pathlib import Path
 
 from firsttry import ci_mapper_impl as impl
 
@@ -32,7 +32,7 @@ def test_extract_steps_from_job_and_build_plan(tmp_path: Path):
                     run: python -m pip install -r requirements.txt
                   - name: Run tests
                     run: pytest -q
-            """
+            """,
         ),
         encoding="utf-8",
     )

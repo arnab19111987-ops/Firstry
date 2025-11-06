@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .base import Gate, GateResult
+from .base import Gate
+from .base import GateResult
 
 
 class CiFilesChangedGate(Gate):
-    """
-    MVP CI-sensitivity gate.
+    """MVP CI-sensitivity gate.
     - If .github/workflows exists, list the workflow files.
     - Later you can teach this gate to compare mtimes or hashes and fail on change.
     """

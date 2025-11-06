@@ -1,7 +1,7 @@
 # tests/test_checks_orchestrator_buckets.py
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -14,8 +14,11 @@ class _DummyRunner:
         self.name = name
 
     async def run(
-        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        idx: int,
+        ctx: dict[str, Any],
+        item: dict[str, Any],
+    ) -> dict[str, Any]:
         # simulate real runner shape
         return {
             "ok": True,
@@ -26,8 +29,7 @@ class _DummyRunner:
 
 
 def test_bucketed_execution_runs_in_phases(monkeypatch):
-    """
-    We expect:
+    """We expect:
       - fast (ruff, mypy) to appear first
       - then mutating (black)
       - then slow (pytest)
@@ -47,7 +49,7 @@ def test_bucketed_execution_runs_in_phases(monkeypatch):
         }
         monkeypatch.setattr(checks_orchestrator, "RUNNERS", fake_runners, raising=True)
 
-        plan: List[Dict[str, Any]] = [
+        plan: list[dict[str, Any]] = [
             {"family": "ruff"},
             {"family": "mypy"},
             {"family": "black"},  # mutating → should be AFTER fast
@@ -61,7 +63,7 @@ def test_bucketed_execution_runs_in_phases(monkeypatch):
             "pytest": 1,
         }
 
-        ctx: Dict[str, Any] = {}
+        ctx: dict[str, Any] = {}
 
         result = await checks_orchestrator.run_checks_with_allocation_and_plan(
             allocation=allocation,

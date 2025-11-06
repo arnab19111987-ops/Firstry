@@ -3,13 +3,21 @@ from firsttry import gates
 
 def make_pass(name: str):
     return gates.GateResult(
-        name=name, status="PASS", info="ok", details="fine", returncode=0
+        name=name,
+        status="PASS",
+        info="ok",
+        details="fine",
+        returncode=0,
     )
 
 
 def make_fail(name: str):
     return gates.GateResult(
-        name=name, status="FAIL", info="bad", details="failed", returncode=1
+        name=name,
+        status="FAIL",
+        info="bad",
+        details="failed",
+        returncode=1,
     )
 
 

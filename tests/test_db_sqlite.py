@@ -5,10 +5,17 @@ import sys
 import types
 from pathlib import Path
 
-import sqlalchemy as sa
-from sqlalchemy.orm import declarative_base
+import pytest
 
-from firsttry.db_sqlite import run_sqlite_probe, _extract_upgrade_body
+# Import sqlalchemy early, before other imports that might skip
+try:
+    import sqlalchemy as sa
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    pytest.importorskip("sqlalchemy", reason="SQLAlchemy required for DB tests")
+
+from firsttry.db_sqlite import _extract_upgrade_body
+from firsttry.db_sqlite import run_sqlite_probe
 
 
 def _install_fake_backend_module(mod_name: str = "backend"):

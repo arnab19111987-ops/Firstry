@@ -1,7 +1,9 @@
 """Coverage check gate implementation."""
-from typing import Optional, Any
 
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class CoverageCheckGate(Gate):
@@ -9,7 +11,7 @@ class CoverageCheckGate(Gate):
 
     gate_id = "coverage_check"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Check code coverage."""
         # This is a placeholder implementation
         # In a real scenario, this would check test coverage

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from .base import Gate, GateResult
 
+from .base import Gate
+from .base import GateResult
 
 REQUIRED_TOOLS = [
     ("python:ruff", "ruff"),
@@ -15,8 +16,7 @@ REQUIRED_TOOLS = [
 
 
 class EnvToolsGate(Gate):
-    """
-    Check that the tools our other gates expect are actually installed in PATH.
+    """Check that the tools our other gates expect are actually installed in PATH.
     This prevents 'passed because tool missing' situations.
     """
 

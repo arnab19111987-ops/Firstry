@@ -3,7 +3,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from .base import Gate, GateResult
+from .base import Gate
+from .base import GateResult
 
 
 class PythonMypyGate(Gate):
@@ -17,6 +18,7 @@ class PythonMypyGate(Gate):
                 cwd=str(root),
                 text=True,
                 capture_output=True,
+                check=False,
             )
         except FileNotFoundError:
             return GateResult(

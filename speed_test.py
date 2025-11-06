@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-"""
-FirstTry Speed Test Suite
+"""FirstTry Speed Test Suite
 Measures execution time for all FirstTry commands and options.
 """
 
+import json
 import subprocess
 import time
-import json
-from typing import Dict, List, Any
+from typing import Any
 
 
 def run_command_with_timing(
-    cmd: List[str], description: str, timeout: int = 60
-) -> Dict[str, Any]:
+    cmd: list[str],
+    description: str,
+    timeout: int = 60,
+) -> dict[str, Any]:
     """Run a command and measure its execution time."""
     print(f"Testing: {description}")
     print(f"Command: {' '.join(cmd)}")
@@ -26,6 +27,7 @@ def run_command_with_timing(
             text=True,
             timeout=timeout,
             cwd="/workspaces/Firstry",
+            check=False,
         )
         end_time = time.perf_counter()
         duration = end_time - start_time
@@ -38,12 +40,8 @@ def run_command_with_timing(
             "stdout_lines": len(result.stdout.splitlines()),
             "stderr_lines": len(result.stderr.splitlines()),
             "success": result.returncode == 0,
-            "stdout": result.stdout[:500] + "..."
-            if len(result.stdout) > 500
-            else result.stdout,
-            "stderr": result.stderr[:500] + "..."
-            if len(result.stderr) > 500
-            else result.stderr,
+            "stdout": result.stdout[:500] + "..." if len(result.stdout) > 500 else result.stdout,
+            "stderr": result.stderr[:500] + "..." if len(result.stderr) > 500 else result.stderr,
         }
     except subprocess.TimeoutExpired:
         end_time = time.perf_counter()
@@ -72,7 +70,7 @@ def run_command_with_timing(
             "stderr_lines": 0,
             "success": False,
             "stdout": "",
-            "stderr": f"Exception: {str(e)}",
+            "stderr": f"Exception: {e!s}",
             "exception": True,
         }
 
@@ -151,13 +149,13 @@ def main():
     print("\n📊 SUMMARY STATISTICS:")
     print(f"  Total Tests:       {len(results)}")
     print(
-        f"  Successful:        {len(successful_tests)} ({len(successful_tests)/len(results)*100:.1f}%)"
+        f"  Successful:        {len(successful_tests)} ({len(successful_tests) / len(results) * 100:.1f}%)",
     )
     print(
-        f"  Failed:            {len(failed_tests)} ({len(failed_tests)/len(results)*100:.1f}%)"
+        f"  Failed:            {len(failed_tests)} ({len(failed_tests) / len(results) * 100:.1f}%)",
     )
     print(f"  Total Runtime:     {total_duration:.3f}s")
-    print(f"  Average Duration:  {sum(durations)/len(durations):.3f}s")
+    print(f"  Average Duration:  {sum(durations) / len(durations):.3f}s")
     print(f"  Fastest Command:   {min(durations):.3f}s")
     print(f"  Slowest Command:   {max(durations):.3f}s")
 
@@ -168,19 +166,15 @@ def main():
     for result in sorted_results:
         status_icon = "✅" if result["success"] else "❌"
         print(
-            f"  {result['duration_seconds']:6.3f}s {status_icon} {result['description']}"
+            f"  {result['duration_seconds']:6.3f}s {status_icon} {result['description']}",
         )
 
     # Command categories analysis
     run_commands = [
-        r
-        for r in results
-        if "run" in r["command"].lower() and "--help" not in r["command"]
+        r for r in results if "run" in r["command"].lower() and "--help" not in r["command"]
     ]
     help_commands = [r for r in results if "--help" in r["command"]]
-    other_commands = [
-        r for r in results if r not in run_commands and r not in help_commands
-    ]
+    other_commands = [r for r in results if r not in run_commands and r not in help_commands]
 
     print("\n📈 CATEGORY ANALYSIS:")
     if run_commands:
@@ -189,20 +183,18 @@ def main():
 
     if help_commands:
         help_avg = sum(r["duration_seconds"] for r in help_commands) / len(
-            help_commands
+            help_commands,
         )
         print(f"  Help Commands:     {len(help_commands)} tests, avg {help_avg:.3f}s")
 
     if other_commands:
         other_avg = sum(r["duration_seconds"] for r in other_commands) / len(
-            other_commands
+            other_commands,
         )
         print(f"  Other Commands:    {len(other_commands)} tests, avg {other_avg:.3f}s")
 
     # Bucketed execution analysis
-    bucketed_commands = [
-        r for r in results if "run" in r["command"] and "tier" in r["command"]
-    ]
+    bucketed_commands = [r for r in results if "run" in r["command"] and "tier" in r["command"]]
     if bucketed_commands:
         print("\n🪣 BUCKETED EXECUTION ANALYSIS:")
         for result in bucketed_commands:
@@ -216,7 +208,7 @@ def main():
 
             phase_str = " → ".join(phases) if phases else "No phases detected"
             print(
-                f"  {result['duration_seconds']:6.3f}s {result['description']}: {phase_str}"
+                f"  {result['duration_seconds']:6.3f}s {result['description']}: {phase_str}",
             )
 
     # Failure analysis
@@ -238,11 +230,11 @@ def main():
         run_durations = [r["duration_seconds"] for r in run_commands]
         if max(run_durations) > 10:
             print(
-                f"  • Long-running commands detected (>{10}s). Consider optimizing check execution."
+                f"  • Long-running commands detected (>{10}s). Consider optimizing check execution.",
             )
         if len([d for d in run_durations if d < 1]) > 0:
             print(
-                "  • Fast commands detected (<1s). Good responsiveness for quick feedback."
+                "  • Fast commands detected (<1s). Good responsiveness for quick feedback.",
             )
 
     print("\n📋 DETAILED RESULTS:")

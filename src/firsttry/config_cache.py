@@ -1,10 +1,9 @@
-"""
-Config caching and timeout handling for remote configuration.
-"""
+"""Config caching and timeout handling for remote configuration."""
+
 import json
 import time
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any
 
 
 def _get_cache_dir() -> Path:
@@ -19,14 +18,14 @@ def _get_config_cache_path() -> Path:
     return _get_cache_dir() / "config.json"
 
 
-def _save_config_to_cache(config_plan: List[Dict[str, Any]], repo_key: str) -> None:
+def _save_config_to_cache(config_plan: list[dict[str, Any]], repo_key: str) -> None:
     """Save a successful config plan to cache with repo versioning."""
     cache_path = _get_config_cache_path()
 
     cache_data = {}
     if cache_path.exists():
         try:
-            with open(cache_path, "r") as f:
+            with open(cache_path) as f:
                 cache_data = json.load(f)
         except (json.JSONDecodeError, OSError):
             cache_data = {}
@@ -45,7 +44,7 @@ def _save_config_to_cache(config_plan: List[Dict[str, Any]], repo_key: str) -> N
         pass
 
 
-def _load_config_from_cache(repo_key: str) -> Optional[List[Dict[str, Any]]]:
+def _load_config_from_cache(repo_key: str) -> list[dict[str, Any]] | None:
     """Load cached config plan for this repo if it exists and is recent."""
     cache_path = _get_config_cache_path()
 
@@ -53,7 +52,7 @@ def _load_config_from_cache(repo_key: str) -> Optional[List[Dict[str, Any]]]:
         return None
 
     try:
-        with open(cache_path, "r") as f:
+        with open(cache_path) as f:
             cache_data = json.load(f)
 
         repo_data = cache_data.get(repo_key)
@@ -92,14 +91,12 @@ def _get_repo_key() -> str:
 class ConfigTimeoutError(Exception):
     """Raised when config operation times out."""
 
-    pass
-
 
 def plan_from_config_with_timeout(
-    config: Dict[str, Any], timeout_seconds: float = 2.5
-) -> Optional[List[Dict[str, Any]]]:
-    """
-    Load config plan with timeout and caching.
+    config: dict[str, Any],
+    timeout_seconds: float = 2.5,
+) -> list[dict[str, Any]] | None:
+    """Load config plan with timeout and caching.
 
     Args:
         config: Configuration dictionary
@@ -107,9 +104,11 @@ def plan_from_config_with_timeout(
 
     Returns:
         Config plan or None if not available/timeout
+
     """
-    from .config_loader import plan_from_config
     import concurrent.futures
+
+    from .config_loader import plan_from_config
 
     # Generate repo key for cache versioning
     repo_key = _get_repo_key()

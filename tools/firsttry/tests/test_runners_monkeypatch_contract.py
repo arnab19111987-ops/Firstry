@@ -1,18 +1,17 @@
-"""
-FIRSTTRY_SECURITY_CONTEXT: test-only
+"""FIRSTTRY_SECURITY_CONTEXT: test-only
 
 This test intentionally monkeypatches subprocess.exec and exercises dynamic exec
 behaviour required by the runner contract. It's intentionally noisy for security scanners.
 """
 
-import types
 import subprocess
-import firsttry.runners as runners
+import types
+
+from firsttry import runners
 
 
 def test__exec_respects_runtime_monkeypatch(monkeypatch, tmp_path):
-    """
-    Contract test:
+    """Contract test:
     _exec() must call subprocess.run dynamically,
     NOT a cached snapshot taken at import time.
 
@@ -21,7 +20,6 @@ def test__exec_respects_runtime_monkeypatch(monkeypatch, tmp_path):
     - CI monkeypatches subprocess.run
     - If _exec binds a local alias at import time, patching breaks and tests get order-dependent.
     """
-
     captured = {}
 
     def fake_run(args, stdout, stderr, text, cwd=None):

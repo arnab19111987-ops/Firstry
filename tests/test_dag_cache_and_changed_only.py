@@ -1,16 +1,18 @@
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
+
 import pytest
 
-from firsttry.planner.dag import Plan, Task
+from firsttry.planner.dag import Plan
+from firsttry.planner.dag import Task
 from firsttry.run_swarm import run_plan
-
 
 pytestmark = pytest.mark.skipif(
     not (shutil.which("ruff") and shutil.which("mypy") and shutil.which("pytest")),
     reason="ruff/mypy/pytest CLIs must be on PATH",
 )
+
 
 def _write(p: Path, text: str):
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -32,9 +34,27 @@ def test_cache_hits_and_changed_only(tmp_path: Path, monkeypatch):
 
     # plan: ruff+mypy on the module, pytest on the single test
     plan = Plan()
-    plan.tasks["ruff:demo"]    = Task(id="ruff:demo",   check_id="ruff",   targets=["src/ft_demo/math.py"], flags=[],   deps=set())
-    plan.tasks["mypy:demo"]    = Task(id="mypy:demo",   check_id="mypy",   targets=["src/ft_demo/math.py"], flags=[],   deps=set())
-    plan.tasks["pytest:smoke"] = Task(id="pytest:smoke",check_id="pytest", targets=["tests/test_ok.py"],     flags=["-q"], deps=set())
+    plan.tasks["ruff:demo"] = Task(
+        id="ruff:demo",
+        check_id="ruff",
+        targets=["src/ft_demo/math.py"],
+        flags=[],
+        deps=set(),
+    )
+    plan.tasks["mypy:demo"] = Task(
+        id="mypy:demo",
+        check_id="mypy",
+        targets=["src/ft_demo/math.py"],
+        flags=[],
+        deps=set(),
+    )
+    plan.tasks["pytest:smoke"] = Task(
+        id="pytest:smoke",
+        check_id="pytest",
+        targets=["tests/test_ok.py"],
+        flags=["-q"],
+        deps=set(),
+    )
 
     # COLD: all should run and succeed
     res1 = run_plan(repo, plan, use_remote_cache=False, workers=2)
@@ -53,9 +73,21 @@ def test_cache_hits_and_changed_only(tmp_path: Path, monkeypatch):
     # CHANGE ONLY pytest input → pytest re-runs, ruff/mypy stay cached
     _write(repo / "tests/test_ok.py", "def test_ok():\n    assert 1+1==2\n")
     res3 = run_plan(repo, plan, use_remote_cache=False, workers=2)
-    p_cs = getattr(res3["pytest:smoke"], "cache_status", None) or getattr(res3["pytest:smoke"], "status", None)
-    m_cs = getattr(res3["mypy:demo"], "cache_status", None) or getattr(res3["mypy:demo"], "status", None)
-    r_cs = getattr(res3["ruff:demo"], "cache_status", None) or getattr(res3["ruff:demo"], "status", None)
+    p_cs = getattr(res3["pytest:smoke"], "cache_status", None) or getattr(
+        res3["pytest:smoke"],
+        "status",
+        None,
+    )
+    m_cs = getattr(res3["mypy:demo"], "cache_status", None) or getattr(
+        res3["mypy:demo"],
+        "status",
+        None,
+    )
+    r_cs = getattr(res3["ruff:demo"], "cache_status", None) or getattr(
+        res3["ruff:demo"],
+        "status",
+        None,
+    )
 
     # pytest may report 'ok' when it actually re-ran and passed, or use a
     # cache marker like 'miss-run' / None depending on the runner impl.

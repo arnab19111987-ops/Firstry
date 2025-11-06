@@ -257,9 +257,7 @@ def demo_project_detection():
     print(f"  • Is JS Project: {analysis['project_info']['is_js_project']}")
     print(f"  • Package Manager: {analysis['project_info']['package_manager']}")
     print(f"  • Has Test Script: {analysis['project_info']['has_test_script']}")
-    print(
-        f"  • Test Frameworks: {', '.join(analysis['project_info']['test_frameworks'])}"
-    )
+    print(f"  • Test Frameworks: {', '.join(analysis['project_info']['test_frameworks'])}")
     print(f"  • JS Files Found: {analysis['js_files_count']}")
     print(f"  • Test Complexity: {analysis['test_complexity']}")
     print(f"  • Estimated Duration: {analysis['estimated_duration']}")
@@ -299,18 +297,14 @@ def demo_change_detection(repo_dir: str):
     print(f"   Relevant changes: {decision['relevant_changes']}")
 
     # Test 4: Config files changed (should run)
-    decision = should_skip_npm_tests(
-        repo_dir, changed_files=["package.json", "tsconfig.json"]
-    )
+    decision = should_skip_npm_tests(repo_dir, changed_files=["package.json", "tsconfig.json"])
     print("\n📋 Config files changed:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
     print(f"   Relevant changes: {decision['relevant_changes']}")
 
     # Test 5: Manual override (should run)
-    decision = should_skip_npm_tests(
-        repo_dir, changed_files=["main.py"], force_run=True
-    )
+    decision = should_skip_npm_tests(repo_dir, changed_files=["main.py"], force_run=True)
     print("\n📋 Manual override --run-npm-anyway:")
     print(f"   Should skip: {decision['should_skip']}")
     print(f"   Reason: {decision['reason']}")
@@ -438,13 +432,7 @@ async def demo_integration_with_orchestrator():
             skipped = status == "skipped"
 
             status_icon = (
-                "✅"
-                if status == "ok"
-                else "❌"
-                if status == "fail"
-                else "⏭️"
-                if skipped
-                else "❓"
+                "✅" if status == "ok" else "❌" if status == "fail" else "⏭️" if skipped else "❓"
             )
             cache_note = " (cached)" if cached else " (skipped)" if skipped else ""
 

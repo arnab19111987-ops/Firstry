@@ -1,5 +1,4 @@
-"""
-pro_features.py
+"""pro_features.py
 ----------------
 
 Executes the repo's adapted CI plan locally (fast) and stops at
@@ -12,11 +11,11 @@ This is the core of FirstTry Pro:
 - Forensic `failed_at` block with a fix hint
 """
 
-import subprocess
 import shlex
+import subprocess
 import time
-from typing import Any, Dict, List, Optional
 from types import ModuleType
+from typing import Any
 
 # optional quickfix integration (best-effort; keep pro_features import-safe)
 # Import into a typed variable so mypy is happy when quickfix is absent.
@@ -30,7 +29,7 @@ except Exception:  # pragma: no cover - defensive
     quickfix = None
 
 
-def normalize_license(payload: Any) -> Dict[str, Any]:
+def normalize_license(payload: Any) -> dict[str, Any]:
     """Lightweight compatibility helper used by some tests.
 
     Accepts either a dict with 'plan' and 'features' or a legacy list of features.
@@ -50,10 +49,10 @@ def normalize_license(payload: Any) -> Dict[str, Any]:
 
 
 def run_ci_steps_locally(
-    plan: Dict[str, Any] | List[str], license_key: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Backwards-compatible runner used by older CLI/tests. Executes all steps
+    plan: dict[str, Any] | list[str],
+    license_key: str | None = None,
+) -> dict[str, Any]:
+    """Backwards-compatible runner used by older CLI/tests. Executes all steps
     (does not stop early), enforces a license for dict plans, and returns
     shape: {"ok": bool, "results": [ {job, step, returncode, output, cmd}, ... ]}
     """
@@ -80,25 +79,24 @@ def run_ci_steps_locally(
                         "step": "validate-license",
                         "returncode": 1,
                         "output": f"License validation failed: {exc}",
-                    }
+                    },
                 ],
             }
-    else:
-        # If no license provided and not legacy, block
-        if not legacy_mode:
-            return {
-                "ok": False,
-                "results": [
-                    {
-                        "job": "license-check",
-                        "step": "validate-license",
-                        "returncode": 1,
-                        "output": "License validation failed: No license key provided",
-                    }
-                ],
-            }
+    # If no license provided and not legacy, block
+    elif not legacy_mode:
+        return {
+            "ok": False,
+            "results": [
+                {
+                    "job": "license-check",
+                    "step": "validate-license",
+                    "returncode": 1,
+                    "output": "License validation failed: No license key provided",
+                },
+            ],
+        }
 
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     overall_ok = True
 
     plan_dict = plan if isinstance(plan, dict) else {"jobs": []}
@@ -130,7 +128,7 @@ def run_ci_steps_locally(
                         "step": step_name,
                         "returncode": None,
                         "output": "SKIPPED (no 'run' provided)",
-                    }
+                    },
                 )
                 continue
 
@@ -145,7 +143,7 @@ def run_ci_steps_locally(
                         "stdout": "",
                         "stderr": "Command blocked by safety policy",
                         "returncode": None,
-                    }
+                    },
                 )
                 overall_ok = False
                 continue
@@ -154,6 +152,7 @@ def run_ci_steps_locally(
                 shlex.split(cmd) if isinstance(cmd, str) else cmd,
                 capture_output=True,
                 text=True,
+                check=False,
             )
             rc = completed.returncode
             out = f"STDOUT:\n{completed.stdout.strip()}\n\nSTDERR:\n{completed.stderr.strip()}"
@@ -165,7 +164,7 @@ def run_ci_steps_locally(
                     "cmd": cmd,
                     "returncode": rc,
                     "output": out,
-                }
+                },
             )
             if rc != 0:
                 overall_ok = False
@@ -177,9 +176,8 @@ class ProFeatureError(RuntimeError):
     pass
 
 
-def _assert_license_is_valid(license_key: Optional[str]) -> None:
-    """
-    Minimal validation. Production would call remote license API.
+def _assert_license_is_valid(license_key: str | None) -> None:
+    """Minimal validation. Production would call remote license API.
     TEST-KEY-OK is accepted in tests.
     """
     if not license_key:
@@ -190,15 +188,14 @@ def _assert_license_is_valid(license_key: Optional[str]) -> None:
     return
 
 
-def _run_single_command(cmd: str) -> Dict[str, Any]:
-    """
-    Run a shell command fast, capture output and timing.
-    """
+def _run_single_command(cmd: str) -> dict[str, Any]:
+    """Run a shell command fast, capture output and timing."""
     start = time.time()
     proc = subprocess.run(
         shlex.split(cmd) if isinstance(cmd, str) else cmd,
         capture_output=True,
         text=True,
+        check=False,
     )
     end = time.time()
 
@@ -211,10 +208,10 @@ def _run_single_command(cmd: str) -> Dict[str, Any]:
 
 
 def run_ci_plan_locally(
-    plan: Dict[str, Any], license_key: Optional[str]
-) -> Dict[str, Any]:
-    """
-    Execute plan from ci_mapper.build_ci_plan().
+    plan: dict[str, Any],
+    license_key: str | None,
+) -> dict[str, Any]:
+    """Execute plan from ci_mapper.build_ci_plan().
 
     Returns structured result:
     {
@@ -250,7 +247,6 @@ def run_ci_plan_locally(
     - stops on first failing step for speed.
     - failure record includes WHERE and WHAT, so we can report precisely.
     """
-
     # license check first
     try:
         _assert_license_is_valid(license_key)
@@ -270,7 +266,7 @@ def run_ci_plan_locally(
         }
 
     t0 = time.time()
-    jobs_report: List[Dict[str, Any]] = []
+    jobs_report: list[dict[str, Any]] = []
     total_steps = 0
     failed_at = None
     overall_ok = True
@@ -278,7 +274,7 @@ def run_ci_plan_locally(
     for job in plan.get("jobs", []):
         job_name = job["job_name"]
         wf_name = job.get("workflow_name", "unknown-workflow")
-        job_steps_report: List[Dict[str, Any]] = []
+        job_steps_report: list[dict[str, Any]] = []
 
         for step in job["steps"]:
             total_steps += 1
@@ -334,9 +330,7 @@ def run_ci_plan_locally(
                             pass
                 except Exception:
                     # Don't let quickfix errors break the runner; fall back to generic hint.
-                    hint_text = (
-                        "This is the first failing step. Fix this step to unblock CI."
-                    )
+                    hint_text = "This is the first failing step. Fix this step to unblock CI."
 
                 failed_at = {
                     "workflow_name": wf_name,
@@ -358,7 +352,7 @@ def run_ci_plan_locally(
                 "job_name": job_name,
                 "workflow_name": wf_name,
                 "steps": job_steps_report,
-            }
+            },
         )
 
         # stop entire run on first failure to keep it fast

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass(frozen=True)
 class GateProfile:
     name: str
-    gates: List[str]
+    gates: list[str]
 
 
 # PHASE 1 profiles

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from .tier_map import (
-    get_checks_for_tier,
-    get_tier_meta,
-    LOCKED_MESSAGE,
-    TIER_CHECKS,
-)
+from typing import Any
+
 from ..license_guard import get_tier
+from .tier_map import LOCKED_MESSAGE
+from .tier_map import TIER_CHECKS
+from .tier_map import get_checks_for_tier
+from .tier_map import get_tier_meta
 
 
 # simple color helper for legacy paths (no-op if Rich not used)
@@ -30,6 +30,9 @@ def render_locked_report(*_args, **_kwargs) -> None:
 
 
 # you probably already have a Rich detection; keep it
+# console may be a rich Console or None when rich isn't available
+console: Any = None
+_HAS_RICH: bool = False
 try:
     from rich.console import Console
     from rich.table import Table
@@ -38,12 +41,11 @@ try:
     _HAS_RICH = True
 except Exception:
     _HAS_RICH = False
-    console = None  # type: ignore[assignment]
+    console = None
 
 
 def render_summary(report: dict) -> None:
-    """
-    `report` is whatever your orchestrator produced:
+    """`report` is whatever your orchestrator produced:
     {
         "results": {
             "ruff": {...},
@@ -104,7 +106,7 @@ def render_summary(report: dict) -> None:
                 res = report["results"].get(chk, {})
                 status = res.get("status", "unknown")
                 emoji = "✅" if status == "ok" else "❌"
-                print(f"  {emoji} {chk}: {res.get('message','')}")
+                print(f"  {emoji} {chk}: {res.get('message', '')}")
             else:
                 print(f"  🔒 {chk}: {LOCKED_MESSAGE}")
 
@@ -120,7 +122,7 @@ def render_summary_legacy(results, context):
     print(c("--- Context ---", "cyan"))
     print(f"  Machine: {context.get('machine', 'unknown')} CPUs")
     print(
-        f"  Repo:    {context.get('files', '?')} files, {context.get('tests', '?')} tests"
+        f"  Repo:    {context.get('files', '?')} files, {context.get('tests', '?')} tests",
     )
     print("  Checks:  " + ", ".join(allowed_checks))
     print()
@@ -138,9 +140,7 @@ def render_summary_legacy(results, context):
     # overall
     print()
     print(c("--- Summary ---", "cyan"))
-    passed_all = all(
-        r.get("passed", True) for name, r in results.items() if name in allowed_checks
-    )
+    passed_all = all(r.get("passed", True) for name, r in results.items() if name in allowed_checks)
     done_msg = c("✅ PASSED", "green") if passed_all else c("❌ FAILED", "red")
     print(f"  Result: {done_msg} ({len(allowed_checks)} checks run)")
     print()

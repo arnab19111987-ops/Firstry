@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # src/firsttry/config_loader.py
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 try:
     import tomllib  # py311+
@@ -13,13 +13,12 @@ except Exception:
         tomllib = None  # type: ignore
 
 
-def load_config() -> Dict[str, Any]:
+def load_config() -> dict[str, Any]:
+    """Load team / user config from:
+    1. ./firsttry.toml
+    2. ./pyproject.toml [tool.firsttry]
     """
-    Load team / user config from:
-      1. ./firsttry.toml
-      2. ./pyproject.toml [tool.firsttry]
-    """
-    root = Path(".").resolve()
+    root = Path().resolve()
 
     ft = root / "firsttry.toml"
     if ft.exists() and tomllib is not None:
@@ -36,9 +35,8 @@ def load_config() -> Dict[str, Any]:
     return {}
 
 
-def plan_from_config(config: Dict[str, Any]) -> List[Dict[str, Any]] | None:
-    """
-    If the user/team provided an explicit plan, we build it from here.
+def plan_from_config(config: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """If the user/team provided an explicit plan, we build it from here.
 
     Supported:
     [tool.firsttry.run]
@@ -65,7 +63,7 @@ def plan_from_config(config: Dict[str, Any]) -> List[Dict[str, Any]] | None:
     if not has_explicit_tools and not has_customs:
         return None
 
-    plan: List[Dict[str, Any]] = []
+    plan: list[dict[str, Any]] = []
 
     if tools:
         for t in tools:
@@ -86,17 +84,17 @@ def plan_from_config(config: Dict[str, Any]) -> List[Dict[str, Any]] | None:
                     "family": family,
                     "tool": name,
                     "cmd": cmd,
-                }
+                },
             )
 
     return plan
 
 
 def apply_overrides_to_plan(
-    plan: List[Dict[str, Any]], config: Dict[str, Any]
-) -> List[Dict[str, Any]]:
-    """
-    After we have a base plan (from config OR from detection),
+    plan: list[dict[str, Any]],
+    config: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """After we have a base plan (from config OR from detection),
     we apply per-tool overrides.
 
     [tool.firsttry.tool.ruff]
@@ -110,7 +108,7 @@ def apply_overrides_to_plan(
     ft_section = tool_section.get("firsttry") or {}
     tool_cfgs = ft_section.get("tool") or {}
 
-    new_plan: List[Dict[str, Any]] = []
+    new_plan: list[dict[str, Any]] = []
     for item in plan:
         tool = item.get("tool")
         override = tool_cfgs.get(tool)
@@ -123,10 +121,10 @@ def apply_overrides_to_plan(
 
 
 def apply_config_to_plan(
-    plan: List[Dict[str, Any]], config: Dict[str, Any]
-) -> List[Dict[str, Any]]:
-    """
-    Enrich auto-plan with user/team config.
+    plan: list[dict[str, Any]],
+    config: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Enrich auto-plan with user/team config.
     - Filter tools (if run.tools provided)
     - Override tool cmd / workers (if tool.* provided)
     - Add custom checks (if custom provided)
@@ -147,14 +145,10 @@ def apply_config_to_plan(
     # 1) filter
     if wanted_tools:
         wanted_set = set(wanted_tools)
-        plan = [
-            p
-            for p in plan
-            if p.get("tool") in wanted_set or p.get("family") in wanted_set
-        ]
+        plan = [p for p in plan if p.get("tool") in wanted_set or p.get("family") in wanted_set]
 
     # 2) per-tool overrides
-    new_plan: List[Dict[str, Any]] = []
+    new_plan: list[dict[str, Any]] = []
     for item in plan:
         tool = item.get("tool")
         override = tool_configs.get(tool) or tool_overrides.get(tool)
@@ -178,7 +172,7 @@ def apply_config_to_plan(
                 "family": family,
                 "tool": name,
                 "cmd": cmd,
-            }
+            },
         )
 
     return new_plan

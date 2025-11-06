@@ -1,5 +1,6 @@
-from pathlib import Path
 import types
+from pathlib import Path
+
 from firsttry import runners
 
 

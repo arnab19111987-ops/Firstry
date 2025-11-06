@@ -1,19 +1,19 @@
-"""
-Lightweight stub runners exposed by default (good for tests and "doctor"/stub runs).
+"""Lightweight stub runners exposed by default (good for tests and "doctor"/stub runs).
 Set FIRSTTRY_USE_REAL_RUNNERS=1 to switch to real implementations if you have them.
 """
+
 import os
 import types
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 __all__ = [
-    "run_ruff",
+    "RUNNERS",
+    "coverage_gate",
     "run_black_check",
+    "run_coverage_xml",
     "run_mypy",
     "run_pytest_kexpr",
-    "run_coverage_xml",
-    "coverage_gate",
-    "RUNNERS",
+    "run_ruff",
 ]
 
 
@@ -23,25 +23,29 @@ def _ok(msg: str = "ok") -> types.SimpleNamespace:
 
 
 def run_ruff(
-    repo_root: str, files: Optional[List[str]] = None
+    repo_root: str,
+    files: list[str] | None = None,
 ) -> types.SimpleNamespace:
     return _ok("ruff(stub)")
 
 
 def run_black_check(
-    repo_root: str, files: Optional[List[str]] = None
+    repo_root: str,
+    files: list[str] | None = None,
 ) -> types.SimpleNamespace:
     return _ok("black --check (stub)")
 
 
 def run_mypy(
-    repo_root: str, targets: Optional[List[str]] = None
+    repo_root: str,
+    targets: list[str] | None = None,
 ) -> types.SimpleNamespace:
     return _ok("mypy(stub)")
 
 
 def run_pytest_kexpr(
-    repo_root: str, kexpr: Optional[str] = None
+    repo_root: str,
+    kexpr: str | None = None,
 ) -> types.SimpleNamespace:
     return _ok("pytest -k (stub)")
 
@@ -55,20 +59,18 @@ def coverage_gate(repo_root: str, min_percent: int = 0) -> types.SimpleNamespace
 
 
 # Default RUNNERS mapping (kept minimal; tests often monkeypatch the orchestrator directly)
-RUNNERS: Dict[str, Any] = {}
+RUNNERS: dict[str, Any] = {}
 
 if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
     # Optional: if you have real runner modules, import and export them here.
     # Keeping try/except so test envs without real deps don't break.
     try:
-        from .real import (
-            run_ruff as _real_run_ruff,
-            run_black_check as _real_run_black_check,
-            run_mypy as _real_run_mypy,
-            run_pytest_kexpr as _real_run_pytest_kexpr,
-            run_coverage_xml as _real_run_coverage_xml,
-            coverage_gate as _real_coverage_gate,
-        )
+        from .real import coverage_gate as _real_coverage_gate
+        from .real import run_black_check as _real_run_black_check
+        from .real import run_coverage_xml as _real_run_coverage_xml
+        from .real import run_mypy as _real_run_mypy
+        from .real import run_pytest_kexpr as _real_run_pytest_kexpr
+        from .real import run_ruff as _real_run_ruff
 
         run_ruff = _real_run_ruff
         run_black_check = _real_run_black_check

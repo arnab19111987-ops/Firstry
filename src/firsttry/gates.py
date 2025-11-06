@@ -6,9 +6,8 @@ import os
 import re
 import shutil
 import subprocess
-from typing import List, Tuple
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 
 class GateResult:
@@ -22,7 +21,7 @@ class GateResult:
         warnings: int = 0,
         fixable: int = 0,
         mode: str = "auto",  # "auto" | "detect" | "advisory"
-        extra: Dict[str, Any] | None = None,
+        extra: dict[str, Any] | None = None,
     ):
         self.name = name  # "lint", "tests", "typecheck", "security"
         self.passed = passed  # bool
@@ -30,9 +29,7 @@ class GateResult:
         self.warnings = warnings or 0
         self.fixable = fixable or 0
         self.mode = mode  # how this gate behaves: auto-fix, detect-only, advisory
-        self.extra = (
-            extra or {}
-        )  # e.g. {"failed_tests": [...]} or {"first_failed_test": "..."}
+        self.extra = extra or {}  # e.g. {"failed_tests": [...]} or {"first_failed_test": "..."}
 
         # Legacy fields for backward compatibility
         self.status = "PASS" if passed else "FAIL"
@@ -137,13 +134,12 @@ def _analyze_output_for_counts(tool_name: str, output: str) -> tuple[int, int, i
 
 
 def _run_external(
-    cmd: List[str],
+    cmd: list[str],
     name: str,
     pass_desc: str = "",
     mode: str = "auto",
 ) -> GateResult:
-    """
-    Run external tools like ruff/mypy/pytest.
+    """Run external tools like ruff/mypy/pytest.
 
     Rules:
     - If the tool is not found: SKIPPED with guidance.
@@ -155,6 +151,7 @@ def _run_external(
             cmd,
             capture_output=True,
             text=True,
+            check=False,
         )
     except FileNotFoundError:
         result = GateResult(name=name, passed=False, mode=mode)
@@ -228,8 +225,7 @@ def check_types() -> GateResult:
 
 
 def check_tests() -> GateResult:
-    """
-    Quick pytest run.
+    """Quick pytest run.
 
     If pytest isn't available -> SKIPPED (not scary).
     """
@@ -237,8 +233,7 @@ def check_tests() -> GateResult:
 
 
 def check_sqlite_drift() -> GateResult:
-    """
-    SQLite drift / import sanity.
+    """SQLite drift / import sanity.
 
     Behavior:
     - If firsttry.db_sqlite is missing → SKIPPED with explanation.
@@ -305,8 +300,7 @@ def check_sqlite_drift() -> GateResult:
 
 
 def check_pg_drift() -> GateResult:
-    """
-    Postgres drift check (heavy).
+    """Postgres drift check (heavy).
 
     Grace rules:
     - If DATABASE_URL missing or not postgres → SKIPPED.
@@ -389,8 +383,7 @@ def check_pg_drift() -> GateResult:
 
 
 def check_docker_smoke() -> GateResult:
-    """
-    Docker smoke test (heavy).
+    """Docker smoke test (heavy).
 
     Grace rules:
     - If `docker` CLI isn't found → SKIPPED ("no Docker runtime").
@@ -470,8 +463,7 @@ def check_docker_smoke() -> GateResult:
 
 
 def check_ci_mirror() -> GateResult:
-    """
-    CI mirror / consistency check.
+    """CI mirror / consistency check.
 
     Grace rules:
     - If firsttry.ci_mapper missing → SKIPPED.
@@ -557,21 +549,21 @@ PRE_PUSH_TASKS = [
 ]
 
 
-def run_gate(which: str) -> Tuple[List[dict[str, object]], bool]:
-    """
-    Execute either `pre-commit` or `pre-push`.
+def run_gate(which: str) -> tuple[list[dict[str, object]], bool]:
+    """Execute either `pre-commit` or `pre-push`.
 
     Returns:
         (results, overall_ok)
 
     overall_ok is False if ANY check FAILs.
+
     """
     if which not in ("pre-commit", "pre-push"):
         raise ValueError("gate must be 'pre-commit' or 'pre-push'")
 
     tasks = PRE_COMMIT_TASKS if which == "pre-commit" else PRE_PUSH_TASKS
 
-    results: List[GateResult] = []
+    results: list[GateResult] = []
     any_fail = False
 
     for label, fn in tasks:
@@ -612,18 +604,18 @@ def run_gate(which: str) -> Tuple[List[dict[str, object]], bool]:
 
 
 # Default ordered gates for a combined health report
-DEFAULT_GATES: List[str] = ["pre-commit", "pre-push"]
+DEFAULT_GATES: list[str] = ["pre-commit", "pre-push"]
 
 
-def run_all_gates(repo_root: Path) -> Dict[str, Any]:
-    """
-    Run all default gates (pre-commit, pre-push, etc.) against the repo
+def run_all_gates(repo_root: Path) -> dict[str, Any]:
+    """Run all default gates (pre-commit, pre-push, etc.) against the repo
     and return a single JSON-ready summary.
 
     Returns:
         {"ok": bool, "results": [ ... ]}
+
     """
-    combined_results: List[Dict[str, object]] = []
+    combined_results: list[dict[str, object]] = []
     overall_ok = True
 
     for gate_name in DEFAULT_GATES:
@@ -635,9 +627,8 @@ def run_all_gates(repo_root: Path) -> Dict[str, Any]:
     return {"ok": overall_ok, "results": combined_results}
 
 
-def format_summary(which: str, results: List[GateResult], overall_ok: bool) -> str:
-    """
-    Build pretty summary block:
+def format_summary(which: str, results: list[GateResult], overall_ok: bool) -> str:
+    """Build pretty summary block:
 
     FirstTry Gate Summary
     ---------------------
@@ -645,7 +636,7 @@ def format_summary(which: str, results: List[GateResult], overall_ok: bool) -> s
     ...
     Verdict: SAFE TO COMMIT ✅
     """
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append("FirstTry Gate Summary")
     lines.append("---------------------")
 
@@ -671,19 +662,18 @@ def format_summary(which: str, results: List[GateResult], overall_ok: bool) -> s
 
     if not overall_ok:
         lines.append(
-            "One or more checks FAILED. Read details above and fix before continuing."
+            "One or more checks FAILED. Read details above and fix before continuing.",
         )
     else:
         lines.append(
-            "Everything looks good. You'll almost certainly pass CI on the first try."
+            "Everything looks good. You'll almost certainly pass CI on the first try.",
         )
 
     return "\n".join(lines)
 
 
-def print_verbose(results: List[GateResult]) -> None:
-    """
-    After the summary, dump extra context only for FAIL and SKIPPED.
+def print_verbose(results: list[GateResult]) -> None:
+    """After the summary, dump extra context only for FAIL and SKIPPED.
 
     This is the "here's what happened, why we skipped, how to enable it"
     layer that builds trust with newer devs / trial users.
@@ -702,9 +692,8 @@ def print_verbose(results: List[GateResult]) -> None:
 # -------------------------
 
 
-def run_pre_commit_gate() -> List[str]:
-    """
-    Compatibility surface for tests that expect a list of CLI commands
+def run_pre_commit_gate() -> list[str]:
+    """Compatibility surface for tests that expect a list of CLI commands
     representing the pre-commit gate sequence. These are not executed here;
     they're illustrative of what the gate would run.
     """
@@ -719,7 +708,7 @@ def run_pre_commit_gate() -> List[str]:
     ]
 
 
-def run_pre_push_gate() -> List[str]:
+def run_pre_push_gate() -> list[str]:
     cmds = list(run_pre_commit_gate())
     cmds.extend(
         [
@@ -731,6 +720,6 @@ def run_pre_push_gate() -> List[str]:
             "actionlint -format tap",
             # security scanners (at least one of these in CI)
             "pip-audit -r requirements.txt",
-        ]
+        ],
     )
     return cmds

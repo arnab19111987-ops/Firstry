@@ -200,16 +200,12 @@ class PerformanceBenchmark:
 
             # Test cold runs (cleared cache)
             print("❄️  Cold runs (cache cleared):")
-            manual_results_cold = self.benchmark_manual_commands(
-                self.tier_commands[tier], "cold"
-            )
+            manual_results_cold = self.benchmark_manual_commands(self.tier_commands[tier], "cold")
             firsttry_result_cold = self.benchmark_firsttry_command(tier, "cold")
 
             # Test warm runs (with cache)
             print("🔥 Warm runs (with cache):")
-            manual_results_warm = self.benchmark_manual_commands(
-                self.tier_commands[tier], "warm"
-            )
+            manual_results_warm = self.benchmark_manual_commands(self.tier_commands[tier], "warm")
             firsttry_result_warm = self.benchmark_firsttry_command(tier, "warm")
 
             tier_results = {
@@ -255,9 +251,7 @@ This report compares FirstTry's execution time against real-world developer comm
 
             report += "### Performance Comparison Table\n\n"
             report += "| Tool | Command | Avg Time (s) | Cache | Relative Speed vs FirstTry |\n"
-            report += (
-                "|------|---------|-------------|-------|---------------------------|\n"
-            )
+            report += "|------|---------|-------------|-------|---------------------------|\n"
 
             # FirstTry entries
             ft_cold_speed = "1.0x (baseline)"
@@ -278,13 +272,9 @@ This report compares FirstTry's execution time against real-world developer comm
             # Total manual time comparison
             manual_total_speedup = manual_cold_total / firsttry_cold.avg_time
             if manual_total_speedup > 1:
-                total_speed_str = (
-                    f"{manual_total_speedup:.1f}x slower when run sequentially"
-                )
+                total_speed_str = f"{manual_total_speedup:.1f}x slower when run sequentially"
             else:
-                total_speed_str = (
-                    f"{1/manual_total_speedup:.1f}x faster when run sequentially"
-                )
+                total_speed_str = f"{1/manual_total_speedup:.1f}x faster when run sequentially"
 
             report += f"| **Manual Total** | All commands sequentially | {manual_cold_total:.2f} | cold | {total_speed_str} |\n"
             report += "\n"
@@ -294,8 +284,7 @@ This report compares FirstTry's execution time against real-world developer comm
 
             # Cache effectiveness
             cache_improvement = (
-                (firsttry_cold.avg_time - firsttry_warm.avg_time)
-                / firsttry_cold.avg_time
+                (firsttry_cold.avg_time - firsttry_warm.avg_time) / firsttry_cold.avg_time
             ) * 100
             report += "**Cache Effectiveness:**\n"
             report += f"- Cold run: {firsttry_cold.avg_time:.2f}s\n"

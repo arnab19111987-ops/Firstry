@@ -1,8 +1,10 @@
 """Python pytest gate implementation."""
 
 import subprocess
-from typing import Optional, Any
-from .base import Gate, GateResult
+from typing import Any
+
+from .base import Gate
+from .base import GateResult
 
 
 class PythonPytestGate(Gate):
@@ -10,7 +12,7 @@ class PythonPytestGate(Gate):
 
     gate_id = "python_pytest"
 
-    def run(self, project_root: Optional[Any] = None) -> GateResult:
+    def run(self, project_root: Any | None = None) -> GateResult:
         """Run pytest tests."""
         try:
             result = subprocess.run(
@@ -19,6 +21,7 @@ class PythonPytestGate(Gate):
                 capture_output=True,
                 text=True,
                 timeout=120,
+                check=False,
             )
 
             if result.returncode == 0:
@@ -28,13 +31,12 @@ class PythonPytestGate(Gate):
                     skipped=False,
                     reason="pytest tests passed",
                 )
-            else:
-                return GateResult(
-                    gate_id=self.gate_id,
-                    ok=False,
-                    skipped=False,
-                    reason=f"pytest tests failed:\n{result.stdout}\n{result.stderr}",
-                )
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=False,
+                skipped=False,
+                reason=f"pytest tests failed:\n{result.stdout}\n{result.stderr}",
+            )
 
         except FileNotFoundError:
             return GateResult(

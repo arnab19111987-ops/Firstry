@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from .base import Gate, GateResult
+
+from .base import Gate
+from .base import GateResult
 
 
 class DepsLockGate(Gate):
-    """
-    MVP: detect obvious Python dependency drift.
+    """MVP: detect obvious Python dependency drift.
     Rules:
     - if requirements.txt exists but no lock -> warn
     - if poetry.lock exists but no pyproject.toml -> warn
@@ -41,7 +42,7 @@ class DepsLockGate(Gate):
                     if lock_req.stat().st_mtime < req.stat().st_mtime:
                         ok = False
                         msgs.append(
-                            "requirements.lock is older than requirements.txt (run lock update)."
+                            "requirements.lock is older than requirements.txt (run lock update).",
                         )
                 except Exception:
                     # stat issues shouldn't crash gate
@@ -52,14 +53,14 @@ class DepsLockGate(Gate):
             if not poetry_lock.exists():
                 ok = False
                 msgs.append(
-                    "pyproject.toml exists but poetry.lock is missing (run `poetry lock`)."
+                    "pyproject.toml exists but poetry.lock is missing (run `poetry lock`).",
                 )
             else:
                 try:
                     if poetry_lock.stat().st_mtime < poetry.stat().st_mtime:
                         ok = False
                         msgs.append(
-                            "poetry.lock is older than pyproject.toml (run `poetry lock`)."
+                            "poetry.lock is older than pyproject.toml (run `poetry lock`).",
                         )
                 except Exception:
                     pass

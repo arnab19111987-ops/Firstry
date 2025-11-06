@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from firsttry.hooks import install_pre_commit_hook
 
 

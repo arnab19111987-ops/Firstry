@@ -3,12 +3,11 @@ from __future__ import annotations
 import importlib
 import re
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 
 def _extract_upgrade_body(script_text: str) -> str:
-    """
-    Extract the body of def upgrade(): from an Alembic migration file,
+    """Extract the body of def upgrade(): from an Alembic migration file,
     dedent it, and return it.
     """
     sentinel = script_text + "\n" + "def __SENTINEL__():\n"
@@ -35,18 +34,14 @@ def _extract_upgrade_body(script_text: str) -> str:
         def leading_spaces(s: str) -> int:
             return len(s) - len(s.lstrip(" "))
 
-        non_blank_indents = [
-            leading_spaces(line) for line in block_lines if line.strip()
-        ]
+        non_blank_indents = [leading_spaces(line) for line in block_lines if line.strip()]
         min_indent = min(non_blank_indents) if non_blank_indents else 0
-        block_lines = [
-            line[min_indent:] if len(line) >= min_indent else "" for line in block_lines
-        ]
+        block_lines = [line[min_indent:] if len(line) >= min_indent else "" for line in block_lines]
 
     return "\n".join(block_lines)
 
 
-def run_sqlite_probe(import_target: str) -> Dict[str, Any]:
+def run_sqlite_probe(import_target: str) -> dict[str, Any]:
     """Simple sqlite probe used by tests.
 
     Behavior:

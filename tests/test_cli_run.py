@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import subprocess
 import sys
 
@@ -13,6 +14,7 @@ def test_cli_run_stub_gate_passes(monkeypatch, tmp_path):
         capture_output=True,
         text=True,
         cwd=tmp_path,
+        check=False,
     )
 
     # Should succeed even if no files to check

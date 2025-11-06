@@ -31,7 +31,9 @@ def test_suggest_fix_pytest_not_found():
 
 def test_suggest_fix_import_error():
     hint = qf.suggest_fix(
-        "python test.py", "", "ModuleNotFoundError: No module named 'fastapi'"
+        "python test.py",
+        "",
+        "ModuleNotFoundError: No module named 'fastapi'",
     )
     assert hint is not None
     assert "fastapi" in hint
@@ -41,7 +43,9 @@ def test_suggest_fix_import_error():
 def test_suggest_fix_import_error_stdlib():
     # Should not suggest installing stdlib modules
     hint = qf.suggest_fix(
-        "python test.py", "", "ModuleNotFoundError: No module named 'sys'"
+        "python test.py",
+        "",
+        "ModuleNotFoundError: No module named 'sys'",
     )
     assert hint is None
 

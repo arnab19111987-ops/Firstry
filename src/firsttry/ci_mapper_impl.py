@@ -1,38 +1,39 @@
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-import sys
+from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 @dataclass
 class StepPlan:
     name: str
     run: str
-    env: Dict[str, str]
+    env: dict[str, str]
 
 
 @dataclass
 class JobPlan:
     job_id: str
-    steps: List[StepPlan]
+    steps: list[StepPlan]
 
 
 @dataclass
 class WorkflowPlan:
     workflow_file: str
-    jobs: List[JobPlan]
+    jobs: list[JobPlan]
 
 
-def _collect_workflow_files(root: Path | str) -> List[Path]:
+def _collect_workflow_files(root: Path | str) -> list[Path]:
     """Collect workflow files from root/.github/workflows.
 
     Args:
         root: Path or string pointing to either the repo root or directly to .github/workflows
+
     """
     root_path = Path(root) if isinstance(root, str) else root
 
@@ -51,9 +52,9 @@ def _collect_workflow_files(root: Path | str) -> List[Path]:
     return sorted(paths)
 
 
-def _extract_steps_from_job(job_id: str, job_dict: Dict[str, Any]) -> JobPlan:
+def _extract_steps_from_job(job_id: str, job_dict: dict[str, Any]) -> JobPlan:
     steps_raw = job_dict.get("steps", [])
-    steps: List[StepPlan] = []
+    steps: list[StepPlan] = []
     job_env = job_dict.get("env", {}) or {}
 
     for s in steps_raw:
@@ -62,7 +63,7 @@ def _extract_steps_from_job(job_id: str, job_dict: Dict[str, Any]) -> JobPlan:
         if not run_cmd:
             continue
 
-        step_env: Dict[str, str] = {}
+        step_env: dict[str, str] = {}
         step_env.update(job_env)
         step_env.update(s.get("env", {}) or {})
 
@@ -71,18 +72,19 @@ def _extract_steps_from_job(job_id: str, job_dict: Dict[str, Any]) -> JobPlan:
                 name=s.get("name", f"step in {job_id}"),
                 run=run_cmd,
                 env=step_env,
-            )
+            ),
         )
     return JobPlan(job_id=job_id, steps=steps)
 
 
-def build_ci_plan(root: Path | str) -> Dict[str, Any]:
+def build_ci_plan(root: Path | str) -> dict[str, Any]:
     """Build a CI plan from GitHub workflows.
 
     Args:
         root: Path or string pointing to repo root or .github/workflows directory
+
     """
-    workflows: List[WorkflowPlan] = []
+    workflows: list[WorkflowPlan] = []
     for wf_path in _collect_workflow_files(root):
         data = yaml.safe_load(wf_path.read_text(encoding="utf-8")) or {}
         jobs = data.get("jobs", {}) or {}
@@ -95,7 +97,7 @@ def build_ci_plan(root: Path | str) -> Dict[str, Any]:
             WorkflowPlan(
                 workflow_file=wf_path.name,
                 jobs=job_plans,
-            )
+            ),
         )
 
     return {
@@ -118,11 +120,11 @@ def build_ci_plan(root: Path | str) -> Dict[str, Any]:
                 ],
             }
             for wf in workflows
-        ]
+        ],
     }
 
 
-def rewrite_run_cmd(cmd: str, python_exe: Optional[str] = None) -> str:
+def rewrite_run_cmd(cmd: str, python_exe: str | None = None) -> str:
     if python_exe is None:
         python_exe = os.environ.get("FIRSTTRY_PYTHON", sys.executable)
 

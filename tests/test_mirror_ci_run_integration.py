@@ -9,22 +9,22 @@ def _fake_plan():
                     {"name": "Say hi", "run": 'echo "hi from qa step 1"'},
                     {"name": "Python check", "run": "python -c \"print('ok')\""},
                 ],
-            }
-        ]
+            },
+        ],
     }
 
 
 def test_mirror_ci_run_executes_plan_and_respects_license(
-    monkeypatch, tmp_path, capsys
+    monkeypatch,
+    tmp_path,
+    capsys,
 ):
-    """
-    This is the MONEY TEST:
+    """This is the MONEY TEST:
     - Sets FIRSTTRY_LICENSE_KEY so Pro path is allowed
     - Forces cli.cmd_mirror_ci to get our fake plan
     - Calls mirror-ci --run
     - Asserts exit code 0 and both steps actually executed
     """
-
     # Ensure license passes
     monkeypatch.setenv("FIRSTTRY_LICENSE_KEY", "TEST-KEY-OK")
 
@@ -39,10 +39,10 @@ def test_mirror_ci_run_executes_plan_and_respects_license(
                 {
                     "workflow_file": "ci.yml",
                     "jobs": [
-                        {"job_id": "qa", "steps": _fake_plan()["jobs"][0]["steps"]}
+                        {"job_id": "qa", "steps": _fake_plan()["jobs"][0]["steps"]},
                     ],
-                }
-            ]
+                },
+            ],
         },
     )
 
@@ -70,10 +70,7 @@ def test_mirror_ci_run_executes_plan_and_respects_license(
 
 
 def test_mirror_ci_denies_without_license(monkeypatch, tmp_path, capsys):
-    """
-    If no FIRSTTRY_LICENSE_KEY is set, run mode should fail.
-    """
-
+    """If no FIRSTTRY_LICENSE_KEY is set, run mode should fail."""
     # No FIRSTTRY_LICENSE_KEY
     monkeypatch.delenv("FIRSTTRY_LICENSE_KEY", raising=False)
 
@@ -87,10 +84,10 @@ def test_mirror_ci_denies_without_license(monkeypatch, tmp_path, capsys):
                 {
                     "workflow_file": "ci.yml",
                     "jobs": [
-                        {"job_id": "qa", "steps": _fake_plan()["jobs"][0]["steps"]}
+                        {"job_id": "qa", "steps": _fake_plan()["jobs"][0]["steps"]},
                     ],
-                }
-            ]
+                },
+            ],
         },
     )
 

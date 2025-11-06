@@ -32,8 +32,7 @@ def detect_language(cwd: str | None = None) -> list[str]:
 
 
 def deps_for_stacks(stacks: list[str]) -> dict[str, list[str]]:
-    """
-    For each detected stack, return the tools we want.
+    """For each detected stack, return the tools we want.
     We'll only *print* these; actual installation is up to the user/env.
     """
     deps: dict[str, list[str]] = {}

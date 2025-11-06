@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List
+from typing import Any
+
 from .constants import LEVELS
 
 
@@ -10,7 +11,7 @@ def _file_exists(path: str) -> bool:
     return os.path.exists(path)
 
 
-def detect_features() -> Dict[str, bool]:
+def detect_features() -> dict[str, bool]:
     return {
         "has_pyproject": _file_exists("pyproject.toml"),
         "has_requirements": _file_exists("requirements.txt"),
@@ -21,16 +22,15 @@ def detect_features() -> Dict[str, bool]:
         "has_jest": _file_exists("jest.config.js")
         or _file_exists("jest.config.cjs")
         or _file_exists("jest.config.mjs"),
-        "has_vitest": _file_exists("vitest.config.ts")
-        or _file_exists("vitest.config.js"),
+        "has_vitest": _file_exists("vitest.config.ts") or _file_exists("vitest.config.js"),
         "has_dockerfile": _file_exists("Dockerfile"),
     }
 
 
-def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
+def plan_checks_for_repo(repo_profile: dict[str, Any]) -> list[dict[str, Any]]:
     languages = repo_profile.get("languages", []) or []
     features = detect_features()
-    plans: List[Dict[str, Any]] = []
+    plans: list[dict[str, Any]] = []
 
     # Badge mapping function (use centralized labels)
     def get_badge_for_tool(tool: str) -> str:
@@ -54,22 +54,18 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
         return "unknown"
 
     # PYTHON
-    if (
-        "python" in languages
-        or features["has_pyproject"]
-        or features["has_requirements"]
-    ):
+    if "python" in languages or features["has_pyproject"] or features["has_requirements"]:
         plans.append(
             {
                 "family": "lint",
                 "tool": "ruff",
                 "lang": "python",
                 "badge": get_badge_for_tool("ruff"),
-            }
+            },
         )
         if features["has_mypy_cfg"] or features["has_pyproject"]:
             plans.append(
-                {"family": "type", "tool": "mypy", "badge": get_badge_for_tool("mypy")}
+                {"family": "type", "tool": "mypy", "badge": get_badge_for_tool("mypy")},
             )
         if repo_profile.get("test_count", 0) > 0 or features["has_pytests"]:
             plans.append(
@@ -77,14 +73,14 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "family": "tests",
                     "tool": "pytest",
                     "badge": get_badge_for_tool("pytest"),
-                }
+                },
             )
         plans.append(
             {
                 "family": "security",
                 "tool": "bandit",
                 "badge": get_badge_for_tool("bandit"),
-            }
+            },
         )
         if features["has_requirements"]:
             plans.append(
@@ -92,7 +88,7 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "family": "deps",
                     "tool": "pip-audit",
                     "badge": get_badge_for_tool("pip-audit"),
-                }
+                },
             )
 
     # NODE
@@ -103,11 +99,11 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "tool": "eslint",
                 "lang": "js",
                 "badge": get_badge_for_tool("eslint"),
-            }
+            },
         )
         if features["has_tsconfig"]:
             plans.append(
-                {"family": "type", "tool": "tsc", "badge": get_badge_for_tool("tsc")}
+                {"family": "type", "tool": "tsc", "badge": get_badge_for_tool("tsc")},
             )
         if features["has_jest"] or features["has_vitest"]:
             plans.append(
@@ -115,14 +111,14 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "family": "tests",
                     "tool": "npm-test",
                     "badge": get_badge_for_tool("npm-test"),
-                }
+                },
             )
         plans.append(
             {
                 "family": "deps",
                 "tool": "npm-audit",
                 "badge": get_badge_for_tool("npm-audit"),
-            }
+            },
         )
 
     # DOCKER
@@ -133,7 +129,7 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "tool": "hadolint",
                 "lang": "docker",
                 "badge": get_badge_for_tool("hadolint"),
-            }
+            },
         )
 
     # CI parity pseudo-family
@@ -142,7 +138,7 @@ def plan_checks_for_repo(repo_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
             "family": "ci_parity",
             "tool": "ci-parity",
             "badge": get_badge_for_tool("ci-parity"),
-        }
+        },
     )
 
     return plans

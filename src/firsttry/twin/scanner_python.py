@@ -1,10 +1,16 @@
 from __future__ import annotations
-from pathlib import Path
-from typing import Iterable, Optional
+
 import ast
+from collections.abc import Iterable
+from pathlib import Path
+
 import tomllib
-from .graph import CodebaseTwin, FileNode, ProjectNode
-from .hashers import hash_file, hash_dir
+
+from .graph import CodebaseTwin
+from .graph import FileNode
+from .graph import ProjectNode
+from .hashers import hash_dir
+from .hashers import hash_file
 
 
 def _iter_py_files(root: Path) -> Iterable[Path]:
@@ -14,7 +20,7 @@ def _iter_py_files(root: Path) -> Iterable[Path]:
         yield p
 
 
-def _module_name(repo_root: Path, file_path: Path) -> Optional[str]:
+def _module_name(repo_root: Path, file_path: Path) -> str | None:
     # Heuristic: turn path like src/pkg/mod.py into pkg.mod if under a src-like root
     try:
         rel = file_path.relative_to(repo_root)
@@ -25,8 +31,7 @@ def _module_name(repo_root: Path, file_path: Path) -> Optional[str]:
         parts = parts[1:]
     if not parts:
         return None
-    if parts[-1].endswith(".py"):
-        parts[-1] = parts[-1][:-3]
+    parts[-1] = parts[-1].removesuffix(".py")
     return ".".join(p for p in parts if p)
 
 
@@ -38,8 +43,7 @@ def _imports_from_ast(src: str) -> set[str]:
         return out
     for n in ast.walk(tree):
         if isinstance(n, ast.Import):
-            for a in n.names:
-                out.add(a.name.split(".")[0])
+            out.update(a.name.split(".")[0] for a in n.names)
         elif isinstance(n, ast.ImportFrom):
             if n.module:
                 out.add(n.module.split(".")[0])
