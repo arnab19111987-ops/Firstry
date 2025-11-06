@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Sequence
 
@@ -14,7 +15,7 @@ class GateResult:
     watched_files: List[str] | None = None
 
 
-class Gate:
+class Gate(ABC):
     gate_id: str = "base"
     # which patterns this gate is interested in
     patterns: Sequence[str] = ("*.py",)
@@ -32,5 +33,6 @@ class Gate:
                     return True
         return False
 
+    @abstractmethod
     def run(self, root):
         raise NotImplementedError

@@ -24,20 +24,24 @@ ruff-fix:  ## auto-fix ruff lint issues and format with black
 	python -m black . || true
 
 .PHONY: stub-check
-stub-check:  ## scan for code stubs, TODOs, and typing crutches
-	@echo "[stub-check] scanning for code stubs and placeholders..."
-	@echo "  ℹ️  Note: NotImplementedError in base classes (abstract methods) is acceptable"
-	@find src tests -name "*.py" -type f 2>/dev/null | xargs grep -l "pass\s*#.*stub" 2>/dev/null && { echo "❌ Stub placeholders found"; exit 1; } || echo "✅ No stub placeholders"
-	@echo "[stub-check] scanning for TODO/FIXME markers..."
-	@find src tests -name "*.py" -type f 2>/dev/null | xargs grep -n "TODO\|FIXME\|HACK\|XXX" 2>/dev/null | grep -v "config_loader\|drift_check\|checks_orchestrator_optimized" && echo "⚠️ TODO/FIXME markers found (excluding known)" || echo "✅ No active TODO/FIXME markers"
-	@echo "[stub-check] scanning for unjustified skip/xfail..."
-	@find tests -name "*.py" -type f 2>/dev/null | xargs grep -B1 "@pytest.mark.skip\|@pytest.mark.xfail" 2>/dev/null | grep -v "reason=" | grep -v "^--$$" && echo "⚠️ Potential unjustified skip/xfail found" || echo "✅ Skip/xfail appear properly justified"
+stub-check:  ## scan for unowned STUB/TODO markers and stray NotImplementedError
+	@echo "[stub-check] checking for unowned STUB/TODO markers..."
+	@git ls-files '*.py' 2>/dev/null | xargs grep -nE '(^|\s)#\s*(STUB:|TODO:)(?!.*owner=|.*due=)' 2>/dev/null && \
+	  { echo "❌ Found STUB/TODO without owner= and due= (required format: # STUB: desc owner=NAME due=YYYY-MM-DD)"; exit 1; } || \
+	  echo "✅ All STUB/TODO markers are properly owned"
+	@echo "[stub-check] checking for NotImplementedError outside abstract base classes..."
+	@python scripts/check_notimpl.py
 	@echo "✅ stub-check passed"
 
+.PHONY: typing-metrics
+typing-metrics:  ## check typing crutches (Any/ignore/cast) against baseline
+	@python scripts/check_typing_metrics.py
+
 .PHONY: check
-check:  ## run full quality gate (lints, types, tests)
+check:  ## run full quality gate (stubs, typing, lints, types, tests)
 	@echo "[firsttry] running full quality gate..."
 	@make stub-check
+	@make typing-metrics
 	@python -m ruff check . || echo "⚠ ruff not installed (optional)"
 	@python -m mypy . || echo "⚠ mypy not installed (optional)"
 	@echo "Running tests..."

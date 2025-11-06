@@ -49,9 +49,9 @@ async def _timed_runner_execution(
 # Prefer the package's RUNNERS; if unavailable, fall back to an empty dict.
 # Tests will monkeypatch this symbol directly inside this module.
 try:
-    from .runners import RUNNERS  # type: ignore
+    from .runners import RUNNERS  # type: ignore[import-not-found]
 except Exception:  # pragma: no cover
-    RUNNERS = {}  # type: ignore
+    RUNNERS = {}  # type: ignore[assignment]
 
 
 # ---- BUCKET DEFINITIONS -------------------------------------------------

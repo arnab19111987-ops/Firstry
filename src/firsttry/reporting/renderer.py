@@ -32,14 +32,15 @@ def render_tty(
         for r in fails:
             print(f"\n[{r.id}] status={r.status}")
 
-            def _clip(s: str) -> str:
+            def _clip(s: str | bytes) -> str:
                 if not s:
                     return ""
-                lines = s.splitlines()
+                text = s.decode() if isinstance(s, bytes) else s
+                lines = text.splitlines()
                 if len(lines) > max_lines:
                     head = "\n".join(lines[:max_lines])
                     return f"{head}\n... (truncated {len(lines)-max_lines} lines)"
-                return s
+                return text
 
             if r.stdout:
                 print("\nSTDOUT:")

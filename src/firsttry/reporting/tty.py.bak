@@ -1,0 +1,269 @@
+# src/firsttry/reporting/tty.py
+from __future__ import annotations
+import shutil
+from typing import Dict, Any
+
+from ..twin.graph import CodebaseTwin  # <-- use the twin for repo/file context
+
+BLUE = "🔹"
+FIRE = "🔥"
+OK = "✅"
+FAIL = "❌"
+WARN = "⚠️"
+LOCK = "🔒"
+X = "✖"
+
+# Roughly map codes/severities for common tools
+RUFF_AUTO_FIXABLE = {
+    # extremely common auto-fixables; extend as needed
+    "I001","I002","I003","I004",        # isort/import sorting
+    "F401","F401",                      # unused import (ruff can fix some)
+    "E711","E712","E713","E714",        # simple comparisons
+    "UP0","UP1","UP2","UP3","UP35",     # pyupgrade families
+}
+def ruff_severity_from_code(code: str) -> str:
+    # Heuristic: F/E = HIGH, W = MEDIUM, I/UP = LOW
+    if not code: return "MEDIUM"
+    prefix = code.split()[0][:1]
+    if prefix in {"F","E"}: return "HIGH"
+    if prefix in {"W","T"}: return "MEDIUM"
+    return "LOW"
+
+def mypy_severity(_msg: str) -> str:
+    # Type errors are usually HIGH; downgrade "note:" lines later.
+    return "HIGH"
+
+def bandit_severity_from_text(msg: str) -> str:
+    # Look for Bandit tags like B101; default MEDIUM
+    if "B3" in msg or "B6" in msg: return "HIGH"
+    if "LOW" in msg.upper(): return "LOW"
+    return "MEDIUM"
+
+def width() -> int:
+    try:
+        return shutil.get_terminal_size((100, 20)).columns
+    except Exception:
+        return 100
+
+def _head_tail(items: List[str], limit: int) -> Tuple[List[str], int]:
+    if len(items) <= limit: return items, 0
+    return items[:limit], len(items) - limit
+
+# --- Parsers (best-effort) ---
+
+def parse_ruff(stdout: str, stderr: str) -> Tuple[int,int,List[Dict[str,str]]]:
+    """Return (findings, autofixable, items). Items have severity/code/file/line/message."""
+    items: List[Dict[str,str]] = []
+    autofix = 0
+    # Prefer JSON if present
+    try:
+        data = json.loads(stdout or "[]")
+        for d in data:
+            code = d.get("code") or ""
+            sev = ruff_severity_from_code(code)
+            file = d.get("filename") or d.get("file") or ""
+            line = d.get("location", {}).get("row") or d.get("line") or 0
+            msg = d.get("message") or ""
+            if code in RUFF_AUTO_FIXABLE: autofix += 1
+            items.append({"severity": sev, "code": code, "file": file, "line": str(line), "msg": msg})
+        return len(items), autofix, items
+    except Exception:
+        pass
+    # Fallback: regex parse text lines like: path.py:12:5: F401 message...
+    rx = re.compile(r"^(?P<file>.+?):(?P<line>\d+):\d+:\s+(?P<code>[A-Z0-9]+)\s+(?P<msg>.+)$", re.M)
+    for m in rx.finditer(stdout or stderr or ""):
+        code = m.group("code")
+        if code in RUFF_AUTO_FIXABLE: autofix += 1
+        items.append({"severity": ruff_severity_from_code(code), "code": code,
+                     "file": m.group("file"), "line": m.group("line"), "msg": m.group("msg")})
+    return len(items), autofix, items
+
+def parse_mypy(stdout: str, stderr: str) -> Tuple[int,List[Dict[str,str]]]:
+    items: List[Dict[str,str]] = []
+    rx = re.compile(r"^(?P<file>.+?):(?P<line>\d+):(?:\d+:)?\s+error:\s+(?P<msg>.+)$", re.M)
+    for m in rx.finditer(stdout or stderr or ""):
+        items.append({"severity": mypy_severity(m.group("msg")), "file": m.group("file"),
+                      "line": m.group("line"), "msg": m.group("msg")})
+    return len(items), items
+
+def parse_pytest(stdout: str, stderr: str) -> Tuple[int,List[Dict[str,str]]]:
+    # Count failed tests from summary; pull a few headings from captured output if present
+    failed = 0
+    m = re.search(r"(\d+)\s+failed", (stdout or "") + (stderr or ""))
+    if m: failed = int(m.group(1))
+    # Optional: extract nodeids
+    nodes = []
+    rx = re.compile(r"^_{2,}\s+(.+?)\s+_{2,}$", re.M)
+    for mm in rx.finditer(stdout or ""):
+        nodes.append({"severity":"CRITICAL","test": mm.group(1).strip()})
+    return failed, nodes
+
+def parse_bandit(stdout: str, stderr: str) -> Tuple[int,List[Dict[str,str]]]:
+    items: List[Dict[str,str]] = []
+    try:
+        data = json.loads(stdout or "{}")
+        for r in data.get("results", []):
+            file = r.get("filename","")
+            line = r.get("line_number") or 0
+            code = r.get("test_id") or ""
+            text = r.get("issue_text") or ""
+            sev = r.get("issue_severity","MEDIUM").upper()
+            items.append({"severity": sev, "file": file, "line": str(line), "code": code, "msg": text})
+        return len(items), items
+    except Exception:
+        pass
+    # Fallback: scan text
+    rx = re.compile(r"Issue:\s+(?P<msg>.+?)\n.*?Location:\s+(?P<file>.+?):(?P<line>\d+)", re.S)
+    for m in rx.finditer((stdout or "") + (stderr or "")):
+        items.append({"severity": bandit_severity_from_text(m.group("msg")),
+                      "file": m.group("file"), "line": m.group("line"),
+                      "code":"", "msg": m.group("msg").strip()})
+    return len(items), items
+
+# --- Rendering ---
+
+def render_tty_report(
+    report_json: Dict[str, Any],
+    *,
+    tier_label: str = "Free",
+    repo_file_count: Optional[int] = None,
+    test_count: Optional[int] = None,
+    machine_desc: str = "",
+    detailed: bool = False,
+    max_per_check: int = 10,
+    order_by_priority: bool = True,
+    skipped_checks_hint: Optional[List[str]] = None,
+) -> str:
+    checks = report_json.get("checks", {})
+    cols = width()
+
+    # Build header
+    lines = []
+    lines.append(f"{EMO_DOT} {BOLD}FirstTry ({tier_label}) — Local CI{RESET}")
+    
+    # Context section (always show if we have info)
+    if machine_desc or repo_file_count or test_count:
+        lines.append("Context")
+        if machine_desc:
+            lines.append(f"Machine: {machine_desc}")
+        if repo_file_count:
+            lines.append(f"Repo: {repo_file_count} files" + (f", {test_count} tests" if test_count else ""))
+    
+    lines.append("")  # blank line before Summary
+
+    # Parse known tools for summary & details
+    summary_chunks: List[str] = []
+    detail_sections: List[Tuple[str, List[str]]] = []
+
+    def add_summary(label: str, emoji: str, text: str):
+        summary_chunks.append(f"{emoji} {label}: {text}")
+
+    def section(title_emoji: str, title: str, body_lines: List[str]) -> None:
+        bar = "─" * max(0, cols - len(title) - 4)
+        lines.append(f"{title_emoji} {BOLD}{title}{RESET}")
+        lines.extend(body_lines)
+        lines.append("")
+
+    # ruff
+    ruff_key = next((k for k in checks if k.startswith("ruff:") or k=="ruff"), None)
+    if ruff_key:
+        r = checks[ruff_key]
+        findings, autofix, items = parse_ruff(r.get("stdout",""), r.get("stderr",""))
+        add_summary("ruff", EMO_FIRE if findings else EMO_OK, f"{findings} findings" + (f" ({autofix} auto-fixable)" if autofix else ""))
+        if detailed and findings:
+            # sort by severity HIGH>MEDIUM>LOW
+            sev_rank = {"CRITICAL":0,"HIGH":1,"MEDIUM":2,"LOW":3}
+            items.sort(key=lambda x: sev_rank.get(x["severity"],9))
+            show, more = _head_tail([
+                f"[{x['severity']}] {x.get('code','')}: {x['msg']}\n{GRAY}File:{RESET} {x['file']}:{x['line']}"
+                for x in items
+            ], max_per_check)
+            sec_title = f"{EMO_FIRE} ruff ({findings} Findings)"
+            if more: show.append(f"{GRAY}(...and {more} more findings){RESET}")
+            detail_sections.append((sec_title, show))
+
+    # mypy
+    mypy_key = next((k for k in checks if k.startswith("mypy:") or k=="mypy"), None)
+    if mypy_key:
+        r = checks[mypy_key]
+        cnt, items = parse_mypy(r.get("stdout",""), r.get("stderr",""))
+        add_summary("mypy", EMO_FIRE if cnt else EMO_OK, f"{cnt} type errors")
+        if detailed and cnt:
+            show, more = _head_tail([
+                f"[HIGH] {it['msg']}\n{GRAY}File:{RESET} {it['file']}:{it['line']}"
+                for it in items
+            ], max_per_check)
+            sec_title = f"{EMO_FIRE} mypy ({cnt} Type Errors)"
+            if more: show.append(f"{GRAY}(...and {more} more errors){RESET}")
+            detail_sections.append((sec_title, show))
+
+    # pytest
+    py_key = next((k for k in checks if k.startswith("pytest:") or k=="pytest"), None)
+    if py_key:
+        r = checks[py_key]
+        fails, nodes = parse_pytest(r.get("stdout",""), r.get("stderr",""))
+        if fails:
+            add_summary("pytest", EMO_FAIL, f"{fails} failed")
+        else:
+            add_summary("pytest", EMO_OK, "all passed")
+        if detailed and fails:
+            show, more = _head_tail([
+                f"[CRITICAL] {n.get('test')}" for n in nodes if n.get("test")
+            ] or [f"[CRITICAL] {fails} failing tests"], max_per_check)
+            sec_title = f"{EMO_FAIL} pytest ({fails} Failures)"
+            if more: show.append(f"{GRAY}(...and {more} more failures){RESET}")
+            detail_sections.append((sec_title, show))
+
+    # bandit
+    ban_key = next((k for k in checks if k.startswith("bandit:") or k=="bandit"), None)
+    if ban_key:
+        r = checks[ban_key]
+        if r.get("status") == "skip":
+            add_summary("bandit", EMO_LOCK, "skipped on this tier")
+        else:
+            cnt, items = parse_bandit(r.get("stdout",""), r.get("stderr",""))
+            add_summary("bandit", EMO_FIRE if cnt else EMO_OK, f"{cnt} findings")
+            if detailed and cnt:
+                show, more = _head_tail([
+                    f"[{it['severity']}] {it.get('code','')}: {it['msg']}\n{GRAY}File:{RESET} {it['file']}:{it['line']}"
+                    for it in items
+                ], max_per_check)
+                sec_title = f"{EMO_FIRE} bandit ({cnt} Findings)"
+                if more: show.append(f"{GRAY}(...and {more} more findings){RESET}")
+                detail_sections.append((sec_title, show))
+
+    # Overall result line
+    total_checks = len([k for k,v in checks.items() if v.get("status")!="skip"])
+    any_fail = any(v.get("status") in {"fail","error"} for v in checks.values())
+    result_line = f"Result: {EMO_FAIL if any_fail else EMO_OK} {'FAILED' if any_fail else 'PASSED'} ({total_checks} checks run)"
+    # Fix hint if ruff autofix
+    if ruff_key:
+        _, autofix, _ = parse_ruff(checks[ruff_key].get("stdout",""), checks[ruff_key].get("stderr",""))
+        if autofix:
+            result_line += f" {DIM}(Run ft --fix to apply {autofix} auto-fixes){RESET}"
+
+    # Compose "Summary" section
+    lines.append(f"{BOLD}Summary{RESET}")
+    for ch in summary_chunks: 
+        lines.append(ch)
+    lines.append(result_line)
+    lines.append("")
+
+    # Detailed sections
+    if detailed and detail_sections:
+        lines.append(f"{BOLD}Detailed Report{RESET}")
+        for title, body in detail_sections:
+            lines.append(title)
+            for line in body:
+                lines.append(line)
+            lines.append("")
+
+    # Upgrade nudge for skipped checks (Free tier etc.)
+    if skipped_checks_hint:
+        lines.append(f"{EMO_STAR} Upgrade to Pro to Unlock More Checks")
+        lines.append("The following checks were skipped on this tier.\n")
+        for s in skipped_checks_hint:
+            lines.append(f"{EMO_LOCK} {s}")
+        lines.append("")
+
+    return "\n".join(lines)

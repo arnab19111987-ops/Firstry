@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 
@@ -12,11 +13,13 @@ class CacheHit:
     meta: Dict[str, Any] | None = None  # freeform (e.g., tool versions, timings)
 
 
-class BaseCache:
+class BaseCache(ABC):
     """Abstract cache interface."""
 
+    @abstractmethod
     def get(self, key: str) -> Optional[CacheHit]:
         raise NotImplementedError
 
+    @abstractmethod
     def put(self, key: str, result: CacheHit) -> None:
         raise NotImplementedError

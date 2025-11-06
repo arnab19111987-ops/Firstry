@@ -12,7 +12,7 @@ from . import cache as ft_cache
 MAX_WORKERS = min(4, os.cpu_count() or 2)
 
 
-async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, str]:
+async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int | None, str]:
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         cwd=cwd,

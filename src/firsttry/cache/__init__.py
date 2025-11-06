@@ -54,8 +54,9 @@ if _legacy_cache is not None:
 
 # Type stubs for commonly used functions from cache.py for mypy
 if TYPE_CHECKING:
-    from typing import Any, Dict, Iterable
+    from typing import Any, Dict, Iterable, Optional
     from pathlib import Path as PathType
+    from ..cache_models import ToolCacheEntry, InputFileMeta
     
     def load_cache() -> Dict[str, Any]: ...
     def save_cache(data: Dict[str, Any]) -> None: ...
@@ -70,3 +71,5 @@ if TYPE_CHECKING:
         status: str,
         extra: Dict[str, Any] | None = None,
     ) -> None: ...
+    def load_tool_cache_entry(repo_root: str, tool_name: str) -> Optional[ToolCacheEntry]: ...
+    def save_tool_cache_entry(repo_root: str, entry: ToolCacheEntry) -> None: ...

@@ -20,7 +20,7 @@ try:
     _console = Console()
 except Exception:  # pragma: no cover
     _HAS_RICH = False
-    _console = None
+    _console = None  # type: ignore[assignment]
 
 
 def _supports_color() -> bool:

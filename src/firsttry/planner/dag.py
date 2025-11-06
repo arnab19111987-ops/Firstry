@@ -63,11 +63,8 @@ def build_plan_from_twin(
         plan.tasks[task.id] = task
 
     for proj_name, files in per_proj_impacted.items():
-        lang = (
-            twin.projects.get(proj_name).lang
-            if proj_name in twin.projects
-            else "python"
-        )
+        proj = twin.projects.get(proj_name)
+        lang = proj.lang if proj else "python"
         root = _project_root(twin, proj_name)
 
         if lang == "python":

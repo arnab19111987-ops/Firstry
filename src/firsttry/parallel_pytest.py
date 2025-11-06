@@ -144,7 +144,7 @@ def create_test_chunks(
     chunk_count = min(max_workers, math.ceil(len(test_files) / target_chunk_size))
 
     # Simple round-robin distribution
-    chunks = [[] for _ in range(chunk_count)]
+    chunks: list[list[str]] = [[] for _ in range(chunk_count)]
     for i, test_file in enumerate(test_files):
         chunk_idx = i % chunk_count
         chunks[chunk_idx].append(test_file)

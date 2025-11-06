@@ -38,7 +38,7 @@ try:
     _HAS_RICH = True
 except Exception:
     _HAS_RICH = False
-    console = None
+    console = None  # type: ignore[assignment]
 
 
 def render_summary(report: dict) -> None:

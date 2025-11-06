@@ -1,6 +1,7 @@
 # src/firsttry/agents/base.py
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
@@ -14,8 +15,9 @@ class AgentResult:
     extra: Dict[str, Any] = field(default_factory=dict)
 
 
-class Agent:
+class Agent(ABC):
     name: str = "agent"
 
+    @abstractmethod
     async def run(self, ctx: Any) -> AgentResult:
         raise NotImplementedError

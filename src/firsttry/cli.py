@@ -502,15 +502,19 @@ def cmd_run(argv=None) -> int:
     argv = _translate_legacy_args(argv)
 
     p = argparse.ArgumentParser(prog="firsttry run")
-    # Accept either a positional tier (legacy UX) or --tier flag
-    p.add_argument("maybe_tier", nargs="?", help="tier/profile (e.g., free-lite, lite, pro)")
-    p.add_argument("--tier", help="tier/profile (alias of positional)")
+    # Primary interface is --tier flag, but keep positional for backward compatibility
+    p.add_argument("maybe_tier", nargs="?", help=argparse.SUPPRESS)  # hidden positional for backward compat
+    p.add_argument("--tier", help="tier/profile (e.g., free-lite, lite, pro, strict)")
     p.add_argument("--legacy", action="store_true", help="use legacy orchestrator")
     p.add_argument("--workers", type=int, default=3)
     p.add_argument("--no-remote-cache", action="store_true")
     p.add_argument("--show-report", action="store_true")
+    p.add_argument("--tty", action="store_true", help="print priority-ordered TTY report to stdout")
+    p.add_argument("--tty-detailed", action="store_true", help="include detailed findings per check")
+    p.add_argument("--tty-max-items", type=int, default=10, help="max items per check in detailed mode")
     ns = p.parse_args(argv)
 
+    # Prioritize --tier flag, fall back to positional, then default to "lite"
     tier = ns.tier or ns.maybe_tier or "lite"
     if tier == "auto":
         tier = "lite"
@@ -537,17 +541,69 @@ def cmd_run(argv=None) -> int:
     try:
         out = repo_root / ".firsttry" / "report.json"
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(
-            {"checks": {k: v.to_report_json() for k, v in results.items()}},
-            indent=2
-        ))
+        report_data = {"checks": {k: v.to_report_json() for k, v in results.items()}}
+        out.write_text(json.dumps(report_data, indent=2))
     except Exception:
         pass
 
-    # Console summary
+    # TTY report rendering (if requested)
+    if ns.tty or ns.tty_detailed:
+        try:
+            from .reporting.tty import render_tty_report
+            import os
+            
+            # Gather context information
+            repo_files = sum(1 for _ in repo_root.rglob("*") if _.is_file() and ".git" not in str(_))
+            test_dir = repo_root / "tests"
+            test_count = sum(1 for _ in test_dir.rglob("test_*.py")) if test_dir.exists() else None
+            
+            # Detect CPU count for machine description
+            cpu_count = os.cpu_count() or 0
+            machine_desc = f"{cpu_count} CPUs" if cpu_count else ""
+            
+            # Collect skipped checks for upgrade hints
+            skipped = []
+            for k, v in results.items():
+                if v.status == "skip":
+                    check_id = k.split(":")[0]
+                    # Friendly descriptions
+                    if check_id == "pytest":
+                        skipped.append("pytest: Run your unit/integration tests.")
+                    elif check_id == "bandit":
+                        skipped.append("bandit: Find common security issues in your code.")
+                    elif check_id == "pip-audit":
+                        skipped.append("pip-audit: Scan dependencies for vulnerabilities.")
+                    elif check_id == "ci-parity":
+                        skipped.append("ci-parity: Check drift vs CI.")
+                    else:
+                        skipped.append(f"{check_id}: (skipped)")
+            
+            # Render the TTY report
+            tty_output = render_tty_report(
+                report_data,
+                tier_label=(tier or "Free").title(),
+                repo_file_count=repo_files if repo_files < 100000 else None,  # Skip if huge repo
+                test_count=test_count,
+                machine_desc=machine_desc,
+                detailed=ns.tty_detailed,
+                max_per_check=ns.tty_max_items,
+                order_by_priority=True,
+                skipped_checks_hint=skipped or None,
+            )
+            print(tty_output)
+        except Exception as e:
+            # Fallback to simple console output if TTY rendering fails
+            print(f"Warning: TTY rendering failed: {e}")
+            for k, v in results.items():
+                print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
+    elif ns.show_report:
+        # Original console summary for --show-report without --tty
+        for k, v in results.items():
+            print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
+    
+    # Determine exit code
     all_ok = True
     for k, v in results.items():
-        print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
         all_ok &= (v.status == "ok")
     return 0 if all_ok else 1
 
