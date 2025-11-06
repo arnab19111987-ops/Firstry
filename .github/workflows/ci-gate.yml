@@ -40,6 +40,9 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
+      - name: Ensure deterministic pytest
+        run: echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+
       - name: Install project + dev dependencies
         run: |
           python -m pip install --upgrade pip
@@ -58,6 +61,9 @@ jobs:
           if [ -d "tools/firsttry" ]; then
             python -m pip install -e tools/firsttry
           fi
+
+      - name: FirstTry lite (must be green)
+        run: python -m firsttry.cli run --tier lite
 
       - name: Run tests with coverage
         run: |

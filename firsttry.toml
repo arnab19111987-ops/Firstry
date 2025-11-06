@@ -2,12 +2,16 @@
 # Both Lite and Pro run the exact same LOCAL checks.
 # Only difference: Pro enables Shared Remote Cache at runtime (code toggle below).
 
+[tier_defaults]
+# Always disable 3rd-party pytest autoload so runs are deterministic
+pytest_disable_plugin_autoload = true
+
 [timeouts]
 default = 300
 [timeouts.per_check]
-ruff = 20
-mypy = 30
-pytest_fast = 60
+ruff = 15
+mypy = 60
+pytest_fast = 120
 bandit = 60
 black = 30
 isort = 20
@@ -29,7 +33,7 @@ enabled = [
 
 # Tier policies: BOTH run the same local checks
 [tiers.lite]
-run = [
+checks = [
   "ruff",
   "config",
   "gitguard",
@@ -39,9 +43,10 @@ run = [
   "black",
   "isort"
 ]
+remote_cache = false
 
 [tiers.pro]
-run = [
+checks = [
   "ruff",
   "config",
   "gitguard",
@@ -51,6 +56,14 @@ run = [
   "black",
   "isort"
 ]
+remote_cache = true   # only delta vs lite
+
+[render]
+tty = { detailed_default_items = 10 }
+
+[fail_policy]
+# If any check fails → non-zero exit (blocks commit/CI)
+strict = true
 
 # Local cache ON by default; remote cache behavior is toggled in code (see patch below)
 [cache]

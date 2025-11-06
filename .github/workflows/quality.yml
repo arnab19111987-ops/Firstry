@@ -20,6 +20,9 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
+      - name: Ensure deterministic pytest
+        run: echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+
       - name: Install dev tools
         run: |
           python -m pip install --upgrade pip
@@ -35,9 +38,9 @@ jobs:
             python -m pip install ruff black mypy pytest coverage
           fi
 
-      - name: Run code quality gate (ruff/black/mypy/pytest smoke)
+      - name: Run FirstTry lite (must be green before deeper checks)
         run: |
-          make check || {
-            echo "::error ::make check failed. Run 'make check' locally to reproduce."
+          python -m firsttry.cli run --tier lite || {
+            echo "::error ::FirstTry lite failed. Run 'python -m firsttry.cli run --tier lite' locally to reproduce."
             exit 1
           }
