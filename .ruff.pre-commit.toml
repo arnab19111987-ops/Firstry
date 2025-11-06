@@ -1,0 +1,18 @@
+# .ruff.pre-commit.toml — strict configuration for pre-commit gate only
+# This matches the CI baseline exactly: E, F, I (pycodestyle, Pyflakes, import order)
+# Pre-commit gate enforces the same rules as CI to catch issues before they fail CI.
+
+extend = ".ruff.toml"
+fix = true
+
+[lint]
+# Match CI baseline exactly: E, F, I
+# The pre-commit hook uses the same rules as CI to prevent surprises.
+# This is NOT a stricter gate—it's the same gate, applied locally before push.
+select = ["E", "F", "I"]
+ignore = ["E203", "E501"]  # Black-compatible; E501 delegated to line-length
+
+[lint.per-file-ignores]
+# Tests may use dynamic names and type comparisons in legacy cases
+"tests/**" = ["F821", "E721", "F841"]
+

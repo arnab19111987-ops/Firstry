@@ -1,0 +1,40 @@
+# .ruff.toml — baseline configuration (used everywhere: CI, local runs, pytest, etc.)
+# This is the standard ruleset for general development and CI/CD.
+
+line-length = 100
+target-version = "py310"
+
+# Only lint our Python source and tests; skip vendored, coverage, docs, and benchmarks
+extend-exclude = [
+  ".venv",
+  ".venv-build",
+  "htmlcov",
+  "docs",
+  "dashboard",
+  "benchmarks",
+  "firsttry.egg-info",
+  "**/*.egg-info",
+  # Exclude demo/performance scripts from strict linting
+  "step12_*.py",
+  "validation_*.py",
+  "test_cache_performance.py",
+  "test_improvements.py",
+  "demo_*.py",
+  "performance_benchmark.py",
+]
+
+[lint]
+# Baseline: Essential checks for code quality
+# E: pycodestyle errors
+# F: Pyflakes errors
+# I: isort import order
+select = ["E", "F", "I"]
+ignore = ["E203", "E501"]  # Black-compatible; E501 delegated to line-length
+
+[lint.per-file-ignores]
+# Tests may use dynamic names and type comparisons in legacy cases
+"tests/**" = ["F821", "E721", "F841"]
+
+[lint.isort]
+known-first-party = ["firsttry"]
+force-single-line = true
