@@ -23,13 +23,18 @@ from firsttry.run_swarm import run_plan
 from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
 
 # add these imports for old enhanced handlers
+# Declare types for mypy
+handle_status: Optional[Callable[[argparse.Namespace], int]]
+handle_setup: Optional[Callable[[argparse.Namespace], int]]
+handle_doctor: Optional[Callable[[argparse.Namespace], int]]
+cmd_mirror_ci: Optional[Callable[[argparse.Namespace], int]]
+
 try:
-    from .cli_enhanced_old import (  # type: ignore[import-not-found]
+    from .cli_enhanced_old import (  # type: ignore[import-not-found,no-redef]
         handle_status,
         handle_setup,
         handle_doctor,
-        cmd_mirror_ci,  # <-- ADD THIS (note: cmd_ not handle_)
-        # handle_report,  # <- leave commented: audit says not implemented
+        cmd_mirror_ci,
     )
 except ImportError:
     # in case someone vendors this without the old file
@@ -1143,7 +1148,7 @@ async def run_fast_pipeline(*, args=None) -> int:
     # ensure we have ci_plan in ctx even if source=detect
     if ci_plan is None:
         # CI parsing disabled; keep an empty ci_plan
-        ci_plan = []
+        ci_plan: list = []
     ctx["ci_plan"] = ci_plan
     ctx["config"] = cfg
 
@@ -1187,7 +1192,8 @@ async def run_fast_pipeline(*, args=None) -> int:
             else:
                 if status is not None:
                     print(f"❌ {single_tool}: Issues found")
-                    print(details.get("stdout", ""))
+                    if details:
+                        print(details.get("stdout", ""))
                     return 1
                 # else: status None -> fallback to orchestrated execution
         # Add other single tools as needed
@@ -1254,7 +1260,8 @@ async def run_fast_pipeline(*, args=None) -> int:
                     entry["locked"] = True
                     entry["reason"] = "Available in Pro tier"
 
-            payload["checks"].append(entry)
+            if isinstance(payload.get("checks"), list):
+                payload["checks"].append(entry)
 
         # Print preview
         import json
