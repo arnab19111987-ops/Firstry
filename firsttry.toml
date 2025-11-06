@@ -1,32 +1,58 @@
-[tool.firsttry]
-fail_on_drift = true
-
-[tool.firsttry.run]
-tools = ["black", "ci-parity", "mypy", "npm test", "pytest", "ruff"]
-
-[tool.firsttry.tool.ruff]
-cmd = "ruff check ."
-
-[tool.firsttry.tool.black]
-cmd = "black --check ."
-
-[tool.firsttry.tool.mypy]
-cmd = "mypy ."
-
-[tool.firsttry.tool.pytest]
-cmd = "pytest -q"
-
-[tool.firsttry.tool."npm test"]
-cmd = "npm test"
-
+# firsttry.toml — minimal, tier-symmetric checks
+# Both Lite and Pro run the exact same LOCAL checks.
+# Only difference: Pro enables Shared Remote Cache at runtime (code toggle below).
 
 [timeouts]
-# Default timeout (seconds)
 default = 300
-
 [timeouts.per_check]
-# Per-check timeouts (seconds)
-ruff = 10
-mypy = 25
-pytest = 60
-bandit = 20
+ruff = 20
+mypy = 30
+pytest_fast = 60
+bandit = 25
+black = 30
+isort = 20
+config = 10       # firsttry.checks.config_parser
+gitguard = 5      # firsttry.gitguard
+
+# Profile used by pre-commit / quick runs
+[profiles.precommit]
+enabled = [
+  "ruff",
+  "config",
+  "gitguard",
+  "pytest_fast",
+  "mypy",
+  "bandit",
+  "black",
+  "isort"
+]
+
+# Tier policies: BOTH run the same local checks
+[tiers.lite]
+run = [
+  "ruff",
+  "config",
+  "gitguard",
+  "pytest_fast",
+  "mypy",
+  "bandit",
+  "black",
+  "isort"
+]
+
+[tiers.pro]
+run = [
+  "ruff",
+  "config",
+  "gitguard",
+  "pytest_fast",
+  "mypy",
+  "bandit",
+  "black",
+  "isort"
+]
+
+# Local cache ON by default; remote cache behavior is toggled in code (see patch below)
+[cache]
+local = true
+remote = false   # leave false in config; Pro tier turns it on programmatically

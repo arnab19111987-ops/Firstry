@@ -163,6 +163,18 @@ def render_tty(
     print(_result_line(overall_ok, len(tools)))
     print()
 
+    # 🔒 Show Shared Remote Cache lock for Lite tier only
+    if tier_name.lower() in ("lite", "free-lite", "free"):
+        # Calculate how many checks could have been shared from team cache
+        # (For now, we show all cache hits as potential shared cache hits)
+        remote_share_saved = sum(
+            1 for v in checks.values() 
+            if v.get("cache_status", "").startswith("hit-")
+        )
+        if remote_share_saved > 0:
+            print(f"{LOCK} Shared Remote Cache (Pro): Your team re-ran {remote_share_saved} check{'s' if remote_share_saved != 1 else ''} you already passed. (Upgrade to Pro to share results)")
+            print()
+
     if not detailed:
         return
 

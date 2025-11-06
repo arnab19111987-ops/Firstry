@@ -540,6 +540,7 @@ def cmd_run(argv=None) -> int:
         plan,
         use_remote_cache=(not ns.no_remote_cache),
         workers=ns.workers,
+        tier=tier,  # Pass tier for remote cache toggle
     )
 
     # Write JSON report (quietly)
