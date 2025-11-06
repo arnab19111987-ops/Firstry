@@ -343,6 +343,23 @@ def build_parser() -> argparse.ArgumentParser:
     # --- list-checks ------------------------------------------------------
     sub.add_parser("list-checks", help="List available checks")
 
+    # --- pre-commit -------------------------------------------------------
+    # Convenience alias for "run fast" - commonly used in git hooks
+    p_precommit = sub.add_parser(
+        "pre-commit", 
+        help="Quick pre-commit checks (alias for 'run fast')"
+    )
+    p_precommit.add_argument(
+        "--fix",
+        action="store_true",
+        help="Automatically fix issues where possible",
+    )
+    p_precommit.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable result caching and run all checks fresh",
+    )
+
     # --- status ------------------------------------------------------------
     if handle_status is not None:
         p_status = sub.add_parser(
@@ -656,6 +673,46 @@ def main(argv: list[str] | None = None) -> int:
 
     elif args.cmd == "lint":
         return cmd_lint(args=args)
+
+    elif args.cmd == "pre-commit":
+        # Convenience alias: pre-commit → run fast
+        # Build minimal args for cmd_run with fast mode
+        import types
+        fast_args = types.SimpleNamespace(
+            mode="fast",
+            tier="lite",
+            profile="fast",
+            source="auto",
+            changed_only=False,
+            no_cache=getattr(args, "no_cache", False),
+            cache_only=False,
+            run_npm_anyway=False,
+            debug_phases=False,
+            interactive=False,
+            report_json=None,
+            report=False,
+            send_telemetry=False,
+            report_schema="2",
+            dry_run=False,
+            tty=False,
+            tty_detailed=False,
+            tty_max_items=10,
+            workers=8,
+            no_remote_cache=False,
+            legacy=False,
+            maybe_tier=None,
+        )
+        # Apply --fix flag if present
+        if getattr(args, "fix", False):
+            # For pre-commit with --fix, we need to call lint with fix
+            return cmd_lint(args=args)
+        
+        # Otherwise run fast checks
+        try:
+            # Convert fast_args to argv format for cmd_run
+            return cmd_run(argv=["fast"])
+        except Exception:
+            return _run_async_cli(run_fast_pipeline(args=fast_args))
 
     elif args.cmd == "inspect":
         return cmd_inspect(args=args)

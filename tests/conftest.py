@@ -1,5 +1,4 @@
 """Pytest configuration and quality gate hooks."""
-import pytest
 from typing import Any
 
 

@@ -4,9 +4,7 @@ Test backward compatibility for --gate and --require-license flags.
 These tests ensure legacy invocations don't break even though
 the flags are no longer part of the official API.
 """
-import sys
 from unittest.mock import patch, MagicMock
-import pytest
 
 import firsttry.cli as cli_module
 

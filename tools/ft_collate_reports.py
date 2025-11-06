@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import json, statistics, sys
+import json
+import statistics
+import sys
 from pathlib import Path
 
 SRC = Path(".firsttry/reports")
@@ -71,7 +73,7 @@ def write_outputs(tiers):
         lines.append(f"- Cold: p50={c.get('p50_ms')}ms, p95={c.get('p95_ms')}ms, ok={c.get('ok',0)}/{c.get('count',0)}")
         lines.append(f"- Warm: p50={w.get('p50_ms')}ms, p95={w.get('p95_ms')}ms, ok={w.get('ok',0)}/{w.get('count',0)}, cache_hit_rate={w.get('cache_hit_rate')}")
         if ph.get("regression_flag"):
-            lines.append(f"- ⚠️ Warm slower than cold (>25%)")
+            lines.append("- ⚠️ Warm slower than cold (>25%)")
         # slowest 3 warm checks
         checks = w.get("checks",{})
         slow = sorted(checks.items(), key=lambda kv: kv[1].get("duration_ms") or 0, reverse=True)[:3]

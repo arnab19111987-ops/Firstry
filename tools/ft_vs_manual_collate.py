@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import json, re, statistics
+import json
+import re
 from pathlib import Path
 
 ROOT = Path(".firsttry/bench")

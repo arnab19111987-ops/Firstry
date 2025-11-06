@@ -2,7 +2,6 @@
 """Test tier-based remote cache toggle."""
 
 import sys
-from pathlib import Path
 
 def test_remote_cache_toggle():
     """Test that Pro enables remote cache, Lite doesn't."""
