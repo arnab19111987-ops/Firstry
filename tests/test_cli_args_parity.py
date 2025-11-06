@@ -1,6 +1,10 @@
 """
 Regression tests to prevent CLI argument regressions (like --report ambiguity).
 Tests that critical flags work and match CI-Green Guarantee surface.
+
+NOTE: These tests require src/firsttry CLI, not tools/firsttry.
+If tools/firsttry is installed as editable, this will test the wrong CLI.
+Mark as integration to skip when tools version shadows src version.
 """
 
 from __future__ import annotations
@@ -12,6 +16,7 @@ import sys
 import pytest
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "args",
     [
@@ -26,8 +31,16 @@ def test_cli_accepts_critical_args(args):
     """
     Ensure critical CLI args are not regressed.
     This would catch regressions like the --report ambiguity that broke CI.
+    
+    Requires src/firsttry CLI to be importable (not shadowed by installed tools/firsttry).
     """
+    from pathlib import Path
+    
+    # Ensure src comes first in PYTHONPATH (for python -m)
+    src_path = str(Path(__file__).resolve().parent.parent / "src")
     env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1")
+    env["PYTHONPATH"] = src_path
+    
     cmd = [sys.executable, "-m", "firsttry.cli", "run"] + args
     result = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=10)
     
@@ -45,11 +58,18 @@ def test_cli_accepts_critical_args(args):
     )
 
 
+@pytest.mark.integration
 def test_cli_no_ambiguous_flags():
     """
     Ensure no ambiguous flags in parser (regression: --report was ambiguous).
+    
+    Requires src/firsttry CLI to be importable (not shadowed by installed tools/firsttry).
     """
+    from pathlib import Path
+    
+    src_path = str(Path(__file__).resolve().parent.parent / "src")
     env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1")
+    env["PYTHONPATH"] = src_path
     
     # Request help to parse parser structure
     cmd = [sys.executable, "-m", "firsttry.cli", "run", "--help"]
