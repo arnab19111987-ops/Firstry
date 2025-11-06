@@ -59,3 +59,18 @@ yarn.lock
 # Misc
 .env
 .env.*
+
+# FirstTry cache and generated files
+.firsttry/
+.quality/typing_current.txt
+
+# Generated documentation
+AUDIT_*.json
+AUDIT_*.md
+PRIORITY_FIXES_COMPLETE.md
+REPOSITORY_AUDIT_REPORT*.md
+S3_CACHE_TEST_GUIDE.md
+
+# Renamed directories (replaced by lic_* versions)
+licensing/app/
+licensing/tests/
