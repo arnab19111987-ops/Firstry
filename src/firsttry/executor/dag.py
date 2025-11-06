@@ -1,7 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Set, List, Optional
-from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, Future
 from threading import Lock
 from pathlib import Path
@@ -63,7 +62,7 @@ class DagExecutor:
         caches: List[BaseCache],
         runners: Dict[str, CheckRunner] | None = None,
         max_workers: int = 8,
-        timeouts: Callable | None = None,
+        timeouts: callable | None = None,
     ):
         self.repo_root = repo_root
         self.plan = plan

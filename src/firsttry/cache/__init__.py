@@ -56,7 +56,8 @@ if _legacy_cache is not None:
 if TYPE_CHECKING:
     from typing import Any, Dict, Iterable, Optional
     from pathlib import Path as PathType
-    from ..cache_models import ToolCacheEntry, InputFileMeta
+    from ..cache_models import ToolCacheEntry
+    # InputFileMeta removed - unused
     
     def load_cache() -> Dict[str, Any]: ...
     def save_cache(data: Dict[str, Any]) -> None: ...

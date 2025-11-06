@@ -48,9 +48,9 @@ def write_html_dashboard(repo_root: Path, out: str = ".firsttry/dashboard.html")
         return
 
     total_hits = total_runs = total_saved = 0
-    top_fail: dict = {}
-    flaky: dict = {}
-    prev: dict = {}
+    top_fail = {}
+    flaky = {}
+    prev = {}
 
     rows = []
     for name, ts, data in reports:

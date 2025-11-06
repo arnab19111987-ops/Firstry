@@ -1,3 +1,12 @@
+"""
+DEPRECATED: This module is deprecated in favor of runners.registry.
+
+Legacy orchestrators (cached_orchestrator, checks_orchestrator_optimized, check_dependencies)
+still use this dict-based registry. New code should use runners.registry.default_registry()
+which returns CheckRunner objects instead.
+
+This file is kept for backward compatibility with demo scripts and legacy orchestrators.
+"""
 from __future__ import annotations
 from typing import Dict, Any, List
 

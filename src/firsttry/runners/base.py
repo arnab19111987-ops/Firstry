@@ -42,6 +42,47 @@ class CheckRunner(Protocol):
 BaseRunner = CheckRunner
 
 
+# Files and directories to ignore when hashing for cache keys
+# Ignoring these prevents spurious cache misses from build artifacts
+IGNORE_FILES = {
+    ".coverage",
+    "coverage.xml",
+    ".coverage.har",
+    "htmlcov",
+    ".pytest_cache",
+}
+
+IGNORE_DIRS = {
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".git",
+    ".firsttry",
+    ".venv",
+    ".venv-build",
+    "htmlcov",
+    ".coverage",
+    "node_modules",
+    ".tox",
+    ".eggs",
+    "dist",
+    "build",
+}
+
+
+def _should_ignore_path(path: Path) -> bool:
+    """Check if a path should be ignored for cache hashing."""
+    # Ignore specific filenames
+    if path.name in IGNORE_FILES:
+        return True
+    # Ignore paths containing any ignored directory
+    parts = set(path.parts)
+    if parts & IGNORE_DIRS:
+        return True
+    return False
+
+
 def _hash_targets(repo_root: Path, targets: List[str]) -> str:
     # Hash the CONTENTS of files under all target paths (intent, not cmd)
     parts: List[str] = []
@@ -49,9 +90,12 @@ def _hash_targets(repo_root: Path, targets: List[str]) -> str:
         p = repo_root / t
         if p.is_dir():
             for f in sorted(p.rglob("*.py")):
+                if _should_ignore_path(f):
+                    continue
                 parts.append(f"{f.as_posix()}::{hash_file(f)}")
         elif p.is_file():
-            parts.append(f"{p.as_posix()}::{hash_file(p)}")
+            if not _should_ignore_path(p):
+                parts.append(f"{p.as_posix()}::{hash_file(p)}")
     return hash_bytes("||".join(parts).encode())
 
 

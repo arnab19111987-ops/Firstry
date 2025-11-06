@@ -11,7 +11,7 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
     This function will:
       - load `firsttry.toml` from repo_root
       - merge per-check flags into tasks
-      - build caches using config/flags (Pro tier enables Shared Remote Cache)
+      - build caches using config/flags
       - construct a timeout function from config
       - run `DagExecutor` with the provided plan
 
@@ -40,18 +40,8 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
             cfg_flags = cfg.checks_flags.get(t.check_id, []) or []
             t.flags = list(cfg_flags) + list(existing)
 
-    # 🔧 Runtime toggle: Only Pro tier enables Shared Remote Cache
-    use_remote = False
-    if tier == "pro":
-        # Pro tier: enable shared remote cache if configured
-        use_remote = bool(
-            getattr(cfg, "remote_cache", False) 
-            or remote_cache_flag 
-            or use_remote_cache
-        )
-    # Lite and other tiers: shared remote cache is always disabled
-    # (local cache is still enabled via default_caches)
-    
+    # Build caches (remote if enabled in config or via explicit flag)
+    use_remote = bool(getattr(cfg, "remote_cache", False) or remote_cache_flag or use_remote_cache)
     caches = default_caches(repo_root, use_remote)
 
     # Timeouts: pull from config per check
@@ -75,17 +65,7 @@ def run_plan(repo_root: Path, plan: Plan, use_remote_cache: bool, workers: int =
         print(f"{prefix} {r.status.upper():10s} {tid} ({r.duration_ms}ms) {cs}")
     hits = sum(1 for r in results.values() if (r.cache_status or "").startswith("hit-"))
     ran = sum(1 for r in results.values() if not (r.cache_status or "").startswith("hit-"))
-    
-    # Show cache summary
-    print(f"\n{hits} checks verified from cache, {ran} run locally.")
-    
-    # Show remote cache status for transparency
-    if use_remote:
-        print("🌐 Shared Remote Cache: enabled (Pro)")
-    elif tier and tier.lower() != "pro":
-        print("🔒 Shared Remote Cache: available in Pro tier")
-    
-    print()
+    print(f"\n{hits} checks verified from cache, {ran} run locally.\n")
     # Append to run history (one JSON line per run) for lightweight dashboards
     try:
         import json

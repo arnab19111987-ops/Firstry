@@ -23,25 +23,20 @@ from firsttry.run_swarm import run_plan
 from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
 
 # add these imports for old enhanced handlers
-# Declare types for mypy
-handle_status: Optional[Callable[[argparse.Namespace], int]]
-handle_setup: Optional[Callable[[argparse.Namespace], int]]
-handle_doctor: Optional[Callable[[argparse.Namespace], int]]
-cmd_mirror_ci: Optional[Callable[[argparse.Namespace], int]]
-
 try:
     from .cli_enhanced_old import (
         handle_status,
         handle_setup,
         handle_doctor,
-        cmd_mirror_ci,
+        cmd_mirror_ci,  # <-- ADD THIS (note: cmd_ not handle_)
+        # handle_report,  # <- leave commented: audit says not implemented
     )
 except ImportError:
     # in case someone vendors this without the old file
-    handle_status = None
-    handle_setup = None
-    handle_doctor = None
-    cmd_mirror_ci = None
+    handle_status: Optional[Callable[[argparse.Namespace], int]] = None
+    handle_setup: Optional[Callable[[argparse.Namespace], int]] = None
+    handle_doctor: Optional[Callable[[argparse.Namespace], int]] = None
+    cmd_mirror_ci: Optional[Callable[[argparse.Namespace], int]] = None
 
 
 def _normalize_profile(raw: str | None) -> str:
@@ -343,23 +338,6 @@ def build_parser() -> argparse.ArgumentParser:
     # --- list-checks ------------------------------------------------------
     sub.add_parser("list-checks", help="List available checks")
 
-    # --- pre-commit -------------------------------------------------------
-    # Convenience alias for "run fast" - commonly used in git hooks
-    p_precommit = sub.add_parser(
-        "pre-commit", 
-        help="Quick pre-commit checks (alias for 'run fast')"
-    )
-    p_precommit.add_argument(
-        "--fix",
-        action="store_true",
-        help="Automatically fix issues where possible",
-    )
-    p_precommit.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="Disable result caching and run all checks fresh",
-    )
-
     # --- status ------------------------------------------------------------
     if handle_status is not None:
         p_status = sub.add_parser(
@@ -524,19 +502,15 @@ def cmd_run(argv=None) -> int:
     argv = _translate_legacy_args(argv)
 
     p = argparse.ArgumentParser(prog="firsttry run")
-    # Primary interface is --tier flag, but keep positional for backward compatibility
-    p.add_argument("maybe_tier", nargs="?", help=argparse.SUPPRESS)  # hidden positional for backward compat
-    p.add_argument("--tier", help="tier/profile (e.g., free-lite, lite, pro, strict)")
+    # Accept either a positional tier (legacy UX) or --tier flag
+    p.add_argument("maybe_tier", nargs="?", help="tier/profile (e.g., free-lite, lite, pro)")
+    p.add_argument("--tier", help="tier/profile (alias of positional)")
     p.add_argument("--legacy", action="store_true", help="use legacy orchestrator")
     p.add_argument("--workers", type=int, default=3)
     p.add_argument("--no-remote-cache", action="store_true")
     p.add_argument("--show-report", action="store_true")
-    p.add_argument("--tty", action="store_true", help="print priority-ordered TTY report to stdout")
-    p.add_argument("--tty-detailed", action="store_true", help="include detailed findings per check")
-    p.add_argument("--tty-max-items", type=int, default=10, help="max items per check in detailed mode")
     ns = p.parse_args(argv)
 
-    # Prioritize --tier flag, fall back to positional, then default to "lite"
     tier = ns.tier or ns.maybe_tier or "lite"
     if tier == "auto":
         tier = "lite"
@@ -557,76 +531,23 @@ def cmd_run(argv=None) -> int:
         plan,
         use_remote_cache=(not ns.no_remote_cache),
         workers=ns.workers,
-        tier=tier,  # Pass tier for remote cache toggle
     )
 
     # Write JSON report (quietly)
     try:
         out = repo_root / ".firsttry" / "report.json"
         out.parent.mkdir(parents=True, exist_ok=True)
-        report_data = {"checks": {k: v.to_report_json() for k, v in results.items()}}
-        out.write_text(json.dumps(report_data, indent=2))
+        out.write_text(json.dumps(
+            {"checks": {k: v.to_report_json() for k, v in results.items()}},
+            indent=2
+        ))
     except Exception:
         pass
 
-    # TTY report rendering (if requested)
-    if ns.tty or ns.tty_detailed:
-        try:
-            from .reporting.tty import render_tty_report
-            import os
-            
-            # Gather context information
-            repo_files = sum(1 for _ in repo_root.rglob("*") if _.is_file() and ".git" not in str(_))
-            test_dir = repo_root / "tests"
-            test_count = sum(1 for _ in test_dir.rglob("test_*.py")) if test_dir.exists() else None
-            
-            # Detect CPU count for machine description
-            cpu_count = os.cpu_count() or 0
-            machine_desc = f"{cpu_count} CPUs" if cpu_count else ""
-            
-            # Collect skipped checks for upgrade hints
-            skipped = []
-            for k, v in results.items():
-                if v.status == "skip":
-                    check_id = k.split(":")[0]
-                    # Friendly descriptions
-                    if check_id == "pytest":
-                        skipped.append("pytest: Run your unit/integration tests.")
-                    elif check_id == "bandit":
-                        skipped.append("bandit: Find common security issues in your code.")
-                    elif check_id == "pip-audit":
-                        skipped.append("pip-audit: Scan dependencies for vulnerabilities.")
-                    elif check_id == "ci-parity":
-                        skipped.append("ci-parity: Check drift vs CI.")
-                    else:
-                        skipped.append(f"{check_id}: (skipped)")
-            
-            # Render the TTY report
-            tty_output = render_tty_report(
-                report_data,
-                tier_label=(tier or "Free").title(),
-                repo_file_count=repo_files if repo_files < 100000 else None,  # Skip if huge repo
-                test_count=test_count,
-                machine_desc=machine_desc,
-                detailed=ns.tty_detailed,
-                max_per_check=ns.tty_max_items,
-                order_by_priority=True,
-                skipped_checks_hint=skipped or None,
-            )
-            print(tty_output)
-        except Exception as e:
-            # Fallback to simple console output if TTY rendering fails
-            print(f"Warning: TTY rendering failed: {e}")
-            for k, v in results.items():
-                print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
-    elif ns.show_report:
-        # Original console summary for --show-report without --tty
-        for k, v in results.items():
-            print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
-    
-    # Determine exit code
+    # Console summary
     all_ok = True
     for k, v in results.items():
+        print(f"[{v.status.upper():5}] {k} {getattr(v,'duration_ms',None)}ms {getattr(v,'cache_status',None)}")
         all_ok &= (v.status == "ok")
     return 0 if all_ok else 1
 
@@ -674,46 +595,6 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd == "lint":
         return cmd_lint(args=args)
 
-    elif args.cmd == "pre-commit":
-        # Convenience alias: pre-commit → run fast
-        # Build minimal args for cmd_run with fast mode
-        import types
-        fast_args = types.SimpleNamespace(
-            mode="fast",
-            tier="lite",
-            profile="fast",
-            source="auto",
-            changed_only=False,
-            no_cache=getattr(args, "no_cache", False),
-            cache_only=False,
-            run_npm_anyway=False,
-            debug_phases=False,
-            interactive=False,
-            report_json=None,
-            report=False,
-            send_telemetry=False,
-            report_schema="2",
-            dry_run=False,
-            tty=False,
-            tty_detailed=False,
-            tty_max_items=10,
-            workers=8,
-            no_remote_cache=False,
-            legacy=False,
-            maybe_tier=None,
-        )
-        # Apply --fix flag if present
-        if getattr(args, "fix", False):
-            # For pre-commit with --fix, we need to call lint with fix
-            return cmd_lint(args=args)
-        
-        # Otherwise run fast checks
-        try:
-            # Convert fast_args to argv format for cmd_run
-            return cmd_run(argv=["fast"])
-        except Exception:
-            return _run_async_cli(run_fast_pipeline(args=fast_args))
-
     elif args.cmd == "inspect":
         return cmd_inspect(args=args)
 
@@ -753,7 +634,7 @@ def main(argv: list[str] | None = None) -> int:
             from pathlib import Path
 
             try:
-                return cmd_doctor(str(Path(".").resolve()))
+                return cmd_doctor(Path(".").resolve())
             except Exception:
                 # If everything fails, emit a minimal failing report
                 sys.stdout.write("# FirstTry Doctor Report\nHealth: FAILED\n")
@@ -931,12 +812,12 @@ def cmd_doctor(repo_root: str | None = None) -> int:
     import platform
     import os
 
-    repo_path = Path(repo_root or ".").resolve()
+    repo_root = Path(repo_root or ".").resolve()
 
     print("FirstTry Doctor\n")
 
     # Config
-    cfg_path = repo_path / "firsttry.toml"
+    cfg_path = repo_root / "firsttry.toml"
     print("Config file:")
     print(f" - {'Found' if cfg_path.exists() else 'Missing'} at {cfg_path}\n")
 
@@ -973,7 +854,7 @@ def cmd_doctor(repo_root: str | None = None) -> int:
     # Remote cache (S3)
     print("Remote Cache (S3):")
     try:
-        import boto3
+        import boto3  # type: ignore
 
         print(" - boto3 lib: OK")
         bucket = os.getenv("FT_S3_BUCKET")
@@ -1105,7 +986,7 @@ def cmd_inspect(*, args=None) -> int:
         from .ci_parser import resolve_ci_plan
     except Exception:
 
-        def resolve_ci_plan(root):  # type: ignore[misc]
+        def resolve_ci_plan(root):
             return None
 
     # ---- plan selection ----
@@ -1158,7 +1039,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         from .ci_parser import resolve_ci_plan
     except Exception:
 
-        def resolve_ci_plan(repo_root: str) -> list[dict[str, str]] | None:
+        def resolve_ci_plan(root):
             return None
 
     # make repo profile available to runners
@@ -1206,7 +1087,7 @@ async def run_fast_pipeline(*, args=None) -> int:
     # ensure we have ci_plan in ctx even if source=detect
     if ci_plan is None:
         # CI parsing disabled; keep an empty ci_plan
-        ci_plan = []  # type: ignore[var-annotated]
+        ci_plan = []
     ctx["ci_plan"] = ci_plan
     ctx["config"] = cfg
 
@@ -1250,8 +1131,7 @@ async def run_fast_pipeline(*, args=None) -> int:
             else:
                 if status is not None:
                     print(f"❌ {single_tool}: Issues found")
-                    if details:
-                        print(details.get("stdout", ""))
+                    print(details.get("stdout", ""))
                     return 1
                 # else: status None -> fallback to orchestrated execution
         # Add other single tools as needed
@@ -1318,8 +1198,7 @@ async def run_fast_pipeline(*, args=None) -> int:
                     entry["locked"] = True
                     entry["reason"] = "Available in Pro tier"
 
-            if isinstance(payload.get("checks"), list):
-                payload["checks"].append(entry)  # type: ignore[union-attr]
+            payload["checks"].append(entry)
 
         # Print preview
         import json
@@ -1330,7 +1209,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         # Write to report-json if requested
         report_json_path = getattr(args, "report_json", None)
         if report_json_path:
-            from .reporting import write_report_async  # type: ignore[attr-defined]
+            from .reporting import write_report_async
 
             path = Path(report_json_path)
             try:
@@ -1369,7 +1248,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         try:
             from datetime import datetime, timezone
             from pathlib import Path
-            from .reporting import write_report_async  # type: ignore[attr-defined]
+            from .reporting import write_report_async
             from .checks_orchestrator import (
                 FAST_FAMILIES,
                 MUTATING_FAMILIES,
@@ -1446,17 +1325,17 @@ async def run_fast_pipeline(*, args=None) -> int:
                     total_s += float(duration_s)
                     if schema_ver == 2:
                         if family in MUTATING_FAMILIES:
-                            payload["timing"]["mutating_ms"] += int(duration_s * 1000)  # type: ignore[index]
+                            payload["timing"]["mutating_ms"] += int(duration_s * 1000)
                         elif family in SLOW_FAMILIES:
-                            payload["timing"]["slow_ms"] += int(duration_s * 1000)  # type: ignore[index]
+                            payload["timing"]["slow_ms"] += int(duration_s * 1000)
                         elif family in FAST_FAMILIES:
-                            payload["timing"]["fast_ms"] += int(duration_s * 1000)  # type: ignore[index]
+                            payload["timing"]["fast_ms"] += int(duration_s * 1000)
                         else:
-                            payload["timing"]["fast_ms"] += int(duration_s * 1000)  # type: ignore[index]
+                            payload["timing"]["fast_ms"] += int(duration_s * 1000)
 
-                payload["checks"].append(entry)  # type: ignore[attr-defined]
+                payload["checks"].append(entry)
 
-            payload["timing"]["total_ms"] = int(total_s * 1000)  # type: ignore[index]
+            payload["timing"]["total_ms"] = int(total_s * 1000)
 
             # write the report (async if possible)
             path = Path(report_json_path)
@@ -1586,29 +1465,29 @@ except ImportError:
 
 
 # Compatibility functions for CLI tests
-def _load_real_runners_or_stub():
+def _load_real_runners_or_stub():  # type: ignore
     """Legacy function expected by tests."""
     return runners
 
 
-def install_git_hooks():
+def install_git_hooks():  # type: ignore
     """Stub function for git hooks installation."""
     try:
-        from .hooks import install_git_hooks_impl
+        from .hooks import install_git_hooks_impl  # type: ignore
 
-        return install_git_hooks_impl()
+        return install_git_hooks_impl()  # type: ignore
     except ImportError:
         print("Git hooks installation not available")
         return False
 
 
-def cmd_gates(args=None):
+def cmd_gates(args=None):  # type: ignore
     """Stub function for gates command."""
     try:
-        from .gates import run_all_gates
+        from .gates import run_all_gates  # type: ignore
         from pathlib import Path
 
-        results = run_all_gates(Path("."))
+        results = run_all_gates(Path("."))  # type: ignore
 
         # Handle both dict format (from mocked tests) and GateResult objects
         if isinstance(results, dict) and "results" in results:
@@ -1630,12 +1509,12 @@ def cmd_gates(args=None):
         print("Gates command not available")
 
 
-def assert_license():
+def assert_license():  # type: ignore
     """Stub function for license assertion."""
     try:
-        from .license_guard import get_tier
+        from .license_guard import get_tier  # type: ignore
 
-        tier = get_tier()
+        tier = get_tier()  # type: ignore
         return tier not in ("NONE", "INVALID")
     except ImportError:
         return True
