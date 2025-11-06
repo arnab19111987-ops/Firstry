@@ -6,11 +6,11 @@ node-validate:
 # Python helpers
 .PHONY: py-validate licensing-test
 py-validate:  ## run firsttry tests locally
-	@. .venv/bin/activate && pip install -e tools/firsttry && pytest -q tools/firsttry/tests
+	@. .venv/bin/activate && pip install -e tools/firsttry && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q tools/firsttry/tests
 
 licensing-test:  ## run licensing FastAPI tests
 	@. .venv/bin/activate || true
-	@PYTHONPATH=licensing pytest -q licensing
+	@PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=licensing pytest -q licensing
 
 .PHONY: run-licensing
 run-licensing:
@@ -49,7 +49,7 @@ check:  ## run full quality gate (stubs, typing, lints, types, tests)
 
 .PHONY: coverage-check
 coverage-check:  ## run tests with coverage and check floor
-	pytest tests \
+	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest tests \
 		--cov=src/firsttry \
 		--cov-report=term \
 		--cov-report=json:coverage.json \

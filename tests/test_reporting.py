@@ -139,17 +139,17 @@ def test_cli_shows_timing_when_write_fails(tmp_path: Path, monkeypatch):
     candidates = [("firsttry.cli", ["run"]), ("firsttry.cli_run_profile", [])]
     use_mod, subcmd = None, None
     for mod, sc in candidates:
-        if _cli_has_flag(mod, sc, "--report"):
+        if _cli_has_flag(mod, sc, "--report-json"):
             use_mod, subcmd = mod, sc
             break
     if use_mod is None:
-        pytest.skip("CLI does not expose --report in this build")
+        pytest.skip("CLI does not expose --report-json in this build")
 
     cmd = [sys.executable, "-m", use_mod, *subcmd]
     if subcmd == ["run"]:
         cmd += ["--tier", "free-lite"]
     # Attempt to write to a typically read-only file to force a write failure
-    cmd += ["--report", "/proc/version"]
+    cmd += ["--report-json", "/proc/version"]
 
     proc = _run(cmd, cwd=tmp_path, env=env, timeout=90)
     # We expect graceful success (return code 0) despite failed write
