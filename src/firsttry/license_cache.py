@@ -78,7 +78,23 @@ def assert_license(product: str = "firsttry") -> Tuple[bool, list[str], str]:
     Config:
       FIRSTTRY_LICENSE_KEY=<key>
       FIRSTTRY_LICENSE_URL=<http://host:port>
+      FIRSTTRY_LICENSE_BACKEND=env  (use ENV backend)
+      FIRSTTRY_LICENSE_ALLOW=<tier> (ENV backend: allowed tier)
     """
+    # Check if ENV backend is requested
+    backend = os.getenv("FIRSTTRY_LICENSE_BACKEND", "").strip().lower()
+    if backend == "env":
+        # ENV backend: validate using FIRSTTRY_LICENSE_ALLOW
+        key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
+        allowed = os.getenv("FIRSTTRY_LICENSE_ALLOW", "").strip().lower()
+        if not key:
+            return False, [], "missing FIRSTTRY_LICENSE_KEY"
+        if not allowed:
+            return False, [], "ENV backend requires FIRSTTRY_LICENSE_ALLOW"
+        # ENV backend always validates as OK if key and allowed tier are set
+        return True, [allowed], "env"
+    
+    # Default: remote verification
     key = os.getenv("FIRSTTRY_LICENSE_KEY", "").strip()
     url = os.getenv("FIRSTTRY_LICENSE_URL", "").strip()
     if not key or not url:
@@ -95,3 +111,27 @@ def assert_license(product: str = "firsttry") -> Tuple[bool, list[str], str]:
     ok, feats = _lc.remote_verify(url, product, key)
     save_cache(CachedLicense(key=key, valid=ok, features=feats, ts=_now()))
     return ok, feats, "remote"
+
+
+def validate_license_key(key: str, tier: str = "", strict: bool = True) -> Tuple[bool, dict]:
+    """
+    Validate a license key for a specific tier.
+    Returns (ok, metadata) tuple.
+    Used by license_guard._validate_license_max_security().
+    """
+    backend = os.getenv("FIRSTTRY_LICENSE_BACKEND", "").strip().lower()
+    if backend == "env":
+        # ENV backend: check if tier is in allowed list
+        allowed = os.getenv("FIRSTTRY_LICENSE_ALLOW", "").strip().lower()
+        if not allowed:
+            return False, {"reason": "ENV backend requires FIRSTTRY_LICENSE_ALLOW"}
+        # Normalize tier names for comparison
+        allowed_tiers = [t.strip() for t in allowed.split(",")]
+        # Check if requested tier is allowed
+        if tier.lower() in allowed_tiers or "pro" in allowed_tiers:
+            return True, {"backend": "env", "tier": tier, "allowed": allowed_tiers}
+        return False, {"reason": f"Tier '{tier}' not in FIRSTTRY_LICENSE_ALLOW={allowed}"}
+    
+    # Default: use assert_license
+    ok, features, reason = assert_license()
+    return ok, {"features": features, "reason": reason}
