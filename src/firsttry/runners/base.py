@@ -17,6 +17,10 @@ class RunResult:
     meta: Dict[str, Any] | None = None
 
 
+# Alias for backward compatibility
+RunnerResult = RunResult
+
+
 class CheckRunner(Protocol):
     check_id: str
 
@@ -32,6 +36,10 @@ class CheckRunner(Protocol):
         self, repo_root: Path, targets: List[str], flags: List[str], *, timeout_s: int
     ) -> RunResult:
         ...
+
+
+# Alias for backward compatibility
+BaseRunner = CheckRunner
 
 
 def _hash_targets(repo_root: Path, targets: List[str]) -> str:

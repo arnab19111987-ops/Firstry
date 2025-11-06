@@ -73,7 +73,7 @@ class ConfigDriftGate(Gate):
     patterns = tuple(CONFIG_CANDIDATES)
 
     def run(self, root: Path) -> GateResult:
-        cache = cache_mod.load_cache(root)
+        cache = cache_mod.load_cache_legacy(root)
         prev_cfg: Dict[str, str] = cache.get("config_hashes", {})
 
         current: Dict[str, str] = {}
@@ -95,7 +95,7 @@ class ConfigDriftGate(Gate):
 
         # update cache
         cache["config_hashes"] = current
-        cache_mod.save_cache(root, cache)
+        cache_mod.save_cache_legacy(root, cache)
 
         if changed:
             return GateResult(

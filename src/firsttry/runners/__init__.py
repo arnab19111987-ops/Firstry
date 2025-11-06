@@ -61,7 +61,7 @@ if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
     # Optional: if you have real runner modules, import and export them here.
     # Keeping try/except so test envs without real deps don't break.
     try:
-        from .real import (  # type: ignore
+        from .real import (
             run_ruff as _real_run_ruff,
             run_black_check as _real_run_black_check,
             run_mypy as _real_run_mypy,

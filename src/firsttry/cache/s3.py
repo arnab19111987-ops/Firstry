@@ -27,7 +27,7 @@ class S3Cache(BaseCache):
         self.conf = conf
         self.enabled = _has_boto3()
         if self.enabled:
-            import boto3  # type: ignore
+            import boto3
 
             self.s3 = boto3.client("s3")
         else:

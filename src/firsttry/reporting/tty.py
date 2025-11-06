@@ -271,7 +271,12 @@ def render_tty(
         for tid, r in checks.items():
             if not tid.startswith("pytest:"):
                 continue
-            for f in r.get("failures", []) or r.get("items", []):
+            failures = r.get("failures", [])
+            if isinstance(failures, int):
+                failures = r.get("items", [])
+            elif not isinstance(failures, list):
+                failures = []
+            for f in failures:
                 fail_items.append(f)
         if fail_items:
             print(f"{X} pytest ({len(fail_items)} Failures)")
@@ -279,6 +284,8 @@ def render_tty(
             for f in fail_items:
                 if shown >= max_items:
                     break
+                if not isinstance(f, dict):
+                    continue
                 name = f.get("name") or f.get("nodeid", "test")
                 msg = f.get("msg") or f.get("assert", "Assertion failed")
                 path = f.get("path", "")

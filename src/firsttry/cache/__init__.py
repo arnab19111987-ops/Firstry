@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from importlib import util as _importlib_util
 from pathlib import Path as _Path
+from typing import TYPE_CHECKING
 
 # Attempt to load the legacy module file ``src/firsttry/cache.py`` directly
 # (as a separate module) and re-export its public helpers. We can't import
@@ -29,7 +30,7 @@ try:
         )
         if _spec and _spec.loader:
             _legacy = _importlib_util.module_from_spec(_spec)
-            _spec.loader.exec_module(_legacy)  # type: ignore[attr-defined]
+            _spec.loader.exec_module(_legacy)
             _legacy_cache = _legacy
 except Exception:  # pragma: no cover - defensive fallback
     _legacy_cache = None
@@ -50,3 +51,22 @@ if _legacy_cache is not None:
         except Exception:
             # best-effort export; ignore attributes that can't be bound
             pass
+
+# Type stubs for commonly used functions from cache.py for mypy
+if TYPE_CHECKING:
+    from typing import Any, Dict, Iterable
+    from pathlib import Path as PathType
+    
+    def load_cache() -> Dict[str, Any]: ...
+    def save_cache(data: Dict[str, Any]) -> None: ...
+    def load_cache_legacy(root: PathType) -> Dict[str, Any]: ...
+    def save_cache_legacy(root: PathType, data: Dict[str, Any]) -> None: ...
+    def sha256_of_paths(paths: Iterable[PathType]) -> str: ...
+    def is_tool_cache_valid(repo_root: str, tool: str, input_hash: str) -> bool: ...
+    def write_tool_cache(
+        repo_root: str,
+        tool_name: str,
+        input_hash: str,
+        status: str,
+        extra: Dict[str, Any] | None = None,
+    ) -> None: ...
