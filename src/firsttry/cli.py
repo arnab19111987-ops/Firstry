@@ -24,7 +24,7 @@ from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
 
 # add these imports for old enhanced handlers
 try:
-    from .cli_enhanced_old import (
+    from .cli_enhanced_old import (  # type: ignore[import-not-found]
         handle_status,
         handle_setup,
         handle_doctor,
@@ -33,10 +33,10 @@ try:
     )
 except ImportError:
     # in case someone vendors this without the old file
-    handle_status: Optional[Callable[[argparse.Namespace], int]] = None
-    handle_setup: Optional[Callable[[argparse.Namespace], int]] = None
-    handle_doctor: Optional[Callable[[argparse.Namespace], int]] = None
-    cmd_mirror_ci: Optional[Callable[[argparse.Namespace], int]] = None
+    handle_status = None
+    handle_setup = None
+    handle_doctor = None
+    cmd_mirror_ci = None
 
 
 def _normalize_profile(raw: str | None) -> str:
@@ -690,7 +690,7 @@ def main(argv: list[str] | None = None) -> int:
             from pathlib import Path
 
             try:
-                return cmd_doctor(Path(".").resolve())
+                return cmd_doctor(str(Path(".").resolve()))
             except Exception:
                 # If everything fails, emit a minimal failing report
                 sys.stdout.write("# FirstTry Doctor Report\nHealth: FAILED\n")
@@ -868,12 +868,12 @@ def cmd_doctor(repo_root: str | None = None) -> int:
     import platform
     import os
 
-    repo_root = Path(repo_root or ".").resolve()
+    repo_path = Path(repo_root or ".").resolve()
 
     print("FirstTry Doctor\n")
 
     # Config
-    cfg_path = repo_root / "firsttry.toml"
+    cfg_path = repo_path / "firsttry.toml"
     print("Config file:")
     print(f" - {'Found' if cfg_path.exists() else 'Missing'} at {cfg_path}\n")
 
@@ -910,7 +910,7 @@ def cmd_doctor(repo_root: str | None = None) -> int:
     # Remote cache (S3)
     print("Remote Cache (S3):")
     try:
-        import boto3  # type: ignore
+        import boto3
 
         print(" - boto3 lib: OK")
         bucket = os.getenv("FT_S3_BUCKET")
@@ -1042,7 +1042,7 @@ def cmd_inspect(*, args=None) -> int:
         from .ci_parser import resolve_ci_plan
     except Exception:
 
-        def resolve_ci_plan(root):
+        def resolve_ci_plan(root):  # type: ignore[misc]
             return None
 
     # ---- plan selection ----

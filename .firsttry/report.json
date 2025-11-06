@@ -1,3 +1,31 @@
 {
-  "checks": {}
+  "checks": {
+    "ruff:_root": {
+      "name": "ruff:_root",
+      "check_id": "ruff:_root",
+      "status": "ok",
+      "duration_ms": 9,
+      "stdout": "All checks passed!\n",
+      "stderr": "",
+      "cache_status": "hit-local"
+    },
+    "pytest:_root": {
+      "name": "pytest:_root",
+      "check_id": "pytest:_root",
+      "status": "ok",
+      "duration_ms": 466,
+      "stdout": ".                                                                        [100%]\n",
+      "stderr": "",
+      "cache_status": "miss-run"
+    },
+    "mypy:_root": {
+      "name": "mypy:_root",
+      "check_id": "mypy:_root",
+      "status": "fail",
+      "duration_ms": 1025,
+      "stdout": "src/firsttry/profiler.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/profiler.py:29: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/parallel_pytest.py:144: error: Module has no attribute \"ceil\"  [attr-defined]\nsrc/firsttry/cli.py:27: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:36: error: Incompatible types in assignment (expression has type \"None\", variable has type \"Callable[[Namespace], int]\")  [assignment]\nsrc/firsttry/cli.py:37: error: Incompatible types in assignment (expression has type \"None\", variable has type \"Callable[[Namespace], int]\")  [assignment]\nsrc/firsttry/cli.py:38: error: Incompatible types in assignment (expression has type \"None\", variable has type \"Callable[[Namespace], int]\")  [assignment]\nsrc/firsttry/cli.py:39: error: Incompatible types in assignment (expression has type \"None\", variable has type \"Callable[[Namespace], int]\")  [assignment]\nsrc/firsttry/cli.py:1098: error: All conditional function variants must have identical signatures  [misc]\nsrc/firsttry/cli.py:1098: note: Original:\nsrc/firsttry/cli.py:1098: note:     def resolve_ci_plan(repo_root: str) -> list[dict[str, str]] | None\nsrc/firsttry/cli.py:1098: note: Redefinition:\nsrc/firsttry/cli.py:1098: note:     def resolve_ci_plan(root: Any) -> Any\nsrc/firsttry/cli.py:1146: error: Need type annotation for \"ci_plan\" (hint: \"ci_plan: list[<type>] = ...\")  [var-annotated]\nsrc/firsttry/cli.py:1190: error: Item \"None\" of \"dict[str, Any] | None\" has no attribute \"get\"  [union-attr]\nsrc/firsttry/cli.py:1257: error: Item \"object\" of \"object | Any\" has no attribute \"append\"  [union-attr]\nsrc/firsttry/cli.py:1268: error: Module \"firsttry.reporting\" has no attribute \"write_report_async\"  [attr-defined]\nsrc/firsttry/cli.py:1307: error: Module \"firsttry.reporting\" has no attribute \"write_report_async\"  [attr-defined]\nsrc/firsttry/cli.py:1384: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1384: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1386: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1386: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1388: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1388: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1390: error: Value of type \"object\" is not indexable  [index]\nsrc/firsttry/cli.py:1390: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1392: error: \"object\" has no attribute \"append\"  [attr-defined]\nsrc/firsttry/cli.py:1394: error: Unsupported target for indexed assignment (\"object\")  [index]\nsrc/firsttry/cli.py:1524: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1529: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1532: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1534: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1540: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1543: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1546: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1568: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1571: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cli.py:1573: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/cached_orchestrator.py:31: error: Argument 2 to \"input_stats_match\" has incompatible type \"list[InputFileMeta] | None\"; expected \"list[InputFileMeta]\"  [arg-type]\nsrc/firsttry/cached_orchestrator.py:74: error: Incompatible return value type (got \"tuple[int | None, str]\", expected \"tuple[int, str]\")  [return-value]\nsrc/firsttry/cached_orchestrator.py:158: error: Need type annotation for \"buckets\"  [var-annotated]\nsrc/firsttry/cached_orchestrator.py:234: error: Module has no attribute \"is_tool_cache_valid_fast\"  [attr-defined]\nsrc/firsttry/cached_orchestrator.py:361: error: Module has no attribute \"is_tool_cache_valid_fast\"  [attr-defined]\nsrc/firsttry/cached_orchestrator.py:427: error: Module has no attribute \"invalidate_tool_cache\"  [attr-defined]\nsrc/firsttry/performance_validator.py:293: error: Argument 1 to \"select_checks\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:297: error: Argument \"scenario\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:298: error: Argument \"profile\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:300: error: Argument \"use_cache\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"bool\"  [arg-type]\nsrc/firsttry/performance_validator.py:301: error: Argument \"changed_files\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"list[str] | None\"  [arg-type]\nFound 43 errors in 4 files (checked 151 source files)\n",
+      "stderr": "",
+      "cache_status": "miss-run"
+    }
+  }
 }

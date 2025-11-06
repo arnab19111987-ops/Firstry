@@ -65,9 +65,9 @@ def render_cli_summary(
 
     # Interactive menu only if requested
     if interactive:
-        from .summary import render_summary
+        from .summary import render_summary_legacy
 
-        render_summary(results, context)
+        render_summary_legacy(results, context)
 
     return 0 if passed_all else 1
 

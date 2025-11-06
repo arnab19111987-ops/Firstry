@@ -209,7 +209,7 @@ async def run_smart_pytest(
         # Build input hash from relevant test files and source files
         repo_path = Path(repo_root)
         test_patterns = ["tests/**/*.py", "test/**/*.py", "src/**/*.py", "**/*test*.py"]
-        test_files = []
+        test_files: list = []
         for pattern in test_patterns:
             test_files.extend(repo_path.glob(pattern))
 
