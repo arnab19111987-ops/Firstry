@@ -74,3 +74,5 @@ S3_CACHE_TEST_GUIDE.md
 # Renamed directories (replaced by lic_* versions)
 licensing/app/
 licensing/tests/
+licensing/lic_app/
+licensing/lic_tests/
