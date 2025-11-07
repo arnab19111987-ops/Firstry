@@ -794,6 +794,7 @@ workers = 8
 
 [workflow]
 # Run tests only after these checks pass (per project)
+# Note: Both ruff and mypy run in parallel; pytest waits for both
 pytest_depends_on = ["ruff","mypy"]
 npm-test_depends_on = ["npm-lint"]
 

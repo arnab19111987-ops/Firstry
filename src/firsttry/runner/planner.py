@@ -3,17 +3,48 @@
 The planner takes a twin (project config) and produces a DAG with concrete
 shell commands for linting, type checking, and testing, with dependency
 injection from the config.
+
+Also provides plan-level caching using BLAKE2b config hashing to avoid
+rebuilding the DAG on every cold start.
 """
 
 from __future__ import annotations
 
 import hashlib
+import json
+import os
+import sys
 from pathlib import Path
 from typing import Any
 from typing import Dict
 
 from .model import DAG
 from .model import Task
+
+PLAN_CACHE_DIR = ".firsttry/cache"
+PLAN_CACHE_PREFIX = "plan_"
+FIRSTTRY_VERSION = os.environ.get("FIRSTTRY_VERSION", "1")
+
+
+def _hash_bytes(b: bytes) -> str:
+    """Fast 128-bit BLAKE2b hash."""
+    h = hashlib.blake2b(digest_size=16)
+    h.update(b)
+    return h.hexdigest()
+
+
+def _load_config_bytes(config_path: str) -> bytes:
+    """Load config and salt with Python + FirstTry version for invalidation."""
+    with open(config_path, "rb") as f:
+        raw = f.read()
+    # Include interpreter version and FirstTry version to invalidate on upgrades
+    salt = f"\nPY:{sys.version}\nFT:{FIRSTTRY_VERSION}\n".encode()
+    return raw + salt
+
+
+def _plan_cache_key(config_bytes: bytes) -> str:
+    """Deterministic cache key from config + versions."""
+    return _hash_bytes(config_bytes)
 
 
 class Planner:
@@ -54,8 +85,10 @@ class Planner:
 
         # Extract custom dependencies
         ruff_deps = twin_dict.get("ruff_depends_on", set())
-        mypy_deps = twin_dict.get("mypy_depends_on", {"ruff"})
-        pytest_deps = twin_dict.get("pytest_depends_on", {"mypy"})
+        mypy_deps = twin_dict.get(
+            "mypy_depends_on", set()
+        )  # No dependency on ruff; both run in parallel
+        pytest_deps = twin_dict.get("pytest_depends_on", {"ruff", "mypy"})  # Depends on both
 
         # Create ruff task
         ruff_cache = self._compute_cache_key("ruff", ruff_cmd, root_path)
@@ -107,3 +140,73 @@ class Planner:
         """
         key_str = f"{tool}:{':'.join(cmd)}:{root}"
         return hashlib.sha256(key_str.encode()).hexdigest()[:16]
+
+    def get_cached_dag(self, config_path: str, twin_dict: Dict[str, Any], root: Path | str) -> DAG:
+        """Build a DAG with caching based on config content hash.
+
+        If a cached DAG exists for this config+versions, deserialize and return it.
+        Otherwise, build the DAG normally and cache for next time.
+
+        Args:
+            config_path: Path to config file (e.g., "firsttry.toml")
+            twin_dict: Project configuration dictionary
+            root: Project root path
+
+        Returns:
+            DAG with concrete tasks
+        """
+        os.makedirs(PLAN_CACHE_DIR, exist_ok=True)
+
+        cfg_bytes = _load_config_bytes(config_path)
+        key = _plan_cache_key(cfg_bytes)
+        cache_file = os.path.join(PLAN_CACHE_DIR, f"{PLAN_CACHE_PREFIX}{key}.json")
+
+        # Try cache first
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, "rb") as f:
+                    cached_data = json.loads(f.read().decode("utf-8"))
+                    # Reconstruct DAG from cached representation
+                    dag = DAG()
+                    for task_dict in cached_data:
+                        task = Task(
+                            id=task_dict["id"],
+                            cmd=task_dict["cmd"],
+                            deps=set(task_dict["deps"]),
+                            cache_key=task_dict.get("cache_key", ""),
+                            timeout_s=task_dict.get("timeout_s", 0),
+                            allow_fail=task_dict.get("allow_fail", True),
+                        )
+                        dag.add(task)
+                    return dag
+            except Exception:
+                # Corrupt cache—rebuild
+                pass
+
+        # Cache miss: build DAG normally
+        dag = self.build_dag(twin_dict, root)
+
+        # Serialize and cache
+        try:
+            cached_data = [
+                {
+                    "id": t.id,
+                    "cmd": t.cmd,
+                    "deps": sorted(t.deps),
+                    "cache_key": t.cache_key,
+                    "timeout_s": t.timeout_s,
+                    "allow_fail": t.allow_fail,
+                }
+                for t in dag.tasks.values()
+            ]
+            with open(cache_file, "wb") as f:
+                f.write(
+                    json.dumps(cached_data, separators=(",", ":"), ensure_ascii=False).encode(
+                        "utf-8"
+                    )
+                )
+        except Exception:
+            # If cache write fails, still return DAG
+            pass
+
+        return dag

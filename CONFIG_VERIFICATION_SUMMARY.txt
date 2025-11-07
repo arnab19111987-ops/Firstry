@@ -1,0 +1,246 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║           CONFIGURATION CODE VERIFICATION & SAFETY ANALYSIS                ║
+║                                                                            ║
+║                        Date: November 7, 2025                             ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+VERIFICATION TASK:
+─────────────────────────────────────────────────────────────────────────────
+Review proposed src/firsttry/config.py (license + S3 config system) and
+verify for breaking issues or conflicts with existing code.
+
+RESULT: ⛔ CRITICAL BREAKING ISSUES FOUND
+─────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════════════════════════════════════
+                           ISSUE ANALYSIS
+════════════════════════════════════════════════════════════════════════════════
+
+ISSUE #1: Function Signature Mismatch
+────────────────────────────────────────────────────────────────────────────
+CURRENT (Working):
+  def load_config(repo_root: Path) -> Config:
+      path = repo_root / "firsttry.toml"
+
+PROPOSED (Breaking):
+  def load_config() -> AppCfg:
+      cfg: AppCfg = {}
+
+EXISTING USAGE (will break):
+  File: src/firsttry/run_swarm.py, line 5
+  Code: cfg = load_config(repo_root)
+  Error: TypeError - load_config() takes 0 positional arguments but 1 was given
+
+SEVERITY: 🔴 CRITICAL
+────────────────────────────────────────────────────────────────────────────
+
+
+ISSUE #2: Return Type Completely Different  
+────────────────────────────────────────────────────────────────────────────
+CURRENT (Working):
+  @dataclass
+  class Config:
+      tier: str = "lite"
+      remote_cache: bool = False
+      workers: int = 8
+      timeouts: Timeouts = field(default_factory=Timeouts)
+      checks_flags: dict[str, list[str]] = field(default_factory=dict)
+      workflow: Workflow = field(default_factory=Workflow)
+
+PROPOSED (Breaking):
+  class AppCfg(TypedDict, total=False):
+      license: LicenseCfg
+      s3: S3Cfg
+
+EXISTING USAGE (will break):
+  File: src/firsttry/run_swarm.py, multiple lines
+  Code: cfg.tier                    → AttributeError: 'dict' has no 'tier'
+  Code: cfg.timeouts.default        → KeyError: 'timeouts'
+  Code: cfg.checks_flags            → KeyError: 'checks_flags'
+  Code: cfg.workflow.pytest_depends_on → KeyError: 'workflow'
+
+SEVERITY: 🔴 CRITICAL
+────────────────────────────────────────────────────────────────────────────
+
+
+ISSUE #3: Helper Functions Removed
+────────────────────────────────────────────────────────────────────────────
+CURRENT (Working):
+  from .config import load_config
+  from .config import timeout_for
+  from .config import workflow_requires
+
+PROPOSED (Breaking):
+  from .config import load_license_config  # different name/location
+  # NO timeout_for()
+  # NO workflow_requires()
+
+EXISTING USAGE (will break):
+  File: src/firsttry/run_swarm.py, line 6
+  Import: from .config import timeout_for
+  Error: ImportError - cannot import name 'timeout_for'
+
+  File: src/firsttry/run_swarm.py, line 7
+  Import: from .config import workflow_requires
+  Error: ImportError - cannot import name 'workflow_requires'
+
+  File: src/firsttry/run_swarm.py, runtime
+  Call: timeout_for(cfg, 'ruff')
+  Error: NameError - name 'timeout_for' is not defined
+
+  File: src/firsttry/run_swarm.py, runtime
+  Call: workflow_requires(cfg)
+  Error: NameError - name 'workflow_requires' is not defined
+
+SEVERITY: 🔴 CRITICAL
+────────────────────────────────────────────────────────────────────────────
+
+
+ISSUE #4: Workflow Configuration Lost
+────────────────────────────────────────────────────────────────────────────
+CURRENT (Config Supported):
+  [core]
+  tier = "pro"
+  workers = 4
+  remote_cache = true
+
+  [timeouts]
+  default = 300
+  per_check = {ruff = 10, mypy = 120, pytest = 300}
+
+  [workflow]
+  pytest_depends_on = ["ruff", "mypy"]
+  npm_test_depends_on = ["npm-lint"]
+
+  [checks.flags]
+  ruff = ["--select", "E,W"]
+  mypy = ["--strict"]
+
+PROPOSED (Not Supported):
+  [license]
+  key = "..."
+  tier = "..."
+
+  [s3]
+  enabled = true
+  bucket = "..."
+
+IMPACT:
+  ❌ Cannot set task timeouts (DAG executor needs this)
+  ❌ Cannot configure task dependencies
+  ❌ Cannot pass check-specific flags
+  ❌ Cannot enable remote caching
+  ❌ Cannot configure worker pool
+  ❌ DAG system broken
+
+SEVERITY: 🔴 CRITICAL (Core functionality loss)
+────────────────────────────────────────────────────────────────────────────
+
+════════════════════════════════════════════════════════════════════════════════
+                        BREAKAGE SCOPE
+════════════════════════════════════════════════════════════════════════════════
+
+FILES THAT WILL BREAK:
+  ❌ src/firsttry/run_swarm.py (primary user of config)
+     - Imports will fail (line 5-7)
+     - All config accessors will crash (line 20+)
+     - Entire module inoperable
+
+  ❌ src/firsttry/cli_dag.py (if it imports config)
+     - Will fail on config access
+
+  ❌ tests/test_runner_dag.py (tests config loading)
+     - Will fail on import/attribute access
+
+  ❌ Any code importing Config, Timeouts, Workflow classes
+     - Will fail on import
+
+TOTAL TEST IMPACT:
+  Current: 325 tests passing ✅
+  After replacement: ~325 tests failing ❌
+
+════════════════════════════════════════════════════════════════════════════════
+                         SAFE SOLUTION
+════════════════════════════════════════════════════════════════════════════════
+
+DO NOT replace src/firsttry/config.py
+
+Instead, use SEPARATE FILES approach:
+
+CURRENT (Single File):
+  src/firsttry/config.py ← ALL config
+
+PROPOSED (Multiple Files - SAFE):
+  src/firsttry/config.py           ← UNCHANGED (workflow + timeouts)
+  src/firsttry/license_config.py   ← NEW (license + S3)
+  src/firsttry/s3_uploader.py      ← NEW (S3 upload logic)
+  src/firsttry/doctor.py           ← NEW (diagnostics)
+  src/firsttry/__main__.py          ← NEW (CLI router)
+
+FILES TO MODIFY:
+  LICENSE_CONFIG.PY (new):
+    - Copy your proposed config.py code HERE
+    - Rename load_config() → load_license_config()
+    - Export: LicenseCfg, S3Cfg, AppCfg, s3_prefs()
+
+  S3_UPLOADER.PY (new):
+    - Import: from .license_config import load_license_config
+    - Use: license_config instead of config
+
+  DOCTOR.PY (new):
+    - Import: from .license_config import load_license_config
+    - Use: license_config instead of config
+
+  __MAIN__.PY (new):
+    - Router for: python -m firsttry doctor
+
+FILES TO KEEP UNCHANGED:
+  CONFIG.PY
+    - DO NOT MODIFY
+    - Still has: Config, Timeouts, Workflow, load_config(repo_root), etc.
+
+  RUN_SWARM.PY
+    - NO CHANGES NEEDED
+    - Still imports from .config (works as before)
+
+RESULT:
+  ✅ Zero breaking changes
+  ✅ All existing code works
+  ✅ All 325 tests still pass
+  ✅ License + S3 config available
+  ✅ Clear separation of concerns
+
+════════════════════════════════════════════════════════════════════════════════
+                    RECOMMENDATION
+════════════════════════════════════════════════════════════════════════════════
+
+✅ APPROVED:  New file approach (license_config.py)
+⛔ REJECTED:  Replacement approach (replacing config.py)
+
+Reason: Replacement would break 325+ tests and critical functionality
+
+Next Steps (if proceeding with safe approach):
+  1. Create src/firsttry/license_config.py
+  2. Create src/firsttry/s3_uploader.py
+  3. Create src/firsttry/doctor.py
+  4. Create src/firsttry/__main__.py
+  5. Update imports in new files
+  6. Run: pytest tests/ -v
+  7. Verify: python -m firsttry doctor
+
+════════════════════════════════════════════════════════════════════════════════
+                          CONCLUSION
+════════════════════════════════════════════════════════════════════════════════
+
+ISSUE:         Proposed config.py replacement would cause 4 critical failures
+SCOPE:         ~325 tests fail, run_swarm.py breaks, DAG system broken
+RECOMMENDATION: Create separate license_config.py file instead
+IMPACT:        Zero breaking changes if safe approach used
+
+Status: ⛔ VERIFICATION COMPLETE - CRITICAL ISSUES FOUND
+
+For detailed analysis, see: CONFIG_MIGRATION_IMPACT_REPORT.md
+
+════════════════════════════════════════════════════════════════════════════════

@@ -1,3 +1,31 @@
 {
-  "checks": {}
+  "checks": {
+    "ruff:_root": {
+      "name": "ruff:_root",
+      "check_id": "ruff:_root",
+      "status": "ok",
+      "duration_ms": 19,
+      "stdout": "All checks passed!\n",
+      "stderr": "",
+      "cache_status": "hit-local"
+    },
+    "mypy:_root": {
+      "name": "mypy:_root",
+      "check_id": "mypy:_root",
+      "status": "ok",
+      "duration_ms": 188,
+      "stdout": "src/firsttry/profiler.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/profiler.py:29: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nSuccess: no issues found in 145 source files\n",
+      "stderr": "",
+      "cache_status": "hit-local"
+    },
+    "pytest:_root": {
+      "name": "pytest:_root",
+      "check_id": "pytest:_root",
+      "status": "ok",
+      "duration_ms": 198,
+      "stdout": ".                                                                        [100%]\n",
+      "stderr": "",
+      "cache_status": "hit-local"
+    }
+  }
 }

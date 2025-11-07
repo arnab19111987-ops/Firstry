@@ -2,17 +2,23 @@
 
 Executes tasks in dependency order. Can use Rust ft_fastpath for parallel
 execution or fall back to sequential Python execution.
+
+Supports external log files to reduce report JSON size during reporting.
 """
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
+import uuid
 from typing import Dict
 from typing import List
 
 from .model import DAG
 from .model import Task
+
+LOG_DIR = ".firsttry/logs"
 
 # Check for Rust fast-path backend
 _RUST_OK = False
@@ -27,12 +33,15 @@ except ImportError:
 class Executor:
     """Executes a DAG of tasks with smart backend selection."""
 
-    def __init__(self, dag: DAG, use_rust: bool | None = None) -> None:
+    def __init__(
+        self, dag: DAG, use_rust: bool | None = None, use_external_logs: bool = True
+    ) -> None:
         """Initialize executor.
 
         Args:
             dag: The DAG to execute
             use_rust: Force Rust (True) or Python (False), or auto-detect (None)
+            use_external_logs: If True, write task output to external files
         """
         self.dag = dag
 
@@ -41,12 +50,20 @@ class Executor:
         else:
             self.use_rust = use_rust and _RUST_OK
 
+        self.use_external_logs = use_external_logs
+        self.task_logs: Dict[str, Dict[str, str]] = (
+            {}
+        )  # task_id -> {"stdout": path, "stderr": path}
+
     def execute(self) -> Dict[str, int]:
         """Execute all tasks in topological order.
 
         Returns:
             Dictionary mapping task ID to exit code (0 = success)
         """
+        if self.use_external_logs:
+            os.makedirs(LOG_DIR, exist_ok=True)
+
         order = self.dag.toposort()
         return self._run_sequential(order)
 
@@ -84,12 +101,39 @@ class Executor:
         """
         print(f"[executor] Running {task.id}: {' '.join(task.cmd)}", file=sys.stderr)
 
+        # Prepare stdout/stderr redirection
+        stdout_file = None
+        stderr_file = None
+        stdout_path = None
+        stderr_path = None
+
         try:
-            result = subprocess.run(
-                task.cmd,
-                timeout=task.timeout_s if task.timeout_s > 0 else None,
-                check=False,
-            )
+            if self.use_external_logs:
+                # Create unique log files per task
+                task_log_id = f"{task.id}_{uuid.uuid4().hex[:8]}"
+                stdout_path = os.path.join(LOG_DIR, f"{task_log_id}.out")
+                stderr_path = os.path.join(LOG_DIR, f"{task_log_id}.err")
+
+                stdout_file = open(stdout_path, "w")
+                stderr_file = open(stderr_path, "w")
+
+                self.task_logs[task.id] = {"stdout": stdout_path, "stderr": stderr_path}
+
+                result = subprocess.run(
+                    task.cmd,
+                    timeout=task.timeout_s if task.timeout_s > 0 else None,
+                    stdout=stdout_file,
+                    stderr=stderr_file,
+                    check=False,
+                )
+            else:
+                # Run with output to stdout/stderr
+                result = subprocess.run(
+                    task.cmd,
+                    timeout=task.timeout_s if task.timeout_s > 0 else None,
+                    check=False,
+                )
+
             return result.returncode
         except subprocess.TimeoutExpired:
             print(f"[executor] Task {task.id} timed out after {task.timeout_s}s", file=sys.stderr)
@@ -97,3 +141,8 @@ class Executor:
         except Exception as e:
             print(f"[executor] Task {task.id} failed with exception: {e}", file=sys.stderr)
             return 1
+        finally:
+            if stdout_file:
+                stdout_file.close()
+            if stderr_file:
+                stderr_file.close()

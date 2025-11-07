@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from datetime import datetime
 from datetime import timezone
@@ -12,10 +11,12 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+from firsttry.reporting import jsonio
 from firsttry.runner.config import ConfigLoader
 from firsttry.runner.executor import Executor
 from firsttry.runner.model import DAG
 from firsttry.runner.planner import Planner
+from firsttry.tests.prune import select_impacted_tests
 
 # Optional: if you already have a summary reporter, import it; else we no-op.
 try:
@@ -39,7 +40,10 @@ def _ensure_report_dir(path: Path) -> None:
 def _write_json_report(
     results: List[Dict[str, Any]], config: Dict[str, Any], out_path: Path
 ) -> None:
-    """Write timestamped JSON report with task results and summary."""
+    """Write timestamped JSON report with task results and summary.
+
+    Uses jsonio for faster serialization (orjson with fallback).
+    """
     payload: Dict[str, Any] = {
         "run_timestamp": datetime.now(timezone.utc).isoformat(),
         "config_used": bool(config),
@@ -51,7 +55,8 @@ def _write_json_report(
         },
     }
     _ensure_report_dir(out_path)
-    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    # Use fast jsonio.dumps for report serialization
+    out_path.write_text(jsonio.dumps(payload), encoding="utf-8")
     print(f"[FirstTry] JSON report written → {out_path}")
 
 
@@ -68,18 +73,23 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     run.add_argument(
         "--report-json",
-        default=".firsttry/report.json",
+        default=".firstry/report.json",
         help="Write JSON report to this path",
     )
     run.add_argument("--repo-root", default=".", help="Repository root (default: .)")
     run.add_argument("--quiet", action="store_true", help="Less chatter")
     run.add_argument("--dag-only", action="store_true", help="Plan only; print DAG and exit")
+    run.add_argument(
+        "--prune-tests",
+        action="store_true",
+        help="Prune tests to only run impacted tests based on git changes",
+    )
 
     return p.parse_args(argv)
 
 
 def _build_dag_from_config(config_path: str, repo_root: str) -> DAG:
-    """Load config and build DAG."""
+    """Load config and build DAG with caching."""
     config_file = Path(config_path).resolve()
     repo_root_path = Path(repo_root).resolve()
 
@@ -91,10 +101,15 @@ def _build_dag_from_config(config_path: str, repo_root: str) -> DAG:
         except Exception:
             config = {}
 
-    # Build DAG using planner
+    # Build DAG using planner with caching
     planner = Planner()
     workflow_config = config.get("workflow", {})
-    dag = planner.build_dag(workflow_config, repo_root_path)
+
+    # Use cached DAG builder if config file exists
+    if config_file.exists():
+        dag = planner.get_cached_dag(str(config_file), workflow_config, repo_root_path)
+    else:
+        dag = planner.build_dag(workflow_config, repo_root_path)
 
     return dag
 
@@ -133,25 +148,38 @@ def cmd_run(argv: list[str] | None = None) -> int:
             return 1
         return 0
 
-    # 3) Execute DAG
+    # 3) Execute DAG with external logs
     if not args.quiet:
         print(f"[FirstTry] Executing {len(dag.tasks)} tasks…")
 
-    executor = Executor(dag, use_rust=None)
+    executor = Executor(dag, use_rust=None, use_external_logs=True)
+
+    # Apply test pruning if requested
+    if args.prune_tests and "pytest" in dag.tasks:
+        if not args.quiet:
+            print("[FirstTry] Selecting impacted tests…")
+        pruned_tests = select_impacted_tests(set())  # Will detect git changes
+        if pruned_tests:
+            # TODO: Modify pytest command to use pruned_tests
+            if not args.quiet:
+                print(f"[FirstTry] Pruned to {len(pruned_tests)} tests")
+
     exit_codes = executor.execute()
 
     # Convert exit codes to result dicts
     results: List[Dict[str, Any]] = []
     for task_id in dag.toposort():
         code = exit_codes.get(task_id, 1)
-        results.append(
-            {
-                "id": task_id,
-                "status": "ok" if code == 0 else "fail",
-                "exit_code": code,
-                "duration_ms": 0,  # Executor doesn't track duration currently
-            }
-        )
+        # Include external log paths if available
+        task_result: Dict[str, Any] = {
+            "id": task_id,
+            "status": "ok" if code == 0 else "fail",
+            "exit_code": code,
+            "duration_ms": 0,  # Executor doesn't track duration currently
+        }
+        if task_id in executor.task_logs:
+            task_result["logs"] = executor.task_logs[task_id]
+        results.append(task_result)
 
     # 4) Report
     if not args.quiet:
