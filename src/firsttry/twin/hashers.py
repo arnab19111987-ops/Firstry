@@ -41,3 +41,34 @@ def env_fingerprint() -> str:
 
     s = f"py={sys.version_info[:3]}|impl={platform.python_implementation()}|plat={platform.platform()}"
     return hash_bytes(s.encode())
+
+
+class Hasher:
+    """High-level hasher for computing repository file digests using BLAKE3.
+
+    Combines fast-path scanning with BLAKE3 hashing for deterministic
+    repository fingerprinting and change detection.
+    """
+
+    def __init__(self, root: Path):
+        """Initialize hasher for a repository root."""
+        from .fastpath import scan_paths
+
+        self.root = Path(root)
+        self._scan_paths = scan_paths
+
+    def enumerate_files(self) -> list[Path]:
+        """Enumerate all discoverable files in the repository."""
+        files = self._scan_paths(self.root)
+        return files
+
+    def compute_hashes(self, files: list[Path]) -> dict[Path, str]:
+        """Compute BLAKE3 digests for given files."""
+        from .fastpath import hash_paths
+
+        return hash_paths(files)
+
+    def hash_all(self) -> dict[Path, str]:
+        """Enumerate and hash all repository files in one call."""
+        files = self.enumerate_files()
+        return self.compute_hashes(files)
