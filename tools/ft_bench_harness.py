@@ -257,6 +257,13 @@ class BenchRunner:
         env["FT_MAX_PROCS"] = str(self.max_procs)
         env["FT_TIMEOUT_S"] = str(self.timeout_s)
         env["FT_SEND_TELEMETRY"] = "0" if self.no_telemetry else "1"
+
+        # For Pro tier benchmarking, set test license via ENV backend
+        if self.tier == "pro" and "FIRSTTRY_LICENSE_KEY" not in env:
+            env["FIRSTTRY_LICENSE_KEY"] = "TEST-KEY-OK"
+            env["FIRSTTRY_LICENSE_BACKEND"] = "env"
+            env["FIRSTTRY_LICENSE_ALLOW"] = "pro"
+
         return env
 
     def _run_benchmark(self, run_type: str, env: Dict[str, str], clear_cache: bool) -> None:
