@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List
 
 _RUST_OK = False
+_BACKEND_USED = "python"  # Track which backend was actually used
 try:
     from ft_fastpath import scan_repo_parallel as _scan_rust  # type: ignore[attr-defined]
 
@@ -63,11 +64,13 @@ def scan_paths(root: Path, threads: int | None = None) -> List[Path]:
     Returns:
         List of Path objects for all discovered files
     """
+    global _BACKEND_USED
     root = Path(root)
 
     if _RUST_OK and os.getenv("FT_FASTPATH", "auto").lower() != "off":
         t = threads or (os.cpu_count() or 4)
         entries = _scan_rust(str(root), int(t))
+        _BACKEND_USED = "rust"
         # Filter any project-specific ignores on top of .gitignore
         rust_out = []
         for e in entries:
@@ -77,6 +80,7 @@ def scan_paths(root: Path, threads: int | None = None) -> List[Path]:
         return rust_out
 
     # --- Python fallback (basic) ---
+    _BACKEND_USED = "python"
     out: list[Path] = []
     for r, dirs, files in os.walk(root):
         # prune directories aggressively
@@ -86,3 +90,12 @@ def scan_paths(root: Path, threads: int | None = None) -> List[Path]:
             if not _is_extra_ignored(p):
                 out.append(p)
     return out
+
+
+def get_backend() -> str:
+    """Return the backend used in the last scan_paths() call.
+
+    Returns:
+        "rust" if Rust backend was used, "python" if Python fallback was used
+    """
+    return _BACKEND_USED
