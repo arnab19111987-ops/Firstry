@@ -78,3 +78,12 @@ licensing/app/
 licensing/tests/
 licensing/lic_app/
 licensing/lic_tests/
+
+# FirstTry runtime artifacts
+.firsttry/
+!/.firsttry/audit/
+!/.firsttry/audit/**
+
+# Local caches & logs
+__pycache__/
+*.log
