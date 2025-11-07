@@ -62,6 +62,8 @@ yarn.lock
 
 # FirstTry cache and generated files
 .firsttry/
+!.firsttry/audit/
+!.firsttry/audit/**
 .quality/typing_current.txt
 
 # Generated documentation

@@ -16,7 +16,9 @@ import os
 import sys
 from pathlib import Path
 from typing import Any
+from typing import Callable
 from typing import Dict
+from typing import List
 
 from .model import DAG
 from .model import Task
@@ -210,3 +212,105 @@ class Planner:
             pass
 
         return dag
+
+
+def _compute_levels(dag: DAG) -> List[List[str]]:
+    """Compute leveled (Kahn) ordering as list of levels (each level is list of task ids).
+
+    This groups tasks that have the same depth (no inter-dependencies) so they can
+    be executed in parallel within each level.
+    """
+    # Build in-degree map and adjacency list
+    indeg = {tid: 0 for tid in dag.tasks}
+    adj = {tid: [] for tid in dag.tasks}
+    for a, b in dag.edges:
+        if a not in dag.tasks or b not in dag.tasks:
+            continue
+        indeg[b] += 1
+        adj[a].append(b)
+
+    levels: List[List[str]] = []
+    # Collect nodes with indeg 0
+    ready = [tid for tid, d in indeg.items() if d == 0]
+    while ready:
+        levels.append(list(ready))
+        next_ready: List[str] = []
+        for n in ready:
+            for nb in adj[n]:
+                indeg[nb] -= 1
+                if indeg[nb] == 0:
+                    next_ready.append(nb)
+        ready = next_ready
+
+    # Sanity check for cycles
+    processed = sum(len(lvl) for lvl in levels)
+    if processed != len(dag.tasks):
+        raise ValueError("Cycle detected while computing levels")
+
+    return levels
+
+
+def plan_levels_cached(config_path: str, graph_supplier: Callable[[], DAG]) -> List[List[str]]:
+    """Return DAG execution levels, using plan cache if available.
+
+    The graph_supplier is only called on cache miss and should return a ready-to-use DAG.
+    """
+    os.makedirs(PLAN_CACHE_DIR, exist_ok=True)
+
+    try:
+        cfg_bytes = _load_config_bytes(config_path)
+    except Exception:
+        # If config can't be read, fall back to supplier
+        dag = graph_supplier()
+        return _compute_levels(dag)
+
+    key = _plan_cache_key(cfg_bytes)
+    cache_file = os.path.join(PLAN_CACHE_DIR, f"{PLAN_CACHE_PREFIX}{key}.json")
+
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, "rb") as f:
+                cached_data = json.loads(f.read().decode("utf-8"))
+                dag = DAG()
+                for task_dict in cached_data:
+                    task = Task(
+                        id=task_dict["id"],
+                        cmd=task_dict["cmd"],
+                        deps=set(task_dict["deps"]),
+                        cache_key=task_dict.get("cache_key", ""),
+                        timeout_s=task_dict.get("timeout_s", 0),
+                        allow_fail=task_dict.get("allow_fail", True),
+                    )
+                    dag.add(task)
+                return _compute_levels(dag)
+        except Exception:
+            # Cache corrupt — fall through to rebuild
+            pass
+
+    # Cache miss: build using supplier and write cache
+    dag = graph_supplier()
+    try:
+        cached_data = [
+            {
+                "id": t.id,
+                "cmd": t.cmd,
+                "deps": sorted(t.deps),
+                "cache_key": t.cache_key,
+                "timeout_s": t.timeout_s,
+                "allow_fail": t.allow_fail,
+            }
+            for t in dag.tasks.values()
+        ]
+        with open(cache_file, "wb") as f:
+            f.write(
+                json.dumps(cached_data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+            )
+    except Exception:
+        pass
+
+    return _compute_levels(dag)
+
+
+def compute_levels(dag: DAG) -> List[List[str]]:
+    """Public wrapper to compute leveled ordering for a DAG."""
+    return _compute_levels(dag)

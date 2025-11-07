@@ -6,6 +6,80 @@ import sys
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import List
+
+from firsttry.tests.prune import get_changed_files
+from firsttry.tests.prune import select_impacted_tests
+
+from .planner import Planner
+
+
+def build_pytest_cmd(prune: bool = False) -> tuple[List[str], dict]:
+    """Build pytest command, optionally injecting pruned nodeids.
+
+    If pruning is requested, attempt to select impacted nodeids via git changes
+    and the test index. Falls back to full pytest command on errors or empty
+    selection.
+
+    Returns:
+        Tuple of (cmd_list, metadata_dict) where metadata includes prune_enabled and nodeids_selected
+    """
+    base = ["pytest", "-q"]
+    meta = {"prune_enabled": bool(prune), "nodeids_selected": 0, "test_files_selected": 0}
+    if not prune:
+        return base, meta
+    try:
+        changed = get_changed_files()
+        nodeids = select_impacted_tests(changed)
+        if nodeids:
+            meta["nodeids_selected"] = len(nodeids)
+            return base + nodeids, meta
+        # Fallback: if test files changed, pass file paths to pytest to run just those files
+        test_files = [f for f in changed if f.startswith("tests/") and f.endswith(".py")]
+        if test_files:
+            meta["test_files_selected"] = len(test_files)
+            return base + test_files, meta
+        return base, meta
+    except Exception:
+        return base, meta
+
+
+def load_graph_from_config(config_path: str | Path, prune_tests: bool = False):
+    """Build a DAG from the TOML config, wiring pytest cmd for pruning.
+
+    Args:
+        config_path: Path to TOML config
+        prune_tests: If True, attempt to inject pruned pytest nodeids
+
+    Returns:
+        Tuple of (DAG, prune_metadata_dict)
+    """
+    cfg = {}
+    try:
+        cfg = ConfigLoader.load(config_path)
+    except Exception:
+        cfg = {}
+
+    workflow = cfg.get("workflow", {})
+    # Build pytest cmd according to prune flag
+    pytest_cmd, prune_meta = build_pytest_cmd(prune_tests)
+    workflow["pytest_cmd"] = pytest_cmd
+
+    planner = Planner()
+    # If config file exists on disk, prefer planner cache
+    conf_path_str = str(config_path)
+    try:
+        if Path(conf_path_str).exists():
+            # If pruning requested, avoid cached plan because cached plan
+            # may not include pruned pytest nodeids. Build a fresh DAG.
+            if prune_tests:
+                return planner.build_dag(workflow, Path(".")), prune_meta
+            return planner.get_cached_dag(conf_path_str, workflow, Path(".")), prune_meta
+    except Exception:
+        pass
+
+    return planner.build_dag(workflow, Path(".")), prune_meta
+
 
 # Use tomllib for Python 3.11+, fall back to tomli for earlier versions
 if sys.version_info >= (3, 11):

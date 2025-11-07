@@ -1,215 +1,79 @@
-"""DAG-based CLI orchestration for FirstTry (Task 6 integration)."""
-
 from __future__ import annotations
 
 import argparse
-import sys
-from datetime import datetime
-from datetime import timezone
-from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
+import datetime as _dt
+import os
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 
-from firsttry.reporting import jsonio
-from firsttry.runner.config import ConfigLoader
+from firsttry.reporting.jsonio import write_report
+from firsttry.runner.config import load_graph_from_config
 from firsttry.runner.executor import Executor
-from firsttry.runner.model import DAG
-from firsttry.runner.planner import Planner
-from firsttry.tests.prune import select_impacted_tests
-
-# Optional: if you already have a summary reporter, import it; else we no-op.
-try:
-    from firsttry.reporting.summary import show_summary
-except Exception:
-
-    def show_summary(results: List[Dict[str, Any]]) -> None:  # minimal fallback
-        ok = sum(1 for r in results if r.get("status") == "ok")
-        fail = sum(1 for r in results if r.get("status") == "fail")
-        print(f"[Summary] ok={ok} fail={fail} tasks={len(results)}")
+from firsttry.runner.planner import compute_levels
+from firsttry.runner.planner import plan_levels_cached
 
 
-def _ensure_report_dir(path: Path) -> None:
-    """Create directory for report file if needed."""
-    if path.is_dir():
-        path.mkdir(parents=True, exist_ok=True)
+def _now_iso() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).isoformat()
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser("firsttry-dag")
+    p.add_argument("run", nargs="?", default="run")
+    p.add_argument("--config", default="firsttry.toml")
+    p.add_argument("--report-json", default=".firsttry/report.json")
+    p.add_argument("--no-capture-logs", action="store_true")
+    p.add_argument("--max-workers", type=int, default=0)
+    p.add_argument(
+        "--prune-tests", action="store_true", help="Run only impacted pytest nodes when possible"
+    )
+    args = p.parse_args(argv)
+
+    # Build the graph ONCE; pass a lambda that returns it only if cache miss.
+    graph, prune_meta = load_graph_from_config(args.config, prune_tests=args.prune_tests)
+
+    # If pruning is requested, compute levels directly from the pruned graph
+    # to avoid serving a cached plan that doesn't include pruned nodeids.
+    if args.prune_tests:
+        lvls = compute_levels(graph)
     else:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        lvls = plan_levels_cached(args.config, lambda: graph)
 
+    results = []
+    level_stats = []
+    executor = Executor(graph, use_external_logs=not args.no_capture_logs)
+    # Ensure log dir exists when using external logs
+    if executor.use_external_logs:
+        os.makedirs(".firsttry/logs", exist_ok=True)
 
-def _write_json_report(
-    results: List[Dict[str, Any]], config: Dict[str, Any], out_path: Path
-) -> None:
-    """Write timestamped JSON report with task results and summary.
+    for i, lvl in enumerate(lvls):
+        maxw = args.max_workers or min(4, max(1, len(lvl)))
+        with ThreadPoolExecutor(max_workers=maxw) as tp:
+            futs = {tp.submit(executor._run_task, graph.tasks[tid]): tid for tid in lvl}
+            completed = []
+            for f in as_completed(futs):
+                r = f.result()
+                r["level"] = i  # Annotate which level executed
+                completed.append(r)
+                results.append(r)
+        level_stats.append({"level": i, "size": len(lvl), "concurrency_used": maxw})
 
-    Uses jsonio for faster serialization (orjson with fallback).
-    """
-    payload: Dict[str, Any] = {
-        "run_timestamp": datetime.now(timezone.utc).isoformat(),
-        "config_used": bool(config),
+    report = {
+        "run_timestamp": _now_iso(),
+        "config_used": True,
+        "levels": lvls,
+        "level_stats": level_stats,  # Proof of parallelism
+        "prune_metadata": prune_meta,  # Proof of pruning
         "tasks": results,
         "run_summary": {
             "total_tasks": len(results),
-            "failed_tasks": sum(1 for r in results if r.get("status") == "fail"),
-            "total_duration_ms": sum(int(r.get("duration_ms", 0)) for r in results),
+            "failed_tasks": sum(1 for r in results if r.get("code", 1) != 0),
+            "total_duration_ms": 0,
         },
     }
-    _ensure_report_dir(out_path)
-    # Use fast jsonio.dumps for report serialization
-    out_path.write_text(jsonio.dumps(payload), encoding="utf-8")
-    print(f"[FirstTry] JSON report written → {out_path}")
-
-
-def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    """Parse command-line arguments for DAG-based CLI."""
-    p = argparse.ArgumentParser(prog="firsttry", description="FirstTry DAG Orchestration CLI")
-    sub = p.add_subparsers(dest="cmd", required=True)
-
-    run = sub.add_parser("run", help="Plan & execute the FirstTry DAG pipeline")
-    run.add_argument(
-        "--config-file",
-        default="firsttry.toml",
-        help="Path to config TOML (default: firsttry.toml)",
-    )
-    run.add_argument(
-        "--report-json",
-        default=".firstry/report.json",
-        help="Write JSON report to this path",
-    )
-    run.add_argument("--repo-root", default=".", help="Repository root (default: .)")
-    run.add_argument("--quiet", action="store_true", help="Less chatter")
-    run.add_argument("--dag-only", action="store_true", help="Plan only; print DAG and exit")
-    run.add_argument(
-        "--prune-tests",
-        action="store_true",
-        help="Prune tests to only run impacted tests based on git changes",
-    )
-
-    return p.parse_args(argv)
-
-
-def _build_dag_from_config(config_path: str, repo_root: str) -> DAG:
-    """Load config and build DAG with caching."""
-    config_file = Path(config_path).resolve()
-    repo_root_path = Path(repo_root).resolve()
-
-    # Load config if file exists
-    config: Dict[str, Any] = {}
-    if config_file.exists():
-        try:
-            config = ConfigLoader.load(config_file)
-        except Exception:
-            config = {}
-
-    # Build DAG using planner with caching
-    planner = Planner()
-    workflow_config = config.get("workflow", {})
-
-    # Use cached DAG builder if config file exists
-    if config_file.exists():
-        dag = planner.get_cached_dag(str(config_file), workflow_config, repo_root_path)
-    else:
-        dag = planner.build_dag(workflow_config, repo_root_path)
-
-    return dag
-
-
-def cmd_run(argv: list[str] | None = None) -> int:
-    """Main DAG orchestration command."""
-    args = _parse_args(argv)
-
-    if args.cmd != "run":
-        print(f"[FirstTry] Unknown command: {args.cmd}", file=sys.stderr)
-        return 2
-
-    # 1) Load config and build DAG
-    if not args.quiet:
-        print("[FirstTry] Loading configuration…")
-
-    try:
-        dag = _build_dag_from_config(args.config_file, args.repo_root)
-    except Exception as e:
-        print(f"[FirstTry] Error building DAG: {e}", file=sys.stderr)
-        return 2
-
-    if not args.quiet:
-        print("[FirstTry] DAG planned successfully")
-
-    # 2) Dry-run mode: print plan and exit
-    if args.dag_only:
-        print("\n--- DAG Plan (Dry Run) ---")
-        print(f"Tasks: {list(dag.tasks.keys())}")
-        print(f"Edges: {sorted(dag.edges)}")
-        try:
-            order = dag.toposort()
-            print(f"Order: {order}")
-        except ValueError as e:
-            print(f"ERROR: {e}")
-            return 1
-        return 0
-
-    # 3) Execute DAG with external logs
-    if not args.quiet:
-        print(f"[FirstTry] Executing {len(dag.tasks)} tasks…")
-
-    executor = Executor(dag, use_rust=None, use_external_logs=True)
-
-    # Apply test pruning if requested
-    if args.prune_tests and "pytest" in dag.tasks:
-        if not args.quiet:
-            print("[FirstTry] Selecting impacted tests…")
-        pruned_tests = select_impacted_tests(set())  # Will detect git changes
-        if pruned_tests:
-            # TODO: Modify pytest command to use pruned_tests
-            if not args.quiet:
-                print(f"[FirstTry] Pruned to {len(pruned_tests)} tests")
-
-    exit_codes = executor.execute()
-
-    # Convert exit codes to result dicts
-    results: List[Dict[str, Any]] = []
-    for task_id in dag.toposort():
-        code = exit_codes.get(task_id, 1)
-        # Include external log paths if available
-        task_result: Dict[str, Any] = {
-            "id": task_id,
-            "status": "ok" if code == 0 else "fail",
-            "exit_code": code,
-            "duration_ms": 0,  # Executor doesn't track duration currently
-        }
-        if task_id in executor.task_logs:
-            task_result["logs"] = executor.task_logs[task_id]
-        results.append(task_result)
-
-    # 4) Report
-    if not args.quiet:
-        print("[FirstTry] Generating summary…")
-
-    show_summary(results)
-
-    if args.report_json:
-        config: Dict[str, Any] = {}
-        try:
-            config = ConfigLoader.load(args.config_file)
-        except Exception:
-            pass
-        _write_json_report(results, config, Path(args.report_json))
-
-    # 5) Exit status
-    failed = [r for r in results if r.get("status") == "fail"]
-    if failed:
-        print(f"\n[FirstTry] FAILED: {len(failed)} task(s) failed.")
-        return 1
-
-    if not args.quiet:
-        print("\n[FirstTry] SUCCESS: All checks passed.")
-    return 0
-
-
-def main(argv: list[str] | None = None) -> None:
-    """Entry point for DAG CLI."""
-    sys.exit(cmd_run(argv))
+    write_report(report, args.report_json)
+    return 1 if any(r.get("code", 1) != 0 for r in results) else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

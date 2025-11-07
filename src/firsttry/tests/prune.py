@@ -26,18 +26,31 @@ def get_changed_files(base_ref: str = "HEAD~1") -> Set[str]:
     Returns:
         Set of changed file paths
     """
+    files: Set[str] = set()
     try:
+        # Prefer explicit diff against a ref (committed changes)
         result = subprocess.run(
             ["git", "diff", "--name-only", base_ref],
             capture_output=True,
             text=True,
             timeout=10,
         )
-        if result.returncode == 0:
-            return set(result.stdout.strip().split("\n")) - {""}
+        if result.returncode == 0 and result.stdout:
+            files.update(set(result.stdout.strip().split("\n")) - {""})
     except Exception:
         pass
-    return set()
+
+    try:
+        # Also include unstaged/working-tree modified files so a quick touch is detected
+        result2 = subprocess.run(
+            ["git", "ls-files", "-m"], capture_output=True, text=True, timeout=5
+        )
+        if result2.returncode == 0 and result2.stdout:
+            files.update(set(result2.stdout.strip().split("\n")) - {""})
+    except Exception:
+        pass
+
+    return files
 
 
 def _should_run_test(nodeid: str, changed_files: Set[str]) -> bool:

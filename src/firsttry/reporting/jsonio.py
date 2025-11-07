@@ -7,6 +7,7 @@ orjson is not available.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 # Try to import orjson; fall back to json
@@ -54,3 +55,17 @@ def loads(s: str | bytes) -> Any:
         if isinstance(s, bytes):
             s = s.decode("utf-8")
         return json.loads(s)
+
+
+def write_report(obj: Any, path: str | "Path") -> None:
+    """Write JSON report to path using fast serializer.
+
+    Args:
+        obj: Python object to serialize
+        path: Destination path to write
+    """
+    from pathlib import Path
+
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(dumps(obj), encoding="utf-8")

@@ -47,6 +47,10 @@ check:  ## run full quality gate (stubs, typing, lints, types, tests)
 	@echo "Running tests..."
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=src pytest -q tests/ --ignore=tests/test_db_sqlite.py
 
+.PHONY: perf
+perf:  ## run performance verification (cold/warm/warm+prune benchmarks)
+	@bash tools/verify_perf.sh
+
 .PHONY: coverage-check
 coverage-check:  ## run tests with coverage and check floor
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest tests \

@@ -12,6 +12,7 @@ import os
 import subprocess
 import sys
 import uuid
+from typing import Any
 from typing import Dict
 from typing import List
 
@@ -90,22 +91,26 @@ class Executor:
 
         return results
 
-    def _run_task(self, task: Task) -> int:
+    def _run_task(self, task: Task) -> Dict[str, Any]:
         """Run a single task.
 
         Args:
             task: The task to run
 
         Returns:
-            Exit code
+            Dict with id, cmd, code, duration_s, and optional log paths
         """
+        import time
+
         print(f"[executor] Running {task.id}: {' '.join(task.cmd)}", file=sys.stderr)
 
+        start_time = time.time()
         # Prepare stdout/stderr redirection
         stdout_file = None
         stderr_file = None
         stdout_path = None
         stderr_path = None
+        exit_code = 1
 
         try:
             if self.use_external_logs:
@@ -126,6 +131,7 @@ class Executor:
                     stderr=stderr_file,
                     check=False,
                 )
+                exit_code = result.returncode
             else:
                 # Run with output to stdout/stderr
                 result = subprocess.run(
@@ -133,16 +139,30 @@ class Executor:
                     timeout=task.timeout_s if task.timeout_s > 0 else None,
                     check=False,
                 )
+                exit_code = result.returncode
 
-            return result.returncode
         except subprocess.TimeoutExpired:
             print(f"[executor] Task {task.id} timed out after {task.timeout_s}s", file=sys.stderr)
-            return 124  # Standard timeout exit code
+            exit_code = 124  # Standard timeout exit code
         except Exception as e:
             print(f"[executor] Task {task.id} failed with exception: {e}", file=sys.stderr)
-            return 1
+            exit_code = 1
         finally:
             if stdout_file:
                 stdout_file.close()
             if stderr_file:
                 stderr_file.close()
+
+        duration = time.time() - start_time
+
+        # Build result metadata with proof
+        meta: Dict[str, Any] = {
+            "id": task.id,
+            "cmd": task.cmd,
+            "code": exit_code,
+            "duration_s": round(duration, 3),
+        }
+        if self.use_external_logs and stdout_path and stderr_path:
+            meta.update({"stdout_path": stdout_path, "stderr_path": stderr_path})
+
+        return meta
