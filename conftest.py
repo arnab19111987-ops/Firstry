@@ -11,6 +11,13 @@ for p in (str(SRC), str(ROOT)):
     if p not in sys.path[:2]:
         sys.path.insert(0, p)
 
+# --- Setup demo license for testing ---
+# Auto-enable demo license with ENV backend for all tests
+os.environ.setdefault("FIRSTTRY_LICENSE_KEY", "demo-lic-key-2025")
+os.environ.setdefault("FIRSTTRY_LICENSE_BACKEND", "env")
+os.environ.setdefault("FIRSTTRY_LICENSE_ALLOW", "pro,promax")
+os.environ.setdefault("FIRSTTRY_TIER", "pro")
+
 # --- Pin top-level `tests` as the canonical package during collection ---
 TOP_TESTS = ROOT / "tests" / "__init__.py"
 if TOP_TESTS.exists():
