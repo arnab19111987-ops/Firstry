@@ -45,7 +45,14 @@ class GateResult:
         if "ok" in kwargs:
             self.ok = kwargs["ok"]
         if "status" in kwargs:
-            self.ok = kwargs["status"] == "PASS"
+            # Handle status string: "PASS", "FAIL", or "SKIPPED"
+            status_val = kwargs["status"]
+            if status_val == "SKIPPED":
+                self.ok = True  # Skipped is considered "ok" but skipped
+                self.skipped = True
+            else:
+                self.ok = status_val == "PASS"
+                self.skipped = False
         if "output" in kwargs:
             self.output = kwargs["output"]
         if "details" in kwargs:

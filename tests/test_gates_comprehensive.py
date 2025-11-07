@@ -8,7 +8,8 @@ from firsttry import gates
 
 
 def test_check_lint_pass(monkeypatch):
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         assert cmd[0] == "ruff"
         return type(
             "P",
@@ -22,7 +23,8 @@ def test_check_lint_pass(monkeypatch):
 
 
 def test_check_lint_fail(monkeypatch):
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         return type(
             "P",
             (),
@@ -35,7 +37,8 @@ def test_check_lint_fail(monkeypatch):
 
 
 def test_check_lint_not_found(monkeypatch):
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         raise FileNotFoundError
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -45,7 +48,8 @@ def test_check_lint_not_found(monkeypatch):
 
 
 def test_check_types_skipped(monkeypatch):
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         raise FileNotFoundError
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -54,16 +58,20 @@ def test_check_types_skipped(monkeypatch):
 
 
 def test_check_tests_pass(monkeypatch):
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         return type(
             "P",
             (),
             {"returncode": 0, "stdout": "23 passed in 1.5s", "stderr": ""},
         )()
 
+    # Unset the nested pytest guard so the function will actually try to run pytest
+    monkeypatch.delenv("FT_DISABLE_NESTED_PYTEST", raising=False)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.setattr(subprocess, "run", fake_run)
     res = gates.check_tests()
-    assert res.status == "PASS"
+    assert res.status == "PASS", f"Expected PASS but got {res.status}: {res.info}"
     assert "23 tests" in res.info
 
 
@@ -112,7 +120,8 @@ def test_check_ci_mirror_skipped():
 
 def test_run_gate_pre_commit(monkeypatch):
     # Mock all checks to pass
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         return type("P", (), {"returncode": 0, "stdout": "ok", "stderr": ""})()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
@@ -156,7 +165,8 @@ def test_print_verbose(capsys):
 
 
 def test_run_all_gates(monkeypatch):
-    def fake_run(cmd, capture_output, text):
+    def fake_run(cmd, *args, **kwargs):
+        """Mock subprocess.run that accepts any kwargs (robust for test compatibility)."""
         return type("P", (), {"returncode": 0, "stdout": "ok", "stderr": ""})()
 
     monkeypatch.setattr(subprocess, "run", fake_run)

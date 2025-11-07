@@ -1,6 +1,8 @@
 """Python pytest gate implementation."""
 
+import os
 import subprocess
+import sys
 from typing import Any
 
 from .base import Gate
@@ -14,14 +16,28 @@ class PythonPytestGate(Gate):
 
     def run(self, project_root: Any | None = None) -> GateResult:
         """Run pytest tests."""
+        # Guard against nested pytest invocations
+        if "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+            return GateResult(
+                gate_id=self.gate_id,
+                ok=True,
+                skipped=True,
+                reason="nested pytest detected; skipping",
+            )
+
         try:
+            # Set guard for child processes to prevent recursion
+            env = os.environ.copy()
+            env["FT_DISABLE_NESTED_PYTEST"] = "1"
+
             result = subprocess.run(
-                ["pytest", "-q", "-m", "not slow"],
+                [sys.executable, "-m", "pytest", "-q", "-m", "not slow"],
                 cwd=project_root,
                 capture_output=True,
                 text=True,
                 timeout=120,
                 check=False,
+                env=env,
             )
 
             if result.returncode == 0:

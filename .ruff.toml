@@ -21,6 +21,8 @@ extend-exclude = [
   "test_improvements.py",
   "demo_*.py",
   "performance_benchmark.py",
+  # Exclude legacy/quarantine code
+  "src/firsttry/legacy_quarantine",
 ]
 
 [lint]

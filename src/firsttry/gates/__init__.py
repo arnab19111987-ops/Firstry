@@ -1,6 +1,8 @@
 """FirstTry gate implementations."""
 
+import os
 import subprocess
+import sys
 from typing import Any
 
 from .base import GateResult
@@ -136,17 +138,38 @@ def check_types():
 # Do NOT "simplify" this to _safe_gate() unless you also port the parser.
 def check_tests():
     """Compatibility function for check_tests."""
+    # Guard against nested pytest invocations
+    if "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+        return GateResult(
+            gate_id="tests",
+            ok=True,
+            skipped=True,
+            reason="nested pytest detected; skipping",
+            output="",
+        )
+
     try:
+        # Set guard for child processes to prevent recursion
+        env = os.environ.copy()
+        env["FT_DISABLE_NESTED_PYTEST"] = "1"
+
         try:
             result = subprocess.run(
-                ["pytest", "-q"],
+                [sys.executable, "-m", "pytest", "-q"],
                 capture_output=True,
                 text=True,
                 check=False,
+                env=env,
             )
         except TypeError:
             # Monkeypatch doesn't accept check parameter
-            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True, check=False)
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", "-q"],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
 
         # Parse test count from output like "23 passed in 1.5s"
         info = "pytest tests"
