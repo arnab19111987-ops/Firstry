@@ -28,8 +28,8 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 # Ensure .firsttry directory exists
 mkdir -p "$REPO_ROOT/.firsttry"
 
-# Path to the Python auditor
-AUDITOR="$SCRIPT_DIR/ft_readiness_audit.py"
+# Path to the Python auditor (in tools/ directory)
+AUDITOR="$REPO_ROOT/tools/ft_readiness_audit.py"
 
 if [ ! -f "$AUDITOR" ]; then
     echo "❌ Error: Auditor script not found at $AUDITOR"
