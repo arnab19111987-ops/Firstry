@@ -16,6 +16,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+from firsttry.runner import taskcache
+
 from .model import DAG
 from .model import Task
 
@@ -81,7 +83,8 @@ class Executor:
 
         for task_id in order:
             task = self.dag.tasks[task_id]
-            exit_code = self._run_task(task)
+            meta = self._run_task(task)
+            exit_code = meta.get("code", 1)
             results[task_id] = exit_code
 
             # Stop on failure if allow_fail is False
@@ -101,6 +104,15 @@ class Executor:
             Dict with id, cmd, code, duration_s, and optional log paths
         """
         import time
+
+        # Try task cache first
+        ckey = taskcache.key_for(task.id, task.cmd, self._inputs_for(task), self._salt_for(task))
+        cached = taskcache.get(task.id, ckey)
+        if cached is not None:
+            cached = dict(cached)
+            cached["cache"] = "hit"
+            print(f"[executor] Cache hit {task.id}: {' '.join(task.cmd)}", file=sys.stderr)
+            return cached
 
         print(f"[executor] Running {task.id}: {' '.join(task.cmd)}", file=sys.stderr)
 
@@ -165,4 +177,41 @@ class Executor:
         if self.use_external_logs and stdout_path and stderr_path:
             meta.update({"stdout_path": stdout_path, "stderr_path": stderr_path})
 
+        # Cache successful results
+        if exit_code == 0:
+            cache_payload = {k: v for k, v in meta.items() if k not in ("duration_s", "cache")}
+            taskcache.put(task.id, ckey, cache_payload)
+
+        meta["cache"] = "miss"
         return meta
+
+    def _inputs_for(self, task: Task) -> list[str]:
+        """Determine input files that affect task output.
+
+        Args:
+            task: Task to analyze
+
+        Returns:
+            List of file/directory paths
+        """
+        if task.id == "ruff":
+            return ["src"]
+        if task.id == "mypy":
+            return ["src", "pyproject.toml"]
+        if task.id == "pytest":
+            return ["src", "tests", "pyproject.toml"]
+        return ["src", "tests"]
+
+    def _salt_for(self, task: Task) -> dict:
+        """Generate salt for task cache key.
+
+        Args:
+            task: Task to analyze
+
+        Returns:
+            Dict of metadata affecting task output
+        """
+        return {
+            "timeout": task.timeout_s,
+            "firsttry_version": os.environ.get("FIRSTTRY_VERSION", "1"),
+        }

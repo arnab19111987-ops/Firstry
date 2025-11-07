@@ -221,8 +221,8 @@ def _compute_levels(dag: DAG) -> List[List[str]]:
     be executed in parallel within each level.
     """
     # Build in-degree map and adjacency list
-    indeg = {tid: 0 for tid in dag.tasks}
-    adj = {tid: [] for tid in dag.tasks}
+    indeg: dict[str, int] = {tid: 0 for tid in dag.tasks}
+    adj: dict[str, list[str]] = {tid: [] for tid in dag.tasks}
     for a, b in dag.edges:
         if a not in dag.tasks or b not in dag.tasks:
             continue
