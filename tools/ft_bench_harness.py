@@ -35,6 +35,14 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+# Optional S3 support
+try:
+    import ft_bench_s3  # noqa: F401 - Used for S3_AVAILABLE flag check
+
+    S3_AVAILABLE = True
+except ImportError:
+    S3_AVAILABLE = False
+
 __version__ = "1.0.0"
 
 
@@ -51,6 +59,7 @@ class BenchRunner:
         regress_pct: float = 25.0,
         skip_cold: bool = False,
         skip_warm: bool = False,
+        upload_s3: bool = False,
     ):
         self.tier = tier
         self.mode = mode
@@ -60,6 +69,7 @@ class BenchRunner:
         self.regress_pct = regress_pct
         self.skip_cold = skip_cold
         self.skip_warm = skip_warm
+        self._upload_s3 = upload_s3 and S3_AVAILABLE
 
         # Setup directories
         self.repo_root = Path.cwd()
@@ -117,6 +127,10 @@ class BenchRunner:
 
             # Print markdown to stdout
             print((self.proof_md).read_text())
+
+            # Upload to S3 if requested (optional, no error if fails)
+            if hasattr(self, "_upload_s3") and self._upload_s3:
+                self._upload_to_s3()
 
             return 4 if regression else 0
 
@@ -633,6 +647,48 @@ class BenchRunner:
 
         return git_info
 
+    def _upload_to_s3(self) -> None:
+        """Upload benchmark report to S3/R2 (optional feature)."""
+        if not S3_AVAILABLE:
+            print("[SKIP] S3 upload skipped (boto3 not installed)", file=sys.stderr)
+            return
+
+        try:
+            from ft_bench_s3 import S3ArchiveManager
+
+            manager = S3ArchiveManager()
+
+            if not manager.is_available():
+                print(
+                    "[SKIP] S3 upload skipped (not configured or unavailable)",
+                    file=sys.stderr,
+                )
+                return
+
+            # Upload benchmark report
+            result = manager.upload_from_file(
+                self.proof_json,
+                str(self.repo_root),
+                run_type="benchmark",
+            )
+
+            if result.success:
+                print(
+                    "\n✓ Benchmark report uploaded to S3",
+                    file=sys.stderr,
+                )
+                print(f"  Key: {result.key}", file=sys.stderr)
+                print(f"  Size: {result.size_bytes} bytes", file=sys.stderr)
+                print(f"  URL: {result.url}", file=sys.stderr)
+            else:
+                print(
+                    f"\n[WARN] S3 upload failed: {result.error}",
+                    file=sys.stderr,
+                )
+
+        except Exception as e:
+            print(f"[WARN] S3 upload error: {e}", file=sys.stderr)
+
 
 def main() -> int:
     """Main entry point."""
@@ -685,6 +741,11 @@ def main() -> int:
         action="store_true",
         help="Skip warm run",
     )
+    parser.add_argument(
+        "--upload-s3",
+        action="store_true",
+        help="Upload benchmark report to S3/R2 (requires S3_* env vars)",
+    )
 
     args = parser.parse_args()
 
@@ -697,6 +758,7 @@ def main() -> int:
         regress_pct=args.regress_pct,
         skip_cold=args.skip_cold,
         skip_warm=args.skip_warm,
+        upload_s3=args.upload_s3,
     )
 
     return runner.run()
