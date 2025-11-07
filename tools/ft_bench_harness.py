@@ -692,76 +692,102 @@ class BenchRunner:
 
 def main() -> int:
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="FirstTry Benchmark Harness - Cold/Warm Performance Runner"
-    )
-    parser.add_argument(
-        "--tier",
-        choices=["lite", "pro"],
-        default="lite",
-        help="FirstTry tier to run",
-    )
-    parser.add_argument(
-        "--mode",
-        choices=["fast", "full"],
-        default="fast",
-        help="FirstTry mode",
-    )
-    parser.add_argument(
-        "--max-procs",
-        type=int,
-        default=None,
-        help="Max parallel processes (auto-detect if not specified)",
-    )
-    parser.add_argument(
-        "--timeout-s",
-        type=int,
-        default=300,
-        help="Timeout per run in seconds",
-    )
-    parser.add_argument(
-        "--no-telemetry",
-        action="store_true",
-        default=True,
-        help="Disable FirstTry telemetry for benchmarking",
-    )
-    parser.add_argument(
-        "--regress-pct",
-        type=float,
-        default=25.0,
-        help="Regression threshold percentage",
-    )
-    parser.add_argument(
-        "--skip-cold",
-        action="store_true",
-        help="Skip cold run",
-    )
-    parser.add_argument(
-        "--skip-warm",
-        action="store_true",
-        help="Skip warm run",
-    )
-    parser.add_argument(
-        "--upload-s3",
-        action="store_true",
-        help="Upload benchmark report to S3/R2 (requires S3_* env vars)",
-    )
+    # Create artifacts directory and prepare for early exits
+    ARTS = Path("bench_artifacts")
+    ARTS.mkdir(parents=True, exist_ok=True)
 
-    args = parser.parse_args()
+    try:
+        parser = argparse.ArgumentParser(
+            description="FirstTry Benchmark Harness - Cold/Warm Performance Runner"
+        )
+        parser.add_argument(
+            "--tier",
+            choices=["lite", "pro"],
+            default="lite",
+            help="FirstTry tier to run",
+        )
+        parser.add_argument(
+            "--mode",
+            choices=["fast", "full"],
+            default="fast",
+            help="FirstTry mode",
+        )
+        parser.add_argument(
+            "--max-procs",
+            type=int,
+            default=None,
+            help="Max parallel processes (auto-detect if not specified)",
+        )
+        parser.add_argument(
+            "--timeout-s",
+            type=int,
+            default=300,
+            help="Timeout per run in seconds",
+        )
+        parser.add_argument(
+            "--no-telemetry",
+            action="store_true",
+            default=True,
+            help="Disable FirstTry telemetry for benchmarking",
+        )
+        parser.add_argument(
+            "--regress-pct",
+            type=float,
+            default=25.0,
+            help="Regression threshold percentage",
+        )
+        parser.add_argument(
+            "--skip-cold",
+            action="store_true",
+            help="Skip cold run",
+        )
+        parser.add_argument(
+            "--skip-warm",
+            action="store_true",
+            help="Skip warm run",
+        )
+        parser.add_argument(
+            "--upload-s3",
+            action="store_true",
+            help="Upload benchmark report to S3/R2 (requires S3_* env vars)",
+        )
 
-    runner = BenchRunner(
-        tier=args.tier,
-        mode=args.mode,
-        max_procs=args.max_procs,
-        timeout_s=args.timeout_s,
-        no_telemetry=args.no_telemetry,
-        regress_pct=args.regress_pct,
-        skip_cold=args.skip_cold,
-        skip_warm=args.skip_warm,
-        upload_s3=args.upload_s3,
-    )
+        args = parser.parse_args()
 
-    return runner.run()
+        runner = BenchRunner(
+            tier=args.tier,
+            mode=args.mode,
+            max_procs=args.max_procs,
+            timeout_s=args.timeout_s,
+            no_telemetry=args.no_telemetry,
+            regress_pct=args.regress_pct,
+            skip_cold=args.skip_cold,
+            skip_warm=args.skip_warm,
+            upload_s3=args.upload_s3,
+        )
+
+        return runner.run()
+
+    except SystemExit as e:
+        (ARTS / "cold.log").write_text(f"SystemExit: {e.code}\n")
+        raise
+    except Exception as e:
+        import json
+        import traceback
+
+        tb = traceback.format_exc()
+        (ARTS / "cold.log").write_text(tb)
+        Path(".firsttry").mkdir(exist_ok=True)
+        Path(".firsttry/bench_proof.json").write_text(
+            json.dumps(
+                {
+                    "status": "error",
+                    "runs": {"cold": {"exit_code": 1, "error": str(e)}},
+                },
+                indent=2,
+            )
+        )
+        raise
 
 
 if __name__ == "__main__":
