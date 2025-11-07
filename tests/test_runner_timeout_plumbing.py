@@ -12,7 +12,7 @@ def test_pytest_runner_receives_timeout_arg(tmp_path: Path):
 
     called = {}
 
-    def fake_run(cmd, cwd=None, capture_output=True, text=True, timeout=None):
+    def fake_run(cmd, cwd=None, capture_output=True, text=True, timeout=None, **kwargs):
         called.update({"cmd": cmd, "cwd": cwd, "timeout": timeout})
 
         class P:

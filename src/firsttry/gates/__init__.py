@@ -138,8 +138,8 @@ def check_types():
 # Do NOT "simplify" this to _safe_gate() unless you also port the parser.
 def check_tests():
     """Compatibility function for check_tests."""
-    # Guard against nested pytest invocations
-    if "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+    # Guard against nested pytest invocations set by parent process via FT_DISABLE_NESTED_PYTEST
+    if os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
         return GateResult(
             gate_id="tests",
             ok=True,
@@ -252,13 +252,17 @@ def run_all_gates(project_root: Any) -> list[GateResult]:
 
 def gate_result_to_dict(gate_result: Any) -> dict[str, Any]:
     """Compatibility function to convert GateResult to dict."""
+    is_skipped = getattr(gate_result, "skipped", False)
+    status = "SKIPPED" if is_skipped else ("PASS" if gate_result.ok else "FAIL")
+    returncode = None if is_skipped else (0 if gate_result.ok else 1)
+
     return {
         "gate": getattr(gate_result, "gate_id", "unknown"),
         "name": getattr(gate_result, "gate_id", "unknown"),
-        "status": "PASS" if gate_result.ok else "FAIL",
+        "status": status,
         "ok": gate_result.ok,
         "info": gate_result.reason,
         "details": getattr(gate_result, "output", ""),
         "stdout": getattr(gate_result, "output", gate_result.reason),
-        "returncode": 0 if gate_result.ok else 1,
+        "returncode": returncode,
     }

@@ -46,12 +46,17 @@ class ShellRunner:
     """Default runner that actually runs shell commands."""
 
     def run(self, cmd: list[str]) -> tuple[int, str]:
+        # Set guard to prevent nested pytest recursion
+        env = os.environ.copy()
+        env["FT_DISABLE_NESTED_PYTEST"] = "1"
+
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             check=False,
+            env=env,
         )
         return proc.returncode, proc.stdout
 
@@ -64,7 +69,17 @@ def _optional_check(
 ) -> CheckResult:
     """Runs a check but downgrades "command not found" to passed=True w/ note.
     This keeps doctor from exploding if mypy/black aren't installed yet.
+
+    Also detects nested pytest and skips to prevent recursion.
     """
+    # Guard against nested pytest: if we're already running inside pytest, skip pytest
+    if name.lower() == "pytest" and "PYTEST_CURRENT_TEST" in os.environ:
+        return CheckResult(
+            name=name,
+            passed=True,
+            output="skipped (nested pytest detected)",
+        )
+
     try:
         code, out = runner.run(cmd)
     except FileNotFoundError as e:

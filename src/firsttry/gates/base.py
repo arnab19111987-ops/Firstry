@@ -111,6 +111,7 @@ class GateResult:
 
     def to_dict(self):
         """Convert to dictionary for JSON serialization."""
+        returncode = None if self.skipped else (0 if self.ok else 1)
         return {
             "gate_id": self.gate_id,
             "ok": self.ok,
@@ -122,7 +123,7 @@ class GateResult:
             "skipped": self.skipped,
             "reason": self.reason,
             "watched_files": self.watched_files,
-            "returncode": 0 if self.ok else 1,
+            "returncode": returncode,
         }
 
     def __json__(self):

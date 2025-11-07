@@ -26,7 +26,7 @@ def test_ft_lite_constructs_correct_command(monkeypatch, tmp_path):
     # Mock subprocess.run to capture the command
     captured_cmd = []
 
-    def mock_run(cmd):
+    def mock_run(cmd, **kwargs):
         captured_cmd.append(cmd)
 
         # Mock successful return
@@ -67,7 +67,7 @@ def test_ft_doctor_checks_constructs_correct_command(monkeypatch, tmp_path):
 
     captured_cmd = []
 
-    def mock_run(cmd):
+    def mock_run(cmd, **kwargs):
         captured_cmd.append(cmd)
 
         class MockProc:
@@ -98,7 +98,7 @@ def test_ft_dash_constructs_correct_command(monkeypatch, tmp_path):
 
     captured_cmd = []
 
-    def mock_run(cmd):
+    def mock_run(cmd, **kwargs):
         captured_cmd.append(cmd)
 
         class MockProc:
@@ -127,7 +127,7 @@ def test_ft_lock_constructs_correct_command(monkeypatch, tmp_path):
 
     captured_cmd = []
 
-    def mock_run(cmd):
+    def mock_run(cmd, **kwargs):
         captured_cmd.append(cmd)
 
         class MockProc:
@@ -157,7 +157,7 @@ def test_ft_extra_flags_passed_through(monkeypatch, tmp_path):
 
     captured_cmd = []
 
-    def mock_run(cmd):
+    def mock_run(cmd, **kwargs):
         captured_cmd.append(cmd)
 
         class MockProc:

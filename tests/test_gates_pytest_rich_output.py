@@ -47,7 +47,7 @@ def test_check_tests_info_contains_count_when_successful(monkeypatch):
     """
     import subprocess
 
-    def fake_run(cmd, capture_output, text, check=False):
+    def fake_run(cmd, capture_output=None, text=None, check=False, env=None, **kwargs):
         """Simulate successful pytest run."""
         return type(
             "FakeResult",

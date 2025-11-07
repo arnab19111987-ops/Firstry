@@ -16,8 +16,8 @@ class PythonPytestGate(Gate):
 
     def run(self, project_root: Any | None = None) -> GateResult:
         """Run pytest tests."""
-        # Guard against nested pytest invocations
-        if "PYTEST_CURRENT_TEST" in os.environ or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+        # Guard against nested pytest invocations set by parent process via FT_DISABLE_NESTED_PYTEST
+        if os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
             return GateResult(
                 gate_id=self.gate_id,
                 ok=True,
