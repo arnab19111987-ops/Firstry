@@ -82,7 +82,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -106,7 +106,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: pip
@@ -135,7 +135,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: pip
@@ -179,7 +179,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: pip
@@ -360,7 +360,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: pip
@@ -398,7 +398,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
 
@@ -436,7 +436,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: pip
@@ -535,7 +535,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: pip

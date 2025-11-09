@@ -37,7 +37,7 @@ jobs:
       cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
       # 3. PIN ACTIONS BY SHA (supply-chain security)
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
         # v4 pinned by SHA
@@ -61,10 +61,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         # v4 pinned by SHA
       
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: "pip"
@@ -85,10 +85,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         # v4 pinned by SHA
       
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: "pip"
@@ -113,10 +113,10 @@ jobs:
       matrix:
         python: ["3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         # v4 pinned by SHA
       
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           cache: "pip"
@@ -168,10 +168,10 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         # v4 pinned by SHA
       
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: "pip"
@@ -196,10 +196,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         # v4 pinned by SHA
       
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
           cache: "pip"
@@ -228,10 +228,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+      - uses: actions/checkout@v4
         # v4 pinned by SHA
       
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.setup.outputs.python-version }}
         # v5 pinned by SHA
