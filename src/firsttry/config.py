@@ -88,12 +88,25 @@ def workflow_requires(cfg: Config) -> list[str]:
 # NOTE: This is a temporary shim. Remove after renaming the tooling package
 # (e.g. to `firsttry_tools`).
 FirstTryConfig = Config  # TEMP compat; remove after tooling package rename
-warnings.warn(
-    "firsttry.config.FirstTryConfig is deprecated; import Config instead. "
-    "This alias will be removed after the tooling package is renamed.",
-    DeprecationWarning,
-    stacklevel=2,
-)
+# NOTE: we intentionally avoid emitting a DeprecationWarning at import time
+# because test suites often run with warnings elevated to errors. If callers
+# need to surface the deprecation, call `emit_firsttryconfig_deprecation()`
+# explicitly from CLI code or tooling that runs interactively.
+
+
+def emit_firsttryconfig_deprecation() -> None:
+    """Emit the deprecation warning for the FirstTryConfig alias.
+
+    This is not called automatically to avoid noisy warnings during test
+    collection where DeprecationWarnings may be treated as errors.
+    """
+    warnings.warn(
+        "firsttry.config.FirstTryConfig is deprecated; import Config instead. "
+        "This alias will be removed after the tooling package is renamed.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
 
 # Explicit export surface. Keep alias on the export list while it's present.
 __all__ = ["Config", "FirstTryConfig"]  # TEMP: remove alias on T2
