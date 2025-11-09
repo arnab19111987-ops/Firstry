@@ -60,7 +60,7 @@ jobs:
 
       # 3. OIDC TO AWS (ditch static keys)
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38c7e35cec09585e8d78191ca0
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
           aws-region: ${{ env.AWS_REGION }}
@@ -129,7 +129,7 @@ jobs:
         # v5 pinned by SHA
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38c7e35cec09585e8d78191ca0
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
           aws-region: ${{ env.AWS_REGION }}
@@ -197,7 +197,7 @@ jobs:
         # v5 pinned by SHA
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38c7e35cec09585e8d78191ca0
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
           aws-region: ${{ env.AWS_REGION }}
@@ -235,7 +235,7 @@ jobs:
         # v4 pinned by SHA
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38c7e35cec09585e8d78191ca0
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ needs.configure-aws.outputs.aws-role }}
           aws-region: ${{ env.AWS_REGION }}

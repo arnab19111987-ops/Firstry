@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload type safety report
         if: always()
-        uses: actions/upload-artifact@65462800fd760344b1a7b33e5b3c9e0d2b6a9a14  # v4 pinned by SHA
+        uses: actions/upload-artifact@v5  # v4 pinned by SHA
         with:
           name: mypy-report
           path: |
@@ -381,7 +381,7 @@ jobs:
 
       - name: Upload enterprise test results
         if: always()
-        uses: actions/upload-artifact@65462800fd760344b1a7b33e5b3c9e0d2b6a9a14  # v4 pinned by SHA
+        uses: actions/upload-artifact@v5  # v4 pinned by SHA
         with:
           name: enterprise-tests
           path: |
@@ -420,7 +420,7 @@ jobs:
 
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@65462800fd760344b1a7b33e5b3c9e0d2b6a9a14  # v4 pinned by SHA
+        uses: actions/upload-artifact@v5  # v4 pinned by SHA
         with:
           name: security-reports
           path: |
@@ -500,7 +500,7 @@ jobs:
 
       - name: Upload benchmark results
         if: always()
-        uses: actions/upload-artifact@65462800fd760344b1a7b33e5b3c9e0d2b6a9a14  # v4 pinned by SHA
+        uses: actions/upload-artifact@v5  # v4 pinned by SHA
         with:
           name: benchmarks-ci
           path: .firsttry/bench_ci.json

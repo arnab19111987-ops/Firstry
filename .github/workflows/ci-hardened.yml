@@ -132,7 +132,7 @@ jobs:
           pytest tests/ -v --tb=short --cov=src/firsttry --cov-report=term-missing --cov-report=json
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@5ecb98a3c6b747ed38dc09f064a7349c1acde9fe
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.json
           flags: unittests
@@ -142,7 +142,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action@f355d34d53ad4e7f506fab0b901f1c528e58179e
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: test-results.xml
           check_name: Test Results (${{ matrix.python }})
@@ -215,7 +215,7 @@ jobs:
           bandit -r src -f json -o bandit-report.json || true
 
       - name: Upload security scan results
-        uses: github/codeql-action/upload-sarif@0ba4244466797eb048eb91a6cd70d1cc03534cab
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bandit-report.json
           wait-for-processing: false

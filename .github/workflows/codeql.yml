@@ -40,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@b611370bb5703a7efb587f9d136a52ea3c847bef  # v2
+        uses: github/codeql-action/init@v4  # v2
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
@@ -58,14 +58,14 @@ jobs:
           pip install -e ".[dev]" 2>/dev/null || pip install pytest pytest-cov pytest-xdist
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@b611370bb5703a7efb587f9d136a52ea3c847bef  # v2
+        uses: github/codeql-action/analyze@v4  # v2
         with:
           category: "/language:${{ matrix.language }}"
           upload: true
           wait-for-processing: false
 
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@b611370bb5703a7efb587f9d136a52ea3c847bef  # v2
+        uses: github/codeql-action/upload-sarif@v4  # v2
         if: always()
         with:
           sarif_file: "results"
