@@ -315,8 +315,8 @@ def test_workflow_cycles_detection(github_workflow_fixture: Dict[str, Any]):
                     return True
         return False
 
-    assert has_cycle(cyclic["jobs"]) == True
-    assert has_cycle(github_workflow_fixture["jobs"]) == False
+    assert has_cycle(cyclic["jobs"])
+    assert not has_cycle(github_workflow_fixture["jobs"])
 
 
 def test_ci_output_format_consistency(github_workflow_fixture: Dict[str, Any]):

@@ -122,7 +122,7 @@ def test_policy_hash_embedding_in_report(enterprise_policy: Dict[str, Any], tmp_
     # Verify report contains policy hash
     loaded = json.loads(report_path.read_text())
     assert loaded["policy_hash"] == policy_hash
-    assert loaded["policy_locked"] == True
+    assert loaded["policy_locked"]
 
 
 def test_policy_locked_flag_enforcement(enterprise_policy: Dict[str, Any]):
@@ -147,8 +147,8 @@ def test_policy_locked_flag_enforcement(enterprise_policy: Dict[str, Any]):
 
 def test_cache_bypass_not_allowed(enterprise_policy: Dict[str, Any]):
     """Test that locked policy prevents cache bypass."""
-    assert enterprise_policy["locked"] == True
-    assert enterprise_policy["restrictions"]["allow_cache_bypass"] == False
+    assert enterprise_policy["locked"]
+    assert not enterprise_policy["restrictions"]["allow_cache_bypass"]
 
     # Enforcement test: attempting to set FT_SKIP_CACHE=1 should be rejected
     # In real implementation:
@@ -159,8 +159,8 @@ def test_cache_bypass_not_allowed(enterprise_policy: Dict[str, Any]):
 
 def test_check_skip_not_allowed(enterprise_policy: Dict[str, Any]):
     """Test that locked policy prevents check skipping."""
-    assert enterprise_policy["locked"] == True
-    assert enterprise_policy["restrictions"]["allow_check_skip"] == False
+    assert enterprise_policy["locked"]
+    assert not enterprise_policy["restrictions"]["allow_check_skip"]
 
     # Enforcement: attempting FT_SKIP_CHECKS=linting should be rejected
     # In real implementation:
@@ -275,8 +275,8 @@ def test_policy_restriction_enforcement(enterprise_policy: Dict[str, Any]):
     restrictions = enterprise_policy["restrictions"]
 
     # Verify restriction properties
-    assert restrictions["allow_cache_bypass"] == False
-    assert restrictions["allow_check_skip"] == False
+    assert not restrictions["allow_cache_bypass"]
+    assert not restrictions["allow_check_skip"]
     assert restrictions["max_concurrent_tasks"] == 8
     assert restrictions["min_security_level"] == "high"
 
@@ -295,7 +295,7 @@ def test_policy_cannot_be_modified_when_locked(enterprise_policy: Dict[str, Any]
 
     # Try to modify it
     loaded = json.loads(policy_file.read_text())
-    assert loaded["locked"] == True
+    assert loaded["locked"]
 
     # Enforcement logic:
     # if policy.locked and policy_file.stat().st_mtime > policy.locked_at:

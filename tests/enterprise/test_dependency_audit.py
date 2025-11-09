@@ -180,8 +180,8 @@ def test_dependency_update_recommendations(tmp_path: Path):
     loaded = json.loads(recs_file.read_text())
 
     assert len(loaded) == 2
-    assert loaded[0]["breaking_changes"] == False
-    assert loaded[1]["breaking_changes"] == True
+    assert not loaded[0]["breaking_changes"]
+    assert loaded[1]["breaking_changes"]
 
 
 def test_sbom_vulnerability_correlation():
@@ -262,8 +262,8 @@ def test_continuous_scanning_enabled():
         "channels": ["email", "slack", "github_issue"],
     }
 
-    assert continuous_config["enabled"] == True
-    assert continuous_config["block_on_critical"] == True
+    assert continuous_config["enabled"]
+    assert continuous_config["block_on_critical"]
 
 
 def test_ci_integration_pip_audit():
@@ -285,7 +285,7 @@ def test_ci_integration_pip_audit():
         "retry": {"max": 2, "when": ["runner_system_failure"]},
     }
 
-    assert ci_job["allow_failure"] == False
+    assert not ci_job["allow_failure"]
     assert "audit_report.json" in ci_job["artifacts"]["paths"]
 
 

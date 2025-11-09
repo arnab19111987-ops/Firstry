@@ -4,13 +4,51 @@ import os
 import sys
 from pathlib import Path
 
-MIN_RATE = float(os.environ.get("FT_CRITICAL_MIN_RATE", "30"))
-CRITICAL = [
-    "firsttry/state.py",
-    "firsttry/smart_pytest.py",
-    "firsttry/planner.py",
-    "firsttry/scanner.py",
-]
+
+def _load_config():
+    data = {}
+    pp = Path("pyproject.toml")
+    if pp.exists():
+        try:
+            import tomllib  # py311+
+        except ImportError:
+            try:
+                import tomli as tomllib  # type: ignore
+            except ImportError:
+                # Fallback to hardcoded values if tomllib/tomli not available
+                return {
+                    "critical_min_rate": 30,
+                    "critical_files": [
+                        "firsttry/state.py",
+                        "firsttry/smart_pytest.py",
+                        "firsttry/planner.py",
+                        "firsttry/scanner.py",
+                    ],
+                }
+        with pp.open("rb") as f:
+            data = tomllib.load(f)
+    cfg = data.get("tool", {}).get("firsttry", {}).get("coverage", {})
+    return {
+        "critical_min_rate": cfg.get("critical_min_rate", 30),
+        "critical_files": cfg.get(
+            "critical_files",
+            [
+                "firsttry/state.py",
+                "firsttry/smart_pytest.py",
+                "firsttry/planner.py",
+                "firsttry/scanner.py",
+            ],
+        ),
+    }
+
+
+CONF = _load_config()
+DEFAULT_MIN = float(CONF["critical_min_rate"])
+CRITICAL_FILES = CONF["critical_files"]
+
+# env override still wins
+MIN_RATE = float(os.environ.get("FT_CRITICAL_MIN_RATE", DEFAULT_MIN))
+CRITICAL = {f: MIN_RATE for f in CRITICAL_FILES}
 
 
 def fail(msg):
@@ -31,6 +69,12 @@ def main():
     files = data.get("files") or {}
     if not files:
         fail("coverage.json has no 'files' entries (no data collected).")
+
+    # Normalize file paths for Windows compatibility
+    normalized_files = {}
+    for k, v in files.items():
+        normalized_files[norm(k)] = v
+    files = normalized_files
 
     missing, below = [], []
     # Map critical -> (matched_coverage_path, percent or None)
@@ -53,13 +97,13 @@ def main():
         pct = summary.get("percent_covered")
         if pct is None:
             print(f"⚠️  No percent_covered for {matched_path or crit}; treating as present.")
-            files_seen[crit] = (matched_path, None)
+            files_seen[norm(crit)] = (matched_path, None)
             continue
         try:
             val = float(pct)
         except Exception:
             val = None
-        files_seen[crit] = (matched_path, val)
+        files_seen[norm(crit)] = (matched_path, val)
         if val is None or val < MIN_RATE:
             if val is None:
                 # treat missing percent as present earlier
@@ -68,7 +112,7 @@ def main():
 
     # If none of the critical files are present at all, fail.
     if not files_seen:
-        fail(f"Critical files missing from coverage: {CRITICAL}")
+        fail(f"Critical files missing from coverage: {list(CRITICAL.keys())}")
 
     # --- Pretty table (always print) ---
     def _fmt_pct(x):
@@ -142,7 +186,7 @@ def main():
     if below:
         fail(f"Critical coverage below threshold {MIN_RATE}%: {below}")
 
-    print(f"✅ Critical coverage OK (≥ {MIN_RATE}%): {CRITICAL}")
+    print(f"✅ Critical coverage OK (≥ {MIN_RATE}%): {list(CRITICAL.keys())}")
 
 
 if __name__ == "__main__":

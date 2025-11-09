@@ -5,6 +5,14 @@ Phase 4.4: Comprehensive validation of CI workflow gates,
 execution patterns, and deployment readiness.
 """
 
+# Ensure pytest-cov has at least one measured import when running this file alone
+try:
+    import importlib
+
+    importlib.import_module("firsttry.state")  # small, fast import that is cheap
+except Exception:
+    pass
+
 import subprocess
 import sys
 from pathlib import Path

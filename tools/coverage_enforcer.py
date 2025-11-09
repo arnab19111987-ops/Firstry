@@ -140,7 +140,6 @@ def main():
 
     # Check thresholds
     failures = []
-    all_ok = True
 
     for filepath, minpct in CRITICAL.items():
         pct = file_coverage.get(filepath, 0.0)
@@ -150,7 +149,6 @@ def main():
 
         if pct < (minpct - 1e-6):
             failures.append((filepath, pct, minpct))
-            all_ok = False
 
     print()
 

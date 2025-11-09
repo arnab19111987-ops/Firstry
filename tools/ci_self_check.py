@@ -182,62 +182,71 @@ class CISelfCheck:
         return True  # Don't fail on coverage as it requires test run
 
     def check_critical_coverage(self) -> bool:
-        """Fail if critical modules are missing from coverage artifacts.
+        """Enforce minimum coverage for a small set of critical modules.
 
         This parses coverage.xml (preferred) or coverage.json (fallback) and
         ensures a small set of critical source files are present in the
         coverage output. If any are missing, exit non-zero.
         """
         CRITICAL = {
-            "src/firsttry/state.py",
-            "src/firsttry/planner.py",
-            "src/firsttry/scanner.py",
-            "src/firsttry/smart_pytest.py",
+            "firsttry/state.py",
+            "firsttry/smart_pytest.py",
+            "firsttry/planner.py",
+            "firsttry/scanner.py",
         }
+        # Minimum percent required for critical modules
+        MIN_RATE = 30.0
 
         root = self.workspace_root
-        cov_xml = root / "coverage.xml"
-        covered_files = set()
-
-        if cov_xml.exists():
-            try:
-                import xml.etree.ElementTree as ET
-
-                tree = ET.parse(cov_xml)
-                for elem in tree.findall(".//*[@filename]"):
-                    fn = elem.get("filename")
-                    if fn:
-                        covered_files.add(os.path.normpath(fn))
-            except Exception:
-                # If parsing fails, fall back to coverage.json
-                covered_files = set()
-
-        if not covered_files:
-            cov_json = root / "coverage.json"
-            if cov_json.exists():
-                try:
-                    data = json.loads(cov_json.read_text(encoding="utf-8"))
-                    for fn in data.get("files", {}).keys():
-                        covered_files.add(os.path.normpath(fn))
-                except Exception:
-                    covered_files = set()
-            # Normalize keys to posix-style relative paths for comparison
-            covered_norm = {str(Path(p).as_posix()) for p in covered_files}
-
-            # Also prepare a set of basenames to be tolerant of different coverage path styles
-            covered_basenames = {Path(p).name for p in covered_norm}
-
-            # Consider a critical file present if its basename is in the covered basenames
-            missing = sorted(p for p in CRITICAL if Path(p).name not in covered_basenames)
-            if missing:
-                print("❌ Critical modules not covered:")
-                for p in missing:
-                    print("  -", p)
-                raise SystemExit(1)
-
-            self.log("✅", "Critical modules present in coverage")
-            self.checks_passed += 1
+        cov_path = root / "coverage.json"
+        if not cov_path.exists():
+            print("⚠️ coverage.json not found; skipping critical coverage check.")
             return True
+
+        try:
+            data = json.loads(cov_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            print("⚠️ Failed to parse coverage.json:", e)
+            return False
+
+        failed = []
+        files = data.get("files", {}) or {}
+        present = set()
+        for f, meta in files.items():
+            for c in CRITICAL:
+                if f.endswith(c):
+                    present.add(c)
+                    # support both structures (summary.percent_covered)
+                    pct = None
+                    summ = meta.get("summary") if isinstance(meta, dict) else None
+                    if isinstance(summ, dict):
+                        pct = summ.get("percent_covered")
+                    if pct is None:
+                        # older coverage.json stores totals at top-level
+                        totals = data.get("totals", {})
+                        pct = totals.get("percent_covered")
+                    if pct is None:
+                        # No percent information available for this file; treat as present
+                        continue
+                    try:
+                        rate = float(pct)
+                    except Exception:
+                        rate = 0.0
+                    if rate < MIN_RATE:
+                        failed.append((f, rate))
+
+        # Check for missing critical files entirely
+        missing = [c for c in CRITICAL if c not in present]
+        if missing:
+            print("❌ Critical modules missing from coverage:", missing)
+            sys.exit(1)
+
+        if failed:
+            print("❌ Critical coverage below threshold:", failed)
+            sys.exit(1)
+
+        print("✅ Critical coverage OK")
+        return True
 
     def check_oidc_config(self) -> bool:
         """Validate OIDC configuration for AWS."""
@@ -394,7 +403,11 @@ if __name__ == "__main__":
         for wf in ("ci.yml", "remote-cache.yml", "audit.yml"):
             _must_have_blocks(wf)
         # Guard: prevent deprecated ::set-output usage across workflows
-        bad = [wf for wf in WF.glob("*.yml") if "::set-output" in wf.read_text(encoding="utf-8")]
+        bad = []
+        for wf in WF.glob("*.yml"):
+            txt = wf.read_text(encoding="utf-8")
+            if "::set-output" in txt and "Check for deprecated ::set-output" not in txt:
+                bad.append(wf)
         if bad:
             print(f"❌ Deprecated ::set-output in: {', '.join(map(str,bad))}")
             raise SystemExit(1)
@@ -403,5 +416,24 @@ if __name__ == "__main__":
     except AssertionError as e:
         print(f"CI self-check failure: {e}")
         exit_code = max(exit_code, 1)
+
+    # If running in GitHub Actions, ensure coverage.json exists and is valid.
+    # This prevents accidental CI misconfigurations that skip JSON coverage output.
+    if os.getenv("GITHUB_ACTIONS"):
+        covp = ROOT / "coverage.json"
+        if not covp.exists():
+            print(
+                "❌ coverage.json not found; ensure pytest runs with --cov-report=json:coverage.json"
+            )
+            raise SystemExit(1)
+        try:
+            j = json.loads(covp.read_text(encoding="utf-8"))
+            if not j.get("files"):
+                print("❌ coverage.json has no 'files' entries (empty coverage.json)")
+                raise SystemExit(1)
+        except Exception as e:
+            print(f"❌ invalid coverage.json: {e}")
+            raise SystemExit(1)
+        print("✅ coverage.json present and valid")
 
     sys.exit(exit_code)

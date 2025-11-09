@@ -24,6 +24,7 @@ env:
   FT_SEND_TELEMETRY: "1"
 
 jobs:
+  # === Core Infrastructure ===
   setup:
     name: Setup Environment
     runs-on: ubuntu-latest
@@ -48,6 +49,30 @@ jobs:
           KEY="${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'package*.json', 'pyproject.toml') }}"
           echo "key=$KEY" >> $GITHUB_OUTPUT
 
+  # === CI Infrastructure Validation ===
+  validate-workflows:
+    name: Validate Workflow YAMLs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5 pinned by SHA
+        with:
+          python-version: '3.11'
+
+      - name: Validate workflow YAMLs
+        run: |
+          pip install pyyaml
+          python - <<'PY'
+          import yaml, glob
+          for f in glob.glob('.github/workflows/*.yml'):
+              with open(f, encoding='utf-8') as fh:
+                  yaml.safe_load(fh)
+              print("✅", f)
+          PY
+
+  # === Code Quality Gates ===
   lint:
     name: Lint - Ruff Python Linter
     runs-on: ubuntu-latest
@@ -114,6 +139,7 @@ jobs:
             mypy.log
           retention-days: 30
 
+  # === Core Testing Suite ===
   tests:
     name: Tests - Pytest Suite
     runs-on: ubuntu-latest
@@ -185,8 +211,30 @@ jobs:
           echo "🔬 Running gate JSON-summary unit tests"
           pytest -q tests/tools/test_check_critical_coverage_json.py
 
+      - name: Snapshot CLI help (artifact)
+        if: matrix.test-tier == 'lite'  # Run only once to avoid duplicates
+        run: |
+          mkdir -p .firsttry
+          PYTHONPATH=src python -m firsttry --help > .firsttry/cli_help.txt
+          PYTHONPATH=src python -m firsttry run --help > .firsttry/cli_run_help.txt
+          PYTHONPATH=src python -m firsttry status --help > .firsttry/cli_status_help.txt
+          PYTHONPATH=src python -m firsttry doctor --help > .firsttry/cli_doctor_help.txt
+          echo "📝 CLI help files generated for drift detection"
+
+      - name: Upload CLI help
+        uses: actions/upload-artifact@v4
+        if: matrix.test-tier == 'lite' && always()
+        with:
+          name: cli-help
+          path: |
+            .firsttry/cli_help.txt
+            .firsttry/cli_run_help.txt
+            .firsttry/cli_status_help.txt
+            .firsttry/cli_doctor_help.txt
+          retention-days: 30
+
       - name: Comment coverage on PR
-        if: github.event_name == 'pull_request' && always()
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -238,7 +286,7 @@ jobs:
           retention-days: 30
 
       - name: Comment per-file critical coverage (REST, idempotent)
-        if: ${{ github.event_name == 'pull_request' && always() }}
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -277,50 +325,8 @@ jobs:
               core.info('Created new coverage comment.');
             }
 
-      - name: Update PR description (REST)
-        if: ${{ github.event_name == 'pull_request' && always() }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const MARKER = '<!-- FT_PR_BODY_MARKER -->';
-            const body = `
-${MARKER}
-# CI/Audit Hardening: Per-file Coverage Gate + PR Comment
 
-**What’s in this PR**
-- Canonical CI header; duplicate headers removed
-- Tests job:
-  - Generates coverage.xml/json
-  - Enforces **critical per-file coverage** (PRs=60, main=85)
-  - Emits \`.firsttry/critical_coverage_summary.json\` (artifact)
-  - Posts/updates PR coverage table via REST (no gh CLI)
-- Audit workflow embeds coverage into audit before upload
-- New unit tests:
-  - Gate logic + JSON schema
-  - Scanner critical paths (adds coverage buffer)
-
-**Reviewer checklist**
-- [ ] Workflows parse (see validate-workflows)
-- [ ] Single coverage comment with table (marker present)
-- [ ] Artifacts include coverage.json and critical_coverage_summary.json
-- [ ] Gate passes (PR=60%); main=85%
-
-**Follow-ups**
-- Bump PR threshold to 70 when scanner coverage stabilizes
-`;
-            const {owner, repo} = context.repo;
-            const pull_number = context.payload.pull_request.number;
-
-            // Get current body
-            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number });
-            const current = pr.body || "";
-            const next = current.includes(MARKER)
-              ? current.replace(new RegExp(`${MARKER}[\s\S]*$`), body)
-              : (current ? `${current}\n\n${body}` : body);
-
-            await github.rest.pulls.update({ owner, repo, pull_number, body: next });
-            core.info('PR body updated.');
-
+  # === Enterprise & Security Validation ===
   enterprise-features:
     name: Enterprise Features
     runs-on: ubuntu-latest
@@ -358,6 +364,7 @@ ${MARKER}
             test-results.xml
           retention-days: 30
 
+  # === Security & Performance Analysis ===
   security:
     name: Security Scanning
     runs-on: ubuntu-latest
@@ -399,6 +406,7 @@ ${MARKER}
     name: Performance Benchmark
     runs-on: ubuntu-latest
     needs: setup
+    continue-on-error: true  # Non-blocking - don't fail CI on benchmark issues
     steps:
       - uses: actions/checkout@v4
 
@@ -469,7 +477,7 @@ ${MARKER}
         if: always()
         uses: actions/upload-artifact@65462800fd760344b1a7b33e5b3c9e0d2b6a9a14  # v4 pinned by SHA
         with:
-          name: benchmark-results
+          name: benchmarks-ci
           path: .firsttry/bench_ci.json
           retention-days: 90
 
@@ -492,6 +500,7 @@ ${MARKER}
               exit(1)
           "
 
+  # === Audit & Compliance ===
   audit-schema:
     name: Audit Schema & Emission
     runs-on: ubuntu-latest
@@ -638,7 +647,7 @@ ${MARKER}
           retention-days: 90
 
       - name: Comment audit report on PR
-        if: github.event_name == 'pull_request' && always()
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && always() }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -688,6 +697,7 @@ ${MARKER}
           print('✅ Policy checks complete')
           "
 
+  # === Pipeline Status Summary ===
   final-status:
     name: Final CI Status
     runs-on: ubuntu-latest

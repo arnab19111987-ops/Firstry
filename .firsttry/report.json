@@ -4,7 +4,7 @@
       "name": "ruff:_root",
       "check_id": "ruff:_root",
       "status": "ok",
-      "duration_ms": 9,
+      "duration_ms": 7,
       "stdout": "All checks passed!\n",
       "stderr": "",
       "cache_status": "hit-local"
@@ -13,7 +13,7 @@
       "name": "mypy:_root",
       "check_id": "mypy:_root",
       "status": "ok",
-      "duration_ms": 156,
+      "duration_ms": 141,
       "stdout": "src/firsttry/profiler.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/profiler.py:29: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nSuccess: no issues found in 147 source files\n",
       "stderr": "",
       "cache_status": "hit-local"
@@ -21,11 +21,11 @@
     "pytest:_root": {
       "name": "pytest:_root",
       "check_id": "pytest:_root",
-      "status": "fail",
-      "duration_ms": 332,
-      "stdout": "",
-      "stderr": "ERROR: usage: pytest [options] [file_or_dir] [file_or_dir] [...]\npytest: error: unrecognized arguments: --cov=src/firsttry --cov-report=term-missing --cov-fail-under=50\n  inifile: /workspaces/Firstry/pytest.ini\n  rootdir: /workspaces/Firstry\n\n",
-      "cache_status": "miss-run"
+      "status": "ok",
+      "duration_ms": 220,
+      "stdout": ".                                                                        [100%]\n1 passed in 0.04s\n",
+      "stderr": "",
+      "cache_status": "hit-local"
     }
   }
 }

@@ -166,8 +166,8 @@ def test_gitleaks_ci_blocking(gitleaks_config: Dict[str, Any]):
         "require_review": False,
     }
 
-    assert enforcement_rules["fail_on_secrets_found"] == True
-    assert enforcement_rules["block_commit"] == True
+    assert enforcement_rules["fail_on_secrets_found"]
+    assert enforcement_rules["block_commit"]
 
 
 def test_secret_pattern_customization(gitleaks_config: Dict[str, Any]):
@@ -256,7 +256,7 @@ def test_policy_enforcement_with_secrets(gitleaks_config: Dict[str, Any]):
         }
     }
 
-    assert policy_enforcement["secrets_scanning"]["fail_on_findings"] == True
+    assert policy_enforcement["secrets_scanning"]["fail_on_findings"]
 
 
 def test_remediation_workflow():
@@ -305,7 +305,7 @@ def test_ci_pipeline_secret_scanning():
         "allow_failure": False,  # Must pass
     }
 
-    assert ci_job["allow_failure"] == False
+    assert not ci_job["allow_failure"]
     assert len(ci_job["script"]) > 0
 
 

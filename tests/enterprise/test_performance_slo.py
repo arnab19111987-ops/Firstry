@@ -131,7 +131,7 @@ def test_regression_budget_calculation():
     is_within_budget = regression_percent <= regression_budget
 
     assert regression_percent > 0  # There is regression
-    assert is_within_budget == True  # But within 15% budget
+    assert is_within_budget  # But within 15% budget
 
 
 def test_regression_budget_exceeded():
@@ -145,7 +145,7 @@ def test_regression_budget_exceeded():
     is_within_budget = regression_percent <= regression_budget
 
     assert regression_percent > regression_budget
-    assert is_within_budget == False
+    assert not is_within_budget
 
 
 def test_slo_violation_alert(slo_targets: Dict[str, Any]):
@@ -196,7 +196,7 @@ def test_performance_daily_report(tmp_path: Path, slo_targets: Dict[str, Any]):
 
     # All metrics should pass
     assert all(v == "PASS" for v in loaded["slo_status"].values())
-    assert loaded["regression_analysis"]["within_budget"] == True
+    assert loaded["regression_analysis"]["within_budget"]
 
 
 def test_slo_enforcement_pipeline_block(slo_targets: Dict[str, Any]):
@@ -207,7 +207,7 @@ def test_slo_enforcement_pipeline_block(slo_targets: Dict[str, Any]):
 
     should_block = violation_detected and slo_enforcement["block_on_violation"]
 
-    assert should_block == True
+    assert should_block
 
 
 def test_slo_warning_vs_violation(slo_targets: Dict[str, Any]):
@@ -287,7 +287,7 @@ def test_trend_analysis_improvement():
     p95_values = [v["p95_ms"] for v in trend_data.values()]
     is_improving = all(p95_values[i] >= p95_values[i + 1] for i in range(len(p95_values) - 1))
 
-    assert is_improving == True
+    assert is_improving
 
 
 def test_performance_budget_monthly():
@@ -310,7 +310,7 @@ def test_performance_budget_monthly():
 
     # Verify within budget
     assert round(total_regression, 1) <= budget
-    assert is_within_monthly_budget == True
+    assert is_within_monthly_budget
 
 
 def test_ci_integration_slo_check():
@@ -330,7 +330,7 @@ def test_ci_integration_slo_check():
         "allow_failure": False,  # Must meet SLO
     }
 
-    assert ci_job["allow_failure"] == False
+    assert not ci_job["allow_failure"]
 
 
 def test_slo_exemption_request():
@@ -365,7 +365,7 @@ def test_performance_regression_detection():
     is_regressed = regression_percent > regression_threshold
 
     assert regression_percent > regression_threshold
-    assert is_regressed == True
+    assert is_regressed
 
 
 if __name__ == "__main__":
