@@ -82,9 +82,7 @@ class TextFile:
         They keyword argument options are described above and affect
         the values returned by 'readline()'."""
         if filename is None and file is None:
-            raise RuntimeError(
-                "you must supply either or both of 'filename' and 'file'"
-            )
+            raise RuntimeError("you must supply either or both of 'filename' and 'file'")
 
         # set values for all options -- either from client option hash
         # or fallback to default_options

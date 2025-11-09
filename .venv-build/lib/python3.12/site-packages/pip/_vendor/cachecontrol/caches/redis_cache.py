@@ -20,9 +20,7 @@ class RedisCache(BaseCache):
     def get(self, key: str) -> bytes | None:
         return self.conn.get(key)
 
-    def set(
-        self, key: str, value: bytes, expires: int | datetime | None = None
-    ) -> None:
+    def set(self, key: str, value: bytes, expires: int | datetime | None = None) -> None:
         if not expires:
             self.conn.set(key, value)
         elif isinstance(expires, datetime):

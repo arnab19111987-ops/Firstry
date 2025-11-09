@@ -112,9 +112,7 @@ class StreamMixer:
 
 
 class _NamedTextIOWrapper(io.TextIOWrapper):
-    def __init__(
-        self, buffer: t.BinaryIO, name: str, mode: str, **kwargs: t.Any
-    ) -> None:
+    def __init__(self, buffer: t.BinaryIO, name: str, mode: str, **kwargs: t.Any) -> None:
         super().__init__(buffer, **kwargs)
         self._name = name
         self._mode = mode
@@ -128,9 +126,7 @@ class _NamedTextIOWrapper(io.TextIOWrapper):
         return self._mode
 
 
-def make_input_stream(
-    input: str | bytes | t.IO[t.Any] | None, charset: str
-) -> t.BinaryIO:
+def make_input_stream(input: str | bytes | t.IO[t.Any] | None, charset: str) -> t.BinaryIO:
     # Is already an input stream.
     if hasattr(input, "read"):
         rv = _find_binary_reader(t.cast("t.IO[t.Any]", input))
@@ -179,8 +175,7 @@ class Result:
         return_value: t.Any,
         exit_code: int,
         exception: BaseException | None,
-        exc_info: tuple[type[BaseException], BaseException, TracebackType]
-        | None = None,
+        exc_info: tuple[type[BaseException], BaseException, TracebackType] | None = None,
     ):
         self.runner = runner
         self.stdout_bytes = stdout_bytes
@@ -199,16 +194,12 @@ class Result:
             No longer a proxy for ``self.stdout``. Now has its own independent stream
             that is mixing `<stdout>` and `<stderr>`, in the order they were written.
         """
-        return self.output_bytes.decode(self.runner.charset, "replace").replace(
-            "\r\n", "\n"
-        )
+        return self.output_bytes.decode(self.runner.charset, "replace").replace("\r\n", "\n")
 
     @property
     def stdout(self) -> str:
         """The standard output as unicode string."""
-        return self.stdout_bytes.decode(self.runner.charset, "replace").replace(
-            "\r\n", "\n"
-        )
+        return self.stdout_bytes.decode(self.runner.charset, "replace").replace("\r\n", "\n")
 
     @property
     def stderr(self) -> str:
@@ -217,9 +208,7 @@ class Result:
         .. versionchanged:: 8.2
             No longer raise an exception, always returns the `<stderr>` string.
         """
-        return self.stderr_bytes.decode(self.runner.charset, "replace").replace(
-            "\r\n", "\n"
-        )
+        return self.stderr_bytes.decode(self.runner.charset, "replace").replace("\r\n", "\n")
 
     def __repr__(self) -> str:
         exc_str = repr(self.exception) if self.exception else "okay"
@@ -381,9 +370,7 @@ class CliRunner:
 
         default_color = color
 
-        def should_strip_ansi(
-            stream: t.IO[t.Any] | None = None, color: bool | None = None
-        ) -> bool:
+        def should_strip_ansi(stream: t.IO[t.Any] | None = None, color: bool | None = None) -> bool:
             if color is None:
                 return not default_color
             return not color

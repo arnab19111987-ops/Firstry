@@ -136,11 +136,12 @@ class CISelfCheck:
 
         # Check specific files we test
         files_data = coverage_data.get("files", {})
+        # Use canonical package path (src/firsttry)
         baselines = {
-            "src/firstry/state.py": 90.0,
-            "src/firstry/planner.py": 90.0,
-            "src/firstry/scanner.py": 75.0,
-            "src/firstry/smart_pytest.py": 70.0,
+            "src/firsttry/state.py": 90.0,
+            "src/firsttry/planner.py": 90.0,
+            "src/firsttry/scanner.py": 75.0,
+            "src/firsttry/smart_pytest.py": 70.0,
         }
 
         for file_path, min_coverage in baselines.items():
@@ -150,9 +151,23 @@ class CISelfCheck:
                 continue
 
             file_info = files_data[file_path]
+            # executed_lines can be either a count or a list of executed line numbers
             executed_lines = file_info.get("executed_lines", 0)
+            if isinstance(executed_lines, list):
+                executed_count = len(executed_lines)
+            else:
+                try:
+                    executed_count = int(executed_lines)
+                except Exception:
+                    executed_count = 0
+
             total_lines = file_info.get("num_statements", 1)
-            percent_covered = (executed_lines / total_lines * 100) if total_lines > 0 else 0
+            try:
+                total_lines = int(total_lines)
+            except Exception:
+                total_lines = 0
+
+            percent_covered = (executed_count / total_lines * 100) if total_lines > 0 else 0
 
             if percent_covered >= min_coverage:
                 self.log("✅", f"{file_path}: {percent_covered:.1f}% (baseline: {min_coverage}%)")
@@ -165,6 +180,64 @@ class CISelfCheck:
                 self.checks_skipped += 1
 
         return True  # Don't fail on coverage as it requires test run
+
+    def check_critical_coverage(self) -> bool:
+        """Fail if critical modules are missing from coverage artifacts.
+
+        This parses coverage.xml (preferred) or coverage.json (fallback) and
+        ensures a small set of critical source files are present in the
+        coverage output. If any are missing, exit non-zero.
+        """
+        CRITICAL = {
+            "src/firsttry/state.py",
+            "src/firsttry/planner.py",
+            "src/firsttry/scanner.py",
+            "src/firsttry/smart_pytest.py",
+        }
+
+        root = self.workspace_root
+        cov_xml = root / "coverage.xml"
+        covered_files = set()
+
+        if cov_xml.exists():
+            try:
+                import xml.etree.ElementTree as ET
+
+                tree = ET.parse(cov_xml)
+                for elem in tree.findall(".//*[@filename]"):
+                    fn = elem.get("filename")
+                    if fn:
+                        covered_files.add(os.path.normpath(fn))
+            except Exception:
+                # If parsing fails, fall back to coverage.json
+                covered_files = set()
+
+        if not covered_files:
+            cov_json = root / "coverage.json"
+            if cov_json.exists():
+                try:
+                    data = json.loads(cov_json.read_text(encoding="utf-8"))
+                    for fn in data.get("files", {}).keys():
+                        covered_files.add(os.path.normpath(fn))
+                except Exception:
+                    covered_files = set()
+            # Normalize keys to posix-style relative paths for comparison
+            covered_norm = {str(Path(p).as_posix()) for p in covered_files}
+
+            # Also prepare a set of basenames to be tolerant of different coverage path styles
+            covered_basenames = {Path(p).name for p in covered_norm}
+
+            # Consider a critical file present if its basename is in the covered basenames
+            missing = sorted(p for p in CRITICAL if Path(p).name not in covered_basenames)
+            if missing:
+                print("❌ Critical modules not covered:")
+                for p in missing:
+                    print("  -", p)
+                raise SystemExit(1)
+
+            self.log("✅", "Critical modules present in coverage")
+            self.checks_passed += 1
+            return True
 
     def check_oidc_config(self) -> bool:
         """Validate OIDC configuration for AWS."""
@@ -273,6 +346,12 @@ class CISelfCheck:
         self.check_permissions()
         self.check_action_pinning()
         self.check_test_coverage()
+        # Enforce that critical modules appear in coverage artifacts
+        try:
+            self.check_critical_coverage()
+        except SystemExit:
+            # Bubble up the failure
+            raise
         self.check_oidc_config()
         self.check_dependabot()
         self.check_codeql()

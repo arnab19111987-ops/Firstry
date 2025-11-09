@@ -39,9 +39,7 @@ class ParseTestDataSuite(Suite):
 
         # Assert
         expected_lineno = result.input.splitlines().index("[unknownsection]") + 1
-        expected = (
-            f".test:{expected_lineno}: Invalid section header [unknownsection] in case 'abc'"
-        )
+        expected = f".test:{expected_lineno}: Invalid section header [unknownsection] in case 'abc'"
         assert expected in result.stdout
 
     def test_bad_ge_version_check(self) -> None:

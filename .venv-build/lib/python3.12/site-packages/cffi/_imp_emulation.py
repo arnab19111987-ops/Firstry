@@ -38,9 +38,7 @@ except ImportError:
             raise TypeError("'name' must be a str, not {}".format(type(name)))
         elif not isinstance(path, (type(None), list)):
             # Backwards-compatibility
-            raise RuntimeError(
-                "'path' must be None or a list, " "not {}".format(type(path))
-            )
+            raise RuntimeError("'path' must be None or a list, " "not {}".format(type(path)))
 
         if path is None:
             if is_builtin(name):

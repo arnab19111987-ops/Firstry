@@ -89,9 +89,5 @@ class HOTP:
         p = hmac_value[offset : offset + 4]
         return int.from_bytes(p, byteorder="big") & 0x7FFFFFFF
 
-    def get_provisioning_uri(
-        self, account_name: str, counter: int, issuer: str | None
-    ) -> str:
-        return _generate_uri(
-            self, "hotp", account_name, issuer, [("counter", int(counter))]
-        )
+    def get_provisioning_uri(self, account_name: str, counter: int, issuer: str | None) -> str:
+        return _generate_uri(self, "hotp", account_name, issuer, [("counter", int(counter))])

@@ -81,9 +81,7 @@ if __name__ == "__main__":  # pragma: no cover
     from pip._vendor.rich.style import Style
 
     class ColorBox:
-        def __rich_console__(
-            self, console: Console, options: ConsoleOptions
-        ) -> Iterable[Segment]:
+        def __rich_console__(self, console: Console, options: ConsoleOptions) -> Iterable[Segment]:
             height = console.size.height - 3
             for y in range(0, height):
                 for x in range(options.max_width):

@@ -44,9 +44,7 @@ class PSS(AsymmetricPadding):
         self._mgf = mgf
 
         if not isinstance(salt_length, (int, _MaxLength, _Auto, _DigestLength)):
-            raise TypeError(
-                "salt_length must be an integer, MAX_LENGTH, " "DIGEST_LENGTH, or AUTO"
-            )
+            raise TypeError("salt_length must be an integer, MAX_LENGTH, " "DIGEST_LENGTH, or AUTO")
 
         if isinstance(salt_length, int) and salt_length < 0:
             raise ValueError("salt_length must be zero or greater.")

@@ -36,7 +36,7 @@ INTERPRETER_SHORT_NAMES: Dict[str, str] = {
 }
 
 
-_32_BIT_INTERPRETER = sys.maxsize <= 2 ** 32
+_32_BIT_INTERPRETER = sys.maxsize <= 2**32
 
 
 class Tag:
@@ -112,9 +112,7 @@ def parse_tag(tag: str) -> FrozenSet[Tag]:
 def _get_config_var(name: str, warn: bool = False) -> Union[int, str, None]:
     value = sysconfig.get_config_var(name)
     if value is None and warn:
-        logger.debug(
-            "Config variable '%s' is unset, Python ABI tag may be incorrect", name
-        )
+        logger.debug("Config variable '%s' is unset, Python ABI tag may be incorrect", name)
     return value
 
 
@@ -150,9 +148,7 @@ def _cpython_abis(py_version: PythonVersion, warn: bool = False) -> List[str]:
             pymalloc = "m"
         if py_version < (3, 3):
             unicode_size = _get_config_var("Py_UNICODE_SIZE", warn)
-            if unicode_size == 4 or (
-                unicode_size is None and sys.maxunicode == 0x10FFFF
-            ):
+            if unicode_size == 4 or (unicode_size is None and sys.maxunicode == 0x10FFFF):
                 ucs4 = "u"
     elif debug:
         # Debug builds can also load "normal" extension modules.

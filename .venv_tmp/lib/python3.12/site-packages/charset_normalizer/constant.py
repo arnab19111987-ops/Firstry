@@ -395,8 +395,7 @@ IANA_NO_ALIASES = [
 
 IANA_SUPPORTED: list[str] = sorted(
     filter(
-        lambda x: x.endswith("_codec") is False
-        and x not in {"rot_13", "tactis", "mbcs"},
+        lambda x: x.endswith("_codec") is False and x not in {"rot_13", "tactis", "mbcs"},
         list(set(aliases.values())) + IANA_NO_ALIASES,
     )
 )
@@ -554,7 +553,9 @@ COMMON_CHINESE_CHARACTERS = "的一是在不了有和人这中大为上个国我
 
 COMMON_JAPANESE_CHARACTERS = "日一国年大十二本中長出三時行見月分後前生五間上東四今金九入学高円子外八六下来気小七山話女北午百書先名川千水半男西電校語土木聞食車何南万毎白天母火右読友左休父雨"
 
-COMMON_KOREAN_CHARACTERS = "一二三四五六七八九十百千萬上下左右中人女子大小山川日月火水木金土父母天地國名年時文校學生"
+COMMON_KOREAN_CHARACTERS = (
+    "一二三四五六七八九十百千萬上下左右中人女子大小山川日月火水木金土父母天地國名年時文校學生"
+)
 
 # Combine all into a set
 COMMON_CJK_CHARACTERS = set(

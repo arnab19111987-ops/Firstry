@@ -78,9 +78,7 @@ class Status(JupyterMixin):
             )
             self._live.update(self.renderable, refresh=True)
         else:
-            self._spinner.update(
-                text=self.status, style=self.spinner_style, speed=self.speed
-            )
+            self._spinner.update(text=self.status, style=self.spinner_style, speed=self.speed)
 
     def start(self) -> None:
         """Start the status animation."""

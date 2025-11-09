@@ -72,11 +72,7 @@ def main():
         sys.exit(2)
 
     # #################### Run Bandit against both commits ####################
-    output_type = (
-        ["-f", "txt"]
-        if output_format == default_output_format
-        else ["-o", report_fname]
-    )
+    output_type = ["-f", "txt"] if output_format == default_output_format else ["-o", report_fname]
 
     with baseline_setup() as t:
         bandit_tmpfile = f"{t}/{baseline_tmp_file}"
@@ -162,8 +158,7 @@ def initialize():
 
     # #################### Parse Args #########################################
     parser = argparse.ArgumentParser(
-        description="Bandit Baseline - Generates Bandit results compared to "
-        "a baseline",
+        description="Bandit Baseline - Generates Bandit results compared to " "a baseline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Additional Bandit arguments such as severity filtering (-ll) "
         "can be added and will be passed to Bandit.",
@@ -190,9 +185,7 @@ def initialize():
 
     # #################### Setup Output #######################################
     # set the output format, or use a default if not provided
-    output_format = (
-        args.output_format if args.output_format else default_output_format
-    )
+    output_format = args.output_format if args.output_format else default_output_format
 
     if output_format == default_output_format:
         LOG.info("No output format specified, using %s", default_output_format)
@@ -219,9 +212,7 @@ def initialize():
 
     else:
         if repo.is_dirty():
-            LOG.error(
-                "Current working directory is dirty and must be " "resolved"
-            )
+            LOG.error("Current working directory is dirty and must be " "resolved")
             valid = False
 
     # if output format is specified, we need to be able to write the report

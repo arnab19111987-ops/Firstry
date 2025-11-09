@@ -119,11 +119,7 @@ class Attribute:
         if not isinstance(other, Attribute):
             return NotImplemented
 
-        return (
-            self.oid == other.oid
-            and self.value == other.value
-            and self._type == other._type
-        )
+        return self.oid == other.oid and self.value == other.value and self._type == other._type
 
     def __hash__(self) -> int:
         return hash((self.oid, self.value, self._type))
@@ -270,9 +266,7 @@ class CertificateSigningRequestBuilder:
             raise TypeError("Expecting x509.Name object.")
         if self._subject_name is not None:
             raise ValueError("The subject name may only be set once.")
-        return CertificateSigningRequestBuilder(
-            name, self._extensions, self._attributes
-        )
+        return CertificateSigningRequestBuilder(name, self._extensions, self._attributes)
 
     def add_extension(
         self, extval: ExtensionType, critical: bool
@@ -488,9 +482,7 @@ class CertificateBuilder:
             raise ValueError("The not valid before may only be set once.")
         time = _convert_to_naive_utc_time(time)
         if time < _EARLIEST_UTC_TIME:
-            raise ValueError(
-                "The not valid before date must be on or after" " 1950 January 1)."
-            )
+            raise ValueError("The not valid before date must be on or after" " 1950 January 1).")
         if self._not_valid_after is not None and time > self._not_valid_after:
             raise ValueError(
                 "The not valid before date must be before the not valid after " "date."
@@ -515,13 +507,9 @@ class CertificateBuilder:
             raise ValueError("The not valid after may only be set once.")
         time = _convert_to_naive_utc_time(time)
         if time < _EARLIEST_UTC_TIME:
-            raise ValueError(
-                "The not valid after date must be on or after 1950 January 1."
-            )
+            raise ValueError("The not valid after date must be on or after 1950 January 1.")
         if self._not_valid_before is not None and time < self._not_valid_before:
-            raise ValueError(
-                "The not valid after date must be after the not valid before " "date."
-            )
+            raise ValueError("The not valid after date must be after the not valid before " "date.")
         return CertificateBuilder(
             self._issuer_name,
             self._subject_name,
@@ -532,9 +520,7 @@ class CertificateBuilder:
             self._extensions,
         )
 
-    def add_extension(
-        self, extval: ExtensionType, critical: bool
-    ) -> CertificateBuilder:
+    def add_extension(self, extval: ExtensionType, critical: bool) -> CertificateBuilder:
         """
         Adds an X.509 extension to the certificate.
         """
@@ -634,9 +620,7 @@ class CertificateRevocationListBuilder:
             self._revoked_certificates,
         )
 
-    def last_update(
-        self, last_update: datetime.datetime
-    ) -> CertificateRevocationListBuilder:
+    def last_update(self, last_update: datetime.datetime) -> CertificateRevocationListBuilder:
         if not isinstance(last_update, datetime.datetime):
             raise TypeError("Expecting datetime object.")
         if self._last_update is not None:
@@ -645,9 +629,7 @@ class CertificateRevocationListBuilder:
         if last_update < _EARLIEST_UTC_TIME:
             raise ValueError("The last update date must be on or after 1950 January 1.")
         if self._next_update is not None and last_update > self._next_update:
-            raise ValueError(
-                "The last update date must be before the next update date."
-            )
+            raise ValueError("The last update date must be before the next update date.")
         return CertificateRevocationListBuilder(
             self._issuer_name,
             last_update,
@@ -656,9 +638,7 @@ class CertificateRevocationListBuilder:
             self._revoked_certificates,
         )
 
-    def next_update(
-        self, next_update: datetime.datetime
-    ) -> CertificateRevocationListBuilder:
+    def next_update(self, next_update: datetime.datetime) -> CertificateRevocationListBuilder:
         if not isinstance(next_update, datetime.datetime):
             raise TypeError("Expecting datetime object.")
         if self._next_update is not None:
@@ -772,9 +752,7 @@ class RevokedCertificateBuilder:
         # zero.
         if number.bit_length() >= 160:  # As defined in RFC 5280
             raise ValueError("The serial number should not be more than 159 bits.")
-        return RevokedCertificateBuilder(
-            number, self._revocation_date, self._extensions
-        )
+        return RevokedCertificateBuilder(number, self._revocation_date, self._extensions)
 
     def revocation_date(self, time: datetime.datetime) -> RevokedCertificateBuilder:
         if not isinstance(time, datetime.datetime):
@@ -786,9 +764,7 @@ class RevokedCertificateBuilder:
             raise ValueError("The revocation date must be on or after 1950 January 1.")
         return RevokedCertificateBuilder(self._serial_number, time, self._extensions)
 
-    def add_extension(
-        self, extval: ExtensionType, critical: bool
-    ) -> RevokedCertificateBuilder:
+    def add_extension(self, extval: ExtensionType, critical: bool) -> RevokedCertificateBuilder:
         if not isinstance(extval, ExtensionType):
             raise TypeError("extension must be an ExtensionType")
 

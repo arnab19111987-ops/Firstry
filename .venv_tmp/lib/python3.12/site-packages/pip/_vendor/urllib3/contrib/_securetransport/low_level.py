@@ -7,6 +7,7 @@ CoreFoundation messing about and memory management. The concerns in this module
 are almost entirely about trying to avoid memory leaks and providing
 appropriate and useful assistance to the higher-level code.
 """
+
 import base64
 import ctypes
 import itertools
@@ -110,9 +111,7 @@ def _cf_string_to_unicode(value):
     """
     value_as_void_p = ctypes.cast(value, ctypes.POINTER(ctypes.c_void_p))
 
-    string = CoreFoundation.CFStringGetCStringPtr(
-        value_as_void_p, CFConst.kCFStringEncodingUTF8
-    )
+    string = CoreFoundation.CFStringGetCStringPtr(value_as_void_p, CFConst.kCFStringEncodingUTF8)
     if string is None:
         buffer = ctypes.create_string_buffer(1024)
         result = CoreFoundation.CFStringGetCString(
@@ -138,8 +137,8 @@ def _assert_no_error(error, exception_class=None):
     output = _cf_string_to_unicode(cf_error_string)
     CoreFoundation.CFRelease(cf_error_string)
 
-    if output is None or output == u"":
-        output = u"OSStatus %s" % error
+    if output is None or output == "":
+        output = "OSStatus %s" % error
 
     if exception_class is None:
         exception_class = ssl.SSLError
@@ -155,9 +154,7 @@ def _cert_array_from_pem(pem_bundle):
     # Normalize the PEM bundle's line endings.
     pem_bundle = pem_bundle.replace(b"\r\n", b"\n")
 
-    der_certs = [
-        base64.b64decode(match.group(1)) for match in _PEM_CERTS_RE.finditer(pem_bundle)
-    ]
+    der_certs = [base64.b64decode(match.group(1)) for match in _PEM_CERTS_RE.finditer(pem_bundle)]
     if not der_certs:
         raise ssl.SSLError("No root certificates specified")
 

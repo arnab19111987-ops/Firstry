@@ -95,16 +95,10 @@ class Manager:
 
         union = set(profile["include"]) & set(profile["exclude"])
         if len(union) > 0:
-            raise ValueError(
-                f"Non-exclusive include/exclude test sets: {union}"
-            )
+            raise ValueError(f"Non-exclusive include/exclude test sets: {union}")
 
     def check_id(self, test):
-        return (
-            test in self.plugins_by_id
-            or test in self.blacklist_by_id
-            or test in self.builtin
-        )
+        return test in self.plugins_by_id or test in self.blacklist_by_id or test in self.builtin
 
 
 # Using entry-points and pkg_resources *can* be expensive. So let's load these

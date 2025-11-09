@@ -44,9 +44,7 @@ def _dnsname_match(
         # than one wildcard per fragment.  A survey of established
         # policy among SSL implementations showed it to be a
         # reasonable choice.
-        raise CertificateError(
-            "too many wildcards in certificate DNS name: " + repr(dn)
-        )
+        raise CertificateError("too many wildcards in certificate DNS name: " + repr(dn))
 
     # speed up common case w/o wildcards
     if not wildcards:
@@ -150,8 +148,7 @@ def match_hostname(
 
     if len(dnsnames) > 1:
         raise CertificateError(
-            "hostname %r "
-            "doesn't match either of %s" % (hostname, ", ".join(map(repr, dnsnames)))
+            "hostname %r " "doesn't match either of %s" % (hostname, ", ".join(map(repr, dnsnames)))
         )
     elif len(dnsnames) == 1:
         raise CertificateError(f"hostname {hostname!r} doesn't match {dnsnames[0]!r}")

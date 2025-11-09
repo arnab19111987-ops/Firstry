@@ -329,9 +329,7 @@ class ParserGenerator:
             self.gettoken()
             return a, z
         else:
-            self.raise_error(
-                f"expected (...) or NAME or STRING, got {self.type}/{self.value}"
-            )
+            self.raise_error(f"expected (...) or NAME or STRING, got {self.type}/{self.value}")
 
     def expect(self, type: int, value: Optional[Any] = None) -> str:
         if self.type != type or (value is not None and self.value != value):
@@ -348,9 +346,7 @@ class ParserGenerator:
         # print token.tok_name[self.type], repr(self.value)
 
     def raise_error(self, msg: str) -> NoReturn:
-        raise SyntaxError(
-            msg, (str(self.filename), self.end[0], self.end[1], self.line)
-        )
+        raise SyntaxError(msg, (str(self.filename), self.end[0], self.end[1], self.line))
 
 
 class NFAState:

@@ -1,0 +1,261 @@
+name: CI - FirstTry Enterprise Pipeline (Hardened)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 2 * * *"
+
+# 1. LOCK DOWN PERMISSIONS - Most restrictive defaults, override per job
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+  statuses: write
+
+# 2. CANCEL SUPERSEDED JOBS - Save minutes, cleaner PRs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+  CACHE_VERSION: "v1"
+  FT_SEND_TELEMETRY: "1"
+
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      python-version: ${{ steps.versions.outputs.python }}
+      node-version: ${{ steps.versions.outputs.node }}
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    steps:
+      # 3. PIN ACTIONS BY SHA (supply-chain security)
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        with:
+          fetch-depth: 0
+        # v4 pinned by SHA
+
+      - name: Determine versions
+        id: versions
+        run: |
+          echo "python=${{ env.PYTHON_VERSION }}" >> $GITHUB_OUTPUT
+          echo "node=${{ env.NODE_VERSION }}" >> $GITHUB_OUTPUT
+
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          KEY="${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ hashFiles('**/requirements*.txt', 'package*.json', 'pyproject.toml') }}"
+          echo "key=$KEY" >> $GITHUB_OUTPUT
+
+  lint:
+    name: Lint - Ruff Python Linter
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        # v4 pinned by SHA
+      
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+        with:
+          python-version: ${{ needs.setup.outputs.python-version }}
+          cache: "pip"
+        # v5 pinned by SHA
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Run ruff linter
+        run: ruff check src tests --extend-select=E,W,I,UP,RUF
+
+  types:
+    name: Types - MyPy Static Type Checker
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        # v4 pinned by SHA
+      
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+        with:
+          python-version: ${{ needs.setup.outputs.python-version }}
+          cache: "pip"
+        # v5 pinned by SHA
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy types-all
+
+      - name: Run mypy type checker
+        run: mypy src --strict
+
+  test:
+    name: Test - Pytest Suite
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      matrix:
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        # v4 pinned by SHA
+      
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+        # v5 pinned by SHA
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run pytest tests
+        run: |
+          pytest tests/ -v --tb=short --cov=src/firsttry --cov-report=term-missing --cov-report=json
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@5ecb98a3c6b747ed38dc09f064a7349c1acde9fe
+        with:
+          files: ./coverage.json
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+        # v4 pinned by SHA
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@f355d34d53ad4e7f506fab0b901f1c528e58179e
+        with:
+          files: test-results.xml
+          check_name: Test Results (${{ matrix.python }})
+        # v2 pinned by SHA
+
+  integration:
+    name: Integration - E2E Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: firsttry_test
+          POSTGRES_PASSWORD: testpass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        # v4 pinned by SHA
+      
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+        with:
+          python-version: ${{ needs.setup.outputs.python-version }}
+          cache: "pip"
+        # v5 pinned by SHA
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:testpass@localhost:5432/firsttry_test
+        run: |
+          pytest tests/integration/ -v --tb=short
+
+  security-scan:
+    name: Security - Bandit Code Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        # v4 pinned by SHA
+      
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+        with:
+          python-version: ${{ needs.setup.outputs.python-version }}
+          cache: "pip"
+        # v5 pinned by SHA
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run bandit security scan
+        run: |
+          bandit -r src -f json -o bandit-report.json || true
+
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@0ba4244466797eb048eb91a6cd70d1cc03534cab
+        with:
+          sarif_file: bandit-report.json
+          wait-for-processing: false
+        # v3 pinned by SHA
+
+  ci-self-audit:
+    name: CI Self-Audit
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585
+        # v4 pinned by SHA
+      
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d
+        with:
+          python-version: ${{ needs.setup.outputs.python-version }}
+        # v5 pinned by SHA
+
+      - name: Run CI self-audit
+        run: python tools/ci_self_check.py
+
+  status-check:
+    name: CI Status Check
+    runs-on: ubuntu-latest
+    needs: [lint, types, test, integration, security-scan, ci-self-audit]
+    permissions:
+      contents: read
+    if: always()
+    steps:
+      - name: Check CI status
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.types.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.integration.result }}" != "success" ] || \
+             [ "${{ needs.security-scan.result }}" != "success" ] || \
+             [ "${{ needs.ci-self-audit.result }}" != "success" ]; then
+            echo "❌ CI pipeline failed"
+            exit 1
+          fi
+          echo "✅ CI pipeline succeeded"

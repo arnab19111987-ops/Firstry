@@ -30,9 +30,7 @@ def parse(
     return _parse(stream_or_string, parser, bufsize)
 
 
-def parseString(
-    string, parser=None, forbid_dtd=False, forbid_entities=True, forbid_external=True
-):
+def parseString(string, parser=None, forbid_dtd=False, forbid_entities=True, forbid_external=True):
     if parser is None:
         parser = make_parser()
         parser.forbid_dtd = forbid_dtd

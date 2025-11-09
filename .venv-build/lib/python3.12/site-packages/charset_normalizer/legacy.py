@@ -16,9 +16,7 @@ if TYPE_CHECKING:
         confidence: float | None
 
 
-def detect(
-    byte_str: bytes, should_rename_legacy: bool = False, **kwargs: Any
-) -> ResultDict:
+def detect(byte_str: bytes, should_rename_legacy: bool = False, **kwargs: Any) -> ResultDict:
     """
     chardet legacy method
     Detect the encoding of the given byte string. It should be mostly backward-compatible.

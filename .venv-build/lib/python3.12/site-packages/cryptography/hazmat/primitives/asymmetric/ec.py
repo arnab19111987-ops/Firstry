@@ -73,9 +73,7 @@ class EllipticCurveSignatureAlgorithm(metaclass=abc.ABCMeta):
 
 class EllipticCurvePrivateKey(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def exchange(
-        self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey
-    ) -> bytes:
+    def exchange(self, algorithm: ECDH, peer_public_key: EllipticCurvePublicKey) -> bytes:
         """
         Performs a key exchange operation using the provided algorithm with the
         provided peer's public key.
@@ -182,9 +180,7 @@ class EllipticCurvePublicKey(metaclass=abc.ABCMeta):
         """
 
     @classmethod
-    def from_encoded_point(
-        cls, curve: EllipticCurve, data: bytes
-    ) -> EllipticCurvePublicKey:
+    def from_encoded_point(cls, curve: EllipticCurve, data: bytes) -> EllipticCurvePublicKey:
         utils._check_bytes("data", data)
 
         if len(data) == 0:
@@ -230,7 +226,9 @@ class SECT409R1(EllipticCurve):
 class SECT283R1(EllipticCurve):
     name = "sect283r1"
     key_size = 283
-    group_order = 0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEF90399660FC938A90165B042A7CEFADB307  # noqa: E501
+    group_order = (
+        0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEF90399660FC938A90165B042A7CEFADB307  # noqa: E501
+    )
 
 
 class SECT233R1(EllipticCurve):
@@ -260,7 +258,9 @@ class SECT409K1(EllipticCurve):
 class SECT283K1(EllipticCurve):
     name = "sect283k1"
     key_size = 283
-    group_order = 0x1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE9AE2ED07577265DFF7F94451E061E163C61  # noqa: E501
+    group_order = (
+        0x1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE9AE2ED07577265DFF7F94451E061E163C61  # noqa: E501
+    )
 
 
 class SECT233K1(EllipticCurve):
@@ -432,6 +432,4 @@ def get_curve_for_oid(oid: ObjectIdentifier) -> type[EllipticCurve]:
     try:
         return _OID_TO_CURVE[oid]
     except KeyError:
-        raise LookupError(
-            "The provided object identifier has no matching elliptic " "curve class"
-        )
+        raise LookupError("The provided object identifier has no matching elliptic " "curve class")

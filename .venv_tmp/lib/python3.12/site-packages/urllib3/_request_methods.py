@@ -62,8 +62,7 @@ class RequestMethods:
         **kw: typing.Any,
     ) -> BaseHTTPResponse:  # Abstract
         raise NotImplementedError(
-            "Classes extending RequestMethods must implement "
-            "their own ``urlopen`` method."
+            "Classes extending RequestMethods must implement " "their own ``urlopen`` method."
         )
 
     def request(
@@ -124,9 +123,7 @@ class RequestMethods:
                 headers = HTTPHeaderDict(headers)
                 headers["Content-Type"] = "application/json"
 
-            body = _json.dumps(json, separators=(",", ":"), ensure_ascii=False).encode(
-                "utf-8"
-            )
+            body = _json.dumps(json, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
         if body is not None:
             urlopen_kw["body"] = body
@@ -261,9 +258,7 @@ class RequestMethods:
                 )
 
             if encode_multipart:
-                body, content_type = encode_multipart_formdata(
-                    fields, boundary=multipart_boundary
-                )
+                body, content_type = encode_multipart_formdata(fields, boundary=multipart_boundary)
             else:
                 body, content_type = (
                     urlencode(fields),  # type: ignore[arg-type]

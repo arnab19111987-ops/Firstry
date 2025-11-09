@@ -139,9 +139,7 @@ class CGenerator(object):
         return "%s %s %s" % (lval_str, n.op, rval_str)
 
     def visit_Assignment(self, n):
-        rval_str = self._parenthesize_if(
-            n.rvalue, lambda n: isinstance(n, c_ast.Assignment)
-        )
+        rval_str = self._parenthesize_if(n.rvalue, lambda n: isinstance(n, c_ast.Assignment))
         return "%s %s %s" % (self.visit(n.lvalue), n.op, rval_str)
 
     def visit_IdentifierType(self, n):
@@ -169,9 +167,7 @@ class CGenerator(object):
     def visit_DeclList(self, n):
         s = self.visit(n.decls[0])
         if len(n.decls) > 1:
-            s += ", " + ", ".join(
-                self.visit_Decl(decl, no_type=True) for decl in n.decls[1:]
-            )
+            s += ", " + ", ".join(self.visit_Decl(decl, no_type=True) for decl in n.decls[1:])
         return s
 
     def visit_Typedef(self, n):
@@ -516,9 +512,7 @@ class CGenerator(object):
         elif typ == c_ast.IdentifierType:
             return " ".join(n.names) + " "
         elif typ in (c_ast.ArrayDecl, c_ast.PtrDecl, c_ast.FuncDecl):
-            return self._generate_type(
-                n.type, modifiers + [n], emit_declname=emit_declname
-            )
+            return self._generate_type(n.type, modifiers + [n], emit_declname=emit_declname)
         else:
             return self.visit(n)
 

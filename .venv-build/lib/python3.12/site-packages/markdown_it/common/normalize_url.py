@@ -28,9 +28,7 @@ def normalizeLink(url: str) -> str:
     # We don't encode unknown schemas, because it's likely that we encode
     # something we shouldn't (e.g. `skype:name` treated as `skype:host`)
     #
-    if parsed.hostname and (
-        not parsed.protocol or parsed.protocol in RECODE_HOSTNAME_FOR
-    ):
+    if parsed.hostname and (not parsed.protocol or parsed.protocol in RECODE_HOSTNAME_FOR):
         with suppress(Exception):
             parsed = parsed._replace(hostname=_punycode.to_ascii(parsed.hostname))
 
@@ -53,9 +51,7 @@ def normalizeLinkText(url: str) -> str:
     # We don't encode unknown schemas, because it's likely that we encode
     # something we shouldn't (e.g. `skype:name` treated as `skype:host`)
     #
-    if parsed.hostname and (
-        not parsed.protocol or parsed.protocol in RECODE_HOSTNAME_FOR
-    ):
+    if parsed.hostname and (not parsed.protocol or parsed.protocol in RECODE_HOSTNAME_FOR):
         with suppress(Exception):
             parsed = parsed._replace(hostname=_punycode.to_unicode(parsed.hostname))
 

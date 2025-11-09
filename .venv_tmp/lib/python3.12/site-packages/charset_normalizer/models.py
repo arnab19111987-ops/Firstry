@@ -215,8 +215,7 @@ class CharsetMatch:
             decoded_string = str(self)
             if (
                 self._preemptive_declaration is not None
-                and self._preemptive_declaration.lower()
-                not in ["utf-8", "utf8", "utf_8"]
+                and self._preemptive_declaration.lower() not in ["utf-8", "utf8", "utf_8"]
             ):
                 patched_header = sub(
                     RE_POSSIBLE_ENCODING_INDICATION,
@@ -281,9 +280,7 @@ class CharsetMatches:
         """
         if not isinstance(item, CharsetMatch):
             raise ValueError(
-                "Cannot append instance '{}' to CharsetMatches".format(
-                    str(item.__class__)
-                )
+                "Cannot append instance '{}' to CharsetMatches".format(str(item.__class__))
             )
         # We should disable the submatch factoring when the input file is too heavy (conserve RAM usage)
         if len(item.raw) < TOO_BIG_SEQUENCE:

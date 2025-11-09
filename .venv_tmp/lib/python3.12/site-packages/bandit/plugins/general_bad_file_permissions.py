@@ -61,12 +61,7 @@ from bandit.core import test_properties as test
 
 
 def _stat_is_dangerous(mode):
-    return (
-        mode & stat.S_IWOTH
-        or mode & stat.S_IWGRP
-        or mode & stat.S_IXGRP
-        or mode & stat.S_IXOTH
-    )
+    return mode & stat.S_IWOTH or mode & stat.S_IWGRP or mode & stat.S_IXGRP or mode & stat.S_IXOTH
 
 
 @test.checks("Call")
@@ -76,11 +71,7 @@ def set_bad_file_permissions(context):
         if context.call_args_count == 2:
             mode = context.get_call_arg_at_position(1)
 
-            if (
-                mode is not None
-                and isinstance(mode, int)
-                and _stat_is_dangerous(mode)
-            ):
+            if mode is not None and isinstance(mode, int) and _stat_is_dangerous(mode):
                 # world writable is an HIGH, group executable is a MEDIUM
                 if mode & stat.S_IWOTH:
                     sev_level = bandit.HIGH
@@ -94,6 +85,5 @@ def set_bad_file_permissions(context):
                     severity=sev_level,
                     confidence=bandit.HIGH,
                     cwe=issue.Cwe.INCORRECT_PERMISSION_ASSIGNMENT,
-                    text="Chmod setting a permissive mask %s on file (%s)."
-                    % (oct(mode), filename),
+                    text="Chmod setting a permissive mask %s on file (%s)." % (oct(mode), filename),
                 )

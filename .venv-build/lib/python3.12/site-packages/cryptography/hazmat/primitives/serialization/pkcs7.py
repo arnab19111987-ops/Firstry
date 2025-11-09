@@ -94,8 +94,7 @@ class PKCS7SignatureBuilder:
             ),
         ):
             raise TypeError(
-                "hash_algorithm must be one of hashes.SHA224, "
-                "SHA256, SHA384, or SHA512"
+                "hash_algorithm must be one of hashes.SHA224, " "SHA256, SHA384, or SHA512"
             )
         if not isinstance(certificate, x509.Certificate):
             raise TypeError("certificate must be a x509.Certificate")
@@ -147,31 +146,20 @@ class PKCS7SignatureBuilder:
 
         # Text is a meaningless option unless it is accompanied by
         # DetachedSignature
-        if (
-            PKCS7Options.Text in options
-            and PKCS7Options.DetachedSignature not in options
-        ):
-            raise ValueError(
-                "When passing the Text option you must also pass " "DetachedSignature"
-            )
+        if PKCS7Options.Text in options and PKCS7Options.DetachedSignature not in options:
+            raise ValueError("When passing the Text option you must also pass " "DetachedSignature")
 
         if PKCS7Options.Text in options and encoding in (
             serialization.Encoding.DER,
             serialization.Encoding.PEM,
         ):
-            raise ValueError(
-                "The Text option is only available for SMIME serialization"
-            )
+            raise ValueError("The Text option is only available for SMIME serialization")
 
         # No attributes implies no capabilities so we'll error if you try to
         # pass both.
-        if (
-            PKCS7Options.NoAttributes in options
-            and PKCS7Options.NoCapabilities in options
-        ):
+        if PKCS7Options.NoAttributes in options and PKCS7Options.NoCapabilities in options:
             raise ValueError(
-                "NoAttributes is a superset of NoCapabilities. Do not pass "
-                "both values."
+                "NoAttributes is a superset of NoCapabilities. Do not pass " "both values."
             )
 
         return rust_pkcs7.sign_and_serialize(self, encoding, options)
@@ -191,8 +179,7 @@ class PKCS7EnvelopeBuilder:
 
         if not ossl.rsa_encryption_supported(padding=padding.PKCS1v15()):
             raise UnsupportedAlgorithm(
-                "RSA with PKCS1 v1.5 padding is not supported by this version"
-                " of OpenSSL.",
+                "RSA with PKCS1 v1.5 padding is not supported by this version" " of OpenSSL.",
                 _Reasons.UNSUPPORTED_PADDING,
             )
         self._data = _data
@@ -258,9 +245,7 @@ class PKCS7EnvelopeBuilder:
 
         # The default content encryption algorithm is AES-128, which the S/MIME
         # v3.2 RFC specifies as MUST support (https://datatracker.ietf.org/doc/html/rfc5751#section-2.7)
-        content_encryption_algorithm = (
-            self._content_encryption_algorithm or algorithms.AES128
-        )
+        content_encryption_algorithm = self._content_encryption_algorithm or algorithms.AES128
 
         options = list(options)
         if not all(isinstance(x, PKCS7Options) for x in options):
@@ -275,8 +260,7 @@ class PKCS7EnvelopeBuilder:
         # Only allow options that make sense for encryption
         if any(opt not in [PKCS7Options.Text, PKCS7Options.Binary] for opt in options):
             raise ValueError(
-                "Only the following options are supported for encryption: "
-                "Text, Binary"
+                "Only the following options are supported for encryption: " "Text, Binary"
             )
         elif PKCS7Options.Text in options and PKCS7Options.Binary in options:
             # OpenSSL accepts both options at the same time, but ignores Text.
@@ -293,9 +277,7 @@ pkcs7_decrypt_pem = rust_pkcs7.decrypt_pem
 pkcs7_decrypt_smime = rust_pkcs7.decrypt_smime
 
 
-def _smime_signed_encode(
-    data: bytes, signature: bytes, micalg: str, text_mode: bool
-) -> bytes:
+def _smime_signed_encode(data: bytes, signature: bytes, micalg: str, text_mode: bool) -> bytes:
     # This function works pretty hard to replicate what OpenSSL does
     # precisely. For good and for ill.
 
@@ -317,9 +299,7 @@ def _smime_signed_encode(
     m.attach(msg_part)
 
     sig_part = email.message.MIMEPart()
-    sig_part.add_header(
-        "Content-Type", "application/x-pkcs7-signature", name="smime.p7s"
-    )
+    sig_part.add_header("Content-Type", "application/x-pkcs7-signature", name="smime.p7s")
     sig_part.add_header("Content-Transfer-Encoding", "base64")
     sig_part.add_header("Content-Disposition", "attachment", filename="smime.p7s")
     sig_part.set_payload(email.base64mime.body_encode(signature, maxlinelen=65))

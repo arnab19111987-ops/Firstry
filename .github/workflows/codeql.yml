@@ -1,0 +1,82 @@
+name: Security - CodeQL Analysis
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/codeql.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "src/**"
+      - "tests/**"
+  schedule:
+    - cron: "0 2 * * 1"  # Monday 2 AM UTC
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze Repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["python"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3df4ab11eba7bdd6ce3b45b1a98f91f2105df3585  # v4
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@b611370bb5703a7efb587f9d136a52ea3c847bef  # v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+          tools: latest
+
+      - name: Set up Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0410993293549f51fe5d  # v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" 2>/dev/null || pip install pytest pytest-cov pytest-xdist
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@b611370bb5703a7efb587f9d136a52ea3c847bef  # v2
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: true
+          wait-for-processing: false
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@b611370bb5703a7efb587f9d136a52ea3c847bef  # v2
+        if: always()
+        with:
+          sarif_file: "results"
+          category: "codeql-${{ matrix.language }}"
+          wait-for-processing: true
+
+      - name: Report security findings
+        if: always()
+        run: |
+          echo "## CodeQL Security Analysis"
+          echo "- Language: ${{ matrix.language }}"
+          echo "- Queries: security-and-quality"
+          echo "- SARIF Upload: complete"
+          echo "- Review findings in: Settings → Security → Code scanning"

@@ -39,9 +39,7 @@ class UnraisableMeta(NamedTuple):
     exc_value: BaseException | None
 
 
-unraisable_exceptions: StashKey[collections.deque[UnraisableMeta | BaseException]] = (
-    StashKey()
-)
+unraisable_exceptions: StashKey[collections.deque[UnraisableMeta | BaseException]] = StashKey()
 
 
 def collect_unraisable(config: Config) -> None:
@@ -83,9 +81,7 @@ def collect_unraisable(config: Config) -> None:
         del errors, meta, hook_error
 
 
-def cleanup(
-    *, config: Config, prev_hook: Callable[[sys.UnraisableHookArgs], object]
-) -> None:
+def cleanup(*, config: Config, prev_hook: Callable[[sys.UnraisableHookArgs], object]) -> None:
     # A single collection doesn't necessarily collect everything.
     # Constant determined experimentally by the Trio project.
     gc_collect_iterations = config.stash.get(gc_collect_iterations_key, 5)
@@ -109,9 +105,7 @@ def unraisable_hook(
         # we need to compute these strings here as they might change after
         # the unraisablehook finishes and before the metadata object is
         # collected by a pytest hook
-        err_msg = (
-            "Exception ignored in" if unraisable.err_msg is None else unraisable.err_msg
-        )
+        err_msg = "Exception ignored in" if unraisable.err_msg is None else unraisable.err_msg
         summary = f"{err_msg}: {unraisable.object!r}"
         traceback_message = "\n\n" + "".join(
             traceback.format_exception(

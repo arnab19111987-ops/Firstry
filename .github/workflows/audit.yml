@@ -317,6 +317,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: audit-proof
+          if-no-files-found: warn
           path: |
             .firsttry/audit.json
             .firsttry/audit_summary.txt

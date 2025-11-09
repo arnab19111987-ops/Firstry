@@ -68,9 +68,7 @@ _HOST_PORT_PAT = ("^(%s|%s|%s)(?::0*?(|0|[1-9][0-9]{0,4}))?$") % (
 )
 _HOST_PORT_RE = re.compile(_HOST_PORT_PAT, re.UNICODE | re.DOTALL)
 
-_UNRESERVED_CHARS = set(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-~"
-)
+_UNRESERVED_CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-~")
 _SUB_DELIM_CHARS = set("!$&'()*+,;=")
 _USERINFO_CHARS = _UNRESERVED_CHARS | _SUB_DELIM_CHARS | {":"}
 _PATH_CHARS = _USERINFO_CHARS | {"@", "/"}
@@ -211,9 +209,7 @@ class Url(
 
 
 @typing.overload
-def _encode_invalid_chars(
-    component: str, allowed_chars: typing.Container[str]
-) -> str:  # Abstract
+def _encode_invalid_chars(component: str, allowed_chars: typing.Container[str]) -> str:  # Abstract
     ...
 
 
@@ -238,9 +234,7 @@ def _encode_invalid_chars(
     # Normalize existing percent-encoded bytes.
     # Try to see if the component we're encoding is already percent-encoded
     # so we can skip all '%' characters but still encode all others.
-    component, percent_encodings = _PERCENT_RE.subn(
-        lambda match: match.group(0).upper(), component
-    )
+    component, percent_encodings = _PERCENT_RE.subn(lambda match: match.group(0).upper(), component)
 
     uri_bytes = component.encode("utf-8", "surrogatepass")
     is_percent_encoded = percent_encodings == uri_bytes.count(b"%")
@@ -332,16 +326,12 @@ def _idna_encode(name: str) -> bytes:
         try:
             import idna
         except ImportError:
-            raise LocationParseError(
-                "Unable to parse URL without the 'idna' module"
-            ) from None
+            raise LocationParseError("Unable to parse URL without the 'idna' module") from None
 
         try:
             return idna.encode(name.lower(), strict=True, std3_rules=True)
         except idna.IDNAError:
-            raise LocationParseError(
-                f"Name '{name}' is not a valid IDNA label"
-            ) from None
+            raise LocationParseError(f"Name '{name}' is not a valid IDNA label") from None
 
     return name.lower().encode("ascii")
 

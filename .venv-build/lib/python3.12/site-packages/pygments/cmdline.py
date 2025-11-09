@@ -367,9 +367,7 @@ def main_inner(parser, argns):
 
     if argns.INPUTFILE:
         if argns.s:
-            print(
-                "Error: -s option not usable when input file specified", file=sys.stderr
-            )
+            print("Error: -s option not usable when input file specified", file=sys.stderr)
             return 2
 
         infn = argns.INPUTFILE
@@ -552,9 +550,7 @@ class HelpFormatter(argparse.HelpFormatter):
                 width = shutil.get_terminal_size().columns - 2
             except Exception:
                 pass
-        argparse.HelpFormatter.__init__(
-            self, prog, indent_increment, max_help_position, width
-        )
+        argparse.HelpFormatter.__init__(self, prog, indent_increment, max_help_position, width)
 
 
 def main(args=sys.argv):
@@ -657,9 +653,7 @@ def main(args=sys.argv):
         action="store_true",
     )
 
-    special_modes_group = parser.add_argument_group(
-        "Special modes - do not do any highlighting"
-    )
+    special_modes_group = parser.add_argument_group("Special modes - do not do any highlighting")
     special_modes = special_modes_group.add_mutually_exclusive_group()
     special_modes.add_argument(
         "-S",
@@ -697,17 +691,12 @@ def main(args=sys.argv):
         help="Print detailed help for the object <name> of type <type>, "
         'where <type> is one of "lexer", "formatter" or "filter".',
     )
-    special_modes.add_argument(
-        "-V", action="store_true", help="Print the package version."
-    )
-    special_modes.add_argument(
-        "-h", "--help", action="store_true", help="Print this help."
-    )
+    special_modes.add_argument("-V", action="store_true", help="Print the package version.")
+    special_modes.add_argument("-h", "--help", action="store_true", help="Print this help.")
     special_modes_group.add_argument(
         "-a",
         metavar="ARG",
-        help="Formatter-specific additional argument for the -S (print "
-        "style sheet) mode.",
+        help="Formatter-specific additional argument for the -S (print " "style sheet) mode.",
     )
 
     argns = parser.parse_args(args[1:])
@@ -721,9 +710,7 @@ def main(args=sys.argv):
         if argns.v:
             print(file=sys.stderr)
             print("*" * 65, file=sys.stderr)
-            print(
-                "An unhandled exception occurred while highlighting.", file=sys.stderr
-            )
+            print("An unhandled exception occurred while highlighting.", file=sys.stderr)
             print(
                 "Please report the whole traceback to the issue tracker at",
                 file=sys.stderr,

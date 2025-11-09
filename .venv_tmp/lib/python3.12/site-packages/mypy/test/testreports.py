@@ -50,6 +50,4 @@ class CoberturaReportSuite(Suite):
             </package>
         """
         ).encode("ascii")
-        assert_equal(
-            expected_output, etree.tostring(cobertura_package.as_xml(), pretty_print=True)
-        )
+        assert_equal(expected_output, etree.tostring(cobertura_package.as_xml(), pretty_print=True))

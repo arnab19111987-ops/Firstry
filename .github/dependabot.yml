@@ -1,0 +1,50 @@
+version: 2
+updates:
+  # Python dependencies (pip)
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - engineering
+    labels:
+      - "type: dependencies"
+      - "priority: high"
+    allow:
+      - dependency-type: all
+    ignore: []
+    commit-message:
+      prefix: "chore(deps): "
+      prefix-development: "chore(deps-dev): "
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: auto
+    target-branch: develop
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - engineering
+    labels:
+      - "type: dependencies"
+      - "type: ci/cd"
+      - "priority: critical"
+    allow:
+      - dependency-type: all
+    commit-message:
+      prefix: "ci(deps): "
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: auto
+    target-branch: main

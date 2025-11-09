@@ -123,12 +123,7 @@ class GroffFormatter(Formatter):
 
         for char in copy:
             if len(char) != len(char.encode()):
-                uni = (
-                    char.encode("unicode_escape")
-                    .decode()[1:]
-                    .replace("x", "u00")
-                    .upper()
-                )
+                uni = char.encode("unicode_escape").decode()[1:].replace("x", "u00").upper()
                 text = text.replace(char, "\\[u" + uni[1:] + "]")
 
         return text

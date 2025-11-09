@@ -41,13 +41,9 @@ def get_url(bid):
             ]:
                 info = info.copy()
                 info["id"] = "b313-b320"
-            ext = template.format(
-                kind="calls", id=info["id"], name=info["name"]
-            )
+            ext = template.format(kind="calls", id=info["id"], name=info["name"])
         else:
-            ext = template.format(
-                kind="imports", id=info["id"], name=info["name"]
-            )
+            ext = template.format(kind="imports", id=info["id"], name=info["name"])
 
         return base_url + ext.lower()
 

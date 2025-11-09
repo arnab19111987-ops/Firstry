@@ -77,9 +77,7 @@ class MockRequest:
 
     def add_header(self, key, val):
         """cookiejar has no legitimate use for this method; add it back if you find one."""
-        raise NotImplementedError(
-            "Cookie headers should be added with add_unredirected_header()"
-        )
+        raise NotImplementedError("Cookie headers should be added with add_unredirected_header()")
 
     def add_unredirected_header(self, name, value):
         self._new_headers[name] = value
@@ -210,9 +208,7 @@ class RequestsCookieJar(cookielib.CookieJar, MutableMapping):
         """
         # support client code that unsets cookies by assignment of a None value:
         if value is None:
-            remove_cookie_by_name(
-                self, name, domain=kwargs.get("domain"), path=kwargs.get("path")
-            )
+            remove_cookie_by_name(self, name, domain=kwargs.get("domain"), path=kwargs.get("path"))
             return
 
         if isinstance(value, Morsel):
@@ -476,9 +472,7 @@ def create_cookie(name, value, **kwargs):
 
     badargs = set(kwargs) - set(result)
     if badargs:
-        raise TypeError(
-            f"create_cookie() got unexpected keyword arguments: {list(badargs)}"
-        )
+        raise TypeError(f"create_cookie() got unexpected keyword arguments: {list(badargs)}")
 
     result.update(kwargs)
     result["port_specified"] = bool(result["port"])
