@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Make image tag stable but invalidates on Dockerfile change
-IMAGE="firsttry/ci-local:py311"
+# Comma- or space-separated; default single version
+PYVERS="${PYVERS:-3.11}"
 DOCKERFILE=".firsttry/Dockerfile"
 
-# Build (fast if cached)
-docker build -t "$IMAGE" -f "$DOCKERFILE" .
+# Normalize to space list
+PYLIST=$(echo "$PYVERS" | tr ',' ' ')
 
-# Default to full CI run locally (no dry-run)
-: "${FT_CI_PARITY_DRYRUN:=0}"
+for VER in $PYLIST; do
+  IMAGE="firsttry/ci-local:py${VER}"
+  echo "[ft] Building image for Python $VER..."
+  docker build --build-arg PYVER="$VER" -t "$IMAGE" -f "$DOCKERFILE" .
 
-# Allow passing extra env/config if needed
-exec docker run --rm \
-  -e FT_CI_PARITY_DRYRUN="$FT_CI_PARITY_DRYRUN" \
-  -e PIP_CACHE_DIR=/cache/pip \
-  -e PYTHONPATH=/work/src \
-  -e GITHUB_ACTIONS=true \
-  -v "$PWD":/work \
-  -v "$HOME/.cache/pip":/cache/pip \
-  -w /work \
-  "$IMAGE" bash -lc '
-    set -euo pipefail
-    python -m pip install -e ".[test]" build
-    python -m firsttry.ci_parity.runner ci
-  '
+  : "${FT_CI_PARITY_DRYRUN:=0}"
+  echo "[ft] Running CI parity for Python $VER (dry-run=$FT_CI_PARITY_DRYRUN)..."
+  docker run --rm \
+    -e FT_CI_PARITY_DRYRUN="$FT_CI_PARITY_DRYRUN" \
+    -e PIP_CACHE_DIR=/cache/pip \
+    -e PYTHONPATH=/work/src \
+    -e GITHUB_ACTIONS=true \
+    -v "$PWD":/work \
+    -v "$HOME/.cache/pip":/cache/pip \
+    -w /work \
+    "$IMAGE" bash -lc '
+      set -euo pipefail
+      python -m pip install -e ".[test]" build
+      # Install repo-specific extras if the file exists
+      if [ -f .firsttry/ci-extra-requirements.txt ]; then
+        echo "[ft] Installing .firsttry/ci-extra-requirements.txt..."
+        pip install -r .firsttry/ci-extra-requirements.txt
+      fi
+      python -m firsttry.ci_parity.runner ci
+    '
+done
