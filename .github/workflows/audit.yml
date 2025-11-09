@@ -22,6 +22,37 @@ env:
   AUDIT_TIER: strict
 
 jobs:
+  validate-workflows:
+    name: Validate Workflows (syntax + deprecations)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate workflow YAML (self)
+        run: |
+          python - <<'PY'
+          import sys, yaml, glob
+          bad=[]
+          for f in glob.glob('.github/workflows/*.yml') + glob.glob('.github/workflows/*.yaml'):
+              try:
+                  yaml.safe_load(open(f, 'r', encoding='utf-8'))
+              except Exception as e:
+                  bad.append((f, str(e)))
+          if bad:
+              print('❌ YAML errors:')
+              for f, e in bad:
+                  print(f'- {f}: {e}')
+              sys.exit(1)
+          print('✅ Workflows parse correctly')
+          PY
+
+      - name: Check for deprecated ::set-output
+        run: |
+          if grep -R "::set-output" .github/workflows >/dev/null 2>&1; then
+            echo "❌ Deprecated ::set-output detected. Use $GITHUB_OUTPUT."
+            exit 1
+          fi
+          echo "✅ No deprecated ::set-output usage"
+
   policy-validation:
     name: Policy Validation
     runs-on: ubuntu-latest
@@ -312,6 +343,14 @@ jobs:
           print('Policy proof present ✅')
           PY
 
+      - name: Embed coverage into audit (if available)
+        if: always()
+        shell: bash
+        run: |
+          if [ -f "coverage.json" ]; then
+            python tools/coverage_embed.py || true
+          fi
+
       - name: Upload audit artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -349,17 +388,17 @@ jobs:
           echo "  ✅ Dependency Audit: N/A"
           echo "  ✅ SBOM Generated: ${{ needs.sbom-generation.result }}"
           echo "  ✅ Compliance Checks: ${{ needs.compliance-checks.result }}"
-          echo ""
-          
-       if [[ "${{ needs.policy-validation.result }}" == "success" ]] && \
-         [[ "${{ needs.sbom-generation.result }}" == "success" ]] && \
-         [[ "${{ needs.compliance-checks.result }}" == "success" ]]; then
+            echo ""
+
+            if [[ "${{ needs.policy-validation.result }}" == "success" ]] && \
+              [[ "${{ needs.sbom-generation.result }}" == "success" ]] && \
+              [[ "${{ needs.compliance-checks.result }}" == "success" ]]; then
               echo "✅ RELEASE READY - All criteria met"
               exit 0
-          else
+            else
               echo "❌ RELEASE BLOCKED - Some criteria not met"
               exit 1
-          fi
+            fi
 
   audit-summary:
     name: Audit Summary

@@ -218,6 +218,14 @@ jobs:
         run: |
           python tools/check_critical_coverage.py
 
+      - name: Enforce critical coverage (main stricter)
+        if: ${{ github.ref_name == 'main' }}
+        env:
+          FT_CRITICAL_MIN_RATE: "85"
+          FT_COVERAGE_JSON_OUT: ".firsttry/critical_coverage_summary.json"
+        run: |
+          python tools/check_critical_coverage.py
+
       - name: Upload coverage reports and critical summary
         if: always()
         uses: actions/upload-artifact@65462800fd760344b1a7b33e5b3c9e0d2b6a9a14
