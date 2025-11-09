@@ -123,3 +123,9 @@ slow=sorted(((k, r.get("duration_ms",0)) for k,r in d["checks"].items()), key=la
 print(f"cache hits: {hits}/{total}"); \
 print("slowest:", ", ".join(f"{k}:{ms}ms" for k,ms in slow)); \
 '
+
+
+.PHONY: hooks-install
+hooks-install:
+	@./scripts/install-hooks
+
