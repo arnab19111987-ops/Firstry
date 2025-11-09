@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "[pre-push] FirstTry push profile…"
+python -m firsttry.ci_parity.runner pre-push
+#!/usr/bin/env bash
+set -euo pipefail
+
 echo "[pre-push] Repo smoke (src)…"
-PYTHONPATH=src python -m pytest -q -k "config_compat or no_alias_in_repo" tests
+PYTHONPATH=src python -m pytest -q \
+	tests/test_config_compat.py \
+	tests/test_no_alias_in_repo.py
 
 echo "[pre-push] Tooling smoke (tools)…"
-PYTHONPATH=tools python -m pytest -q -k "import_resolution or no_site_packages_collision" tools/firsttry
+PYTHONPATH=tools python -m pytest -q \
+	tools/firsttry/tests/test_import_resolution.py \
+	tools/firsttry/tests/test_no_site_packages_collision.py
 
 echo "[pre-push] OK (full suites run in CI)"

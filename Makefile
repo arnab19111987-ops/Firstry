@@ -129,3 +129,13 @@ print("slowest:", ", ".join(f"{k}:{ms}ms" for k,ms in slow)); \
 hooks-install:
 	@./scripts/install-hooks
 
+.PHONY: ft-pre-commit ft-pre-push ft-ci
+ft-pre-commit:
+	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit
+
+ft-pre-push:
+	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-push
+
+ft-ci:
+	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner ci
+
