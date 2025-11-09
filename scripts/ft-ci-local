@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Make image tag stable but invalidates on Dockerfile change
+IMAGE="firsttry/ci-local:py311"
+DOCKERFILE=".firsttry/Dockerfile"
+
+# Build (fast if cached)
+docker build -t "$IMAGE" -f "$DOCKERFILE" .
+
+# Default to full CI run locally (no dry-run)
+: "${FT_CI_PARITY_DRYRUN:=0}"
+
+# Allow passing extra env/config if needed
+exec docker run --rm \
+  -e FT_CI_PARITY_DRYRUN="$FT_CI_PARITY_DRYRUN" \
+  -e PIP_CACHE_DIR=/cache/pip \
+  -e PYTHONPATH=/work/src \
+  -e GITHUB_ACTIONS=true \
+  -v "$PWD":/work \
+  -v "$HOME/.cache/pip":/cache/pip \
+  -w /work \
+  "$IMAGE" bash -lc '
+    set -euo pipefail
+    python -m pip install -e ".[test]" build
+    python -m firsttry.ci_parity.runner ci
+  '

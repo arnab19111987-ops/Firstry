@@ -45,13 +45,15 @@ jobs:
           print('✅ Workflows parse correctly')
           PY
 
-      - name: Check for deprecated ::set-output
+      - name: Check for deprecated set-output usage
         run: |
-          if grep -R "::set-output" .github/workflows >/dev/null 2>&1; then
-            echo "❌ Deprecated ::set-output detected. Use $GITHUB_OUTPUT."
+          # build the literal safely (avoid embedding the raw pattern in this workflow file)
+          PAT=$(printf '\x3a\x3aset-output')
+          if grep -R "$PAT" .github/workflows >/dev/null 2>&1; then
+            echo "❌ Deprecated set-output detected. Use \$GITHUB_OUTPUT."
             exit 1
           fi
-          echo "✅ No deprecated ::set-output usage"
+          echo "✅ No deprecated set-output usage"
 
   policy-validation:
     name: Policy Validation

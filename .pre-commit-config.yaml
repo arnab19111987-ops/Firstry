@@ -1,41 +1,39 @@
 repos:
+  # --- FAST pre-commit gates ---
   - repo: https://github.com/psf/black
-    rev: 25.9.0
+    rev: 24.10.0
     hooks:
       - id: black
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.4
+    rev: v0.6.9
     hooks:
       - id: ruff
-        name: ruff (strict gate)
-        args:
-          - --config=.ruff.pre-commit.toml
-          - --exit-non-zero-on-fix
+        args: [--fix]
+        stages: [commit]
+      - id: ruff-format
+        stages: [commit]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+        stages: [push]
+
+  # --- HEAVY parity only on push ---
   - repo: local
     hooks:
-      - id: forbid-legacy-cache-check
-        name: Forbid legacy cache-hit checks
-        entry: bash -lc "rg -n \"hit-local|hit-remote|miss-run\" src/ | rg -v cache_status && { echo 'Use cache_status, not status'; exit 1; } || true"
+      - id: gh-workflow-lint
+        name: GitHub Actions workflow linter
+        entry: bash -lc './scripts/check-workflows.sh'
         language: system
-      
-      - id: mypy
-        name: mypy (type checking)
-        entry: mypy src
-        language: system
-        types: [python]
         pass_filenames: false
+        stages: [commit, push]
 
-      - id: pytest
-        name: pytest (unit tests - fast smoke)
-        # Run a tiny, fast smoke subset to keep pre-commit quick and avoid
-        # collection-time failures from repository-wide test collection.
-        entry: pytest -q tests/test_config_compat.py tests/test_no_alias_in_repo.py
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: ft-pre-commit
-        name: FirstTry pre-commit (dry-run parity)
-        entry: bash -lc 'FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit'
+      - id: ft-pre-push
+        name: FirstTry pre-push (CI parity, containerized)
+        stages: [push]
+        entry: bash -lc './scripts/ft-ci-local'
         language: system
         pass_filenames: false

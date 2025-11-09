@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Detach from git's stdin (prevents any tool from reading push refs by accident)
+exec </dev/null
+
+# Quick opt-out for one push: SKIP_CI_PARITY=1 git push ...
+if [[ "${SKIP_CI_PARITY:-}" == "1" ]]; then
+  echo "[pre-push] Skipped (SKIP_CI_PARITY=1)."
+  exit 0
+fi
+
+# Keep local pushes fast: default to dry-run unless explicitly disabled
+: "${FT_CI_PARITY_DRYRUN:=1}"
+
+echo "[pre-push] FirstTry push profile… (dry-run=${FT_CI_PARITY_DRYRUN})"
+python -m firsttry.ci_parity.runner pre-push
+#!/usr/bin/env bash
+set -euo pipefail
+
 echo "[pre-push] FirstTry push profile…"
 python -m firsttry.ci_parity.runner pre-push
 #!/usr/bin/env bash

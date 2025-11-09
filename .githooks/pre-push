@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Detach stdin; git passes refs on stdin which can confuse tools
+exec </dev/null
+
+# Clear, opt-outable guard
+if [[ "${SKIP_FT:-}" == "1" ]] || [[ "${SKIP:-}" =~ (^|,)(ft-pre-push|pre-push)(,|$) ]]; then
+  echo "⚠️  WARNING: You are skipping FirstTry pre-push checks (SKIP_FT=1/SKIP=...)."
+  echo "   This can cause CI failures. Continue at your own risk."
+  exit 0
+fi
+
+if ! command -v pre-commit >/dev/null 2>&1; then
+  echo "❌ pre-commit not found on PATH."
+  echo "   Install: pip install pre-commit  (or) pipx install pre-commit"
+  echo "   Then run: pre-commit install"
+  exit 1
+fi
+
+# Use pre-commit's push stage; it will invoke ft containerized parity if configured
+echo "[ft] running pre-push…"
+exec pre-commit run --hook-stage push --color always
