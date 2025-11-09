@@ -129,9 +129,9 @@ def main():
             if cov_path == p:
                 raw_pct = val
                 break
-    summary["files"].append(
-        {"path": p, "percent_covered": (0.0 if raw_pct is None else float(raw_pct))}
-    )
+        summary["files"].append(
+            {"path": p, "percent_covered": (0.0 if raw_pct is None else float(raw_pct))}
+        )
 
     try:
         out_p.write_text(json.dumps(summary, indent=2), encoding="utf-8")
