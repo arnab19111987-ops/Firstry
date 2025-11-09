@@ -149,12 +149,28 @@ def _extract_cov_threshold_from_args(args: List[str]) -> Optional[int]:
     return None
 
 
+def _is_runner_cmd(tokens: list[str]) -> bool:
+    """True if command would invoke our own runner (avoid recursion)."""
+    if not tokens:
+        return False
+    t0 = tokens[0]
+    if t0 in {"python", "python3", "py"}:
+        # look for: -m firsttry.ci_parity.runner <profile>
+        for i in range(1, len(tokens) - 1):
+            if tokens[i] == "-m" and tokens[i + 1] == "firsttry.ci_parity.runner":
+                return True
+    return False
+
+
 def detect() -> Detected:
     steps: List[DetectedStep] = []
     env: Dict[str, str] = {}
     # From Actions YAML
     for cmd in _scan_actions_runs():
         if not cmd:
+            continue
+        # skip self-reference to avoid infinite recursion
+        if _is_runner_cmd(cmd):
             continue
         t = cmd[0]
         # Special-case python -m pytest before generic tool matching

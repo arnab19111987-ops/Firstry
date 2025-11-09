@@ -17,6 +17,9 @@ from firsttry.run_swarm import run_plan
 
 from . import __version__
 from .agent_manager import SmartAgentManager
+
+# CI parity runner (lightweight parity commands)
+from .ci_parity import runner as ci_runner
 from .config_cache import plan_from_config_with_timeout
 from .config_loader import apply_overrides_to_plan
 from .config_loader import load_config
@@ -421,7 +424,33 @@ def build_parser() -> argparse.ArgumentParser:
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
 
+    # --- ci-parity shims --------------------------------------------------
+    p_pc = sub.add_parser("pre-commit", help="Run ci-parity pre-commit profile")
+    p_pc.set_defaults(func=cmd_pre_commit)
+    p_pp = sub.add_parser("pre-push", help="Run ci-parity pre-push profile")
+    p_pp.set_defaults(func=cmd_pre_push)
+    p_ci = sub.add_parser("ci", help="Run ci-parity ci profile")
+    p_ci.set_defaults(func=cmd_ci)
+
     return p
+
+
+def cmd_pre_commit(args=None) -> int:
+    """Run the ci_parity pre-commit profile (ft pre-commit).
+
+    Delegates to the ci_parity runner for a consistent parity plan.
+    """
+    return ci_runner.main(["pre-commit"])
+
+
+def cmd_pre_push(args=None) -> int:
+    """Run the ci_parity pre-push profile (ft pre-push)."""
+    return ci_runner.main(["pre-push"])
+
+
+def cmd_ci(args=None) -> int:
+    """Run the ci_parity ci profile (ft ci)."""
+    return ci_runner.main(["ci"])
 
 
 # --- DAG-run helper functions (default run path) -------------------------
@@ -622,17 +651,6 @@ def cmd_run(argv: list[str] | None = None) -> int:
             f"[{v.status.upper():5}] {k} {getattr(v, 'duration_ms', None)}ms {getattr(v, 'cache_status', None)}",
         )
         all_ok &= v.status == "ok"
-
-    # Overall status summary
-    print()
-    if all_ok:
-        print("✅ CI PIPELINE PASSED - All checks successful")
-    else:
-        failed_checks = [k for k, v in results.items() if v.status != "ok"]
-        print(
-            f"❌ CI PIPELINE FAILED - {len(failed_checks)} check(s) failed: {', '.join(failed_checks)}"
-        )
-
     return 0 if all_ok else 1
 
 

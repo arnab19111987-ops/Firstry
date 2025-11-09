@@ -2,7 +2,7 @@
 """
 Final validation script to test all improvements from user feedback:
 1. Honest performance claims (0.4-0.6s on small repos, 1-1.5s on larger ones)
-2. Cache normalization (hit vs policy re-run distinction) 
+2. Cache normalization (hit vs policy re-run distinction)
 3. Stat-first cache validation integration
 4. Mutating check invalidation
 """

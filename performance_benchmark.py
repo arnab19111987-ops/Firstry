@@ -2,7 +2,7 @@
 """
 FirstTry Performance Benchmark
 
-Compares FirstTry execution times against manual CLI commands that developers 
+Compares FirstTry execution times against manual CLI commands that developers
 typically run in their local workflow or CI pipeline.
 
 Author: Engineering Performance Auditor

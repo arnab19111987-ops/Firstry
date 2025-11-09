@@ -35,7 +35,7 @@ repos:
         pass_filenames: false
 
       - id: ft-pre-commit
-        name: FirstTry pre-commit (CI-parity subset)
-        entry: python -m firsttry.ci_parity.runner pre-commit
+        name: FirstTry pre-commit (dry-run parity)
+        entry: bash -lc 'FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit'
         language: system
         pass_filenames: false

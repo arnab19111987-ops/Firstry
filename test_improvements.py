@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Quick test of the new improvements:
-1. Smart cache that replays failed results 
+1. Smart cache that replays failed results
 2. Phase timing instrumentation
 """
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -75,3 +76,24 @@ def timeout_for(cfg: Config, check_id: str) -> int:
 def workflow_requires(cfg: Config) -> list[str]:
     # unified list the planner understands per language section
     return list(set(cfg.workflow.pytest_depends_on + cfg.workflow.npm_test_depends_on))
+
+
+# Temporary compatibility alias
+# Historically some tooling (under `tools/firsttry`) exported a
+# `FirstTryConfig` symbol. When tests or scripts accidentally import the
+# repository `src` package rather than the tooling package this caused an
+# ImportError during collection. Keep a small alias here so those imports
+# succeed while the tooling package is migrated/renamed.
+#
+# NOTE: This is a temporary shim. Remove after renaming the tooling package
+# (e.g. to `firsttry_tools`).
+FirstTryConfig = Config  # TEMP compat; remove after tooling package rename
+warnings.warn(
+    "firsttry.config.FirstTryConfig is deprecated; import Config instead. "
+    "This alias will be removed after the tooling package is renamed.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+# Explicit export surface. Keep alias on the export list while it's present.
+__all__ = ["Config", "FirstTryConfig"]  # TEMP: remove alias on T2

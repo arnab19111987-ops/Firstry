@@ -3,8 +3,7 @@
 # Copyright (c) 2013 by Christian Heimes <christian@python.org>
 # Licensed to PSF under a Contributor Agreement.
 # See https://www.python.org/psf/license for licensing details.
-"""Defused xml.sax
-"""
+"""Defused xml.sax"""
 from __future__ import print_function, absolute_import
 
 from xml.sax import InputSource as _InputSource

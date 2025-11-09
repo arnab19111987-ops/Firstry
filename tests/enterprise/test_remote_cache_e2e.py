@@ -2,7 +2,7 @@
 
 Tests for:
 1. Cold run → S3 upload validation
-2. Warm run → S3 download validation  
+2. Warm run → S3 download validation
 3. Cache hit verification (≤5ms response)
 4. S3 object listing consistency
 5. Remote cache performance impact

@@ -150,6 +150,7 @@ def generate_gate_documentation(output_path: Path):
                         if isinstance(attr_value, (str, int, bool, list, dict)):
                             config_attrs.append(f"- `{attr_name}`: `{attr_value}`")
                     except Exception:
+                        # Ignore attribute access errors (e.g., descriptors that raise)
                         pass
 
             if config_attrs:

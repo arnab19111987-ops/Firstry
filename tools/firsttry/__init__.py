@@ -4,4 +4,4 @@ but we do NOT duplicate logic and drift.
 All real code lives in top-level `firsttry` package.
 """
 
-from firsttry import *  # noqa: F403
+from .firsttry import *  # noqa: F403

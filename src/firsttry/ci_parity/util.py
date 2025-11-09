@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import re
+import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,13 +38,15 @@ def run_step(step: Step, dryrun: bool = False) -> Tuple[int, str]:
     if step.env:
         env.update(step.env)
     cwd = str(step.cwd or current_repo_root())
+    # Final safety: drop stray '\\' tokens that can appear from malformed splits
+    safe_cmd = [t for t in step.cmd if t != "\\"]
     if dryrun or os.environ.get("FT_CI_PARITY_DRYRUN") == "1":
-        return 0, f"[dryrun] ({step.id}) {' '.join(step.cmd)}"
-    proc = subprocess.run(step.cmd, cwd=cwd, env=env, capture_output=True, text=True)
+        return 0, f"[dryrun] ({step.id}) {' '.join(safe_cmd)}"
+    proc = subprocess.run(safe_cmd, cwd=cwd, env=env, capture_output=True, text=True)
     if proc.returncode != 0 and not step.allow_fail:
         raise ExecError(
             f"[{step.id}] failed ({proc.returncode})\n"
-            f"CMD: {' '.join(step.cmd)}\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
+            f"CMD: {' '.join(safe_cmd)}\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
         )
     return proc.returncode, proc.stdout + proc.stderr
 
@@ -102,10 +104,25 @@ def grep_any(lines: List[str], *needles: str) -> bool:
 
 
 def tokenize_shell_line(line: str) -> List[str]:
-    # Very light splitter; good enough for simple entries in Actions.
-    return re.findall(r"""(?:[^\s"']+|"(?:\\.|[^"])*"|'(?:\\.|[^'])*')+""", line)
+    """
+    Tokenize a shell command line robustly.
+    - Uses shlex.split (POSIX) to honor quotes/escapes.
+    - Handles cases like: pytest -q -m "not slow"
+    - Avoids leaking stray backslashes as tokens.
+    """
+    try:
+        return shlex.split(line, posix=True)
+    except ValueError:
+        # Fall back to whitespace split if the line is badly quoted
+        return [t for t in line.strip().split() if t]
 
 
 def normalize_cmd(cmd: List[str]) -> List[str]:
-    # Strip surrounding quotes and keep as list
-    return [c.strip('"').strip("'") for c in cmd]
+    # Strip trivial surrounding quotes, keep list
+    out = []
+    for c in cmd:
+        # Drop standalone backslash tokens (defensive)
+        if c == "\\":
+            continue
+        out.append(c.strip('"').strip("'"))
+    return out
