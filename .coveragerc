@@ -1,9 +1,6 @@
 [run]
 branch = True
 source = firsttry
-[run]
-branch = True
-source = firsttry
 omit =
     tests/*
     */benchmarks/*
@@ -17,13 +14,3 @@ skip_covered = False
 exclude_lines =
     pragma: no cover
     if TYPE_CHECKING:
-[report]
-show_missing = True
-skip_covered = False
-precision = 1
-exclude_lines =
-    pragma: no cover
-    if TYPE_CHECKING:
-    if __name__ == .__main__.:    
-    # defensive license checks etc.
-    raise NotImplementedError
