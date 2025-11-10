@@ -18,16 +18,15 @@ for VER in $PYLIST; do
     -e PIP_CACHE_DIR=/cache/pip \
     -e PYTHONPATH=/work/src \
     -e GITHUB_ACTIONS=true \
+    --build-arg UID=$(id -u) \
+    --build-arg GID=$(id -g) \
     -v "$PWD":/work \
     -v "$HOME/.cache/pip":/cache/pip \
     -w /work \
     "$IMAGE" bash -lc '
       set -euo pipefail
-      python -m pip install -e ".[test]" build
-      if [ -f .firsttry/ci-extra-requirements.txt ]; then
-        echo "[ft] Installing .firsttry/ci-extra-requirements.txt…"
-        pip install -r .firsttry/ci-extra-requirements.txt
-      fi
+      pip install --upgrade --progress-bar=off -c .firsttry/constraints.txt -e . -r .firsttry/ci-extra-requirements.txt
+      python -m firsttry doctor --json | tee .firsttry/doctor.json || true
       python -m firsttry.ci_parity.runner ci
     '
 done
