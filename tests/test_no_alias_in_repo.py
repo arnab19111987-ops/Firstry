@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 ALLOWLIST = {
     "tests/test_config_compat.py",
@@ -9,6 +9,7 @@ ALLOWLIST = {
     "src/firsttry/config.py",
     "tests/test_no_alias_in_repo.py",
 }
+
 
 def test_no_global_alias_usage() -> None:
     root = Path(__file__).resolve().parents[1]

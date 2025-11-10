@@ -1,5 +1,3 @@
-from pathlib import Path
-import os
 from firsttry.ci_parity import planner
 
 

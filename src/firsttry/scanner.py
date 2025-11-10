@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import fnmatch
+import importlib
 import json
 import os
 import subprocess
-import importlib
 from pathlib import Path
 
 # Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse

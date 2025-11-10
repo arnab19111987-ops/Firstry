@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser
+
 from .ci_parity import runner as ci_runner
 
 
