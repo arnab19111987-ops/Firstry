@@ -8,7 +8,7 @@ PYLIST=$(echo "$PYVERS" | tr ',' ' ')
 for VER in $PYLIST; do
   IMAGE="firsttry/ci-local:py${VER}"
   echo "[ft] Building image for Python $VER…"
-  docker build --build-arg PYVER="$VER" -t "$IMAGE" -f "$DOCKERFILE" .
+  docker build --build-arg PYVER="$VER" --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t "$IMAGE" -f "$DOCKERFILE" .
 
   : "${FT_CI_PARITY_DRYRUN:=0}"
   echo "[ft] Running CI parity for Python $VER (dry-run=$FT_CI_PARITY_DRYRUN)…"
@@ -18,8 +18,6 @@ for VER in $PYLIST; do
     -e PIP_CACHE_DIR=/cache/pip \
     -e PYTHONPATH=/work/src \
     -e GITHUB_ACTIONS=true \
-    --build-arg UID=$(id -u) \
-    --build-arg GID=$(id -g) \
     -v "$PWD":/work \
     -v "$HOME/.cache/pip":/cache/pip \
     -w /work \
