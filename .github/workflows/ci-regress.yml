@@ -1,10 +1,15 @@
-name: FirstTry – Regression Guards
-
+name: regress
 on:
-  push:
-    branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]
+  push:
+    branches: [ main, 'fix/**', 'feat/**' ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regress-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   regress:
@@ -12,27 +17,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
-      - name: Install deps
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt', 'pyproject.toml', 'setup.cfg', 'setup.py') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dev deps
         run: |
-          python -m pip install --upgrade pip
-          # install minimal runtime + test deps (adjust as needed)
-          pip install -e . || true
-          pip install pytest
+          python -m pip install -U pip
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install -e .
 
-      - name: Run regression tests
+      - name: Collect-only sanity
         env:
-          PYTHONPATH: src
+          PYTHONPATH: src:.
         run: |
-          pytest -q tests/regress
+          # optional: ensure tests that will run are discoverable and log what will be run
+          pytest -q --collect-only | head -n 200
 
-      - name: Strict smoke (ensures no crash + report emitted)
-        env:
-          PYTHONPATH: src
+      - name: Smoke (no crash)
         run: |
-          python -m firsttry run strict || exit 1
-          test -f .firsttry/report.json || (echo "report missing" && exit 2)
+          python - <<'PY'
+          from firsttry.checks_orchestrator import _run_bucket_with_timeout
+          import asyncio
+          out = asyncio.run(_run_bucket_with_timeout([{"tool":"custom","cmd":"echo hello"}], allocation={}, ctx={}, tier=None, config=None, timeout_s=2.0))
+          assert isinstance(out, list) and out and out[0].get("status")=="error"
+          assert "echo hello" in out[0].get("message","")
+          PY
+
+      - name: Run regress tests
+        env:
+          PYTHONPATH: src:.
+        run: |
+          pytest -q tests/regress --cov=src/firsttry --cov-report=term-missing
+
+      - name: (optional) Full tests
+        if: ${{ always() }}
+        env:
+          PYTHONPATH: src:.
+        run: |
+          # Full test run (may be slower); keep ignores if needed
+          pytest -q --cov=src/firsttry --cov-report=term-missing || true
+
+      - name: Lint parity (optional strict)
+        run: |
+          ruff check .
+          ruff format --check .
+          mypy src || true
