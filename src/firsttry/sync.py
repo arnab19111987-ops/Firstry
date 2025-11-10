@@ -12,7 +12,14 @@ except ImportError:
     except ImportError:
         tomllib = None  # type: ignore
 
-from .ci_parser import resolve_ci_plan
+try:
+    from .ci_parser import resolve_ci_plan
+except Exception as e:
+    # If the ci_parser or its optional dependencies are missing, provide a
+    # stub that raises a runtime error when used so callers can present
+    # a friendly message instead of a raw ImportError.
+    def resolve_ci_plan(_root):
+        raise RuntimeError(f"CI parser unavailable: {e}")
 
 
 CONFIG_PATH = Path("firsttry.toml")

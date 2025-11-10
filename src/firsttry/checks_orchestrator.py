@@ -49,6 +49,7 @@ async def _timed_runner_execution(runner, worker_id: int, ctx: Dict[str, Any], i
 try:
     from .runners import RUNNERS  # type: ignore
 except Exception:  # pragma: no cover
+    # Fall back to empty RUNNERS; tests may monkeypatch this symbol.
     RUNNERS = {}  # type: ignore
 
 
@@ -146,9 +147,21 @@ async def _run_bucket_with_timeout(
         
         runner = RUNNERS.get(tool)
         if not runner:
-            # custom command runner
+            # If this item provides a command, prefer a 'custom' runner if available.
             if item.get("cmd"):
-                runner = RUNNERS["custom"]
+                runner = RUNNERS.get("custom")
+                if runner is None:
+                    # Return a structured error for this item instead of raising KeyError
+                    # The orchestrator expects a list of results for a bucket; return
+                    # a single-item list carrying the error for this check.
+                    return [
+                        {
+                            "ok": False,
+                            "family": family,
+                            "tool": tool,
+                            "error": "No runner available for command-based check (missing 'custom' runner)",
+                        }
+                    ]
             else:
                 # nothing we can run for this item
                 continue

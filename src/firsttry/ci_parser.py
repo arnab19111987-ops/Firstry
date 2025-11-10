@@ -7,7 +7,11 @@ import shlex
 import re
 
 # hard dependency — tests run mypy on this file
-import yaml
+try:
+    import yaml
+except Exception:
+    # PyYAML is optional in some environments; callers should handle absence
+    yaml = None
 
 
 # -------------------- helpers -------------------- #
