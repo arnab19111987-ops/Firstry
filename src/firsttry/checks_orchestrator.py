@@ -151,15 +151,16 @@ async def _run_bucket_with_timeout(
             if item.get("cmd"):
                 runner = RUNNERS.get("custom")
                 if runner is None:
-                    # Return a structured error for this item instead of raising KeyError
-                    # The orchestrator expects a list of results for a bucket; return
-                    # a single-item list carrying the error for this check.
+                    # Return a structured error for this item instead of raising KeyError.
+                    # Include the original command to aid debugging. The orchestrator
+                    # expects a list of results for a bucket; return a single-item list.
+                    cmd_str = item.get("cmd")
                     return [
                         {
-                            "ok": False,
-                            "family": family,
                             "tool": tool,
-                            "error": "No runner available for command-based check (missing 'custom' runner)",
+                            "status": "error",
+                            "message": f"No runner for tool; missing 'custom' runner. cmd={cmd_str!r}",
+                            "exit_code": 2,
                         }
                     ]
             else:

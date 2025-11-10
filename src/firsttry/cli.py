@@ -346,9 +346,52 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _translate_legacy_args(argv: list[str]) -> list[str]:
+    """Translate a small set of legacy CLI invocations into modern form.
+
+    Currently supports: `firsttry run --gate <gate>` -> `firsttry run fast` with
+    a one-time deprecation message. We intentionally avoid adding new flags
+    here to keep the parser stable; this shim only provides a migration
+    convenience and deprecation notice.
+    """
+    a = list(argv)
+    if not a:
+        return a
+
+    # Only handle the common form that starts with `run`
+    if a[0] == "run" and "--gate" in a:
+        idx = a.index("--gate")
+        # remove the flag
+        a.pop(idx)
+        # try to pop the gate value if present
+        gate = None
+        if idx < len(a):
+            gate = a.pop(idx)
+
+        # ensure a mode is present after 'run' (insert 'fast' if missing)
+        if len(a) == 1 or a[1].startswith("-"):
+            a.insert(1, "fast")
+
+        # Emit a soft deprecation notice to stdout (non-fatal) only once.
+        global _LEGACY_NOTICE_PRINTED
+        try:
+            printed = _LEGACY_NOTICE_PRINTED
+        except NameError:
+            printed = False
+
+        if not printed:
+            print("firsttry: `--gate` is deprecated; use `firsttry run fast` or the new CLI syntax", flush=True)
+            _LEGACY_NOTICE_PRINTED = True
+        return a
+
+    return a
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    # translate legacy argforms (e.g., `run --gate <name>`) before parsing
+    argv = _translate_legacy_args(argv)
     parser = build_parser()
     args = parser.parse_args(argv)
 
