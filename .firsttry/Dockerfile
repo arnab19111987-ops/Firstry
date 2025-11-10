@@ -1,15 +1,21 @@
 ARG PYVER=3.11
 FROM python:${PYVER}-slim
 
+<<<<<<< HEAD
 # (optional) set build args to match your local UID:GID for volume mounts
 ARG UID=1000
 ARG GID=1000
 
 ENV DEBIAN_FRONTEND=noninteractive \
+=======
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     GITHUB_ACTIONS=true
 
+<<<<<<< HEAD
 # deps you actually need; keep minimal
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git ca-certificates curl build-essential \
@@ -28,6 +34,19 @@ ENV PIP_CACHE_DIR=/cache/pip \
 RUN python -m pip install --upgrade pip wheel
 WORKDIR /work
 USER app
+=======
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git git-lfs curl ca-certificates \
+      build-essential gcc pkg-config \
+      libffi-dev libssl-dev \
+      zlib1g-dev libbz2-dev liblzma-dev \
+      libsqlite3-dev \
+      # cargo \   # <-- uncomment if you need Rust-backed wheels
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --upgrade pip wheel
+WORKDIR /work
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 # .firsttry/Dockerfile
 ARG PYVER=3.11
 FROM python:${PYVER}-slim

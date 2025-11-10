@@ -8,7 +8,11 @@ PYLIST=$(echo "$PYVERS" | tr ',' ' ')
 for VER in $PYLIST; do
   IMAGE="firsttry/ci-local:py${VER}"
   echo "[ft] Building image for Python $VER…"
+<<<<<<< HEAD
   docker build --build-arg PYVER="$VER" --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t "$IMAGE" -f "$DOCKERFILE" .
+=======
+  docker build --build-arg PYVER="$VER" -t "$IMAGE" -f "$DOCKERFILE" .
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 
   : "${FT_CI_PARITY_DRYRUN:=0}"
   echo "[ft] Running CI parity for Python $VER (dry-run=$FT_CI_PARITY_DRYRUN)…"
@@ -23,8 +27,16 @@ for VER in $PYLIST; do
     -w /work \
     "$IMAGE" bash -lc '
       set -euo pipefail
+<<<<<<< HEAD
       pip install --upgrade --progress-bar=off -c .firsttry/constraints.txt -e . -r .firsttry/ci-extra-requirements.txt
       python -m firsttry doctor --json | tee .firsttry/doctor.json || true
+=======
+      python -m pip install -e ".[test]" build
+      if [ -f .firsttry/ci-extra-requirements.txt ]; then
+        echo "[ft] Installing .firsttry/ci-extra-requirements.txt…"
+        pip install -r .firsttry/ci-extra-requirements.txt
+      fi
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
       python -m firsttry.ci_parity.runner ci
     '
 done

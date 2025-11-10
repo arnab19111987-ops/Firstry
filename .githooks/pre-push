@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
+<<<<<<< HEAD
 set -eo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 [ -f "$REPO_ROOT/ci/parity.lock.json" ] || exit 0
+=======
+set -euo pipefail
+if [[ "${SKIP_FT:-}" == "1" ]]; then
+  echo "[ft] WARNING: skipping pre-push (SKIP_FT=1)"; exit 0
+fi
+# Keep the heavy run reproducible: run parity inside the container
+export FT_CI_PARITY_DRYRUN="${FT_CI_PARITY_DRYRUN:-0}"  # set to 1 to preview
+exec bash -lc './scripts/ft-ci-local'
+#!/usr/bin/env bash
+set -euo pipefail
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 
 # Tag this as a pre-push hook (enables full parity mode)
 export GIT_HOOK=pre-push

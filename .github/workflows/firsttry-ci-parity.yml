@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+<<<<<<< HEAD
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
@@ -21,5 +22,11 @@ jobs:
             echo "No constraints file found; installing without constraints."
             pip install --upgrade --progress-bar=off -e ".[test]" -r .firsttry/ci-extra-requirements.txt build
           fi
+=======
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]" build
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
       - name: FirstTry CI-parity (config-aware)
         run: python -m firsttry.ci_parity.runner ci

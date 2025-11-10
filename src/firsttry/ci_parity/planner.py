@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+import os
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 from pathlib import Path
 from typing import Any
 from typing import Dict

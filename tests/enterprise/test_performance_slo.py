@@ -259,9 +259,7 @@ def test_percentile_calculation_accuracy():
         1000,
         1500,
         2000,  # Very slow (3)
-    ] + [
-        200
-    ] * 5  # Additional normal cases
+    ] + [200] * 5  # Additional normal cases
 
     # Sort for percentile calculation
     sorted_latencies = sorted(latencies)

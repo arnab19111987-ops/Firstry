@@ -686,6 +686,21 @@ def _run_pre_commit_gate() -> int:
         except Exception:
             changed_files = []
 
+        # Run a quick secret scan on changed files and abort early with a distinct code
+        try:
+            from firsttry.security.secret_scan import scan_changed_files
+
+            secrets = scan_changed_files(changed_files)
+            if secrets:
+                click.echo("\nSecret scan: potential secrets found in changed files:", err=True)
+                for s in secrets:
+                    click.echo(f" - {s}", err=True)
+                # Distinct exit code used by CI/demo to indicate secret detection
+                return 97
+        except Exception:
+            # Non-fatal: if scanner fails, continue with other checks
+            pass
+
         # Call each runner once. Tests monkeypatch these on firsttry.cli.runners
         steps = []
         try:

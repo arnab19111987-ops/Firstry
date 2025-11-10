@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
+<<<<<<< HEAD
 set -eo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
 [ -f "$REPO_ROOT/ci/parity.lock.json" ] || exit 0
+=======
+set -euo pipefail
+if [[ "${SKIP_FT:-}" == "1" ]]; then
+  echo "[ft] WARNING: skipping pre-commit (SKIP_FT=1)"; exit 0
+fi
+# pre-commit manages the lightweight stage (black/ruff/workflow-lint)
+if command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit run --hook-stage commit --color always
+fi
+echo "[ft] pre-commit not found; please 'pipx install pre-commit' or 'pip install pre-commit'"
+exit 1
+#!/usr/bin/env bash
+set -euo pipefail
+>>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 
 # Tag this as a pre-commit hook (enables fast self-check mode)
 export GIT_HOOK=pre-commit

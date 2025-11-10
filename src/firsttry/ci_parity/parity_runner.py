@@ -29,6 +29,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from firsttry.ci_discovery.reader import discover_ci_jobs
+from firsttry.ci_parity.checker import load_mirror_config, find_unmapped_ci_jobs
+from firsttry.ci_parity.report import format_unmapped_ci_jobs
+from firsttry.ci_parity.env_check import check_python_version_parity, PythonVersionMismatchError
+
 try:
     from .cache_utils import ARTIFACTS
     from .cache_utils import auto_refresh_golden_cache
@@ -544,6 +549,27 @@ def self_check(explain: bool = False, quiet: bool = False) -> int:
         _write_self_check_report(False, [{"code": "PARITY-002", "msg": str(e)}], explain, quiet)
         return EXIT_CONFIG_DRIFT
 
+    # Quick python parity check (fast) using env_check API (raises on mismatch)
+    try:
+        check_python_version_parity()
+        if explain and not quiet:
+            print("python parity: OK")
+    except PythonVersionMismatchError as e:
+        if explain and not quiet:
+            print(str(e))
+        err = ParityError(
+            code="PARITY-100",
+            gate="python",
+            msg=str(e),
+            hint="Use Python version pinned in CI workflows or adjust local interpreter",
+            exit_code=EXIT_VERSION_DRIFT,
+        )
+        errors.append(err)
+    except Exception:
+        # Non-fatal: if parity check tool errors, continue with other checks
+        if explain and not quiet:
+            print("⚠ python parity check failed to run")
+
     errors: list[ParityError] = []
 
     # Check versions (fast)
@@ -557,6 +583,18 @@ def self_check(explain: bool = False, quiet: bool = False) -> int:
 
     # Check environment (fast, warnings only)
     errors.extend(check_environment(lock, explain and not quiet))
+
+    # Discover workflows and report unmapped CI jobs (warning only)
+    try:
+        discovered = discover_ci_jobs()
+        mapping = load_mirror_config()
+        missing = find_unmapped_ci_jobs(discovered, mapping)
+        if missing and explain and not quiet:
+            print(format_unmapped_ci_jobs(missing))
+    except Exception:
+        # Best-effort only
+        if explain and not quiet:
+            print("⚠ CI discovery failed (skipping unmapped job report)")
 
     # Check test collection signature (fast: --collect-only, no execution)
     errors.extend(check_test_collection(lock, explain and not quiet))
