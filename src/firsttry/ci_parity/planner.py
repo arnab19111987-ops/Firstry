@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
@@ -11,6 +13,32 @@ from . import util
 from .detector import detect
 from .detector import load_user_overrides
 from .util import Step
+
+
+def _mypy_cmd_for_repo(repo_root: Path) -> list[str]:
+    """
+    Build a mypy command that respects repo config if present.
+    - If mypy.ini exists → use --config-file=mypy.ini
+    - Else if pyproject has [tool.mypy] → let mypy auto-detect (no --strict)
+    - Else → default args (still non-strict)
+    - FT_MYPY_STRICT=1 can force --strict regardless
+    """
+    cmd: list[str] = ["python", "-m", "mypy"]
+    ini = repo_root / "mypy.ini"
+    pyproj = repo_root / "pyproject.toml"
+    force_strict = os.environ.get("FT_MYPY_STRICT", "") == "1"
+
+    if ini.exists():
+        cmd += [f"--config-file={ini.name}"]
+    elif pyproj.exists():
+        # mypy will auto-detect [tool.mypy] in pyproject.toml if present
+        pass
+
+    if force_strict:
+        cmd += ["--strict"]
+
+    cmd += ["src"]
+    return cmd
 
 
 @dataclass
@@ -96,6 +124,15 @@ def build_plan(profile: str) -> Plan:
         if not isinstance(raw_cmd, list) or any(not isinstance(x, str) for x in raw_cmd):
             continue
         cmd: List[str] = list(raw_cmd)
+
+        # Special handling for mypy: use repo-aware command builder so we
+        # respect mypy.ini / pyproject.toml and allow FT_MYPY_STRICT override.
+        if tid == "mypy":
+            repo_root = util.current_repo_root()
+            cmd = _mypy_cmd_for_repo(Path(repo_root))
+            steps.append(Step(id="mypy:_root", cmd=cmd, env=env))
+            # don't add the detected raw mypy invocation a second time
+            continue
 
         if profile in ("pre-commit", "commit"):
             if tid in ("black", "ruff", "mypy"):

@@ -139,26 +139,19 @@ ft-pre-push:
 ft-ci:
 	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner ci
 
-
-.PHONY: ft-ci-local ft-ci-dry
-
-# Full CI parity in container (executes real checks)
-ft-ci-local:
-	./scripts/ft-ci-local
-
-# Preview the plan (dry-run) in container
-ft-ci-dry:
-	FT_CI_PARITY_DRYRUN=1 ./scripts/ft-ci-local
-
-
-.PHONY: hooks-ensure hooks-status
-
+.PHONY: hooks-ensure hooks-status ft-ci-local ft-ci-dry ft-ci-matrix
 hooks-ensure:
 	@./scripts/enable-hooks
 
 hooks-status:
-	@echo "core.hooksPath = $$(git config --get core.hooksPath || echo '(not set)')"
-	@echo "Checking hook files:"
-	@test -x .githooks/pre-commit && echo " - pre-commit: present" || echo " - pre-commit: MISSING"
-	@test -x .githooks/pre-push && echo " - pre-push: present" || echo " - pre-push: MISSING"
+	@echo "hooksPath=$$(git config --get core.hooksPath)"; ls -l .githooks || true
+
+ft-ci-local:
+	@./scripts/ft-ci-local
+
+ft-ci-dry:
+	@FT_CI_PARITY_DRYRUN=1 ./scripts/ft-ci-local
+
+ft-ci-matrix:
+	@PYVERS=$${PYVERS:-"3.10,3.11"} ./scripts/ft-ci-local
 

@@ -1,34 +1,17 @@
 name: FirstTry CI Parity
-
 on:
   push:
     branches: [ "**" ]
   pull_request:
-    branches: [ "**" ]
-
-concurrency:
-  group: ci-parity-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
-  firsttry-ci-parity:
+  parity:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
-
-      - name: Install project (test extras) and build tooling
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[test]" build
-
-      - name: FirstTry CI-parity (auto-detected)
+      - run: python -m pip install -e ".[test]" build
+      - name: FirstTry CI-parity (config-aware)
         run: python -m firsttry.ci_parity.runner ci

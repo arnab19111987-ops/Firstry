@@ -1,6 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PYVERS="${PYVERS:-3.11}"
+DOCKERFILE=".firsttry/Dockerfile"
+PYLIST=$(echo "$PYVERS" | tr ',' ' ')
+
+for VER in $PYLIST; do
+  IMAGE="firsttry/ci-local:py${VER}"
+  echo "[ft] Building image for Python $VER…"
+  docker build --build-arg PYVER="$VER" -t "$IMAGE" -f "$DOCKERFILE" .
+
+  : "${FT_CI_PARITY_DRYRUN:=0}"
+  echo "[ft] Running CI parity for Python $VER (dry-run=$FT_CI_PARITY_DRYRUN)…"
+
+  docker run --rm \
+    -e FT_CI_PARITY_DRYRUN="$FT_CI_PARITY_DRYRUN" \
+    -e PIP_CACHE_DIR=/cache/pip \
+    -e PYTHONPATH=/work/src \
+    -e GITHUB_ACTIONS=true \
+    -v "$PWD":/work \
+    -v "$HOME/.cache/pip":/cache/pip \
+    -w /work \
+    "$IMAGE" bash -lc '
+      set -euo pipefail
+      python -m pip install -e ".[test]" build
+      if [ -f .firsttry/ci-extra-requirements.txt ]; then
+        echo "[ft] Installing .firsttry/ci-extra-requirements.txt…"
+        pip install -r .firsttry/ci-extra-requirements.txt
+      fi
+      python -m firsttry.ci_parity.runner ci
+    '
+done
+#!/usr/bin/env bash
+set -euo pipefail
+
 # Comma- or space-separated; default single version
 PYVERS="${PYVERS:-3.11}"
 DOCKERFILE=".firsttry/Dockerfile"

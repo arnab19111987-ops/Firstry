@@ -10,7 +10,7 @@ ALLOWLIST = {
     "tests/test_no_alias_in_repo.py",
 }
 
-def test_no_global_alias_usage():
+def test_no_global_alias_usage() -> None:
     root = Path(__file__).resolve().parents[1]
     offenders = []
     for p in root.rglob("*.py"):

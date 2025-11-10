@@ -1,9 +1,10 @@
 from __future__ import annotations
-import sys
+
 from argparse import ArgumentParser
 from .ci_parity import runner as ci_runner
 
-def main(argv=None) -> int:
+
+def main(argv: list[str] | None = None) -> int:
     parser = ArgumentParser(prog="ft ci-parity")
     parser.add_argument(
         "profile",

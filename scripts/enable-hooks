@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+git config core.hooksPath .githooks
+echo "[ft] hooksPath set to .githooks"
+if command -v pre-commit >/dev/null 2>&1; then
+  pre-commit install --hook-type pre-commit --hook-type pre-push || true
+fi
+echo "[ft] hooks enabled. Use 'make hooks-status' to verify."
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Point git at our repo-owned hooks
 git config core.hooksPath .githooks

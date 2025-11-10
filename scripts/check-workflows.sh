@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+fail=0
+files=$(ls .github/workflows/*.yml 2>/dev/null || true)
+[ -z "$files" ] && exit 0
+
+bad_art=$(grep -R --line-number -E 'uses:\s*actions/upload-artifact@v3' .github/workflows || true)
+if [ -n "$bad_art" ]; then echo "[ft] deprecated upload-artifact@v3:"; echo "$bad_art"; fail=1; fi
+
+bad_sha=$(grep -R --line-number -E 'uses:\s*[^ ]+@[0-9a-f]{7,}' .github/workflows | grep -vE 'checkout@v4|setup-python@v5|upload-artifact@v4' || true)
+if [ -n "$bad_sha" ]; then echo "[ft] raw SHA-pinned actions:"; echo "$bad_sha"; fi  # set fail=1 if your policy forbids SHA pins
+
+bad_out=$(grep -R --line-number -E '::set-output' .github/workflows | grep -v 'audit.yml' || true)
+if [ -n "$bad_out" ]; then echo "[ft] deprecated ::set-output usage:"; echo "$bad_out"; fail=1; fi
+
+exit $fail
+#!/usr/bin/env bash
+set -euo pipefail
+
 DIR=".github/workflows"
 [ -d "$DIR" ] || exit 0
 

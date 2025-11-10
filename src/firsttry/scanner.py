@@ -5,13 +5,14 @@ import fnmatch
 import json
 import os
 import subprocess
+import importlib
 from pathlib import Path
 
 # Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse
 # a simple fallback format (lines starting with '-' under a 'files:' key).
 try:
-    import yaml  # type: ignore[import-untyped]
-
+    # Import dynamically to avoid mypy requiring installed library stubs.
+    yaml = importlib.import_module("yaml")
     YAML_AVAILABLE = True
 except Exception:
     YAML_AVAILABLE = False

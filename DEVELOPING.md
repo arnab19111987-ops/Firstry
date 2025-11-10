@@ -71,24 +71,3 @@ FT_CI_PARITY_DRYRUN=1 PYTHONPATH=src python -m firsttry.ci_parity.runner pre-pus
 FT_CI_PARITY_DRYRUN=1 PYTHONPATH=src python -m firsttry.ci_parity.runner ci
 ```
 
-## CI parity (local = CI)
-
-- Full parity (containerized, real run): `make ft-ci-local`
-- Plan preview (no execution): `make ft-ci-dry`
-- Pre-commit runs the same containerized CI profile, so passing locally should pass CI.
-
-## Git hooks & FirstTry parity
-
-- Enable hooks (once per clone): `make hooks-ensure`
-- Check status: `make hooks-status`
-
-Hooks:
-- **pre-commit** runs FirstTry CI parity (containerized). If it passes, CI should pass.
-- **pre-push** does the same at push time.
-
-Skip (one-time, not recommended):
-- `SKIP_FT=1 git commit -m "..."` or `SKIP_FT=1 git push`
-You’ll see a ⚠️ warning when skipping.
-
-
-

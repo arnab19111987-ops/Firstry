@@ -1,3 +1,7 @@
+# Add any test-only deps your repo needs; empty is fine.
+# Examples:
+# jsonschema>=4.0
+# blake3>=0.4
 # Example extra deps needed only for tests/CI
 jsonschema>=4.0
 blake3>=0.4

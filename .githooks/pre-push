@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "${SKIP_FT:-}" == "1" ]]; then
+  echo "[ft] WARNING: skipping pre-push (SKIP_FT=1)"; exit 0
+fi
+# Keep the heavy run reproducible: run parity inside the container
+export FT_CI_PARITY_DRYRUN="${FT_CI_PARITY_DRYRUN:-0}"  # set to 1 to preview
+exec bash -lc './scripts/ft-ci-local'
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Detach stdin; git passes refs on stdin which can confuse tools
 exec </dev/null
