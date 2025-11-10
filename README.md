@@ -17,3 +17,19 @@ Behavior:
 
 If you want this demo enabled in CI, see `.github/workflows/firsttry-proof.yml`.
 
+## Telemetry (opt-out)
+
+FirstTry sends **minimal, anonymized** usage metrics (e.g., command, tier, durations, success/fail) to help improve the tool.
+- Endpoint: configurable via `FIRSTTRY_TELEMETRY_URL` (default internal endpoint)
+- Stored locally: `.firsttry/telemetry_status.json`
+- **Opt-out**: set `FT_SEND_TELEMETRY=0`
+
+Examples:
+```bash
+# Disable telemetry for current shell
+export FT_SEND_TELEMETRY=0
+
+# One-off run without telemetry
+FT_SEND_TELEMETRY=0 python -m firsttry run
+```
+

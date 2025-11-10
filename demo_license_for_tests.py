@@ -8,9 +8,9 @@ Provides a universal demo license key valid for all tests.
 Usage:
     # In conftest.py:
     from demo_license_for_tests import setup_demo_license, DemoLicense
-    
+
     setup_demo_license()  # Enable demo license for all tests
-    
+
     # Or manually in tests:
     @pytest.fixture
     def demo_license():

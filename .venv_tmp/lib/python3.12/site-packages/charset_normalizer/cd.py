@@ -134,9 +134,7 @@ def get_target_features(language: str) -> tuple[bool, bool]:
     return target_have_accents, target_pure_latin
 
 
-def alphabet_languages(
-    characters: list[str], ignore_non_latin: bool = False
-) -> list[str]:
+def alphabet_languages(characters: list[str], ignore_non_latin: bool = False) -> list[str]:
     """
     Return associated languages associated to given characters.
     """
@@ -155,9 +153,7 @@ def alphabet_languages(
 
         character_count: int = len(language_characters)
 
-        character_match_count: int = len(
-            [c for c in language_characters if c in characters]
-        )
+        character_match_count: int = len([c for c in language_characters if c in characters])
 
         ratio: float = character_match_count / character_count
 
@@ -169,9 +165,7 @@ def alphabet_languages(
     return [compatible_language[0] for compatible_language in languages]
 
 
-def characters_popularity_compare(
-    language: str, ordered_characters: list[str]
-) -> float:
+def characters_popularity_compare(language: str, ordered_characters: list[str]) -> float:
     """
     Determine if a ordered characters list (by occurrence from most appearance to rarest) match a particular language.
     The result is a ratio between 0. (absolutely no correspondence) and 1. (near perfect fit).
@@ -188,9 +182,7 @@ def characters_popularity_compare(
 
     large_alphabet: bool = target_language_characters_count > 26
 
-    for character, character_rank in zip(
-        ordered_characters, range(0, ordered_characters_count)
-    ):
+    for character, character_rank in zip(ordered_characters, range(0, ordered_characters_count)):
         if character not in FREQUENCIES_language_set:
             continue
 
@@ -214,22 +206,14 @@ def characters_popularity_compare(
             character_approved_count += 1
             continue
 
-        characters_before_source: list[str] = FREQUENCIES[language][
-            0:character_rank_in_language
-        ]
-        characters_after_source: list[str] = FREQUENCIES[language][
-            character_rank_in_language:
-        ]
+        characters_before_source: list[str] = FREQUENCIES[language][0:character_rank_in_language]
+        characters_after_source: list[str] = FREQUENCIES[language][character_rank_in_language:]
         characters_before: list[str] = ordered_characters[0:character_rank]
         characters_after: list[str] = ordered_characters[character_rank:]
 
-        before_match_count: int = len(
-            set(characters_before) & set(characters_before_source)
-        )
+        before_match_count: int = len(set(characters_before) & set(characters_before_source))
 
-        after_match_count: int = len(
-            set(characters_after) & set(characters_after_source)
-        )
+        after_match_count: int = len(set(characters_after) & set(characters_after_source))
 
         if len(characters_before_source) == 0 and before_match_count <= 4:
             character_approved_count += 1
@@ -269,10 +253,7 @@ def alpha_unicode_split(decoded_sequence: str) -> list[str]:
         layer_target_range: str | None = None
 
         for discovered_range in layers:
-            if (
-                is_suspiciously_successive_range(discovered_range, character_range)
-                is False
-            ):
+            if is_suspiciously_successive_range(discovered_range, character_range) is False:
                 layer_target_range = discovered_range
                 break
 
@@ -376,9 +357,7 @@ def coherence_ratio(
         for language in lg_inclusion_list or alphabet_languages(
             popular_character_ordered, ignore_non_latin
         ):
-            ratio: float = characters_popularity_compare(
-                language, popular_character_ordered
-            )
+            ratio: float = characters_popularity_compare(language, popular_character_ordered)
 
             if ratio < threshold:
                 continue
@@ -390,6 +369,4 @@ def coherence_ratio(
             if sufficient_match_count >= 3:
                 break
 
-    return sorted(
-        filter_alt_coherence_matches(results), key=lambda x: x[1], reverse=True
-    )
+    return sorted(filter_alt_coherence_matches(results), key=lambda x: x[1], reverse=True)

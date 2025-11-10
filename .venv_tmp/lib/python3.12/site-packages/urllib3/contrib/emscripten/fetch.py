@@ -68,9 +68,7 @@ ERROR_TIMEOUT = -3
 ERROR_EXCEPTION = -4
 
 _STREAMING_WORKER_CODE = (
-    files(__package__)
-    .joinpath("emscripten_fetch_worker.js")
-    .read_text(encoding="utf-8")
+    files(__package__).joinpath("emscripten_fetch_worker.js").read_text(encoding="utf-8")
 )
 
 
@@ -167,10 +165,7 @@ class _ReadStream(io.RawIOBase):
             # wait for the worker to send something
             js.Atomics.store(self.int_buffer, 0, ERROR_TIMEOUT)
             self.worker.postMessage(_obj_from_dict({"getMore": self.connection_id}))
-            if (
-                js.Atomics.wait(self.int_buffer, 0, ERROR_TIMEOUT, self.timeout)
-                == "timed-out"
-            ):
+            if js.Atomics.wait(self.int_buffer, 0, ERROR_TIMEOUT, self.timeout) == "timed-out":
                 raise _TimeoutError
             data_len = self.int_buffer[0]
             if data_len > 0:
@@ -194,9 +189,7 @@ class _ReadStream(io.RawIOBase):
                 return 0
         # copy from int32array to python bytes
         ret_length = min(self.read_len, len(memoryview(byte_obj)))
-        subarray = self.byte_buffer.subarray(
-            self.read_pos, self.read_pos + ret_length
-        ).to_py()
+        subarray = self.byte_buffer.subarray(self.read_pos, self.read_pos + ret_length).to_py()
         memoryview(byte_obj)[0:ret_length] = subarray
         self.read_len -= ret_length
         self.read_pos += ret_length
@@ -229,9 +222,7 @@ class _StreamingFetcher:
         self.js_worker_ready_promise = js.globalThis.Promise.new(promise_resolver)
 
     def send(self, request: EmscriptenRequest) -> EmscriptenResponse:
-        headers = {
-            k: v for k, v in request.headers.items() if k not in HEADERS_TO_IGNORE
-        }
+        headers = {k: v for k, v in request.headers.items() if k not in HEADERS_TO_IGNORE}
 
         body = request.body
         fetch_data = {"headers": headers, "body": to_js(body), "method": request.method}
@@ -396,9 +387,7 @@ class _JSPIReadStream(io.RawIOBase):
             if not self._get_next_buffer() or self.current_buffer is None:
                 self.close()
                 return 0
-        ret_length = min(
-            len(byte_obj), len(self.current_buffer) - self.current_buffer_pos
-        )
+        ret_length = min(len(byte_obj), len(self.current_buffer) - self.current_buffer_pos)
         byte_obj[0:ret_length] = self.current_buffer[
             self.current_buffer_pos : self.current_buffer_pos + ret_length
         ]
@@ -433,8 +422,7 @@ def is_worker_available() -> bool:
 _fetcher: _StreamingFetcher | None = None
 
 if is_worker_available() and (
-    (is_cross_origin_isolated() and not is_in_browser_main_thread())
-    and (not is_in_node())
+    (is_cross_origin_isolated() and not is_in_browser_main_thread()) and (not is_in_node())
 ):
     _fetcher = _StreamingFetcher()
 else:
@@ -547,9 +535,7 @@ def send_request(request: EmscriptenRequest) -> EmscriptenResponse:
             raise _RequestError(err.message, request=request)
 
 
-def send_jspi_request(
-    request: EmscriptenRequest, streaming: bool
-) -> EmscriptenResponse:
+def send_jspi_request(request: EmscriptenRequest, streaming: bool) -> EmscriptenResponse:
     """
     Send a request using WebAssembly JavaScript Promise Integration
     to wrap the asynchronous JavaScript fetch api (experimental).
@@ -608,9 +594,7 @@ def send_jspi_request(
         if response_js.body is not None:
             # get a reader from the fetch response
             body_stream_js = response_js.body.getReader()
-            body = _JSPIReadStream(
-                body_stream_js, timeout, request, response, js_abort_controller
-            )
+            body = _JSPIReadStream(body_stream_js, timeout, request, response, js_abort_controller)
     else:
         # get directly via arraybuffer
         # n.b. this is another async JavaScript call.
@@ -669,9 +653,7 @@ def _run_sync_with_timeout(
         return run_sync(promise)
     except JsException as err:
         if err.name == "AbortError":
-            raise _TimeoutError(
-                message="Request timed out", request=request, response=response
-            )
+            raise _TimeoutError(message="Request timed out", request=request, response=response)
         else:
             raise _RequestError(message=err.message, request=request, response=response)
     finally:

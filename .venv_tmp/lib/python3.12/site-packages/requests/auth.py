@@ -59,9 +59,7 @@ def _basic_auth_str(username, password):
     if isinstance(password, str):
         password = password.encode("latin1")
 
-    authstr = "Basic " + to_native_string(
-        b64encode(b":".join((username, password))).strip()
-    )
+    authstr = "Basic " + to_native_string(b64encode(b":".join((username, password))).strip())
 
     return authstr
 
@@ -270,9 +268,7 @@ class HTTPDigestAuth(AuthBase):
             extract_cookies_to_jar(prep._cookies, r.request, r.raw)
             prep.prepare_cookies(prep._cookies)
 
-            prep.headers["Authorization"] = self.build_digest_header(
-                prep.method, prep.url
-            )
+            prep.headers["Authorization"] = self.build_digest_header(prep.method, prep.url)
             _r = r.connection.send(prep, **kwargs)
             _r.history.append(r)
             _r.request = prep

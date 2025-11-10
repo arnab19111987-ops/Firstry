@@ -30,9 +30,7 @@ class ThreadExceptionMeta(NamedTuple):
     exc_value: BaseException | None
 
 
-thread_exceptions: StashKey[collections.deque[ThreadExceptionMeta | BaseException]] = (
-    StashKey()
-)
+thread_exceptions: StashKey[collections.deque[ThreadExceptionMeta | BaseException]] = StashKey()
 
 
 def collect_thread_exception(config: Config) -> None:
@@ -74,9 +72,7 @@ def collect_thread_exception(config: Config) -> None:
         del errors, meta, hook_error
 
 
-def cleanup(
-    *, config: Config, prev_hook: Callable[[threading.ExceptHookArgs], object]
-) -> None:
+def cleanup(*, config: Config, prev_hook: Callable[[threading.ExceptHookArgs], object]) -> None:
     try:
         try:
             # We don't join threads here, so exceptions raised from any

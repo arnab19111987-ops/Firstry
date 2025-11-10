@@ -36,9 +36,7 @@ class Instant:
 
     # Performance counter tick of the instant, used to measure precise elapsed time.
     # Note: using a `lambda` to correctly get the mocked time via `MockTiming`.
-    perf_count: float = dataclasses.field(
-        default_factory=lambda: perf_counter(), init=False
-    )
+    perf_count: float = dataclasses.field(default_factory=lambda: perf_counter(), init=False)
 
     def elapsed(self) -> Duration:
         """Measure the duration since `Instant` was created."""

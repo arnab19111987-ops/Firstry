@@ -105,6 +105,20 @@ def main() -> None:
         )
         raise SystemExit(_run(cmd))
 
+    if sub in ("ci", "c"):
+        # CI-equivalent run (same as strict tier)
+        cmd = (
+            base
+            + [
+                "run",
+                "ci",
+                "--report-json",
+                default_report,
+            ]
+            + extra
+        )
+        raise SystemExit(_run(cmd))
+
     # 2) maintenance / visibility
     if sub == "doctor":
         cmd = base + ["doctor"] + extra
@@ -251,6 +265,8 @@ Core fast flows:
       -> python -m firsttry run strict --tier free-strict --report-json .firsttry/report.json
   {prog} pro
       -> python -m firsttry run fast --tier pro --report-json .firsttry/report.json
+  {prog} ci
+      -> python -m firsttry run ci --report-json .firsttry/report.json
 
 Maintenance / visibility:
   {prog} doctor

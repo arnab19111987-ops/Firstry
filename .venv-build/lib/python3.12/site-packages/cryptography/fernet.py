@@ -34,9 +34,7 @@ class Fernet:
         try:
             key = base64.urlsafe_b64decode(key)
         except binascii.Error as exc:
-            raise ValueError(
-                "Fernet key must be 32 url-safe base64-encoded bytes."
-            ) from exc
+            raise ValueError("Fernet key must be 32 url-safe base64-encoded bytes.") from exc
         if len(key) != 32:
             raise ValueError("Fernet key must be 32 url-safe base64-encoded bytes.")
 
@@ -65,9 +63,7 @@ class Fernet:
         ).encryptor()
         ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
-        basic_parts = (
-            b"\x80" + current_time.to_bytes(length=8, byteorder="big") + iv + ciphertext
-        )
+        basic_parts = b"\x80" + current_time.to_bytes(length=8, byteorder="big") + iv + ciphertext
 
         h = HMAC(self._signing_key, hashes.SHA256())
         h.update(basic_parts)
@@ -139,9 +135,7 @@ class Fernet:
 
         iv = data[9:25]
         ciphertext = data[25:-32]
-        decryptor = Cipher(
-            algorithms.AES(self._encryption_key), modes.CBC(iv)
-        ).decryptor()
+        decryptor = Cipher(algorithms.AES(self._encryption_key), modes.CBC(iv)).decryptor()
         plaintext_padded = decryptor.update(ciphertext)
         try:
             plaintext_padded += decryptor.finalize()

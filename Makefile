@@ -123,3 +123,35 @@ slow=sorted(((k, r.get("duration_ms",0)) for k,r in d["checks"].items()), key=la
 print(f"cache hits: {hits}/{total}"); \
 print("slowest:", ", ".join(f"{k}:{ms}ms" for k,ms in slow)); \
 '
+
+
+.PHONY: hooks-install
+hooks-install:
+	@./scripts/install-hooks
+
+.PHONY: ft-pre-commit ft-pre-push ft-ci
+ft-pre-commit:
+	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit
+
+ft-pre-push:
+	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-push
+
+ft-ci:
+	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner ci
+
+.PHONY: hooks-ensure hooks-status ft-ci-local ft-ci-dry ft-ci-matrix
+hooks-ensure:
+	@./scripts/enable-hooks
+
+hooks-status:
+	@echo "hooksPath=$$(git config --get core.hooksPath)"; ls -l .githooks || true
+
+ft-ci-local:
+	@./scripts/ft-ci-local
+
+ft-ci-dry:
+	@FT_CI_PARITY_DRYRUN=1 ./scripts/ft-ci-local
+
+ft-ci-matrix:
+	@PYVERS=$${PYVERS:-"3.10,3.11"} ./scripts/ft-ci-local
+

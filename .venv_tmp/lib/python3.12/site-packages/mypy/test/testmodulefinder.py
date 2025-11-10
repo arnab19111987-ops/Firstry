@@ -139,9 +139,7 @@ class ModuleFinderSuite(Suite):
 
 class ModuleFinderSitePackagesSuite(Suite):
     def setUp(self) -> None:
-        self.package_dir = os.path.relpath(
-            os.path.join(package_path, "modulefinder-site-packages")
-        )
+        self.package_dir = os.path.relpath(os.path.join(package_path, "modulefinder-site-packages"))
 
         package_paths = (
             os.path.join(self.package_dir, "baz"),

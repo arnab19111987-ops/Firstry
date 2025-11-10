@@ -3,8 +3,7 @@
 # Copyright (c) 2013 by Christian Heimes <christian@python.org>
 # Licensed to PSF under a Contributor Agreement.
 # See https://www.python.org/psf/license for licensing details.
-"""Defuse XML bomb denial of service vulnerabilities
-"""
+"""Defuse XML bomb denial of service vulnerabilities"""
 from __future__ import print_function, absolute_import
 
 import warnings

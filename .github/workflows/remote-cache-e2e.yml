@@ -1,0 +1,85 @@
+name: Remote Cache E2E (LocalStack S3)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  remote-cache-e2e:
+    runs-on: ubuntu-latest
+    name: Remote Cache E2E Tests
+
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: s3
+          DEBUG: 1
+          DATA_DIR: /tmp/localstack/data
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd="awslocal kinesis list-streams"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest awscli-local boto3
+
+      - name: Wait for LocalStack
+        run: |
+          timeout 60 bash -c 'until curl -s http://localhost:4566/_localstack/health | grep -q "\"services\""; do sleep 1; done'
+
+      - name: Create S3 bucket
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          awslocal s3 mb s3://ft-cache-e2e --endpoint-url http://localhost:4566
+
+      - name: Run remote cache E2E tests
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+          FT_S3_ENDPOINT: http://localhost:4566
+          FT_S3_BUCKET: ft-cache-e2e
+          FT_SEND_TELEMETRY: "0"
+        run: |
+          pytest tests/enterprise/test_remote_cache_e2e.py -v --tb=short
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-cache-test-results
+          path: .pytest_cache/
+          retention-days: 7
+
+      - name: Verify S3 cache objects
+        if: always()
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          echo "=== S3 Bucket Contents ===" 
+          awslocal s3 ls s3://ft-cache-e2e/ --recursive --endpoint-url http://localhost:4566 || echo "Bucket empty"
+          awslocal s3 ls s3://ft-cache-e2e/ --endpoint-url http://localhost:4566 || echo "No buckets"

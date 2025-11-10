@@ -334,9 +334,7 @@ class _SSHFormatRSA:
         dmp1 = rsa.rsa_crt_dmp1(d, p)
         dmq1 = rsa.rsa_crt_dmq1(d, q)
         public_numbers = rsa.RSAPublicNumbers(e, n)
-        private_numbers = rsa.RSAPrivateNumbers(
-            p, q, d, dmp1, dmq1, iqmp, public_numbers
-        )
+        private_numbers = rsa.RSAPrivateNumbers(p, q, d, dmp1, dmq1, iqmp, public_numbers)
         private_key = private_numbers.private_key(
             unsafe_skip_rsa_key_validation=unsafe_skip_rsa_key_validation
         )
@@ -442,9 +440,7 @@ class _SSHFormatECDSA:
         self.ssh_curve_name = ssh_curve_name
         self.curve = curve
 
-    def get_public(
-        self, data: memoryview
-    ) -> tuple[tuple[memoryview, memoryview], memoryview]:
+    def get_public(self, data: memoryview) -> tuple[tuple[memoryview, memoryview], memoryview]:
         """ECDSA public fields"""
         curve, data = _get_sshstr(data)
         point, data = _get_sshstr(data)
@@ -454,14 +450,10 @@ class _SSHFormatECDSA:
             raise NotImplementedError("Need uncompressed point")
         return (curve, point), data
 
-    def load_public(
-        self, data: memoryview
-    ) -> tuple[ec.EllipticCurvePublicKey, memoryview]:
+    def load_public(self, data: memoryview) -> tuple[ec.EllipticCurvePublicKey, memoryview]:
         """Make ECDSA public key from data."""
         (_, point), data = self.get_public(data)
-        public_key = ec.EllipticCurvePublicKey.from_encoded_point(
-            self.curve, point.tobytes()
-        )
+        public_key = ec.EllipticCurvePublicKey.from_encoded_point(self.curve, point.tobytes())
         return public_key, data
 
     def load_private(
@@ -476,17 +468,13 @@ class _SSHFormatECDSA:
         private_key = ec.derive_private_key(secret, self.curve)
         return private_key, data
 
-    def encode_public(
-        self, public_key: ec.EllipticCurvePublicKey, f_pub: _FragList
-    ) -> None:
+    def encode_public(self, public_key: ec.EllipticCurvePublicKey, f_pub: _FragList) -> None:
         """Write ECDSA public key"""
         point = public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
         f_pub.put_sshstr(self.ssh_curve_name)
         f_pub.put_sshstr(point)
 
-    def encode_private(
-        self, private_key: ec.EllipticCurvePrivateKey, f_priv: _FragList
-    ) -> None:
+    def encode_private(self, private_key: ec.EllipticCurvePrivateKey, f_priv: _FragList) -> None:
         """Write ECDSA private key"""
         public_key = private_key.public_key()
         private_numbers = private_key.private_numbers()
@@ -510,9 +498,7 @@ class _SSHFormatEd25519:
         point, data = _get_sshstr(data)
         return (point,), data
 
-    def load_public(
-        self, data: memoryview
-    ) -> tuple[ed25519.Ed25519PublicKey, memoryview]:
+    def load_public(self, data: memoryview) -> tuple[ed25519.Ed25519PublicKey, memoryview]:
         """Make Ed25519 public key from data."""
         (point,), data = self.get_public(data)
         public_key = ed25519.Ed25519PublicKey.from_public_bytes(point.tobytes())
@@ -532,21 +518,15 @@ class _SSHFormatEd25519:
         private_key = ed25519.Ed25519PrivateKey.from_private_bytes(secret)
         return private_key, data
 
-    def encode_public(
-        self, public_key: ed25519.Ed25519PublicKey, f_pub: _FragList
-    ) -> None:
+    def encode_public(self, public_key: ed25519.Ed25519PublicKey, f_pub: _FragList) -> None:
         """Write Ed25519 public key"""
         raw_public_key = public_key.public_bytes(Encoding.Raw, PublicFormat.Raw)
         f_pub.put_sshstr(raw_public_key)
 
-    def encode_private(
-        self, private_key: ed25519.Ed25519PrivateKey, f_priv: _FragList
-    ) -> None:
+    def encode_private(self, private_key: ed25519.Ed25519PrivateKey, f_priv: _FragList) -> None:
         """Write Ed25519 private key"""
         public_key = private_key.public_key()
-        raw_private_key = private_key.private_bytes(
-            Encoding.Raw, PrivateFormat.Raw, NoEncryption()
-        )
+        raw_private_key = private_key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
         raw_public_key = public_key.public_bytes(Encoding.Raw, PublicFormat.Raw)
         f_keypair = _FragList([raw_private_key, raw_public_key])
 
@@ -560,9 +540,7 @@ def load_application(data) -> tuple[memoryview, memoryview]:
     """
     application, data = _get_sshstr(data)
     if not application.tobytes().startswith(b"ssh:"):
-        raise ValueError(
-            "U2F application string does not start with b'ssh:' " f"({application})"
-        )
+        raise ValueError("U2F application string does not start with b'ssh:' " f"({application})")
     return application, data
 
 
@@ -575,9 +553,7 @@ class _SSHFormatSKEd25519:
         string		application (user-specified, but typically "ssh:")
     """
 
-    def load_public(
-        self, data: memoryview
-    ) -> tuple[ed25519.Ed25519PublicKey, memoryview]:
+    def load_public(self, data: memoryview) -> tuple[ed25519.Ed25519PublicKey, memoryview]:
         """Make Ed25519 public key from data."""
         public_key, data = _lookup_kformat(_SSH_ED25519).load_public(data)
         _, data = load_application(data)
@@ -599,9 +575,7 @@ class _SSHFormatSKECDSA:
         string		application (user-specified, but typically "ssh:")
     """
 
-    def load_public(
-        self, data: memoryview
-    ) -> tuple[ec.EllipticCurvePublicKey, memoryview]:
+    def load_public(self, data: memoryview) -> tuple[ec.EllipticCurvePublicKey, memoryview]:
         """Make ECDSA public key from data."""
         public_key, data = _lookup_kformat(_ECDSA_NISTP256).load_public(data)
         _, data = load_application(data)
@@ -610,9 +584,7 @@ class _SSHFormatSKECDSA:
     def get_public(self, data: memoryview) -> typing.NoReturn:
         # Confusingly `get_public` is an entry point used by private key
         # loading.
-        raise UnsupportedAlgorithm(
-            "sk-ecdsa-sha2-nistp256 private keys cannot be loaded"
-        )
+        raise UnsupportedAlgorithm("sk-ecdsa-sha2-nistp256 private keys cannot be loaded")
 
 
 _KEY_FORMATS = {
@@ -762,8 +734,7 @@ def _serialize_ssh_private_key(
     utils._check_bytes("password", password)
     if isinstance(private_key, dsa.DSAPrivateKey):
         warnings.warn(
-            "SSH DSA key support is deprecated and will be "
-            "removed in a future release",
+            "SSH DSA key support is deprecated and will be " "removed in a future release",
             utils.DeprecatedIn40,
             stacklevel=4,
         )
@@ -956,9 +927,7 @@ class SSHCertificate:
             _check_empty(data)
             computed_sig = asym_utils.encode_dss_signature(r, s)
             hash_alg = _get_ec_hash_alg(signature_key.curve)
-            signature_key.verify(
-                computed_sig, bytes(self._tbs_cert_body), ec.ECDSA(hash_alg)
-            )
+            signature_key.verify(computed_sig, bytes(self._tbs_cert_body), ec.ECDSA(hash_alg))
         else:
             assert isinstance(signature_key, rsa.RSAPublicKey)
             if self._inner_sig_type == _SSH_RSA:
@@ -1038,9 +1007,7 @@ def _load_ssh_public_identity(
         sig_key_raw, rest = _get_sshstr(rest)
         sig_type, sig_key = _get_sshstr(sig_key_raw)
         if sig_type == _SSH_DSA and not _legacy_dsa_allowed:
-            raise UnsupportedAlgorithm(
-                "DSA signatures aren't supported in SSH certificates"
-            )
+            raise UnsupportedAlgorithm("DSA signatures aren't supported in SSH certificates")
         # Get the entire cert body and subtract the signature
         tbs_cert_body = cert_body[: -len(rest)]
         signature_raw, rest = _get_sshstr(rest)
@@ -1126,9 +1093,7 @@ def ssh_key_fingerprint(
     return hash_obj.finalize()
 
 
-def load_ssh_public_key(
-    data: utils.Buffer, backend: typing.Any = None
-) -> SSHPublicKeyTypes:
+def load_ssh_public_key(data: utils.Buffer, backend: typing.Any = None) -> SSHPublicKeyTypes:
     cert_or_key = _load_ssh_public_identity(data, _legacy_dsa_allowed=True)
     public_key: SSHPublicKeyTypes
     if isinstance(cert_or_key, SSHCertificate):
@@ -1149,8 +1114,7 @@ def serialize_ssh_public_key(public_key: SSHPublicKeyTypes) -> bytes:
     """One-line public key format for OpenSSH"""
     if isinstance(public_key, dsa.DSAPublicKey):
         warnings.warn(
-            "SSH DSA key support is deprecated and will be "
-            "removed in a future release",
+            "SSH DSA key support is deprecated and will be " "removed in a future release",
             utils.DeprecatedIn40,
             stacklevel=4,
         )
@@ -1290,21 +1254,15 @@ class SSHCertificateBuilder:
     def valid_principals(self, valid_principals: list[bytes]) -> SSHCertificateBuilder:
         if self._valid_for_all_principals:
             raise ValueError(
-                "Principals can't be set because the cert is valid "
-                "for all principals"
+                "Principals can't be set because the cert is valid " "for all principals"
             )
-        if (
-            not all(isinstance(x, bytes) for x in valid_principals)
-            or not valid_principals
-        ):
+        if not all(isinstance(x, bytes) for x in valid_principals) or not valid_principals:
             raise TypeError("principals must be a list of bytes and can't be empty")
         if self._valid_principals:
             raise ValueError("valid_principals already set")
 
         if len(valid_principals) > _SSHKEY_CERT_MAX_PRINCIPALS:
-            raise ValueError(
-                "Reached or exceeded the maximum number of valid_principals"
-            )
+            raise ValueError("Reached or exceeded the maximum number of valid_principals")
 
         return SSHCertificateBuilder(
             _public_key=self._public_key,
@@ -1321,9 +1279,7 @@ class SSHCertificateBuilder:
 
     def valid_for_all_principals(self):
         if self._valid_principals:
-            raise ValueError(
-                "valid_principals already set, can't set " "valid_for_all_principals"
-            )
+            raise ValueError("valid_principals already set, can't set " "valid_for_all_principals")
         if self._valid_for_all_principals:
             raise ValueError("valid_for_all_principals already set")
 
@@ -1452,9 +1408,7 @@ class SSHCertificateBuilder:
         # the user to explicitly set valid_for_all_principals to get
         # that behavior.
         if not self._valid_principals and not self._valid_for_all_principals:
-            raise ValueError(
-                "valid_principals must be set if valid_for_all_principals " "is False"
-            )
+            raise ValueError("valid_principals must be set if valid_for_all_principals " "is False")
 
         if self._valid_before is None:
             raise ValueError("valid_before must be set")
@@ -1545,9 +1499,7 @@ class SSHCertificateBuilder:
             # RFC 8332 defines SHA256 and 512 as options
             fsig = _FragList()
             fsig.put_sshstr(_SSH_RSA_SHA512)
-            signature = private_key.sign(
-                f.tobytes(), padding.PKCS1v15(), hashes.SHA512()
-            )
+            signature = private_key.sign(f.tobytes(), padding.PKCS1v15(), hashes.SHA512())
             fsig.put_sshstr(signature)
             f.put_sshstr(fsig.tobytes())
 

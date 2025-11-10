@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${SKIP_FT:-}" == "1" ]]; then
+  echo "[ft] WARNING: skipping pre-commit (SKIP_FT=1)"; exit 0
+fi
+# pre-commit manages the lightweight stage (black/ruff/workflow-lint)
+if command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit run --hook-stage commit --color always
+fi
+echo "[ft] pre-commit not found; please 'pipx install pre-commit' or 'pip install pre-commit'"
+exit 1
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Detach from git stdin to avoid odd reads by sub-tools
+exec </dev/null
+
+# Respect common skip switches, but WARN loudly
+if [[ "${SKIP_FT:-}" == "1" ]] || [[ "${SKIP:-}" =~ (^|,)(ft-pre-commit|pre-commit)(,|$) ]]; then
+  echo "⚠️  WARNING: You are skipping FirstTry pre-commit checks (SKIP_FT=1/SKIP=...)."
+  echo "   This can cause CI failures. Continue at your own risk."
+  exit 0
+fi
+
+# Ensure pre-commit is available; if not, hint and fail fast
+if ! command -v pre-commit >/dev/null 2>&1; then
+  echo "❌ pre-commit not found on PATH."
+  echo "   Install: pip install pre-commit  (or) pipx install pre-commit"
+  echo "   Then run: pre-commit install"
+  exit 1
+fi
+
+# Local parity: run your configured pre-commit (which calls ft containerized CI parity)
+# NOTE: your .pre-commit-config.yaml already uses `entry: ./scripts/ft-ci-local`
+echo "[ft] running pre-commit…"
+exec pre-commit run --hook-stage commit --color always

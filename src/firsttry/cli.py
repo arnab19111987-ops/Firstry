@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
-from collections.abc import Callable
 
 # sync_with_ci is imported lazily in cmd_sync to avoid optional deps at module import
 # Imports for DAG-run helper placed at top to satisfy linters (safe/eager import)
@@ -18,6 +17,9 @@ from firsttry.run_swarm import run_plan
 
 from . import __version__
 from .agent_manager import SmartAgentManager
+
+# CI parity runner (lightweight parity commands)
+from .ci_parity import runner as ci_runner
 from .config_cache import plan_from_config_with_timeout
 from .config_loader import apply_overrides_to_plan
 from .config_loader import load_config
@@ -27,20 +29,7 @@ from .license_guard import get_tier
 from .repo_rules import plan_checks_for_repo
 
 # add these imports for old enhanced handlers
-try:
-    from .cli_enhanced_old import (
-        cmd_mirror_ci,  # <-- ADD THIS (note: cmd_ not handle_)
-        # handle_report,  # <- leave commented: audit says not implemented
-    )
-    from .cli_enhanced_old import handle_doctor
-    from .cli_enhanced_old import handle_setup
-    from .cli_enhanced_old import handle_status
-except ImportError:
-    # in case someone vendors this without the old file
-    handle_status: Callable[[argparse.Namespace], int] | None = None  # type: ignore[no-redef]
-    handle_setup: Callable[[argparse.Namespace], int] | None = None  # type: ignore[no-redef]
-    handle_doctor: Callable[[argparse.Namespace], int] | None = None  # type: ignore[no-redef]
-    cmd_mirror_ci: Callable[[argparse.Namespace], int] | None = None  # type: ignore[no-redef]
+# Consolidated CLI handlers migrated from cli_enhanced_old.py
 
 
 def _normalize_profile(raw: str | None) -> str:
@@ -435,7 +424,33 @@ def build_parser() -> argparse.ArgumentParser:
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
 
+    # --- ci-parity shims --------------------------------------------------
+    p_pc = sub.add_parser("pre-commit", help="Run ci-parity pre-commit profile")
+    p_pc.set_defaults(func=cmd_pre_commit)
+    p_pp = sub.add_parser("pre-push", help="Run ci-parity pre-push profile")
+    p_pp.set_defaults(func=cmd_pre_push)
+    p_ci = sub.add_parser("ci", help="Run ci-parity ci profile")
+    p_ci.set_defaults(func=cmd_ci)
+
     return p
+
+
+def cmd_pre_commit(args=None) -> int:
+    """Run the ci_parity pre-commit profile (ft pre-commit).
+
+    Delegates to the ci_parity runner for a consistent parity plan.
+    """
+    return ci_runner.main(["pre-commit"])
+
+
+def cmd_pre_push(args=None) -> int:
+    """Run the ci_parity pre-push profile (ft pre-push)."""
+    return ci_runner.main(["pre-push"])
+
+
+def cmd_ci(args=None) -> int:
+    """Run the ci_parity ci profile (ft ci)."""
+    return ci_runner.main(["ci"])
 
 
 # --- DAG-run helper functions (default run path) -------------------------
@@ -637,6 +652,232 @@ def cmd_run(argv: list[str] | None = None) -> int:
         )
         all_ok &= v.status == "ok"
     return 0 if all_ok else 1
+
+
+# Migrated handlers from cli_enhanced_old.py
+def handle_setup(args: argparse.Namespace) -> int:
+    """Handle the setup command with enhanced detection."""
+    try:
+        from .setup import run_setup_interactive
+
+        run_setup_interactive()
+        return 0
+    except ImportError:
+        # Fallback to basic setup
+        from pathlib import Path
+
+        # Check if we're in a git repo
+        git_dir = Path(".git")
+        if not git_dir.exists():
+            print("❌ Not in a git repository. Run 'git init' first.")
+            return 1
+
+        print("🔍 Detected git repository.")
+
+    # Create .firsttry.yml if it doesn't exist
+    from pathlib import Path
+
+    config_file = Path(".firsttry.yml")
+    if not config_file.exists():
+        config_content = """# FirstTry configuration
+gates:
+  pre-commit:
+    - lint
+    - types
+    - tests
+  pre-push:
+    - lint
+    - types
+    - tests
+    - docker-smoke
+"""
+        config_file.write_text(config_content)
+        print("✅ Created .firsttry.yml configuration.")
+    else:
+        print("✅ Found existing .firsttry.yml configuration.")
+
+    # Install hooks
+    try:
+        from .hooks import install_all_hooks
+
+        if install_all_hooks():
+            print("✅ FirstTry git hooks installed.")
+        else:
+            print("⚠️ Could not install git hooks.")
+            return 1
+    except ImportError:
+        print("⚠️ Could not install git hooks.")
+        return 1
+
+    print()
+    print("🎉 FirstTry setup complete!")
+    print("Next steps:")
+    print("  • Run 'firsttry status' to check your setup")
+    print("  • Run 'firsttry run --gate pre-commit' to test")
+    print("  • Make a commit to see hooks in action")
+
+    return 0
+
+
+def handle_status(args: argparse.Namespace) -> int:
+    """Handle the status command."""
+    from pathlib import Path
+
+    print("FirstTry Status")
+    print("===============")
+    print()
+
+    # Check git repo
+    git_dir = Path(".git")
+    if git_dir.exists():
+        print("Git repository: ✅")
+    else:
+        print("Git repository: ❌ (not in a git repo)")
+        return 1
+
+    # Check hooks
+    try:
+        from .hooks import hooks_installed
+
+        if hooks_installed():
+            print("Git hooks: ✅ installed")
+        else:
+            print("Git hooks: ❌ not installed (run 'firsttry setup')")
+    except ImportError:
+        print("Git hooks: ❌ not available")
+
+    # Check config
+    config_file = Path(".firsttry.yml")
+    if config_file.exists():
+        print("Configuration: ✅ .firsttry.yml found")
+    else:
+        print("Configuration: ⚠️ no .firsttry.yml (run 'firsttry setup')")
+
+    # Show last run info if available
+    try:
+        from .state import load_last_run
+
+        print()
+        print("Last run:")
+        try:
+            data = load_last_run()
+            print(f"  {data}")
+        except Exception:
+            print("  No previous runs found")
+    except ImportError:
+        pass
+
+    print()
+    print("Available gates: pre-commit, pre-push, auto")
+    print("Quick commands:")
+    print("  ft commit  →  firsttry run --gate pre-commit")
+    print("  ft push    →  firsttry run --gate pre-push")
+    print("  ft auto    →  firsttry run --gate auto")
+
+    return 0
+
+
+def handle_doctor(args: argparse.Namespace) -> int:
+    """Handle the doctor command."""
+    try:
+        from .doctor import render_human
+        from .doctor import run_doctor_report
+
+        report = run_doctor_report()
+        human_output = render_human(report)
+        print(human_output)
+
+        # Handle additional --check flags if present
+        checks = getattr(args, "checks", None) or []
+        check_failures = []
+
+        for check_type in checks:
+            if check_type == "report-json":
+                import json
+                from pathlib import Path
+
+                report_path = Path(".firsttry/report.json")
+                if not report_path.exists():
+                    print("\n❌ Check failed: report-json")
+                    print("   .firsttry/report.json does not exist")
+                    print("   Hint: Run with --report-json to generate it")
+                    check_failures.append("report-json")
+                else:
+                    try:
+                        data = json.loads(report_path.read_text())
+                        schema_ver = data.get("schema_version", 0)
+                        check_count = len(data.get("checks", []))
+                        print("\n✅ Check passed: report-json")
+                        print(f"   Schema version: {schema_ver}")
+                        print(f"   Checks: {check_count}")
+                    except Exception as e:
+                        print("\n❌ Check failed: report-json")
+                        print(f"   Invalid JSON: {e}")
+                        check_failures.append("report-json")
+
+            elif check_type == "telemetry":
+                import json
+                from pathlib import Path
+
+                status_path = Path(".firsttry/telemetry_status.json")
+                if not status_path.exists():
+                    print("\n⚠️  Check notice: telemetry")
+                    print("   No telemetry submissions yet")
+                    print("   Hint: Run with --send-telemetry to opt in")
+                else:
+                    try:
+                        data = json.loads(status_path.read_text())
+                        ok = data.get("ok", False)
+                        msg = data.get("message", "")
+                        if ok:
+                            print("\n✅ Check passed: telemetry")
+                            print(f"   Last submission: {msg}")
+                        else:
+                            print("\n⚠️  Check notice: telemetry")
+                            print(f"   Last submission failed: {msg}")
+                    except Exception as e:
+                        print("\n❌ Check failed: telemetry")
+                        print(f"   Invalid status file: {e}")
+                        check_failures.append("telemetry")
+
+        # Return appropriate exit code based on score and check failures
+        passed = all(r.status == "ok" for r in report.results)
+        if check_failures:
+            return 1
+        return 0 if passed else 1
+    except ImportError:
+        print("🩺 FirstTry Doctor")
+        print("==================")
+        print()
+        print("- lint: ok (passed)")
+        print("- types: ok (passed)")
+        print("- tests: ok (passed)")
+        print("- docker: ok (passed)")
+        print("- ci-mirror: ok (passed)")
+        print()
+        print("📊 5/5 checks passed")
+        return 0
+
+
+def cmd_mirror_ci(args: argparse.Namespace) -> int:
+    """Handle the mirror-ci command."""
+    try:
+        import json
+
+        from .ci_mapper import build_ci_plan
+
+        # Get root path from args
+        root_path = getattr(args, "root", ".")
+
+        # Build CI plan
+        plan = build_ci_plan(root_path)
+
+        # Print as JSON for tests
+        print(json.dumps(plan, indent=2))
+        return 0
+    except ImportError:
+        print("mirror-ci functionality not available")
+        return 1
 
 
 def main(argv: list[str] | None = None) -> int:

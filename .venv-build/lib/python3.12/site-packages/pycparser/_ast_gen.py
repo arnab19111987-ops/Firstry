@@ -20,8 +20,7 @@ class ASTCodeGenerator(object):
         """
         self.cfg_filename = cfg_filename
         self.node_cfg = [
-            NodeCfg(name, contents)
-            for (name, contents) in self.parse_cfgfile(cfg_filename)
+            NodeCfg(name, contents) for (name, contents) in self.parse_cfgfile(cfg_filename)
         ]
 
     def generate(self, file=None):
@@ -144,8 +143,7 @@ class NodeCfg(object):
 
             for seq_child in self.seq_child:
                 src += (
-                    "        for child in (self.%(child)s or []):\n"
-                    "            yield child\n"
+                    "        for child in (self.%(child)s or []):\n" "            yield child\n"
                 ) % (dict(child=seq_child))
 
             if not (self.child or self.seq_child):

@@ -3,6 +3,7 @@ NTLM authenticating pool, contributed by erikcederstran
 
 Issue #10, see: http://code.google.com/p/urllib3/issues/detail?id=10
 """
+
 from __future__ import absolute_import
 
 import warnings
@@ -63,9 +64,7 @@ class NTLMConnectionPool(HTTPSConnectionPool):
         conn = HTTPSConnection(host=self.host, port=self.port)
 
         # Send negotiation message
-        headers[req_header] = "NTLM %s" % ntlm.create_NTLM_NEGOTIATE_MESSAGE(
-            self.rawuser
-        )
+        headers[req_header] = "NTLM %s" % ntlm.create_NTLM_NEGOTIATE_MESSAGE(self.rawuser)
         log.debug("Request headers: %s", headers)
         conn.request("GET", self.authurl, None, headers)
         res = conn.getresponse()
@@ -90,9 +89,7 @@ class NTLMConnectionPool(HTTPSConnectionPool):
             )
 
         # Send authentication message
-        ServerChallenge, NegotiateFlags = ntlm.parse_NTLM_CHALLENGE_MESSAGE(
-            auth_header_value
-        )
+        ServerChallenge, NegotiateFlags = ntlm.parse_NTLM_CHALLENGE_MESSAGE(auth_header_value)
         auth_msg = ntlm.create_NTLM_AUTHENTICATE_MESSAGE(
             ServerChallenge, self.user, self.domain, self.pw, NegotiateFlags
         )

@@ -1,0 +1,422 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FirstTry Audit Report Schema v1.0",
+  "description": "Enterprise audit report format for CI/CD compliance and governance",
+  "type": "object",
+  "required": [
+    "version",
+    "timestamp",
+    "repository",
+    "branch",
+    "commit",
+    "tier",
+    "status",
+    "scores",
+    "gates",
+    "cache_metrics",
+    "security",
+    "compliance"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.\\d+\\.\\d+$",
+      "description": "Audit schema version (semantic versioning)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of audit execution"
+    },
+    "repository": {
+      "type": "object",
+      "required": ["owner", "name", "url"],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "description": "Repository owner (GitHub org/user)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Repository name"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Repository URL"
+        }
+      }
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch name"
+    },
+    "commit": {
+      "type": "object",
+      "required": ["sha", "author", "message"],
+      "properties": {
+        "sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$",
+          "description": "Commit SHA (short or full)"
+        },
+        "author": {
+          "type": "string",
+          "description": "Commit author name"
+        },
+        "message": {
+          "type": "string",
+          "description": "Commit message (first line)"
+        }
+      }
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["lite", "pro", "strict", "promax"],
+      "description": "Execution tier (feature set)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "partial"],
+      "description": "Overall audit status"
+    },
+    "scores": {
+      "type": "object",
+      "required": ["overall", "categories"],
+      "properties": {
+        "overall": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Overall score 0-100"
+        },
+        "categories": {
+          "type": "object",
+          "properties": {
+            "architecture": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "security": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "performance": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "test_coverage": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "enforcement": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "ci_parity": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "description": "Gate execution results",
+      "properties": {
+        "executed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status", "duration_ms"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Gate name (e.g., 'ruff', 'mypy', 'pytest')"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pass", "fail", "skip"],
+                "description": "Gate execution status"
+              },
+              "duration_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Execution time in milliseconds"
+              },
+              "exit_code": {
+                "type": "integer",
+                "description": "Process exit code (0 = success)"
+              },
+              "issues_found": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of issues detected"
+              },
+              "autofixable": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of auto-fixable issues"
+              },
+              "cache_status": {
+                "type": "string",
+                "enum": ["hit", "miss", "invalid"],
+                "description": "Cache hit/miss status"
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "passed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "cache_metrics": {
+      "type": "object",
+      "description": "Cache performance metrics",
+      "properties": {
+        "total_hits": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_misses": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hit_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Cache hit rate (0.0-1.0)"
+        },
+        "speedup_factor": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Speedup vs cold run (e.g., 3.18x)"
+        },
+        "cold_run_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warm_run_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["local", "s3", "redis"]
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "entries": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hit_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "description": "Security audit findings",
+      "properties": {
+        "secrets_found": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of secrets detected"
+        },
+        "vulnerabilities": {
+          "type": "object",
+          "properties": {
+            "critical": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "high": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "medium": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "low": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "unsafe_patterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"]
+              }
+            }
+          }
+        },
+        "compliance_checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "check": {
+                "type": "string",
+                "description": "Compliance check name"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pass", "fail"]
+              },
+              "details": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "description": "Compliance and policy enforcement",
+      "properties": {
+        "policy_enforced": {
+          "type": "boolean",
+          "description": "Was policy lock enforced?"
+        },
+        "policy_version": {
+          "type": "string"
+        },
+        "tier_downgrade_attempted": {
+          "type": "boolean"
+        },
+        "gate_disable_attempted": {
+          "type": "boolean"
+        },
+        "sbom_generated": {
+          "type": "boolean",
+          "description": "Was SBOM (CycloneDX/SPDX) generated?"
+        },
+        "sbom_format": {
+          "type": "string",
+          "enum": ["cyclonedx", "spdx", "both"]
+        },
+        "dependencies_audited": {
+          "type": "boolean",
+          "description": "Were dependencies scanned for vulnerabilities?"
+        },
+        "license_check_passed": {
+          "type": "boolean",
+          "description": "Did license validation pass?"
+        },
+        "ci_parity_verified": {
+          "type": "boolean",
+          "description": "Does local DAG match CI workflow?"
+        },
+        "performance_slo_met": {
+          "type": "boolean",
+          "description": "Did execution meet SLO targets?"
+        },
+        "performance_slo_details": {
+          "type": "object",
+          "properties": {
+            "cold_run_slo_ms": {
+              "type": "integer"
+            },
+            "cold_run_actual_ms": {
+              "type": "integer"
+            },
+            "warm_run_slo_ms": {
+              "type": "integer"
+            },
+            "warm_run_actual_ms": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "properties": {
+        "python_version": {
+          "type": "string"
+        },
+        "node_version": {
+          "type": "string"
+        },
+        "tools": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Tool versions (ruff, mypy, pytest, etc.)"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["local", "ci", "staging", "production"]
+        },
+        "audit_duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

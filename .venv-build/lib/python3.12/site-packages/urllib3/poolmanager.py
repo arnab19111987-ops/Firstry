@@ -318,9 +318,7 @@ class PoolManager(RequestMethods):
 
         return self.connection_from_context(request_context)
 
-    def connection_from_context(
-        self, request_context: dict[str, typing.Any]
-    ) -> HTTPConnectionPool:
+    def connection_from_context(self, request_context: dict[str, typing.Any]) -> HTTPConnectionPool:
         """
         Get a :class:`urllib3.connectionpool.ConnectionPool` based on the request context.
 
@@ -387,9 +385,7 @@ class PoolManager(RequestMethods):
             u.host, port=u.port, scheme=u.scheme, pool_kwargs=pool_kwargs
         )
 
-    def _merge_pool_kwargs(
-        self, override: dict[str, typing.Any] | None
-    ) -> dict[str, typing.Any]:
+    def _merge_pool_kwargs(self, override: dict[str, typing.Any] | None) -> dict[str, typing.Any]:
         """
         Merge a dictionary of override values for self.connection_pool_kw.
 
@@ -418,9 +414,7 @@ class PoolManager(RequestMethods):
         if self.proxy is None:
             return False
 
-        return not connection_requires_http_tunnel(
-            self.proxy, self.proxy_config, parsed_url.scheme
-        )
+        return not connection_requires_http_tunnel(self.proxy, self.proxy_config, parsed_url.scheme)
 
     def urlopen(  # type: ignore[override]
         self, method: str, url: str, redirect: bool = True, **kw: typing.Any
@@ -479,9 +473,7 @@ class PoolManager(RequestMethods):
         # Strip headers marked as unsafe to forward to the redirected location.
         # Check remove_headers_on_redirect to avoid a potential network call within
         # conn.is_same_host() which may use socket.gethostbyname() in the future.
-        if retries.remove_headers_on_redirect and not conn.is_same_host(
-            redirect_location
-        ):
+        if retries.remove_headers_on_redirect and not conn.is_same_host(redirect_location):
             new_headers = kw["headers"].copy()
             for header in kw["headers"]:
                 if header.lower() in retries.remove_headers_on_redirect:
@@ -609,9 +601,7 @@ class ProxyManager(PoolManager):
         pool_kwargs: dict[str, typing.Any] | None = None,
     ) -> HTTPConnectionPool:
         if scheme == "https":
-            return super().connection_from_host(
-                host, port, scheme, pool_kwargs=pool_kwargs
-            )
+            return super().connection_from_host(host, port, scheme, pool_kwargs=pool_kwargs)
 
         return super().connection_from_host(
             self.proxy.host, self.proxy.port, self.proxy.scheme, pool_kwargs=pool_kwargs  # type: ignore[union-attr]

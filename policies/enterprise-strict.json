@@ -1,0 +1,87 @@
+{
+  "version": "1.0",
+  "name": "enterprise-strict",
+  "description": "Enterprise-grade strict policy with non-bypassable enforcement",
+  "locked": true,
+  "effective_date": "2024-01-01T00:00:00Z",
+  "checks": {
+    "linting": {
+      "enabled": true,
+      "fail_on_error": true,
+      "tools": ["pylint", "flake8"],
+      "severity_threshold": "error"
+    },
+    "type_checking": {
+      "enabled": true,
+      "fail_on_error": true,
+      "tool": "mypy",
+      "strict_mode": true
+    },
+    "security_scan": {
+      "enabled": true,
+      "fail_on_error": true,
+      "tools": ["bandit", "gitleaks"],
+      "severity_threshold": "high"
+    },
+    "coverage": {
+      "enabled": true,
+      "fail_on_error": true,
+      "min_percent": 80,
+      "critical_modules": [
+        "src/firsttry/runner/state.py",
+        "src/firsttry/planner/model.py",
+        "src/firsttry/planner/scanner.py",
+        "src/firsttry/core/smart_pytest.py"
+      ]
+    },
+    "dependency_audit": {
+      "enabled": true,
+      "fail_on_error": true,
+      "tool": "pip-audit",
+      "check_licenses": true
+    },
+    "sbom_generation": {
+      "enabled": true,
+      "fail_on_error": false,
+      "format": "cyclonedx",
+      "include_transitive": true
+    },
+    "commit_validation": {
+      "enabled": true,
+      "fail_on_error": true,
+      "convention": "conventional-commits",
+      "require_scope": true
+    }
+  },
+  "restrictions": {
+    "allow_cache_bypass": false,
+    "allow_check_skip": false,
+    "allow_partial_runs": false,
+    "max_concurrent_tasks": 8,
+    "min_security_level": "high",
+    "require_approval_for": ["production_deploy", "policy_modification"]
+  },
+  "audit": {
+    "log_all_runs": true,
+    "require_approval": false,
+    "track_deviations": true,
+    "retention_days": 365
+  },
+  "performance_slo": {
+    "enabled": true,
+    "p95_latency_seconds": 30,
+    "regression_budget_percent": 15,
+    "track_metrics": [
+      "total_duration",
+      "task_cache_hits",
+      "network_latency",
+      "s3_operations"
+    ]
+  },
+  "enforcement": {
+    "mode": "strict",
+    "fail_on_policy_violation": true,
+    "log_all_violations": true,
+    "notify_on_violation": true
+  }
+}

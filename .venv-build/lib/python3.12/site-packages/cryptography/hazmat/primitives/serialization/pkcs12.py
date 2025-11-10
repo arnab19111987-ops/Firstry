@@ -61,17 +61,12 @@ class PKCS12KeyAndCertificates:
             ),
         ):
             raise TypeError(
-                "Key must be RSA, DSA, EllipticCurve, ED25519, or ED448"
-                " private key, or None."
+                "Key must be RSA, DSA, EllipticCurve, ED25519, or ED448" " private key, or None."
             )
         if cert is not None and not isinstance(cert, PKCS12Certificate):
             raise TypeError("cert must be a PKCS12Certificate object or None")
-        if not all(
-            isinstance(add_cert, PKCS12Certificate) for add_cert in additional_certs
-        ):
-            raise TypeError(
-                "all values in additional_certs must be PKCS12Certificate" " objects"
-            )
+        if not all(isinstance(add_cert, PKCS12Certificate) for add_cert in additional_certs):
+            raise TypeError("all values in additional_certs must be PKCS12Certificate" " objects")
         self._key = key
         self._cert = cert
         self._additional_certs = additional_certs
@@ -124,9 +119,7 @@ def serialize_java_truststore(
         raise ValueError("You must supply at least one cert")
 
     if not isinstance(encryption_algorithm, serialization.KeySerializationEncryption):
-        raise TypeError(
-            "Key encryption algorithm must be a " "KeySerializationEncryption instance"
-        )
+        raise TypeError("Key encryption algorithm must be a " "KeySerializationEncryption instance")
 
     return rust_pkcs12.serialize_java_truststore(certs, encryption_algorithm)
 
@@ -149,18 +142,13 @@ def serialize_key_and_certificates(
         ),
     ):
         raise TypeError(
-            "Key must be RSA, DSA, EllipticCurve, ED25519, or ED448"
-            " private key, or None."
+            "Key must be RSA, DSA, EllipticCurve, ED25519, or ED448" " private key, or None."
         )
 
     if not isinstance(encryption_algorithm, serialization.KeySerializationEncryption):
-        raise TypeError(
-            "Key encryption algorithm must be a " "KeySerializationEncryption instance"
-        )
+        raise TypeError("Key encryption algorithm must be a " "KeySerializationEncryption instance")
 
     if key is None and cert is None and not cas:
         raise ValueError("You must supply at least one of key, cert, or cas")
 
-    return rust_pkcs12.serialize_key_and_certificates(
-        name, key, cert, cas, encryption_algorithm
-    )
+    return rust_pkcs12.serialize_key_and_certificates(name, key, cert, cas, encryption_algorithm)

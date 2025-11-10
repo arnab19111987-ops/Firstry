@@ -76,17 +76,13 @@ class Padding(JupyterMixin):
     def __repr__(self) -> str:
         return f"Padding({self.renderable!r}, ({self.top},{self.right},{self.bottom},{self.left}))"
 
-    def __rich_console__(
-        self, console: "Console", options: "ConsoleOptions"
-    ) -> "RenderResult":
+    def __rich_console__(self, console: "Console", options: "ConsoleOptions") -> "RenderResult":
         style = console.get_style(self.style)
         if self.expand:
             width = options.max_width
         else:
             width = min(
-                Measurement.get(console, options, self.renderable).maximum
-                + self.left
-                + self.right,
+                Measurement.get(console, options, self.renderable).maximum + self.left + self.right,
                 options.max_width,
             )
         render_options = options.update_width(width - self.left - self.right)
@@ -94,9 +90,7 @@ class Padding(JupyterMixin):
             render_options = render_options.update_height(
                 height=render_options.height - self.top - self.bottom
             )
-        lines = console.render_lines(
-            self.renderable, render_options, style=style, pad=True
-        )
+        lines = console.render_lines(self.renderable, render_options, style=style, pad=True)
         _Segment = Segment
 
         left = _Segment(" " * self.left, style) if self.left else None
@@ -122,9 +116,7 @@ class Padding(JupyterMixin):
             blank_line = blank_line or [_Segment(f'{" " * width}\n', style)]
             yield from blank_line * self.bottom
 
-    def __rich_measure__(
-        self, console: "Console", options: "ConsoleOptions"
-    ) -> "Measurement":
+    def __rich_measure__(self, console: "Console", options: "ConsoleOptions") -> "Measurement":
         max_width = options.max_width
         extra_width = self.left + self.right
         if max_width - extra_width < 1:

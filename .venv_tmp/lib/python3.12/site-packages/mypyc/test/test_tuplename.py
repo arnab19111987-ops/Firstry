@@ -28,6 +28,5 @@ class TestTupleNames(unittest.TestCase):
             RTuple([RTuple([]), RTuple([int_rprimitive, int_rprimitive])]).unique_id == "T2T0T2II"
         )
         assert (
-            RTuple([bool_rprimitive, RUnion([bool_rprimitive, int_rprimitive])]).unique_id
-            == "T2CO"
+            RTuple([bool_rprimitive, RUnion([bool_rprimitive, int_rprimitive])]).unique_id == "T2CO"
         )

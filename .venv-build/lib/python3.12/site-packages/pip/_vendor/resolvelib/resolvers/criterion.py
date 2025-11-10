@@ -36,9 +36,7 @@ class Criterion(Generic[RT, CT]):
         self.incompatibilities = incompatibilities
 
     def __repr__(self) -> str:
-        requirements = ", ".join(
-            f"({req!r}, via={parent!r})" for req, parent in self.information
-        )
+        requirements = ", ".join(f"({req!r}, via={parent!r})" for req, parent in self.information)
         return f"Criterion({requirements})"
 
     def iter_requirement(self) -> Iterator[RT]:

@@ -96,19 +96,15 @@ class Measurement(NamedTuple):
         if _max_width < 1:
             return Measurement(0, 0)
         if isinstance(renderable, str):
-            renderable = console.render_str(
-                renderable, markup=options.markup, highlight=False
-            )
+            renderable = console.render_str(renderable, markup=options.markup, highlight=False)
         renderable = rich_cast(renderable)
         if is_renderable(renderable):
-            get_console_width: Optional[
-                Callable[["Console", "ConsoleOptions"], "Measurement"]
-            ] = getattr(renderable, "__rich_measure__", None)
+            get_console_width: Optional[Callable[["Console", "ConsoleOptions"], "Measurement"]] = (
+                getattr(renderable, "__rich_measure__", None)
+            )
             if get_console_width is not None:
                 render_width = (
-                    get_console_width(console, options)
-                    .normalize()
-                    .with_maximum(_max_width)
+                    get_console_width(console, options).normalize().with_maximum(_max_width)
                 )
                 if render_width.maximum < 1:
                     return Measurement(0, 0)
@@ -141,9 +137,7 @@ def measure_renderables(
     if not renderables:
         return Measurement(0, 0)
     get_measurement = Measurement.get
-    measurements = [
-        get_measurement(console, options, renderable) for renderable in renderables
-    ]
+    measurements = [get_measurement(console, options, renderable) for renderable in renderables]
     measured_width = Measurement(
         max(measurements, key=itemgetter(0)).minimum,
         max(measurements, key=itemgetter(1)).maximum,

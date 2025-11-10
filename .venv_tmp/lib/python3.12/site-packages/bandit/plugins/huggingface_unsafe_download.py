@@ -81,9 +81,7 @@ def huggingface_unsafe_download(context):
     ]
 
     # Check if any HF modules are imported
-    hf_imported = any(
-        context.is_module_imported_like(module) for module in hf_modules
-    )
+    hf_imported = any(context.is_module_imported_like(module) for module in hf_modules)
 
     if not hf_imported:
         return
@@ -144,10 +142,7 @@ def huggingface_unsafe_download(context):
     return bandit.Issue(
         severity=bandit.MEDIUM,
         confidence=bandit.HIGH,
-        text=(
-            f"Unsafe Hugging Face Hub download without revision pinning "
-            f"in {func_name}()"
-        ),
+        text=(f"Unsafe Hugging Face Hub download without revision pinning " f"in {func_name}()"),
         cwe=issue.Cwe.DOWNLOAD_OF_CODE_WITHOUT_INTEGRITY_CHECK,
         lineno=context.get_lineno_for_call_arg(func_name),
     )

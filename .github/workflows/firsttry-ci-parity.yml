@@ -1,0 +1,17 @@
+name: FirstTry CI Parity
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --upgrade --progress-bar=off -c .firsttry/constraints.txt -e ".[test]" -r .firsttry/ci-extra-requirements.txt build
+      - name: FirstTry CI-parity (config-aware)
+        run: python -m firsttry.ci_parity.runner ci

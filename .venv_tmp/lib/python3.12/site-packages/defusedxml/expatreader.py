@@ -3,8 +3,7 @@
 # Copyright (c) 2013 by Christian Heimes <christian@python.org>
 # Licensed to PSF under a Contributor Agreement.
 # See https://www.python.org/psf/license for licensing details.
-"""Defused xml.sax.expatreader
-"""
+"""Defused xml.sax.expatreader"""
 from __future__ import print_function, absolute_import
 
 from xml.sax.expatreader import ExpatParser as _ExpatParser
@@ -20,7 +19,7 @@ class DefusedExpatParser(_ExpatParser):
     def __init__(
         self,
         namespaceHandling=0,
-        bufsize=2 ** 16 - 20,
+        bufsize=2**16 - 20,
         forbid_dtd=False,
         forbid_entities=True,
         forbid_external=True,

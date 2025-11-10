@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$root" ]; then
+  echo "Run inside a git repo"; exit 1
+fi
+
+mkdir -p "$root/.git/hooks"
+install -m 0755 "$root/scripts/pre-push" "$root/.git/hooks/pre-push"
+echo "Installed pre-push hook → .git/hooks/pre-push"

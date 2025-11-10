@@ -21,9 +21,7 @@ def main(*, argv: list[str] | None = None) -> None:
         raise SystemExit(2)
 
     parser = argparse.ArgumentParser(description="Install Dependency Groups.")
-    parser.add_argument(
-        "DEPENDENCY_GROUP", nargs="+", help="The dependency groups to install."
-    )
+    parser.add_argument("DEPENDENCY_GROUP", nargs="+", help="The dependency groups to install.")
     parser.add_argument(
         "-f",
         "--pyproject-file",

@@ -30,25 +30,18 @@ T = TypeVar("T")
 class Renderables:
     """A list subclass which renders its contents to the console."""
 
-    def __init__(
-        self, renderables: Optional[Iterable["RenderableType"]] = None
-    ) -> None:
+    def __init__(self, renderables: Optional[Iterable["RenderableType"]] = None) -> None:
         self._renderables: List["RenderableType"] = (
             list(renderables) if renderables is not None else []
         )
 
-    def __rich_console__(
-        self, console: "Console", options: "ConsoleOptions"
-    ) -> "RenderResult":
+    def __rich_console__(self, console: "Console", options: "ConsoleOptions") -> "RenderResult":
         """Console render method to insert line-breaks."""
         yield from self._renderables
 
-    def __rich_measure__(
-        self, console: "Console", options: "ConsoleOptions"
-    ) -> "Measurement":
+    def __rich_measure__(self, console: "Console", options: "ConsoleOptions") -> "Measurement":
         dimensions = [
-            Measurement.get(console, options, renderable)
-            for renderable in self._renderables
+            Measurement.get(console, options, renderable) for renderable in self._renderables
         ]
         if not dimensions:
             return Measurement(1, 1)
@@ -76,12 +69,10 @@ class Lines:
         return iter(self._lines)
 
     @overload
-    def __getitem__(self, index: int) -> "Text":
-        ...
+    def __getitem__(self, index: int) -> "Text": ...
 
     @overload
-    def __getitem__(self, index: slice) -> List["Text"]:
-        ...
+    def __getitem__(self, index: slice) -> List["Text"]: ...
 
     def __getitem__(self, index: Union[slice, int]) -> Union["Text", List["Text"]]:
         return self._lines[index]
@@ -93,9 +84,7 @@ class Lines:
     def __len__(self) -> int:
         return self._lines.__len__()
 
-    def __rich_console__(
-        self, console: "Console", options: "ConsoleOptions"
-    ) -> "RenderResult":
+    def __rich_console__(self, console: "Console", options: "ConsoleOptions") -> "RenderResult":
         """Console render method to insert line-breaks."""
         yield from self._lines
 
@@ -155,9 +144,7 @@ class Lines:
                         num_spaces += 1
                         index = (index + 1) % len(spaces)
                 tokens: List[Text] = []
-                for index, (word, next_word) in enumerate(
-                    zip_longest(words, words[1:])
-                ):
+                for index, (word, next_word) in enumerate(zip_longest(words, words[1:])):
                     tokens.append(word)
                     if index < len(spaces):
                         style = word.get_style_at_offset(console, -1)

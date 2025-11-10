@@ -17,9 +17,7 @@ class BanditTestSet:
             profile = {}
         extman = extension_loader.MANAGER
         filtering = self._get_filter(config, profile)
-        self.plugins = [
-            p for p in extman.plugins if p.plugin._test_id in filtering
-        ]
+        self.plugins = [p for p in extman.plugins if p.plugin._test_id in filtering]
         self.plugins.extend(self._load_builtins(filtering, profile))
         self._load_tests(config, self.plugins)
 

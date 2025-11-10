@@ -469,9 +469,7 @@ class Decl(Node):
         "__weakref__",
     )
 
-    def __init__(
-        self, name, quals, align, storage, funcspec, type, init, bitsize, coord=None
-    ):
+    def __init__(self, name, quals, align, storage, funcspec, type, init, bitsize, coord=None):
         self.name = name
         self.quals = quals
         self.align = align

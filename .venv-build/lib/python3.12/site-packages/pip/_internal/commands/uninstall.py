@@ -80,9 +80,7 @@ class UninstallCommand(Command, SessionCommandMixin):
                     name,
                 )
         for filename in options.requirements:
-            for parsed_req in parse_requirements(
-                filename, options=options, session=session
-            ):
+            for parsed_req in parse_requirements(filename, options=options, session=session):
                 req = install_req_from_parsed_requirement(
                     parsed_req, isolated=options.isolated_mode
                 )
@@ -97,9 +95,7 @@ class UninstallCommand(Command, SessionCommandMixin):
         if not options.override_externally_managed:
             check_externally_managed()
 
-        protect_pip_from_modification_on_windows(
-            modifying_pip="pip" in reqs_to_uninstall
-        )
+        protect_pip_from_modification_on_windows(modifying_pip="pip" in reqs_to_uninstall)
 
         for req in reqs_to_uninstall.values():
             uninstall_pathset = req.uninstall(

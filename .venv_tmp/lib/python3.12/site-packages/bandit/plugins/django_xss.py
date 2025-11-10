@@ -70,9 +70,7 @@ class DeepAssignation:
             if isinstance(target, ast.Name):
                 if target.id == self.var_name.id:
                     assigned = node.value
-            elif isinstance(target, ast.Tuple) and isinstance(
-                node.value, ast.Tuple
-            ):
+            elif isinstance(target, ast.Tuple) and isinstance(node.value, ast.Tuple):
                 pos = 0
                 for name in target.elts:
                     if name.id == self.var_name.id:
@@ -108,9 +106,7 @@ def evaluate_var(xss_var, parent, until, ignore_nodes=None):
                         if isinstance(some_to, ast.Str):
                             num_secure += 1
                         elif isinstance(some_to, ast.Name):
-                            if evaluate_var(
-                                some_to, parent, node.lineno, ignore_nodes
-                            ):
+                            if evaluate_var(some_to, parent, node.lineno, ignore_nodes):
                                 num_secure += 1
                             else:
                                 break
@@ -152,9 +148,7 @@ def evaluate_call(call, parent, ignore_nodes=None):
                     num_secure += 1
                 else:
                     break
-            elif isinstance(arg, ast.Starred) and isinstance(
-                arg.value, (ast.List, ast.Tuple)
-            ):
+            elif isinstance(arg, ast.Starred) and isinstance(arg.value, (ast.List, ast.Tuple)):
                 args.extend(arg.value.elts)
                 num_secure += 1
             else:

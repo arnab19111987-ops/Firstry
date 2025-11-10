@@ -24,6 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 enterprise = ["boto3>=1.34"]
+test = ["moto[boto3]>=5.0.0", "boto3>=1.34.0", "botocore>=1.34.0"]
 
 [project.scripts]
 firsttry = "firsttry.cli:main"
@@ -93,4 +94,23 @@ extend-exclude = '''
  | coverage
 )
 '''
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests", "licensing/lic_tests"]
+pythonpath = [".", "src"]
+norecursedirs = [
+  ".git", ".venv", ".venv-build", ".pytest_cache", ".mypy_cache", ".ruff_cache", 
+  "__pycache__", "node_modules", "dist", "build", ".next", "coverage", ".firsttry", 
+  "benchmarks", "my-monorepo", "vscode-extension"
+]
+
+[tool.firsttry.coverage]
+critical_min_rate = 60  # PR; main stricter gate remains in CI step
+critical_files = [
+  "firsttry/state.py",
+  "firsttry/smart_pytest.py", 
+  "firsttry/planner.py",
+  "firsttry/scanner.py",
+]
 

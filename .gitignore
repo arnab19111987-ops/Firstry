@@ -87,3 +87,42 @@ licensing/lic_tests/
 # Local caches & logs
 __pycache__/
 *.log
+
+# --- FirstTry dev junk / Python ---
+# virtual envs
+.venv/
+venv/
+ENV/
+.env/
+*.env
+
+# python caches
+__pycache__/
+*.py[cod]
+*.pyo
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.ipynb_checkpoints/
+
+# coverage / test-output
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# build / dist
+dist/
+build/
+*.egg-info/
+
+# editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+

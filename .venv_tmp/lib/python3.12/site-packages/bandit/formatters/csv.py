@@ -48,9 +48,7 @@ def report(manager, fileobj, sev_level, conf_level, lines=-1):
     :param lines: Number of lines to report, -1 for all
     """
 
-    results = manager.get_issue_list(
-        sev_level=sev_level, conf_level=conf_level
-    )
+    results = manager.get_issue_list(sev_level=sev_level, conf_level=conf_level)
 
     with fileobj:
         fieldnames = [
@@ -68,9 +66,7 @@ def report(manager, fileobj, sev_level, conf_level, lines=-1):
             "more_info",
         ]
 
-        writer = csv.DictWriter(
-            fileobj, fieldnames=fieldnames, extrasaction="ignore"
-        )
+        writer = csv.DictWriter(fileobj, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         for result in results:
             r = result.as_dict(with_code=False)
