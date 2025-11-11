@@ -38,7 +38,27 @@ repos:
         stages: [commit, push]
 
   # --- Heavy parity occurs in pre-push hook (containerized) ---
-  # We don’t wire it here; .githooks/pre-push calls ./scripts/ft-ci-local
+  # We don't wire it here; .githooks/pre-push calls ./scripts/ft-ci-local
+  
+  # --- CI Parity System (lock-driven enforcement) ---
+  - repo: local
+    hooks:
+      # Fast self-check on commit (GIT_HOOK=pre-commit triggers fast mode)
+      - id: ft-pre-commit
+        name: ft pre-commit (CI parity)
+        entry: bash -lc 'export GIT_HOOK=pre-commit; ft pre-commit'
+        language: system
+        pass_filenames: false
+        stages: [commit]
+      
+      # Full parity on push (GIT_HOOK=pre-push triggers full parity)
+      - id: ft-pre-push
+        name: ft pre-commit (full parity)
+        entry: bash -lc 'export GIT_HOOK=pre-push FT_NO_NETWORK=1; ft pre-commit'
+        language: system
+        pass_filenames: false
+        stages: [push]
+
 repos:
   - repo: https://github.com/psf/black
     rev: 25.9.0

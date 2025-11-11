@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 # hard dependency — tests run mypy on this file
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 # -------------------- helpers -------------------- #
 

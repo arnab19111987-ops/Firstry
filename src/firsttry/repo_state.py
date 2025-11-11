@@ -30,7 +30,7 @@ def repo_id_from_root(root):
     except Exception:
         remote = root
     key = (root + "::" + remote).encode()
-    return hashlib.sha1(key).hexdigest()
+    return hashlib.sha1(key, usedforsecurity=False).hexdigest()
 
 
 def state_file_for_repo(root):

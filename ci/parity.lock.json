@@ -1,0 +1,128 @@
+{
+  "$schema": "https://example.com/firsttry/ci-parity.schema.json",
+  "_comment": "Single source of truth for CI/local parity. Keep this synchronized with CI configuration.",
+  
+  "python": "3.11",
+  "matrix": {
+    "python": ["3.10", "3.11"]
+  },
+  
+  "env": {
+    "CI": "true",
+    "TZ": "UTC",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONHASHSEED": "0"
+  },
+  
+  "tools": {
+    "ruff": {
+      "version": "0.14.4",
+      "args": ["check", "."],
+      "fresh": true,
+      "timeout_sec": 180
+    },
+    "mypy": {
+      "version": "1.18.2",
+      "args": ["src/firsttry"],
+      "timeout_sec": 300
+    },
+    "pytest": {
+      "version": "9.0.0",
+      "args": [
+        "-q",
+        "--ignore-glob=tools/**",
+        "--timeout=60",
+        "--maxfail=1",
+        "--durations=10",
+        "--cov=src/firsttry",
+        "--cov-branch",
+        "--cov-report=term-missing",
+        "--cov-report=xml:artifacts/coverage.xml"
+      ],
+      "timeout_sec": 900
+    },
+    "bandit": {
+      "version": "1.7.9",
+      "args": ["-r", "src/firsttry", "-c", ".bandit"],
+      "timeout_sec": 180
+    }
+  },
+  
+  "plugins": [
+    "pytest_cov",
+    "pytest_timeout",
+    "pytest_xdist",
+    "pytest_rerunfailures"
+  ],
+  
+  "thresholds": {
+    "coverage_min": 0.15,
+    "bandit_severity_max": "HIGH",
+    "max_warnings": 0,
+    "allow_flaky": false
+  },
+  
+  "pytest_collection": {
+    "expected_count": 1055,
+    "name_hash_sha256": "6a153d8d6547bf0354ca40f5090a443599d852f6a7e3ae34b087fa7cc1c99972",
+    "allow_uncollected": true
+  },
+  
+  "config_hashes": {
+    "pyproject.toml": "c4d31bc0bac31931654c65394202964284f38088144d7c7b5eb5d1583295b42d",
+    ".ruff.toml": "a39282bacace1b73f3b75311e2d8519728f53546d233b840d937c76b925e5a46",
+    "mypy.ini": "84f0e870cf6c9136cb09d263a2a132360f8c5305d2cedcee877b6bb510185875",
+    "pytest.ini": "732339ee3ccb329a3bfc69d42ee72de149c10a89ad516f0f6b4af11adcc3d4ef",
+    ".bandit": "9d4165936de9c0547fa0f3bcc0d420f2994f94f546606f55b29cd9b813576e6c"
+  },
+  
+  "scope": {
+    "full_repo": true,
+    "exclude": [
+      ".venv*",
+      ".pytest_cache",
+      ".mypy_cache",
+      ".ruff_cache",
+      "build",
+      "dist",
+      "htmlcov",
+      "__pycache__",
+      "*.pyc",
+      ".git"
+    ]
+  },
+  
+  "network_policy": {
+    "forbid_network": false,
+    "allowed_hosts": ["127.0.0.1", "localhost"]
+  },
+  
+  "resource_limits": {
+    "cpu_count": 2,
+    "mem_mb": 4096
+  },
+  
+  "required_artifacts": [
+    "artifacts/parity_report.json",
+    "artifacts/coverage.xml"
+  ],
+  
+  "container": {
+    "image": "python:3.11-slim",
+    "force_container": false
+  },
+  
+  "explain": true,
+  
+  "changed_only_policy": {
+    "forbid_in_parity": true,
+    "message": "Parity mode requires full repo scan. Remove --changed-only flag."
+  },
+  
+  "cache_policy": {
+    "clear_before_run": true,
+    "caches": [".pytest_cache", ".mypy_cache", ".ruff_cache", ".coverage"]
+  }
+}

@@ -2,7 +2,7 @@ import glob
 import os
 from typing import Any
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 # Heuristics for skipping or rewriting steps to make local run faster
 # You can tune this list over time.

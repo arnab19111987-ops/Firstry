@@ -137,15 +137,18 @@ print("slowest:", ", ".join(f"{k}:{ms}ms" for k,ms in slow)); \
 hooks-install:
 	@./scripts/install-hooks
 
-.PHONY: ft-pre-commit ft-pre-push ft-ci
-ft-pre-commit:
-	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit
+.PHONY: ft-pre-commit ft-pre-push ft-ci precommit
+ft-pre-commit:  ## Run FirstTry pre-commit (same gate as CI)
+	ft pre-commit
 
-ft-pre-push:
-	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-push
+precommit:  ## Alias for ft-pre-commit
+	ft pre-commit
 
-ft-ci:
-	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner ci
+ft-pre-push:  ## Run FirstTry pre-push (full parity)
+	ft pre-commit
+
+ft-ci:  ## Run FirstTry CI parity (full parity)
+	ft pre-commit
 
 .PHONY: hooks-ensure hooks-status ft-ci-local ft-ci-dry ft-ci-matrix
 hooks-ensure:
@@ -277,3 +280,67 @@ backup-verify:  ## Verify integrity of all bundle files
 		fi; \
 	fi
 	@echo "✅ Verification complete"
+
+# ============================================================================
+# CI Parity Targets (Lock-driven enforcement)
+# ============================================================================
+
+.PHONY: parity parity-selfcheck parity-matrix parity-bootstrap parity-help
+
+parity-help:  ## Show CI parity system usage
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "CI PARITY SYSTEM - Hermetic local/CI synchronization"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make parity-bootstrap   Bootstrap hermetic environment"
+	@echo "  make parity-selfcheck   Run preflight checks only"
+	@echo "  make parity             Run full parity (all gates)"
+	@echo "  make parity-matrix      Run parity across Python matrix"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  Lock file: ci/parity.lock.json (single source of truth)"
+	@echo "  Env vars:  FT_PARITY_EXPLAIN=1 (verbose output)"
+	@echo "            FT_NO_NETWORK=1 (sandbox network)"
+	@echo ""
+	@echo "Exit codes:"
+	@echo "  0   - All green, ready for CI"
+	@echo "  10x - Preflight parity mismatch (versions/config/plugins)"
+	@echo "  21x - Lint/type failures (ruff/mypy)"
+	@echo "  22x - Test failures/collection mismatch"
+	@echo "  23x - Coverage below threshold"
+	@echo "  24x - Bandit security failed"
+	@echo "  30x - Missing artifacts"
+	@echo ""
+
+parity-bootstrap:  ## Bootstrap hermetic environment (.venv-parity)
+	@./scripts/ft-parity-bootstrap.sh
+
+parity-selfcheck:  ## Run preflight self-checks (versions, config, plugins)
+	@if [ ! -d ".venv-parity" ]; then \
+		echo "❌ .venv-parity not found. Run: make parity-bootstrap"; \
+		exit 1; \
+	fi
+	@. .venv-parity/bin/activate && \
+	 . .venv-parity/parity-env.sh && \
+	 FT_PARITY_EXPLAIN=1 python -c "from firsttry.ci_parity.parity_runner import main; import sys; sys.exit(main(['--self-check', '--explain']))"
+
+parity:  ## Run full CI parity check (all gates)
+	@if [ ! -d ".venv-parity" ]; then \
+		echo "❌ .venv-parity not found. Run: make parity-bootstrap"; \
+		exit 1; \
+	fi
+	@. .venv-parity/bin/activate && \
+	 . .venv-parity/parity-env.sh && \
+	 FT_NO_NETWORK=1 FT_PARITY_EXPLAIN=1 python -c "from firsttry.ci_parity.parity_runner import main; import sys; sys.exit(main(['--parity', '--explain']))"
+
+parity-matrix:  ## Run parity across Python version matrix
+	@echo ">>> Matrix mode (Python 3.10, 3.11)"
+	@echo "Note: Requires tox or multiple Python versions installed"
+	@if command -v tox >/dev/null 2>&1; then \
+		tox -q; \
+	else \
+		echo "❌ tox not found. Install with: pip install tox"; \
+		exit 1; \
+	fi
+
