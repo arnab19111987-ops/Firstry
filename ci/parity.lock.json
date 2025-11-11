@@ -29,7 +29,7 @@
       "timeout_sec": 300
     },
     "pytest": {
-      "version": "9.0.0",
+      "version": "8.4.2",
       "args": [
         "-q",
         "--ignore-glob=tools/**",
@@ -54,7 +54,9 @@
     "pytest_cov",
     "pytest_timeout",
     "pytest_xdist",
-    "pytest_rerunfailures"
+    "pytest_rerunfailures",
+    "pytest_testmon",
+    "pytest_json_report"
   ],
   
   "thresholds": {
@@ -74,7 +76,7 @@
     "pyproject.toml": "c4d31bc0bac31931654c65394202964284f38088144d7c7b5eb5d1583295b42d",
     ".ruff.toml": "a39282bacace1b73f3b75311e2d8519728f53546d233b840d937c76b925e5a46",
     "mypy.ini": "84f0e870cf6c9136cb09d263a2a132360f8c5305d2cedcee877b6bb510185875",
-    "pytest.ini": "732339ee3ccb329a3bfc69d42ee72de149c10a89ad516f0f6b4af11adcc3d4ef",
+    "pytest.ini": "e25b2ee8fe9af0347560f2416bedc5ce4528f480c139a37d752e34366506d952",
     ".bandit": "9d4165936de9c0547fa0f3bcc0d420f2994f94f546606f55b29cd9b813576e6c"
   },
   

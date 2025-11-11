@@ -28,6 +28,23 @@ import time
 from pathlib import Path
 from typing import Any
 
+try:
+    from .cache_utils import (
+        ARTIFACTS,
+        ensure_dirs,
+        auto_refresh_golden_cache,
+        read_flaky_tests,
+    )
+except ImportError:
+    # Fallback if cache_utils not available yet
+    ARTIFACTS = Path("artifacts")
+    def ensure_dirs() -> None:
+        ARTIFACTS.mkdir(exist_ok=True)
+    def auto_refresh_golden_cache(ref: str) -> None:
+        pass
+    def read_flaky_tests() -> list[str]:
+        return []
+
 # Exit code constants
 EXIT_SUCCESS = 0
 EXIT_VERSION_DRIFT = 101
@@ -176,6 +193,8 @@ def check_plugins(lock: dict[str, Any], explain: bool = False) -> list[ParityErr
         "pytest_timeout": "pytest_timeout",
         "pytest_xdist": "xdist",
         "pytest_rerunfailures": "pytest_rerunfailures",
+        "pytest_testmon": "testmon.pytest_testmon",
+        "pytest_json_report": "pytest_jsonreport.plugin",
     }
     
     for plugin in plugins:
@@ -820,15 +839,229 @@ def _write_parity_report(
         print(f"\n📄 Report written to: {report_path}")
 
 
+def _collect_failures_from_json(json_path: Path) -> list[dict[str, Any]]:
+    """Use pytest-json-report output for robust failure extraction.
+    
+    Args:
+        json_path: Path to pytest JSON report file
+        
+    Returns:
+        List of failure dicts with nodeid and when (setup/call/teardown)
+    """
+    if not json_path.exists():
+        return []
+    try:
+        data = json.loads(json_path.read_text())
+        # Structure per pytest-json-report: tests -> list of dicts with "outcome", "nodeid", "call"
+        fails = []
+        for t in data.get("tests", []):
+            if t.get("outcome") == "failed":
+                fails.append({"nodeid": t.get("nodeid"), "when": t.get("when")})
+        return fails
+    except Exception:
+        return []
+
+
+def _write_report(obj: dict[str, Any], filename: str = "parity_report.json") -> None:
+    """Write parity report to artifacts directory.
+    
+    Args:
+        obj: Report data to write
+        filename: Output filename (default: parity_report.json)
+    """
+    ensure_dirs()
+    (ARTIFACTS / filename).write_text(json.dumps(obj, indent=2))
+
+
+def warm_path(explain: bool = False) -> int:
+    """Fast-but-thorough warm path for developer pre-commit checks.
+    
+    Strategy:
+      1) pytest --testmon (affected tests) + JSON report
+      2) always run CI-known flaky tests (positional nodeids)
+      3) if testmon had no tests AND no flakies, run @smoke marker
+      4) (optional) diff-coverage gate (if coverage.xml exists)
+    
+    Uses pytest exit code 5 for "no tests collected" - no stdout parsing needed.
+    Flaky tests run by nodeid as positional args (no -k or escaping issues).
+    JSON report collected via pytest-json-report for reliable failure extraction.
+    
+    Returns:
+        0 on success, appropriate exit code on failure
+    """
+    report: dict[str, Any] = {"mode": "warm", "steps": [], "failures": []}
+    start = time.time()
+
+    if explain:
+        print("\n" + "=" * 80)
+        print("WARM PATH (testmon + flaky + smoke fallback)")
+        print("=" * 80)
+
+    # 1) testmon (exit 5 = "no tests collected") — no stdout parsing
+    if explain:
+        print("\n▶ Step 1: pytest --testmon (affected tests)")
+    
+    warm_json = ARTIFACTS / "pytest-warm.json"
+    cmd1 = [
+        "pytest",
+        "--testmon",
+        "--maxfail=1",
+        "--timeout=60",
+        "-q",
+        "-n",
+        "auto",
+        "--json-report",
+        f"--json-report-file={warm_json}",
+    ]
+    rc1, out1 = run(cmd1, timeout_s=600, explain=False)
+    fails1 = _collect_failures_from_json(warm_json)
+    report["steps"].append({"step": "testmon", "rc": rc1, "failures": len(fails1)})
+    report["failures"].extend(fails1)
+    _write_report(report)
+
+    if explain:
+        if rc1 == 0:
+            print(f"  ✓ testmon passed ({len(fails1)} failures)")
+        elif rc1 == 5:
+            print("  ⊘ testmon collected no tests")
+        else:
+            print(f"  ✗ testmon failed (rc={rc1}, {len(fails1)} failures)")
+
+    if rc1 not in (0, 5):
+        _write_report(report)
+        if explain:
+            print(f"\n✗ Warm path failed at testmon stage")
+        return EXIT_TEST_FAILED if rc1 != EXIT_TEST_TIMEOUT else EXIT_TEST_TIMEOUT
+
+    # 2) Always run CI-known flaky tests (positional nodeids, no -k, no escaping)
+    flaky = read_flaky_tests()
+    if flaky:
+        if explain:
+            print(f"\n▶ Step 2: Running {len(flaky)} known flaky tests")
+        
+        flaky_json = ARTIFACTS / "pytest-flaky.json"
+        cmd2 = [
+            "pytest",
+            "-q",
+            "--maxfail=1",
+            "--timeout=60",
+            "-n",
+            "auto",
+            "--json-report",
+            f"--json-report-file={flaky_json}",
+        ] + flaky[:200]  # Limit to prevent command line overflow
+        
+        rc2, out2 = run(cmd2, timeout_s=600, explain=False)
+        fails2 = _collect_failures_from_json(flaky_json)
+        report["steps"].append({
+            "step": "flaky",
+            "rc": rc2,
+            "count": len(flaky),
+            "failures": len(fails2),
+        })
+        report["failures"].extend(fails2)
+        _write_report(report)
+
+        if explain:
+            if rc2 == 0:
+                print(f"  ✓ flaky tests passed")
+            else:
+                print(f"  ✗ flaky tests failed (rc={rc2}, {len(fails2)} failures)")
+
+        if rc2 not in (0, 5):
+            if explain:
+                print(f"\n✗ Warm path failed at flaky stage")
+            return EXIT_TEST_FAILED if rc2 != EXIT_TEST_TIMEOUT else EXIT_TEST_TIMEOUT
+
+    # 3) Fallback smoke ONLY if testmon had no tests (rc1==5) AND no flaky list
+    if rc1 == 5 and not flaky:
+        if explain:
+            print("\n▶ Step 3: Fallback to @smoke marker tests")
+        
+        smoke_json = ARTIFACTS / "pytest-smoke.json"
+        cmd3 = [
+            "pytest",
+            "-q",
+            "-m",
+            "smoke",
+            "--maxfail=1",
+            "--timeout=60",
+            "-n",
+            "auto",
+            "--json-report",
+            f"--json-report-file={smoke_json}",
+        ]
+        rc3, out3 = run(cmd3, timeout_s=600, explain=False)
+        fails3 = _collect_failures_from_json(smoke_json)
+        report["steps"].append({"step": "smoke", "rc": rc3, "failures": len(fails3)})
+        report["failures"].extend(fails3)
+        _write_report(report)
+
+        if explain:
+            if rc3 == 0:
+                print(f"  ✓ smoke tests passed")
+            elif rc3 == 5:
+                print("  ⊘ no smoke tests found")
+            else:
+                print(f"  ✗ smoke tests failed (rc={rc3}, {len(fails3)} failures)")
+
+        if rc3 not in (0, 5):
+            if explain:
+                print(f"\n✗ Warm path failed at smoke stage")
+            return EXIT_TEST_FAILED if rc3 != EXIT_TEST_TIMEOUT else EXIT_TEST_TIMEOUT
+
+    # (Optional) 4) If your warm path also emits coverage.xml, enforce diff-cover here
+    cov_xml = ARTIFACTS / "coverage.xml"
+    if cov_xml.exists():
+        if explain:
+            print("\n▶ Step 4: diff-cover (90% on changed lines)")
+        
+        rc4, out4 = run(
+            ["diff-cover", str(cov_xml), "--compare-branch=origin/main", "--fail-under=90"],
+            timeout_s=120,
+            explain=False,
+        )
+        report["steps"].append({"step": "diff-cover", "rc": rc4})
+        _write_report(report)
+
+        if explain:
+            if rc4 == 0:
+                print("  ✓ diff-cover passed")
+            else:
+                print(f"  ✗ diff-cover failed (rc={rc4})")
+
+        if rc4 != 0:
+            if explain:
+                print(f"\n✗ Warm path failed at diff-cover stage")
+            return EXIT_COVERAGE_FAILED
+
+    report["duration_sec"] = round(time.time() - start, 2)
+    _write_report(report)
+
+    if explain:
+        print(f"\n✓ Warm path passed ({report['duration_sec']}s)")
+        print("=" * 80)
+
+    return EXIT_SUCCESS
+
+
 def main(argv: list[str] | None = None) -> int:
     """Main entry point for parity runner.
     
     Usage:
         ft-parity --self-check [--explain]   # Fast preflight checks
+        ft-parity --warm-only [--explain]    # Warm path (testmon + flaky)
         ft-parity --parity [--explain]       # Full parity run
         ft-parity --matrix [--explain]       # Matrix mode (future)
     """
     argv = argv or sys.argv[1:]
+    
+    # Auto-refresh golden cache (silent, best-effort, ~1s budget)
+    ensure_dirs()
+    try:
+        auto_refresh_golden_cache("origin/main")
+    except Exception:
+        pass  # Never block on cache refresh
     
     # Simple argument parsing (minimal dependencies)
     explain = "--explain" in argv or os.getenv("FT_PARITY_EXPLAIN") == "1"
@@ -838,12 +1071,15 @@ def main(argv: list[str] | None = None) -> int:
     # CRITICAL: --self-check must be fast and never run long tools
     if "--self-check" in argv:
         return self_check(explain=explain, quiet=quiet)
-    elif "--parity" in argv:
+    elif "--warm-only" in argv:
+        return warm_path(explain=explain)
+    elif "--parity" in argv or "--full" in argv:
         return run_parity(explain=explain, matrix=matrix, quiet=quiet)
     elif "--help" in argv or "-h" in argv:
         print(__doc__)
         print("\nUsage:")
         print("  ft-parity --self-check [--explain] [--quiet]   # Fast preflight (versions, config, plugins)")
+        print("  ft-parity --warm-only [--explain]              # Warm path (testmon + flaky + smoke)")
         print("  ft-parity --parity [--explain] [--quiet]       # Full parity run (lint, types, tests)")
         print("  ft-parity --matrix [--explain]                 # Matrix mode (future)")
         print("\nOptions:")
@@ -859,8 +1095,8 @@ def main(argv: list[str] | None = None) -> int:
         print("  31x - Build/import failures")
         return 0
     else:
-        # Default: run parity
-        return run_parity(explain=explain, matrix=matrix, quiet=quiet)
+        # Default: run warm path for fast feedback
+        return warm_path(explain=explain)
 
 
 if __name__ == "__main__":

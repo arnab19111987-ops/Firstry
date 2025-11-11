@@ -59,6 +59,14 @@ check:  ## run full quality gate (stubs, typing, lints, types, tests)
 perf:  ## run performance verification (cold/warm/warm+prune benchmarks)
 	@bash tools/verify_perf.sh
 
+.PHONY: update-cache
+update-cache:  ## Pull warm cache from CI artifacts
+	@ft update-cache || true
+
+.PHONY: clear-cache
+clear-cache:  ## Nuke local caches (warm, mypy, ruff, testmon)
+	@ft clear-cache
+
 .PHONY: coverage-check
 coverage-check:  ## run tests with coverage and check floor
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest tests \

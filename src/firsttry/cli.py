@@ -22,6 +22,22 @@ from .agent_manager import SmartAgentManager
 
 # CI parity runner (lock-file based parity system)
 from .ci_parity import parity_runner as ci_runner
+
+try:
+    from .ci_parity.cache_utils import (
+        auto_refresh_golden_cache,
+        update_cache,
+        clear_cache,
+    )
+except ImportError:
+    # Fallback if cache_utils not available
+    def auto_refresh_golden_cache(ref: str) -> None:
+        pass
+    def update_cache() -> None:
+        pass
+    def clear_cache() -> None:
+        pass
+
 from .config_cache import plan_from_config_with_timeout
 from .config_loader import apply_overrides_to_plan
 from .config_loader import load_config
@@ -503,6 +519,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_ci = sub.add_parser("ci", help="Run ci-parity ci profile")
     p_ci.set_defaults(func=cmd_ci)
 
+    # --- cache utilities ---------------------------------------------------
+    sub.add_parser("update-cache", help="Update warm cache from CI artifacts")
+    sub.add_parser("clear-cache", help="Clear all local caches (warm, mypy, ruff, testmon)")
+
     return p
 
 
@@ -975,6 +995,28 @@ def handle_doctor(args: argparse.Namespace) -> int:
         return 0
 
 
+def cmd_update_cache() -> int:
+    """Update warm cache from CI artifacts (ft update-cache)."""
+    try:
+        update_cache()
+        print("[ft] ✓ Warm cache updated (if available)")
+        return 0
+    except Exception as e:
+        print(f"[ft] ⚠ Cache update failed: {e}")
+        return 0  # Non-fatal
+
+
+def cmd_clear_cache() -> int:
+    """Nuke local caches (ft clear-cache)."""
+    try:
+        clear_cache()
+        print("[ft] ✓ Caches cleared (.firsttry/warm, .mypy_cache, .ruff_cache, testmon)")
+        return 0
+    except Exception as e:
+        print(f"[ft] ⚠ Cache clear failed: {e}")
+        return 1
+
+
 def cmd_mirror_ci(args: argparse.Namespace) -> int:
     """Handle the mirror-ci command."""
     try:
@@ -999,6 +1041,13 @@ def cmd_mirror_ci(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    
+    # Auto-refresh golden cache (silent, best-effort, ~1s budget)
+    # Runs on EVERY ft command to keep cache warm
+    try:
+        auto_refresh_golden_cache("origin/main")
+    except Exception:
+        pass  # Never block user on cache refresh
     
     # Parse args early to determine command
     parser = build_parser()
@@ -1130,6 +1179,12 @@ def main(argv: list[str] | None = None) -> int:
 
     elif args.cmd == "ci":
         return cmd_ci(args)
+
+    elif args.cmd == "update-cache":
+        return cmd_update_cache()
+
+    elif args.cmd == "clear-cache":
+        return cmd_clear_cache()
 
     else:
         parser.print_help()

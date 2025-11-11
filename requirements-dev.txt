@@ -15,6 +15,12 @@ pytest-cov==5.0.0
 pytest-xdist==3.8.0
 pytest-timeout==2.3.1
 pytest-rerunfailures==15.0
+pytest-testmon==2.1.1
+pytest-json-report==1.5.0
+
+# Coverage & Reporting
+coverage==7.6.4
+diff-cover==9.2.0
 
 # Security
 bandit==1.7.9
