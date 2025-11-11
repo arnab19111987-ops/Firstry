@@ -24,7 +24,7 @@ jobs:
           ls -la
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload artifacts (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: firsttry-reports
           path: .firsttry/
