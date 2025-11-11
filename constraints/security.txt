@@ -1,0 +1,5 @@
+# Security-critical pins and floors for Python tooling runtime.
+# Keep these minimal; they are included in all installs with `-c constraints/security.txt`.
+
+# Covers CVE-2025-47273 / PYSEC-2025-49 and CVE-2024-6345 class issues.
+setuptools>=78.1.1

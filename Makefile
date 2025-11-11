@@ -67,6 +67,23 @@ update-cache:  ## Pull warm cache from CI artifacts
 clear-cache:  ## Nuke local caches (warm, mypy, ruff, testmon)
 	@ft clear-cache
 
+## Supply-chain audit helpers
+.PHONY: audit-supply dev-audit parity-audit
+
+audit-supply: dev-audit parity-audit  ## Run pip-audit in dev container and parity venv, save JSONs
+
+dev-audit:
+	@mkdir -p .firsttry
+	@python -m pip install -U pip-audit >/dev/null 2>&1 || true
+	@pip-audit -f json -o .firsttry/audit-devcontainer.json || true
+	@echo "wrote .firsttry/audit-devcontainer.json"
+
+parity-audit:
+	@mkdir -p .firsttry
+	@([ -x .venv-parity/bin/pip-audit ] || .venv-parity/bin/python -m pip install -U pip-audit) >/dev/null 2>&1 || true
+	@.venv-parity/bin/pip-audit -f json -o .firsttry/audit-parity.json || true
+	@echo "wrote .firsttry/audit-parity.json"
+
 .PHONY: coverage-check
 coverage-check:  ## run tests with coverage and check floor
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest tests \

@@ -1,0 +1,80 @@
+name: supply-chain-audit
+on:
+  push:
+    branches: [ "main", "release/**" ]
+  pull_request:
+    branches: [ "main", "release/**" ]
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip and install with security constraints
+        run: |
+          python -m pip install -U pip
+          if [ -f constraints/security.txt ]; then
+            python -m pip install -c constraints/security.txt -e ".[dev]" || true
+          else
+            python -m pip install -e ".[dev]" || true
+          fi
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+
+      - name: Run pip-audit (live env)
+        run: pip-audit -l -f json -o audit-live.json
+        continue-on-error: true
+
+      - name: Run pip-audit (declared inputs best-effort)
+        run: |
+          # Prefer explicit requirement files if present; else try pyproject.
+          if ls requirements*.txt >/dev/null 2>&1; then
+            # Merge findings across multiple req files; last run exit code used below.
+            set -e
+            for f in requirements*.txt; do
+              pip-audit -r "$f" -f json -o "audit-$f.json" || export A_HAS_FINDINGS=1
+            done
+          elif [ -f pyproject.toml ]; then
+            pip-audit -f json -o audit-pyproject.json || export A_HAS_FINDINGS=1
+          else
+            echo "No requirements*.txt or pyproject.toml found; skipping declared-inputs audit."
+          fi
+          exit ${A_HAS_FINDINGS:-0}
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-json
+          path: |
+            audit-*.json
+            audit-live.json
+          if-no-files-found: ignore
+
+      - name: Gate on findings (fail if any audit file contains vulns)
+        run: |
+          has_vulns=0
+          for f in audit-*.json audit-live.json; do
+            [ -f "$f" ] || continue
+            # non-empty array => vulnerabilities present
+            if jq -e 'length > 0' "$f" >/dev/null 2>&1; then
+              echo "::error file=$f::pip-audit reported vulnerabilities"
+              has_vulns=1
+            fi
+          done
+          exit $has_vulns

@@ -108,3 +108,10 @@ repos:
         language: system
         pass_filenames: false
         stages: [commit, push]
+
+      - id: pip-audit-snapshot
+        name: pip-audit (snapshot only)
+        entry: bash -c 'mkdir -p .firsttry && (pip-audit -f json -o .firsttry/precommit-audit.json || true) && echo "pip-audit snapshot saved"'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
