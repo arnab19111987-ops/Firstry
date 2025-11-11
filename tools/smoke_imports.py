@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Smoke test all module imports to find broken/unused modules."""
-import pkgutil
 import importlib
-import sys
 import os
+import pkgutil
+import sys
 
 PKG = "firsttry"
 
@@ -27,7 +27,7 @@ for m in pkgutil.walk_packages([f"src/{PKG}"], prefix=f"{PKG}."):
         print(f"✗ {name}: {e}")
 
 print("\n# " + "=" * 70)
-print(f"# Summary:")
+print("# Summary:")
 print(f"#   Succeeded: {len(succeeded)}")
 print(f"#   Failed: {len(failed)}")
 

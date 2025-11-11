@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Combine all dead code signals into one report."""
 import json
-import sys
-from pathlib import Path
 
 print("# " + "=" * 78)
 print("# DEAD CODE ANALYSIS REPORT")
@@ -135,15 +133,15 @@ if len(legacy_files) > 5:
 
 print("\n## SUMMARY STATISTICS")
 print("# " + "=" * 78)
-print(f"  Total source files analyzed: ~181")
+print("  Total source files analyzed: ~181")
 print(f"  Files with 0% coverage: {len(zero_cov_files)}")
 print(f"  Orphaned files (unreachable): {len(orphans_from_import_graph)}")
 print(f"  Broken imports (can't even load): {len(broken_imports)}")
-print(f"  ")
+print("  ")
 print(f"  HIGH CONFIDENCE deletions: {len(high_confidence_broken)}")
 print(f"  VERY SAFE deletions: {len(high_confidence - broken_imports)}")
 print(f"  LIKELY DEAD: {len(orphans_from_import_graph - zero_cov_files)}")
-print(f"  ")
+print("  ")
 print(f"  TOTAL SAFE TO DELETE: {len(high_confidence) + len(orphans_from_import_graph - zero_cov_files)}")
 
 print("\n## RECOMMENDED ACTION PLAN")

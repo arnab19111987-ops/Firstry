@@ -211,3 +211,69 @@ dev.checks:
 
 dev.all: dev.fast dev.tests dev.checks
 	@echo ">>> All dev routines complete (fast, timed, reliable)"
+
+
+# ============================================================================
+# Backup & Recovery Targets
+# ============================================================================
+
+.PHONY: backup backup-standalone backup-verify backup-help
+
+backup-help:
+	@echo "Backup targets for safe recovery:"
+	@echo "  make backup              - Create incremental bundle (origin/main..perf/optimizations-40pc)"
+	@echo "  make backup-standalone   - Create standalone bundle (entire repo, works anywhere)"
+	@echo "  make backup-verify       - Verify all bundle checksums"
+	@echo ""
+	@echo "Bundle files created:"
+	@echo "  - firsttry-perf-40pc.bundle (incremental, 106 KB)"
+	@echo "  - firsttry-standalone.bundle (complete, ~80 MB)"
+	@echo ""
+	@echo "Restore examples:"
+	@echo "  Incremental: git fetch bundle-file perf/optimizations-40pc:perf/optimizations-40pc"
+	@echo "  Standalone:  git clone bundle-file Firstry-restored"
+
+backup:  ## Create incremental bundle + checksums (perf/optimizations-40pc)
+	@echo ">>> Creating incremental backup bundle..."
+	@git fetch origin 2>/dev/null || true
+	git bundle create firsttry-perf-40pc.bundle origin/main..perf/optimizations-40pc
+	@echo ">>> Generating checksums..."
+	sha256sum firsttry-perf-40pc.bundle > firsttry-perf-40pc.bundle.sha256
+	md5sum firsttry-perf-40pc.bundle > firsttry-perf-40pc.bundle.md5
+	@echo "✅ Incremental backup complete:"
+	@ls -lh firsttry-perf-40pc.bundle* | awk '{printf "   %s  %s\n", $$5, $$9}'
+	@echo ""
+	@echo "SHA256: $$(cat firsttry-perf-40pc.bundle.sha256 | awk '{print $$1}')"
+
+backup-standalone:  ## Create standalone bundle + checksums (entire repo)
+	@echo ">>> Creating standalone backup bundle (this may take a moment)..."
+	@rm -rf /tmp/Firstry.git
+	@git clone --mirror . /tmp/Firstry.git 2>/dev/null
+	@cd /tmp/Firstry.git && git bundle create /workspaces/Firstry/firsttry-standalone.bundle --all
+	@echo ">>> Generating checksums..."
+	sha256sum firsttry-standalone.bundle > firsttry-standalone.bundle.sha256
+	md5sum firsttry-standalone.bundle > firsttry-standalone.bundle.md5
+	@echo "✅ Standalone backup complete:"
+	@ls -lh firsttry-standalone.bundle* | awk '{printf "   %s  %s\n", $$5, $$9}'
+	@echo ""
+	@echo "SHA256: $$(cat firsttry-standalone.bundle.sha256 | awk '{print $$1}')"
+	@rm -rf /tmp/Firstry.git
+
+backup-verify:  ## Verify integrity of all bundle files
+	@echo ">>> Verifying bundle integrity..."
+	@if [ -f firsttry-perf-40pc.bundle ]; then \
+		echo "Incremental bundle:"; \
+		git bundle verify firsttry-perf-40pc.bundle 2>&1 | grep -E "(okay|contains)" || true; \
+		if [ -f firsttry-perf-40pc.bundle.sha256 ]; then \
+			sha256sum -c firsttry-perf-40pc.bundle.sha256 2>&1 | grep -E "(OK|FAILED)"; \
+		fi; \
+		echo ""; \
+	fi
+	@if [ -f firsttry-standalone.bundle ]; then \
+		echo "Standalone bundle:"; \
+		git bundle verify firsttry-standalone.bundle 2>&1 | head -1; \
+		if [ -f firsttry-standalone.bundle.sha256 ]; then \
+			sha256sum -c firsttry-standalone.bundle.sha256 2>&1 | grep -E "(OK|FAILED)"; \
+		fi; \
+	fi
+	@echo "✅ Verification complete"

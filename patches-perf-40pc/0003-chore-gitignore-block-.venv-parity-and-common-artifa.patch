@@ -1,0 +1,1662 @@
+From a631617af321bab12c7f5f97d3d43c2d57fdb0d3 Mon Sep 17 00:00:00 2001
+From: arnab19111987-ops <arnab19111987@gmail.com>
+Date: Tue, 11 Nov 2025 10:37:20 +0000
+Subject: [PATCH 3/3] chore: gitignore: block .venv-parity and common artifacts
+
+---
+ .firsttry/history.jsonl                |  6 ++++++
+ .firsttry/report.json                  | 30 +-------------------------
+ .firsttry_detect_cache.json            |  2 +-
+ .gitignore                             | 12 +++++++++++
+ src/firsttry/agents/base.py            |  6 ++++--
+ src/firsttry/agents/ci/deps_parity.py  |  3 ++-
+ src/firsttry/agents/ci/env_parity.py   |  3 ++-
+ src/firsttry/cache.py                  |  3 ++-
+ src/firsttry/cache/base.py             |  3 ++-
+ src/firsttry/cache/local.py            |  3 ++-
+ src/firsttry/cache/s3.py               |  3 ++-
+ src/firsttry/cache_models.py           |  3 ++-
+ src/firsttry/cache_utils.py            |  4 +++-
+ src/firsttry/cached_orchestrator.py    |  9 +++++---
+ src/firsttry/ci_parity/detector.py     | 12 ++++++++---
+ src/firsttry/ci_parity/planner.py      |  9 ++++++--
+ src/firsttry/ci_parity/util.py         |  5 ++++-
+ src/firsttry/cli.py                    | 30 +++++++++++++++-----------
+ src/firsttry/cli_dag.py                | 10 ++++++---
+ src/firsttry/cli_enhanced.py           |  3 ++-
+ src/firsttry/cli_run_profile.py        |  3 ++-
+ src/firsttry/cli_stable.py             |  3 ++-
+ src/firsttry/cli_v2.py                 | 17 +++++++--------
+ src/firsttry/config.py                 |  3 ++-
+ src/firsttry/detectors.py              |  3 ++-
+ src/firsttry/device.py                 |  4 +++-
+ src/firsttry/doctor.py                 | 10 ++++++---
+ src/firsttry/env.py                    |  3 ++-
+ src/firsttry/executor/dag.py           |  9 +++++---
+ src/firsttry/executor/key_builder.py   |  5 ++++-
+ src/firsttry/gate_guard.py             |  8 +++++--
+ src/firsttry/gates/ci_files_changed.py |  3 ++-
+ src/firsttry/gates/config_drift.py     |  3 ++-
+ src/firsttry/gates/coverage_check.py   |  3 ++-
+ src/firsttry/gates/deps_lock.py        |  3 ++-
+ src/firsttry/gates/drift_check.py      |  3 ++-
+ src/firsttry/gates/env_tools.py        |  3 ++-
+ src/firsttry/gates/go_tests.py         |  3 ++-
+ src/firsttry/gates/node_tests.py       |  3 ++-
+ src/firsttry/gates/precommit_all.py    |  3 ++-
+ src/firsttry/gates/python_lint.py      |  3 ++-
+ src/firsttry/gates/python_mypy.py      |  3 ++-
+ src/firsttry/gates/python_pytest.py    |  3 ++-
+ src/firsttry/gates/security_bandit.py  |  3 ++-
+ src/firsttry/hooks.py                  |  3 ++-
+ src/firsttry/lazy_orchestrator.py      | 13 +++++++----
+ src/firsttry/license.py                |  7 ++++--
+ src/firsttry/license_cache.py          |  4 +++-
+ src/firsttry/models.py                 |  3 ++-
+ src/firsttry/performance_validator.py  |  3 ++-
+ src/firsttry/planner/dag.py            |  3 ++-
+ src/firsttry/repo_state.py             |  3 ++-
+ src/firsttry/report.py                 |  3 ++-
+ src/firsttry/reporting/html.py         |  8 +++++--
+ src/firsttry/reports/cli_summary.py    |  3 ++-
+ src/firsttry/reports/summary.py        |  5 ++++-
+ src/firsttry/reports/ui.py             | 12 +++++------
+ src/firsttry/run_swarm.py              | 10 ++++++---
+ src/firsttry/runner/config.py          |  7 ++++--
+ src/firsttry/runner/executor.py        |  7 ++++--
+ src/firsttry/runner/model.py           |  8 +++++--
+ src/firsttry/runner/planner.py         |  8 +++++--
+ src/firsttry/runner/state.py           |  4 +++-
+ src/firsttry/runner/taskcache.py       |  4 +++-
+ src/firsttry/runners.py                |  3 ++-
+ src/firsttry/runners/__init__.py       | 14 ++++++------
+ src/firsttry/runners/bandit.py         | 10 +++++++--
+ src/firsttry/runners/base.py           |  6 ++++--
+ src/firsttry/runners/ci_parity.py      |  3 ++-
+ src/firsttry/runners/custom.py         |  3 ++-
+ src/firsttry/runners/deps.py           |  3 ++-
+ src/firsttry/runners/js.py             |  3 ++-
+ src/firsttry/runners/mypy.py           | 10 +++++++--
+ src/firsttry/runners/npm_lint.py       |  9 ++++++--
+ src/firsttry/runners/npm_test.py       | 10 +++++++--
+ src/firsttry/runners/pytest.py         | 10 +++++++--
+ src/firsttry/runners/python.py         |  3 ++-
+ src/firsttry/runners/ruff.py           | 10 +++++++--
+ src/firsttry/scanner.py                |  4 +++-
+ src/firsttry/setup.py                  |  6 ++++--
+ src/firsttry/smart_pytest.py           |  3 ++-
+ src/firsttry/tests/indexer.py          |  4 +++-
+ src/firsttry/tests/prune.py            |  3 ++-
+ src/firsttry/twin/fastpath.py          |  7 +++---
+ src/firsttry/twin/fastpath_scan.py     |  4 +---
+ src/firsttry/twin/graph.py             |  3 ++-
+ src/firsttry/twin/scanner_node.py      |  3 ++-
+ src/firsttry/twin/scanner_python.py    | 10 ++++++---
+ src/firsttry/utils/proc.py             |  3 ++-
+ 89 files changed, 345 insertions(+), 186 deletions(-)
+
+diff --git a/.firsttry/history.jsonl b/.firsttry/history.jsonl
+index 74041bfa..78264e46 100644
+--- a/.firsttry/history.jsonl
++++ b/.firsttry/history.jsonl
+@@ -1831,3 +1831,9 @@
+ {"ts": "2025-11-11T09:25:38Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 12}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 169}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 175}}}
+ {"ts": "2025-11-11T09:25:38Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 11}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 156}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 159}}}
+ {"ts": "2025-11-11T09:25:38Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 11}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 160}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 168}}}
++{"ts": "2025-11-11T10:16:10Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 19}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 458}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 517}}}
++{"ts": "2025-11-11T10:17:05Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 18}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 379}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 422}}}
++{"ts": "2025-11-11T10:17:58Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 20}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 432}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 550}}}
++{"ts": "2025-11-11T10:22:03Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 21}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 567}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 611}}}
++{"ts": "2025-11-11T10:22:59Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 14}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 385}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 427}}}
++{"ts": "2025-11-11T10:23:52Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 23}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 564}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 609}}}
+diff --git a/.firsttry/report.json b/.firsttry/report.json
+index abb946ba..7cc05406 100644
+--- a/.firsttry/report.json
++++ b/.firsttry/report.json
+@@ -1,31 +1,3 @@
+ {
+-  "checks": {
+-    "ruff:_root": {
+-      "name": "ruff:_root",
+-      "check_id": "ruff:_root",
+-      "status": "ok",
+-      "duration_ms": 11,
+-      "stdout": "All checks passed!\n",
+-      "stderr": "",
+-      "cache_status": "hit-local"
+-    },
+-    "mypy:_root": {
+-      "name": "mypy:_root",
+-      "check_id": "mypy:_root",
+-      "status": "ok",
+-      "duration_ms": 160,
+-      "stdout": "src/firsttry/profiler.py:28: \u001b[34mnote:\u001b(B\u001b[m By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\u001b(B\u001b[m\nsrc/firsttry/profiler.py:29: \u001b[34mnote:\u001b(B\u001b[m By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\u001b(B\u001b[m\n\u001b[1m\u001b[32mSuccess: no issues found in 153 source files\u001b(B\u001b[m\n",
+-      "stderr": "",
+-      "cache_status": "hit-local"
+-    },
+-    "pytest:_root": {
+-      "name": "pytest:_root",
+-      "check_id": "pytest:_root",
+-      "status": "ok",
+-      "duration_ms": 168,
+-      "stdout": "\u001b[32m.\u001b[0m\u001b[32m                                                                        [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m1 passed\u001b[0m\u001b[32m in 0.04s\u001b[0m\u001b[0m\n",
+-      "stderr": "",
+-      "cache_status": "hit-local"
+-    }
+-  }
++  "checks": {}
+ }
+\ No newline at end of file
+diff --git a/.firsttry_detect_cache.json b/.firsttry_detect_cache.json
+index b01712dc..9f8bc7e1 100644
+--- a/.firsttry_detect_cache.json
++++ b/.firsttry_detect_cache.json
+@@ -1,5 +1,5 @@
+ {
+-  "ts": 1762855658.1843715,
++  "ts": 1762856260.9164999,
+   "payload": {
+     "python": true,
+     "node": true,
+diff --git a/.gitignore b/.gitignore
+index 3e1b8778..333aa8fc 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -127,3 +127,15 @@ build/
+ .DS_Store
+ 
+ .venv-parity/
++# local envs & caches
++.venv/
++.venv-parity/
++.pytest_cache/
++.mypy_cache/
++.ruff_cache/
++__pycache__/
++# coverage & build
++.coverage
++htmlcov/
++dist/
++build/
+diff --git a/src/firsttry/agents/base.py b/src/firsttry/agents/base.py
+index 702d0025..3c07b010 100644
+--- a/src/firsttry/agents/base.py
++++ b/src/firsttry/agents/base.py
+@@ -1,8 +1,10 @@
+ # src/firsttry/agents/base.py
+ from __future__ import annotations
+ 
+-from abc import ABC, abstractmethod
+-from dataclasses import dataclass, field
++from abc import ABC
++from abc import abstractmethod
++from dataclasses import dataclass
++from dataclasses import field
+ from typing import Any
+ 
+ 
+diff --git a/src/firsttry/agents/ci/deps_parity.py b/src/firsttry/agents/ci/deps_parity.py
+index b1932536..59f2fbf4 100644
+--- a/src/firsttry/agents/ci/deps_parity.py
++++ b/src/firsttry/agents/ci/deps_parity.py
+@@ -3,7 +3,8 @@ from __future__ import annotations
+ 
+ from typing import Any
+ 
+-from ...agents.base import Agent, AgentResult
++from ...agents.base import Agent
++from ...agents.base import AgentResult
+ from ...ci_parser import detect_ci_deps
+ from ...deps import read_local_deps
+ 
+diff --git a/src/firsttry/agents/ci/env_parity.py b/src/firsttry/agents/ci/env_parity.py
+index c0e9b1d2..64654bc3 100644
+--- a/src/firsttry/agents/ci/env_parity.py
++++ b/src/firsttry/agents/ci/env_parity.py
+@@ -4,7 +4,8 @@ from __future__ import annotations
+ import platform
+ from typing import Any
+ 
+-from ...agents.base import Agent, AgentResult
++from ...agents.base import Agent
++from ...agents.base import AgentResult
+ from ...ci_parser import detect_ci_runtime
+ 
+ 
+diff --git a/src/firsttry/cache.py b/src/firsttry/cache.py
+index 5bbb16cd..29fd1058 100644
+--- a/src/firsttry/cache.py
++++ b/src/firsttry/cache.py
+@@ -8,7 +8,8 @@ from collections.abc import Iterable
+ from pathlib import Path
+ from typing import Any
+ 
+-from .cache_models import InputFileMeta, ToolCacheEntry
++from .cache_models import InputFileMeta
++from .cache_models import ToolCacheEntry
+ from .cache_utils import get_cache_state
+ 
+ # Global cache file (can be monkeypatched in tests)
+diff --git a/src/firsttry/cache/base.py b/src/firsttry/cache/base.py
+index 53c31e1e..9cc04550 100644
+--- a/src/firsttry/cache/base.py
++++ b/src/firsttry/cache/base.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+-from abc import ABC, abstractmethod
++from abc import ABC
++from abc import abstractmethod
+ from dataclasses import dataclass
+ from typing import Any
+ 
+diff --git a/src/firsttry/cache/local.py b/src/firsttry/cache/local.py
+index f6e10956..c172a24a 100644
+--- a/src/firsttry/cache/local.py
++++ b/src/firsttry/cache/local.py
+@@ -5,7 +5,8 @@ import time
+ from pathlib import Path
+ from typing import Any
+ 
+-from .base import BaseCache, CacheHit
++from .base import BaseCache
++from .base import CacheHit
+ 
+ 
+ class LocalCache(BaseCache):
+diff --git a/src/firsttry/cache/s3.py b/src/firsttry/cache/s3.py
+index 11577180..4013753f 100644
+--- a/src/firsttry/cache/s3.py
++++ b/src/firsttry/cache/s3.py
+@@ -5,7 +5,8 @@ import os
+ from dataclasses import dataclass
+ from typing import Any
+ 
+-from .base import BaseCache, CacheHit
++from .base import BaseCache
++from .base import CacheHit
+ 
+ 
+ def _has_boto3() -> bool:
+diff --git a/src/firsttry/cache_models.py b/src/firsttry/cache_models.py
+index dc68c3c5..56155357 100644
+--- a/src/firsttry/cache_models.py
++++ b/src/firsttry/cache_models.py
+@@ -5,7 +5,8 @@ Avoids expensive file hashing when file metadata (size, mtime) hasn't changed.
+ 
+ import json
+ import time
+-from dataclasses import asdict, dataclass
++from dataclasses import asdict
++from dataclasses import dataclass
+ from typing import Any
+ 
+ 
+diff --git a/src/firsttry/cache_utils.py b/src/firsttry/cache_utils.py
+index 1c25cf30..01de3eee 100644
+--- a/src/firsttry/cache_utils.py
++++ b/src/firsttry/cache_utils.py
+@@ -5,7 +5,9 @@ Avoids expensive file hashing when possible by checking file metadata first.
+ 
+ import os
+ 
+-from .cache_models import CacheStats, InputFileMeta, ToolCacheEntry
++from .cache_models import CacheStats
++from .cache_models import InputFileMeta
++from .cache_models import ToolCacheEntry
+ 
+ 
+ def collect_input_stats(paths: list[str]) -> list[InputFileMeta] | None:
+diff --git a/src/firsttry/cached_orchestrator.py b/src/firsttry/cached_orchestrator.py
+index a243a95e..7246e418 100644
+--- a/src/firsttry/cached_orchestrator.py
++++ b/src/firsttry/cached_orchestrator.py
+@@ -5,10 +5,13 @@ import os
+ from pathlib import Path
+ from typing import Any
+ 
+-from . import cache as ft_cache, progress
+-from .cache_utils import collect_input_stats, input_stats_match
++from . import cache as ft_cache
++from . import progress
++from .cache_utils import collect_input_stats
++from .cache_utils import input_stats_match
+ from .check_dependencies import should_skip_due_to_dependencies
+-from .check_registry import CHECK_REGISTRY, get_check_inputs
++from .check_registry import CHECK_REGISTRY
++from .check_registry import get_check_inputs
+ from .run_profiles import get_pytest_mode_for_profile
+ from .smart_npm import run_smart_npm_test
+ from .smart_pytest import run_smart_pytest
+diff --git a/src/firsttry/ci_parity/detector.py b/src/firsttry/ci_parity/detector.py
+index 9dfa424e..d4fef464 100644
+--- a/src/firsttry/ci_parity/detector.py
++++ b/src/firsttry/ci_parity/detector.py
+@@ -2,9 +2,15 @@ from __future__ import annotations
+ 
+ import re
+ from dataclasses import dataclass
+-from typing import Dict, List, Optional, TypedDict, Union
+-
+-from .util import current_repo_root, normalize_cmd, tokenize_shell_line
++from typing import Dict
++from typing import List
++from typing import Optional
++from typing import TypedDict
++from typing import Union
++
++from .util import current_repo_root
++from .util import normalize_cmd
++from .util import tokenize_shell_line
+ 
+ TOOLS = (
+     "black",
+diff --git a/src/firsttry/ci_parity/planner.py b/src/firsttry/ci_parity/planner.py
+index 935d4a56..1e44ad90 100644
+--- a/src/firsttry/ci_parity/planner.py
++++ b/src/firsttry/ci_parity/planner.py
+@@ -3,10 +3,15 @@ from __future__ import annotations
+ import os
+ from dataclasses import dataclass
+ from pathlib import Path
+-from typing import Any, Dict, List, Optional, Sequence
++from typing import Any
++from typing import Dict
++from typing import List
++from typing import Optional
++from typing import Sequence
+ 
+ from . import util
+-from .detector import detect, load_user_overrides
++from .detector import detect
++from .detector import load_user_overrides
+ from .util import Step
+ 
+ 
+diff --git a/src/firsttry/ci_parity/util.py b/src/firsttry/ci_parity/util.py
+index 4f6704f1..e5b83b54 100644
+--- a/src/firsttry/ci_parity/util.py
++++ b/src/firsttry/ci_parity/util.py
+@@ -5,7 +5,10 @@ import shlex
+ import subprocess
+ from dataclasses import dataclass
+ from pathlib import Path
+-from typing import Dict, List, Optional, Tuple
++from typing import Dict
++from typing import List
++from typing import Optional
++from typing import Tuple
+ 
+ 
+ def current_repo_root() -> Path:
+diff --git a/src/firsttry/cli.py b/src/firsttry/cli.py
+index 94505565..a01367df 100644
+--- a/src/firsttry/cli.py
++++ b/src/firsttry/cli.py
+@@ -11,7 +11,8 @@ from pathlib import Path
+ from typing import Any
+ 
+ from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
+-from firsttry.planner.dag import Plan, Task
++from firsttry.planner.dag import Plan
++from firsttry.planner.dag import Task
+ from firsttry.run_swarm import run_plan
+ 
+ from . import __version__
+@@ -20,8 +21,10 @@ from .agent_manager import SmartAgentManager
+ # CI parity runner (lightweight parity commands)
+ from .ci_parity import runner as ci_runner
+ from .config_cache import plan_from_config_with_timeout
+-from .config_loader import apply_overrides_to_plan, load_config
+-from .context_builders import build_context, build_repo_profile
++from .config_loader import apply_overrides_to_plan
++from .config_loader import load_config
++from .context_builders import build_context
++from .context_builders import build_repo_profile
+ from .license_guard import get_tier
+ from .repo_rules import plan_checks_for_repo
+ 
+@@ -782,7 +785,8 @@ def handle_status(args: argparse.Namespace) -> int:
+ def handle_doctor(args: argparse.Namespace) -> int:
+     """Handle the doctor command."""
+     try:
+-        from .doctor import render_human, run_doctor_report
++        from .doctor import render_human
++        from .doctor import run_doctor_report
+ 
+         report = run_doctor_report()
+         human_output = render_human(report)
+@@ -1482,10 +1486,13 @@ async def run_fast_pipeline(*, args=None) -> int:
+     # DRY-RUN MODE: Build plan preview with tier lockout without executing
+     dry_run = getattr(args, "dry_run", False) if args else False
+     if dry_run:
+-        from datetime import datetime, timezone
++        from datetime import datetime
++        from datetime import timezone
+         from pathlib import Path
+ 
+-        from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
++        from .checks_orchestrator import FAST_FAMILIES
++        from .checks_orchestrator import MUTATING_FAMILIES
++        from .checks_orchestrator import SLOW_FAMILIES
+         from .reports.tier_map import get_checks_for_tier
+ 
+         allowed = set(get_checks_for_tier(tier)) if tier else set()
+@@ -1585,14 +1592,13 @@ async def run_fast_pipeline(*, args=None) -> int:
+     report_json_path = getattr(args, "report_json", None) if args else None
+     if report_json_path:
+         try:
+-            from datetime import datetime, timezone
++            from datetime import datetime
++            from datetime import timezone
+             from pathlib import Path
+ 
+-            from .checks_orchestrator import (
+-                FAST_FAMILIES,
+-                MUTATING_FAMILIES,
+-                SLOW_FAMILIES,
+-            )
++            from .checks_orchestrator import FAST_FAMILIES
++            from .checks_orchestrator import MUTATING_FAMILIES
++            from .checks_orchestrator import SLOW_FAMILIES
+             from .reporting import write_report_async  # type: ignore
+             from .reports.tier_map import get_checks_for_tier
+ 
+diff --git a/src/firsttry/cli_dag.py b/src/firsttry/cli_dag.py
+index bc2e7e57..96a5a785 100644
+--- a/src/firsttry/cli_dag.py
++++ b/src/firsttry/cli_dag.py
+@@ -4,13 +4,17 @@ import argparse
+ import datetime as _dt
+ import os
+ import sys
+-from concurrent.futures import ThreadPoolExecutor, as_completed
++from concurrent.futures import ThreadPoolExecutor
++from concurrent.futures import as_completed
+ 
+ from firsttry.reporting.jsonio import write_report
+ from firsttry.runner.config import load_graph_from_config
+ from firsttry.runner.executor import Executor
+-from firsttry.runner.planner import compute_levels, plan_levels_cached
+-from firsttry.runner.state import load_last_green, repo_fingerprint, save_last_green
++from firsttry.runner.planner import compute_levels
++from firsttry.runner.planner import plan_levels_cached
++from firsttry.runner.state import load_last_green
++from firsttry.runner.state import repo_fingerprint
++from firsttry.runner.state import save_last_green
+ 
+ 
+ def _now_iso() -> str:
+diff --git a/src/firsttry/cli_enhanced.py b/src/firsttry/cli_enhanced.py
+index b08baa92..5455b8e7 100644
+--- a/src/firsttry/cli_enhanced.py
++++ b/src/firsttry/cli_enhanced.py
+@@ -1,7 +1,8 @@
+ # src/firsttry/cli_enhanced.py
+ from __future__ import annotations
+ 
+-from .cli import build_parser as _build_parser, main as _main
++from .cli import build_parser as _build_parser
++from .cli import main as _main
+ 
+ 
+ def build_parser() -> object:
+diff --git a/src/firsttry/cli_run_profile.py b/src/firsttry/cli_run_profile.py
+index 8f04fc98..db6b91b3 100644
+--- a/src/firsttry/cli_run_profile.py
++++ b/src/firsttry/cli_run_profile.py
+@@ -36,7 +36,8 @@ def main():
+     )
+ 
+     # Build comprehensive report payload from orchestrator report with locked schema
+-    from datetime import datetime, timezone
++    from datetime import datetime
++    from datetime import timezone
+ 
+     payload = {
+         "schema_version": 1,
+diff --git a/src/firsttry/cli_stable.py b/src/firsttry/cli_stable.py
+index 479f5184..dc8103d0 100644
+--- a/src/firsttry/cli_stable.py
++++ b/src/firsttry/cli_stable.py
+@@ -1,7 +1,8 @@
+ # src/firsttry/cli_stable.py
+ from __future__ import annotations
+ 
+-from .cli import build_parser as _build_parser, main as _main
++from .cli import build_parser as _build_parser
++from .cli import main as _main
+ 
+ 
+ def build_parser() -> object:
+diff --git a/src/firsttry/cli_v2.py b/src/firsttry/cli_v2.py
+index 257af6e0..f2438f4b 100644
+--- a/src/firsttry/cli_v2.py
++++ b/src/firsttry/cli_v2.py
+@@ -8,14 +8,12 @@ from typing import Any
+ 
+ from .cache import save_cache
+ from .gates.base import GateResult
+-from .runner_light import (
+-    GATE_REGISTRY,
+-    get_changed_files,
+-    get_profile,
+-    load_cache,
+-    should_skip_gate,
+-    update_gate_cache,
+-)
++from .runner_light import GATE_REGISTRY
++from .runner_light import get_changed_files
++from .runner_light import get_profile
++from .runner_light import load_cache
++from .runner_light import should_skip_gate
++from .runner_light import update_gate_cache
+ 
+ AUTOFIX_HINTS = {
+     "python:ruff": "ruff fix .",
+@@ -88,7 +86,8 @@ def run_pipeline(profile: str, since: str | None) -> list[GateResult]:
+         to_run.append(gate_id)
+ 
+     # run in parallel
+-    from concurrent.futures import ThreadPoolExecutor, as_completed
++    from concurrent.futures import ThreadPoolExecutor
++    from concurrent.futures import as_completed
+ 
+     with ThreadPoolExecutor(max_workers=4) as ex:
+         fut_map = {}
+diff --git a/src/firsttry/config.py b/src/firsttry/config.py
+index 757ede96..67c9b81c 100644
+--- a/src/firsttry/config.py
++++ b/src/firsttry/config.py
+@@ -1,7 +1,8 @@
+ from __future__ import annotations
+ 
+ import warnings
+-from dataclasses import dataclass, field
++from dataclasses import dataclass
++from dataclasses import field
+ from pathlib import Path
+ 
+ try:
+diff --git a/src/firsttry/detectors.py b/src/firsttry/detectors.py
+index d936fdf8..50a2b02e 100644
+--- a/src/firsttry/detectors.py
++++ b/src/firsttry/detectors.py
+@@ -3,7 +3,8 @@ from __future__ import annotations
+ from pathlib import Path
+ from typing import Any
+ 
+-from .detection_cache import load_detect_cache, save_detect_cache
++from .detection_cache import load_detect_cache
++from .detection_cache import save_detect_cache
+ 
+ 
+ def detect_languages(root: Path) -> set[str]:
+diff --git a/src/firsttry/device.py b/src/firsttry/device.py
+index 6fe0ef18..441621c6 100644
+--- a/src/firsttry/device.py
++++ b/src/firsttry/device.py
+@@ -1,6 +1,8 @@
+ import json
+ import uuid
+-from datetime import datetime, timedelta, timezone
++from datetime import datetime
++from datetime import timedelta
++from datetime import timezone
+ from pathlib import Path
+ 
+ DEVICE_DIR = Path.home() / ".firsttry"
+diff --git a/src/firsttry/doctor.py b/src/firsttry/doctor.py
+index 9692cb34..83271f24 100644
+--- a/src/firsttry/doctor.py
++++ b/src/firsttry/doctor.py
+@@ -5,9 +5,13 @@ import json
+ import os
+ import subprocess
+ import sys
+-from concurrent.futures import ThreadPoolExecutor, as_completed
+-from dataclasses import asdict, dataclass, field
+-from typing import Any, Protocol
++from concurrent.futures import ThreadPoolExecutor
++from concurrent.futures import as_completed
++from dataclasses import asdict
++from dataclasses import dataclass
++from dataclasses import field
++from typing import Any
++from typing import Protocol
+ 
+ from .quickfix import generate_quickfix_suggestions
+ 
+diff --git a/src/firsttry/env.py b/src/firsttry/env.py
+index 59e8e59f..acc29b94 100644
+--- a/src/firsttry/env.py
++++ b/src/firsttry/env.py
+@@ -1,7 +1,8 @@
+ from __future__ import annotations
+ 
+ import json
+-from dataclasses import asdict, dataclass
++from dataclasses import asdict
++from dataclasses import dataclass
+ from pathlib import Path
+ 
+ 
+diff --git a/src/firsttry/executor/dag.py b/src/firsttry/executor/dag.py
+index 7065759d..84760f25 100644
+--- a/src/firsttry/executor/dag.py
++++ b/src/firsttry/executor/dag.py
+@@ -2,16 +2,19 @@ from __future__ import annotations
+ 
+ import time
+ from collections.abc import Callable
+-from concurrent.futures import Future, ThreadPoolExecutor
++from concurrent.futures import Future
++from concurrent.futures import ThreadPoolExecutor
+ from dataclasses import dataclass
+ from pathlib import Path
+ from threading import Lock
+ 
+-from ..cache.base import BaseCache, CacheHit
++from ..cache.base import BaseCache
++from ..cache.base import CacheHit
+ from ..cache.local import LocalCache
+ from ..cache.s3 import S3Cache
+ from ..planner.dag import Plan
+-from ..runners.base import CheckRunner, RunResult
++from ..runners.base import CheckRunner
++from ..runners.base import RunResult
+ from ..runners.registry import default_registry
+ 
+ 
+diff --git a/src/firsttry/executor/key_builder.py b/src/firsttry/executor/key_builder.py
+index 47c62266..637d9940 100644
+--- a/src/firsttry/executor/key_builder.py
++++ b/src/firsttry/executor/key_builder.py
+@@ -2,7 +2,10 @@ from __future__ import annotations
+ 
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, hash_file, tool_version_hash
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import hash_file
++from ..twin.hashers import tool_version_hash
+ 
+ 
+ def build_cache_key(repo_root: Path, cmd: list[str], inputs: set[str]) -> str:
+diff --git a/src/firsttry/gate_guard.py b/src/firsttry/gate_guard.py
+index 000aaadd..e035a4ab 100644
+--- a/src/firsttry/gate_guard.py
++++ b/src/firsttry/gate_guard.py
+@@ -1,8 +1,12 @@
+ import os
+ import sys
+ 
+-from .device import freemium_expired, mark_consumed, set_license, touch_device
+-from .repo_state import create_or_touch_repo_state, mark_repo_consumed
++from .device import freemium_expired
++from .device import mark_consumed
++from .device import set_license
++from .device import touch_device
++from .repo_state import create_or_touch_repo_state
++from .repo_state import mark_repo_consumed
+ 
+ TRIAL_URL = "https://www.firsttry.run/trial"
+ 
+diff --git a/src/firsttry/gates/ci_files_changed.py b/src/firsttry/gates/ci_files_changed.py
+index b8135ed4..06ad49dc 100644
+--- a/src/firsttry/gates/ci_files_changed.py
++++ b/src/firsttry/gates/ci_files_changed.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class CiFilesChangedGate(Gate):
+diff --git a/src/firsttry/gates/config_drift.py b/src/firsttry/gates/config_drift.py
+index 532d51aa..335068eb 100644
+--- a/src/firsttry/gates/config_drift.py
++++ b/src/firsttry/gates/config_drift.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class ConfigDriftGate(Gate):
+diff --git a/src/firsttry/gates/coverage_check.py b/src/firsttry/gates/coverage_check.py
+index 3f2496ab..a1de37d4 100644
+--- a/src/firsttry/gates/coverage_check.py
++++ b/src/firsttry/gates/coverage_check.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class CoverageCheckGate(Gate):
+diff --git a/src/firsttry/gates/deps_lock.py b/src/firsttry/gates/deps_lock.py
+index 2ef5020a..6568db18 100644
+--- a/src/firsttry/gates/deps_lock.py
++++ b/src/firsttry/gates/deps_lock.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class DepsLockGate(Gate):
+diff --git a/src/firsttry/gates/drift_check.py b/src/firsttry/gates/drift_check.py
+index 566a4ab2..2a0ddec8 100644
+--- a/src/firsttry/gates/drift_check.py
++++ b/src/firsttry/gates/drift_check.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class DriftCheckGate(Gate):
+diff --git a/src/firsttry/gates/env_tools.py b/src/firsttry/gates/env_tools.py
+index afb5abe9..a7b25902 100644
+--- a/src/firsttry/gates/env_tools.py
++++ b/src/firsttry/gates/env_tools.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class EnvToolsGate(Gate):
+diff --git a/src/firsttry/gates/go_tests.py b/src/firsttry/gates/go_tests.py
+index e23fc072..6e9b9001 100644
+--- a/src/firsttry/gates/go_tests.py
++++ b/src/firsttry/gates/go_tests.py
+@@ -3,7 +3,8 @@
+ import subprocess
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class GoTestGate(Gate):
+diff --git a/src/firsttry/gates/node_tests.py b/src/firsttry/gates/node_tests.py
+index 404ae3ac..ac43576c 100644
+--- a/src/firsttry/gates/node_tests.py
++++ b/src/firsttry/gates/node_tests.py
+@@ -4,7 +4,8 @@ import subprocess
+ from pathlib import Path
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class NodeNpmTestGate(Gate):
+diff --git a/src/firsttry/gates/precommit_all.py b/src/firsttry/gates/precommit_all.py
+index 4ec8494c..950ef005 100644
+--- a/src/firsttry/gates/precommit_all.py
++++ b/src/firsttry/gates/precommit_all.py
+@@ -2,7 +2,8 @@
+ 
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class PreCommitAllGate(Gate):
+diff --git a/src/firsttry/gates/python_lint.py b/src/firsttry/gates/python_lint.py
+index 97f78a56..d3fcb268 100644
+--- a/src/firsttry/gates/python_lint.py
++++ b/src/firsttry/gates/python_lint.py
+@@ -3,7 +3,8 @@
+ import subprocess
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class PythonRuffGate(Gate):
+diff --git a/src/firsttry/gates/python_mypy.py b/src/firsttry/gates/python_mypy.py
+index 8893de0c..d1b84af0 100644
+--- a/src/firsttry/gates/python_mypy.py
++++ b/src/firsttry/gates/python_mypy.py
+@@ -3,7 +3,8 @@
+ import subprocess
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class PythonMypyGate(Gate):
+diff --git a/src/firsttry/gates/python_pytest.py b/src/firsttry/gates/python_pytest.py
+index 6b2ec2c3..b96804de 100644
+--- a/src/firsttry/gates/python_pytest.py
++++ b/src/firsttry/gates/python_pytest.py
+@@ -5,7 +5,8 @@ import subprocess
+ import sys
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class PythonPytestGate(Gate):
+diff --git a/src/firsttry/gates/security_bandit.py b/src/firsttry/gates/security_bandit.py
+index cce922cd..27d5b5b8 100644
+--- a/src/firsttry/gates/security_bandit.py
++++ b/src/firsttry/gates/security_bandit.py
+@@ -3,7 +3,8 @@
+ import subprocess
+ from typing import Any
+ 
+-from .base import Gate, GateResult
++from .base import Gate
++from .base import GateResult
+ 
+ 
+ class SecurityBanditGate(Gate):
+diff --git a/src/firsttry/hooks.py b/src/firsttry/hooks.py
+index ad292a36..c7f236e6 100644
+--- a/src/firsttry/hooks.py
++++ b/src/firsttry/hooks.py
+@@ -4,7 +4,8 @@ import os
+ import stat
+ from pathlib import Path
+ 
+-from .license import ensure_trial_license_if_missing, license_summary_for_humans
++from .license import ensure_trial_license_if_missing
++from .license import license_summary_for_humans
+ 
+ PRE_COMMIT_SCRIPT = """#!/bin/sh
+ # FirstTry pre-commit hook
+diff --git a/src/firsttry/lazy_orchestrator.py b/src/firsttry/lazy_orchestrator.py
+index 0b7a333d..25d7794f 100644
+--- a/src/firsttry/lazy_orchestrator.py
++++ b/src/firsttry/lazy_orchestrator.py
+@@ -2,13 +2,18 @@ from __future__ import annotations
+ 
+ import time
+ from pathlib import Path
+-from typing import Any, Dict, List
++from typing import Any
++from typing import Dict
++from typing import List
+ 
+-from .cache import load_tool_cache_entry, save_tool_cache_entry
++from .cache import load_tool_cache_entry
++from .cache import save_tool_cache_entry
+ from .cache_models import ToolCacheEntry
+-from .cache_utils import collect_input_stats, input_stats_match
++from .cache_utils import collect_input_stats
++from .cache_utils import input_stats_match
+ from .detectors import detect_stack
+-from .run_profiles import RunProfile, dev_profile
++from .run_profiles import RunProfile
++from .run_profiles import dev_profile
+ 
+ 
+ def _normalize_results_flat(raw: Any) -> List[Dict[str, Any]]:
+diff --git a/src/firsttry/license.py b/src/firsttry/license.py
+index dbf03068..6a911de9 100644
+--- a/src/firsttry/license.py
++++ b/src/firsttry/license.py
+@@ -9,9 +9,12 @@ import os
+ import pathlib
+ from collections.abc import Callable
+ from dataclasses import dataclass
+-from datetime import datetime, timedelta, timezone
++from datetime import datetime
++from datetime import timedelta
++from datetime import timezone
+ from pathlib import Path
+-from typing import Any, Protocol
++from typing import Any
++from typing import Protocol
+ 
+ 
+ class HTTPResponseLike(Protocol):
+diff --git a/src/firsttry/license_cache.py b/src/firsttry/license_cache.py
+index 759893ff..37888ea0 100644
+--- a/src/firsttry/license_cache.py
++++ b/src/firsttry/license_cache.py
+@@ -4,7 +4,9 @@ import json
+ import os
+ import urllib.request
+ from dataclasses import dataclass
+-from datetime import datetime, timedelta, timezone
++from datetime import datetime
++from datetime import timedelta
++from datetime import timezone
+ from pathlib import Path
+ 
+ # Root-level forwarder/implementation to ensure a single, canonical
+diff --git a/src/firsttry/models.py b/src/firsttry/models.py
+index a0886af5..b8251b42 100644
+--- a/src/firsttry/models.py
++++ b/src/firsttry/models.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass, field
++from dataclasses import dataclass
++from dataclasses import field
+ from typing import Literal
+ 
+ IssueType = Literal[
+diff --git a/src/firsttry/performance_validator.py b/src/firsttry/performance_validator.py
+index ee8fc287..4124801a 100644
+--- a/src/firsttry/performance_validator.py
++++ b/src/firsttry/performance_validator.py
+@@ -3,7 +3,8 @@ from __future__ import annotations
+ import json
+ import statistics
+ import time
+-from dataclasses import asdict, dataclass
++from dataclasses import asdict
++from dataclasses import dataclass
+ from datetime import datetime
+ from pathlib import Path
+ 
+diff --git a/src/firsttry/planner/dag.py b/src/firsttry/planner/dag.py
+index 41b62373..e351d73c 100644
+--- a/src/firsttry/planner/dag.py
++++ b/src/firsttry/planner/dag.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass, field
++from dataclasses import dataclass
++from dataclasses import field
+ 
+ from ..twin.graph import CodebaseTwin
+ 
+diff --git a/src/firsttry/repo_state.py b/src/firsttry/repo_state.py
+index 68c4c48a..38a9a244 100644
+--- a/src/firsttry/repo_state.py
++++ b/src/firsttry/repo_state.py
+@@ -1,7 +1,8 @@
+ import hashlib
+ import json
+ import subprocess
+-from datetime import datetime, timezone
++from datetime import datetime
++from datetime import timezone
+ from pathlib import Path
+ 
+ 
+diff --git a/src/firsttry/report.py b/src/firsttry/report.py
+index 223cf84c..57fab584 100644
+--- a/src/firsttry/report.py
++++ b/src/firsttry/report.py
+@@ -2,7 +2,8 @@ from __future__ import annotations
+ 
+ from collections.abc import Iterable
+ 
+-from .models import ScanResult, SectionSummary as SectionResult
++from .models import ScanResult
++from .models import SectionSummary as SectionResult
+ 
+ 
+ def _plural(n: int, word: str) -> str:
+diff --git a/src/firsttry/reporting/html.py b/src/firsttry/reporting/html.py
+index 6b60226b..ed452245 100644
+--- a/src/firsttry/reporting/html.py
++++ b/src/firsttry/reporting/html.py
+@@ -5,9 +5,13 @@ import datetime as dt
+ import html as html_module
+ import json
+ import time
+-from collections import Counter, defaultdict
++from collections import Counter
++from collections import defaultdict
+ from pathlib import Path
+-from typing import Any, Dict, List, Tuple
++from typing import Any
++from typing import Dict
++from typing import List
++from typing import Tuple
+ 
+ # ------------- LEGACY: Backward compatibility functions --------
+ 
+diff --git a/src/firsttry/reports/cli_summary.py b/src/firsttry/reports/cli_summary.py
+index 172374ee..275cd7c0 100644
+--- a/src/firsttry/reports/cli_summary.py
++++ b/src/firsttry/reports/cli_summary.py
+@@ -6,7 +6,8 @@ from __future__ import annotations
+ from typing import Any
+ 
+ from ..license_guard import get_tier
+-from .tier_map import LOCKED_MESSAGE, get_checks_for_tier
++from .tier_map import LOCKED_MESSAGE
++from .tier_map import get_checks_for_tier
+ from .ui import c
+ 
+ 
+diff --git a/src/firsttry/reports/summary.py b/src/firsttry/reports/summary.py
+index ef927fbd..201aa791 100644
+--- a/src/firsttry/reports/summary.py
++++ b/src/firsttry/reports/summary.py
+@@ -5,7 +5,10 @@ from __future__ import annotations
+ from typing import Any
+ 
+ from ..license_guard import get_tier
+-from .tier_map import LOCKED_MESSAGE, TIER_CHECKS, get_checks_for_tier, get_tier_meta
++from .tier_map import LOCKED_MESSAGE
++from .tier_map import TIER_CHECKS
++from .tier_map import get_checks_for_tier
++from .tier_map import get_tier_meta
+ 
+ 
+ # simple color helper for legacy paths (no-op if Rich not used)
+diff --git a/src/firsttry/reports/ui.py b/src/firsttry/reports/ui.py
+index 1387e9b5..35f4b723 100644
+--- a/src/firsttry/reports/ui.py
++++ b/src/firsttry/reports/ui.py
+@@ -14,13 +14,11 @@ _NO_UI_MODE: bool = False  # Performance mode flag
+ 
+ try:
+     from rich.console import Console
+-    from rich.progress import (
+-        BarColumn,
+-        Progress,
+-        SpinnerColumn,
+-        TextColumn,
+-        TimeElapsedColumn,
+-    )
++    from rich.progress import BarColumn
++    from rich.progress import Progress
++    from rich.progress import SpinnerColumn
++    from rich.progress import TextColumn
++    from rich.progress import TimeElapsedColumn
+ 
+     _HAS_RICH = True
+     _console = Console()
+diff --git a/src/firsttry/run_swarm.py b/src/firsttry/run_swarm.py
+index f63004fb..e0b022c3 100644
+--- a/src/firsttry/run_swarm.py
++++ b/src/firsttry/run_swarm.py
+@@ -2,9 +2,13 @@ from __future__ import annotations
+ 
+ from pathlib import Path
+ 
+-from .config import load_config, timeout_for, workflow_requires
+-from .executor.dag import DagExecutor, default_caches
+-from .planner.dag import Plan, build_plan_from_twin
++from .config import load_config
++from .config import timeout_for
++from .config import workflow_requires
++from .executor.dag import DagExecutor
++from .executor.dag import default_caches
++from .planner.dag import Plan
++from .planner.dag import build_plan_from_twin
+ 
+ 
+ def run_plan(
+diff --git a/src/firsttry/runner/config.py b/src/firsttry/runner/config.py
+index ff262871..1948fec1 100644
+--- a/src/firsttry/runner/config.py
++++ b/src/firsttry/runner/config.py
+@@ -4,9 +4,12 @@ from __future__ import annotations
+ 
+ import sys
+ from pathlib import Path
+-from typing import Any, Dict, List
++from typing import Any
++from typing import Dict
++from typing import List
+ 
+-from firsttry.tests.prune import get_changed_files, select_impacted_tests
++from firsttry.tests.prune import get_changed_files
++from firsttry.tests.prune import select_impacted_tests
+ 
+ from .planner import Planner
+ 
+diff --git a/src/firsttry/runner/executor.py b/src/firsttry/runner/executor.py
+index 25de27cc..0a0ad27f 100644
+--- a/src/firsttry/runner/executor.py
++++ b/src/firsttry/runner/executor.py
+@@ -12,11 +12,14 @@ import os
+ import subprocess
+ import sys
+ import uuid
+-from typing import Any, Dict, List
++from typing import Any
++from typing import Dict
++from typing import List
+ 
+ from firsttry.runner import taskcache
+ 
+-from .model import DAG, Task
++from .model import DAG
++from .model import Task
+ 
+ LOG_DIR = ".firsttry/logs"
+ 
+diff --git a/src/firsttry/runner/model.py b/src/firsttry/runner/model.py
+index 7e204ff7..5d2c7938 100644
+--- a/src/firsttry/runner/model.py
++++ b/src/firsttry/runner/model.py
+@@ -6,8 +6,12 @@ topological sorting and edge validation.
+ 
+ from __future__ import annotations
+ 
+-from dataclasses import dataclass, field
+-from typing import Dict, List, Set, Tuple
++from dataclasses import dataclass
++from dataclasses import field
++from typing import Dict
++from typing import List
++from typing import Set
++from typing import Tuple
+ 
+ 
+ @dataclass(frozen=True)
+diff --git a/src/firsttry/runner/planner.py b/src/firsttry/runner/planner.py
+index f4a9a431..5525af8f 100644
+--- a/src/firsttry/runner/planner.py
++++ b/src/firsttry/runner/planner.py
+@@ -15,9 +15,13 @@ import json
+ import os
+ import sys
+ from pathlib import Path
+-from typing import Any, Callable, Dict, List
++from typing import Any
++from typing import Callable
++from typing import Dict
++from typing import List
+ 
+-from .model import DAG, Task
++from .model import DAG
++from .model import Task
+ 
+ PLAN_CACHE_DIR = ".firsttry/cache"
+ PLAN_CACHE_PREFIX = "plan_"
+diff --git a/src/firsttry/runner/state.py b/src/firsttry/runner/state.py
+index 64fdeaa7..697051ad 100644
+--- a/src/firsttry/runner/state.py
++++ b/src/firsttry/runner/state.py
+@@ -12,7 +12,9 @@ import json
+ import os
+ import sys
+ from pathlib import Path
+-from typing import Any, Dict, Iterable
++from typing import Any
++from typing import Dict
++from typing import Iterable
+ 
+ B3 = hashlib.blake2b
+ CACHE_DIR = Path(".firsttry/cache")
+diff --git a/src/firsttry/runner/taskcache.py b/src/firsttry/runner/taskcache.py
+index 80b5203d..649dba84 100644
+--- a/src/firsttry/runner/taskcache.py
++++ b/src/firsttry/runner/taskcache.py
+@@ -10,7 +10,9 @@ from __future__ import annotations
+ import hashlib
+ import json
+ from pathlib import Path
+-from typing import Any, Dict, Iterable
++from typing import Any
++from typing import Dict
++from typing import Iterable
+ 
+ B3 = hashlib.blake2b
+ DIR = Path(".firsttry/cache/tasks")
+diff --git a/src/firsttry/runners.py b/src/firsttry/runners.py
+index 95d38e54..b6cc0747 100644
+--- a/src/firsttry/runners.py
++++ b/src/firsttry/runners.py
+@@ -2,7 +2,8 @@ from __future__ import annotations
+ 
+ import subprocess
+ import xml.etree.ElementTree as ET
+-from collections.abc import Iterable, Sequence
++from collections.abc import Iterable
++from collections.abc import Sequence
+ from dataclasses import dataclass
+ from pathlib import Path
+ from time import perf_counter
+diff --git a/src/firsttry/runners/__init__.py b/src/firsttry/runners/__init__.py
+index fe5d092a..c239126b 100644
+--- a/src/firsttry/runners/__init__.py
++++ b/src/firsttry/runners/__init__.py
+@@ -65,14 +65,12 @@ if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
+     # Optional: if you have real runner modules, import and export them here.
+     # Keeping try/except so test envs without real deps don't break.
+     try:
+-        from .real import (
+-            coverage_gate as _real_coverage_gate,
+-            run_black_check as _real_run_black_check,
+-            run_coverage_xml as _real_run_coverage_xml,
+-            run_mypy as _real_run_mypy,
+-            run_pytest_kexpr as _real_run_pytest_kexpr,
+-            run_ruff as _real_run_ruff,
+-        )
++        from .real import coverage_gate as _real_coverage_gate
++        from .real import run_black_check as _real_run_black_check
++        from .real import run_coverage_xml as _real_run_coverage_xml
++        from .real import run_mypy as _real_run_mypy
++        from .real import run_pytest_kexpr as _real_run_pytest_kexpr
++        from .real import run_ruff as _real_run_ruff
+ 
+         run_ruff = _real_run_ruff
+         run_black_check = _real_run_black_check
+diff --git a/src/firsttry/runners/bandit.py b/src/firsttry/runners/bandit.py
+index 476db064..6b32ad76 100644
+--- a/src/firsttry/runners/bandit.py
++++ b/src/firsttry/runners/bandit.py
+@@ -3,8 +3,14 @@ from __future__ import annotations
+ import subprocess
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+-from .base import CheckRunner, RunResult, _hash_config, _hash_targets, ensure_bin
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import tool_version_hash
++from .base import CheckRunner
++from .base import RunResult
++from .base import _hash_config
++from .base import _hash_targets
++from .base import ensure_bin
+ 
+ 
+ class BanditRunner(CheckRunner):
+diff --git a/src/firsttry/runners/base.py b/src/firsttry/runners/base.py
+index e9ca79aa..04caece0 100644
+--- a/src/firsttry/runners/base.py
++++ b/src/firsttry/runners/base.py
+@@ -3,9 +3,11 @@ from __future__ import annotations
+ import shutil
+ from dataclasses import dataclass
+ from pathlib import Path
+-from typing import Any, Protocol
++from typing import Any
++from typing import Protocol
+ 
+-from ..twin.hashers import hash_bytes, hash_file
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import hash_file
+ 
+ 
+ @dataclass
+diff --git a/src/firsttry/runners/ci_parity.py b/src/firsttry/runners/ci_parity.py
+index 28a200b6..ca4d0d94 100644
+--- a/src/firsttry/runners/ci_parity.py
++++ b/src/firsttry/runners/ci_parity.py
+@@ -7,7 +7,8 @@ from ..agents.ci.deps_parity import DependencyParityAgent
+ from ..agents.ci.env_parity import EnvParityAgent
+ from ..agents.ci.validation_parity import ValidationParityAgent
+ from ..ci_parser import resolve_ci_plan
+-from .base import BaseRunner, RunnerResult
++from .base import BaseRunner
++from .base import RunnerResult
+ 
+ 
+ class CiParityRunner(BaseRunner):
+diff --git a/src/firsttry/runners/custom.py b/src/firsttry/runners/custom.py
+index 64d195fa..3fa98191 100644
+--- a/src/firsttry/runners/custom.py
++++ b/src/firsttry/runners/custom.py
+@@ -3,7 +3,8 @@ from __future__ import annotations
+ 
+ from typing import Any
+ 
+-from .base import BaseRunner, RunnerResult
++from .base import BaseRunner
++from .base import RunnerResult
+ 
+ 
+ class CustomRunner(BaseRunner):
+diff --git a/src/firsttry/runners/deps.py b/src/firsttry/runners/deps.py
+index 3e97f4b6..7b49b878 100644
+--- a/src/firsttry/runners/deps.py
++++ b/src/firsttry/runners/deps.py
+@@ -4,7 +4,8 @@ from __future__ import annotations
+ import json
+ from typing import Any
+ 
+-from .base import BaseRunner, RunnerResult
++from .base import BaseRunner
++from .base import RunnerResult
+ 
+ 
+ class PipAuditRunner(BaseRunner):
+diff --git a/src/firsttry/runners/js.py b/src/firsttry/runners/js.py
+index 677c5b35..6914109b 100644
+--- a/src/firsttry/runners/js.py
++++ b/src/firsttry/runners/js.py
+@@ -4,7 +4,8 @@ from __future__ import annotations
+ import re
+ from typing import Any
+ 
+-from .base import BaseRunner, RunnerResult
++from .base import BaseRunner
++from .base import RunnerResult
+ 
+ _ESLINT_RULE_RE = re.compile(r"\(([^()]+)\)\s*$")
+ 
+diff --git a/src/firsttry/runners/mypy.py b/src/firsttry/runners/mypy.py
+index 160af9d6..f66abdf5 100644
+--- a/src/firsttry/runners/mypy.py
++++ b/src/firsttry/runners/mypy.py
+@@ -3,8 +3,14 @@ from __future__ import annotations
+ import subprocess
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+-from .base import CheckRunner, RunResult, _hash_config, _hash_targets, ensure_bin
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import tool_version_hash
++from .base import CheckRunner
++from .base import RunResult
++from .base import _hash_config
++from .base import _hash_targets
++from .base import ensure_bin
+ 
+ 
+ class MypyRunner(CheckRunner):
+diff --git a/src/firsttry/runners/npm_lint.py b/src/firsttry/runners/npm_lint.py
+index dc464086..03c56aef 100644
+--- a/src/firsttry/runners/npm_lint.py
++++ b/src/firsttry/runners/npm_lint.py
+@@ -4,8 +4,13 @@ import shutil
+ import subprocess
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+-from .base import CheckRunner, RunResult, _hash_config, _hash_targets
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import tool_version_hash
++from .base import CheckRunner
++from .base import RunResult
++from .base import _hash_config
++from .base import _hash_targets
+ 
+ 
+ class NpmLintRunner(CheckRunner):
+diff --git a/src/firsttry/runners/npm_test.py b/src/firsttry/runners/npm_test.py
+index b6652003..34a19e2c 100644
+--- a/src/firsttry/runners/npm_test.py
++++ b/src/firsttry/runners/npm_test.py
+@@ -3,8 +3,14 @@ from __future__ import annotations
+ import subprocess
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+-from .base import CheckRunner, RunResult, _hash_config, _hash_targets, ensure_bin
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import tool_version_hash
++from .base import CheckRunner
++from .base import RunResult
++from .base import _hash_config
++from .base import _hash_targets
++from .base import ensure_bin
+ 
+ 
+ class NpmTestRunner(CheckRunner):
+diff --git a/src/firsttry/runners/pytest.py b/src/firsttry/runners/pytest.py
+index c735f311..7902e9b2 100644
+--- a/src/firsttry/runners/pytest.py
++++ b/src/firsttry/runners/pytest.py
+@@ -3,8 +3,14 @@ from __future__ import annotations
+ import subprocess
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+-from .base import CheckRunner, RunResult, _hash_config, _hash_targets, ensure_bin
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import tool_version_hash
++from .base import CheckRunner
++from .base import RunResult
++from .base import _hash_config
++from .base import _hash_targets
++from .base import ensure_bin
+ 
+ 
+ class PytestRunner(CheckRunner):
+diff --git a/src/firsttry/runners/python.py b/src/firsttry/runners/python.py
+index 5acd146a..cc1438ae 100644
+--- a/src/firsttry/runners/python.py
++++ b/src/firsttry/runners/python.py
+@@ -7,7 +7,8 @@ import re
+ from pathlib import Path
+ from typing import Any
+ 
+-from .base import BaseRunner, RunnerResult
++from .base import BaseRunner
++from .base import RunnerResult
+ 
+ _MYPY_CODE_RE = re.compile(r"\[([a-zA-Z0-9_-]+)\]")
+ 
+diff --git a/src/firsttry/runners/ruff.py b/src/firsttry/runners/ruff.py
+index ddd765b0..da1b7a5b 100644
+--- a/src/firsttry/runners/ruff.py
++++ b/src/firsttry/runners/ruff.py
+@@ -3,8 +3,14 @@ from __future__ import annotations
+ import subprocess
+ from pathlib import Path
+ 
+-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+-from .base import CheckRunner, RunResult, _hash_config, _hash_targets, ensure_bin
++from ..twin.hashers import env_fingerprint
++from ..twin.hashers import hash_bytes
++from ..twin.hashers import tool_version_hash
++from .base import CheckRunner
++from .base import RunResult
++from .base import _hash_config
++from .base import _hash_targets
++from .base import ensure_bin
+ 
+ 
+ class RuffRunner(CheckRunner):
+diff --git a/src/firsttry/scanner.py b/src/firsttry/scanner.py
+index ae23dda8..0fa371c3 100644
+--- a/src/firsttry/scanner.py
++++ b/src/firsttry/scanner.py
+@@ -16,7 +16,9 @@ try:
+     YAML_AVAILABLE = True
+ except Exception:
+     YAML_AVAILABLE = False
+-from .models import Issue, ScanResult, SectionSummary
++from .models import Issue
++from .models import ScanResult
++from .models import SectionSummary
+ 
+ COVERAGE_REQUIRED_DEFAULT = 80.0
+ 
+diff --git a/src/firsttry/setup.py b/src/firsttry/setup.py
+index 0abf540e..5c0a03db 100644
+--- a/src/firsttry/setup.py
++++ b/src/firsttry/setup.py
+@@ -1,8 +1,10 @@
+ # firsttry/setup.py
+ from pathlib import Path
+ 
+-from .detect import deps_for_stacks, detect_language
+-from .hooks import hooks_installed, install_all_hooks
++from .detect import deps_for_stacks
++from .detect import detect_language
++from .hooks import hooks_installed
++from .hooks import install_all_hooks
+ 
+ DEFAULT_CONFIG_TEMPLATE = """# FirstTry config
+ version: 1
+diff --git a/src/firsttry/smart_pytest.py b/src/firsttry/smart_pytest.py
+index 017d3b3d..eb15b1b8 100644
+--- a/src/firsttry/smart_pytest.py
++++ b/src/firsttry/smart_pytest.py
+@@ -7,7 +7,8 @@ from pathlib import Path
+ from typing import Any
+ 
+ from . import cache as ft_cache
+-from .parallel_pytest import analyze_test_suite, run_parallel_pytest
++from .parallel_pytest import analyze_test_suite
++from .parallel_pytest import run_parallel_pytest
+ 
+ 
+ def get_pytest_cache_dir(repo_root: str) -> Path:
+diff --git a/src/firsttry/tests/indexer.py b/src/firsttry/tests/indexer.py
+index 1f52c344..84bc36ff 100644
+--- a/src/firsttry/tests/indexer.py
++++ b/src/firsttry/tests/indexer.py
+@@ -10,7 +10,9 @@ from __future__ import annotations
+ import json
+ import os
+ import subprocess
+-from typing import Dict, List, Set
++from typing import Dict
++from typing import List
++from typing import Set
+ 
+ INDEX_CACHE_DIR = ".firsttry/cache"
+ PYTEST_INDEX_FILE = os.path.join(INDEX_CACHE_DIR, "pytest_index.json")
+diff --git a/src/firsttry/tests/prune.py b/src/firsttry/tests/prune.py
+index 33d82272..354439a5 100644
+--- a/src/firsttry/tests/prune.py
++++ b/src/firsttry/tests/prune.py
+@@ -8,7 +8,8 @@ tests (safeguard against false negatives).
+ from __future__ import annotations
+ 
+ import subprocess
+-from typing import List, Set
++from typing import List
++from typing import Set
+ 
+ from .indexer import get_or_build_index
+ 
+diff --git a/src/firsttry/twin/fastpath.py b/src/firsttry/twin/fastpath.py
+index d082c7e0..e7aa7fd2 100644
+--- a/src/firsttry/twin/fastpath.py
++++ b/src/firsttry/twin/fastpath.py
+@@ -15,10 +15,9 @@ from typing import Iterable
+ _RUST_OK = False
+ try:
+     import blake3  # Ensure available even when Rust path is used
+-    from ft_fastpath import (  # type: ignore[attr-defined]
+-        hash_files_parallel as _hash_rust,
+-        scan_repo_parallel as _scan_rust,
+-    )
++
++    from ft_fastpath import hash_files_parallel as _hash_rust  # type: ignore[attr-defined]
++    from ft_fastpath import scan_repo_parallel as _scan_rust  # type: ignore[attr-defined]
+ 
+     _RUST_OK = True
+ except Exception:
+diff --git a/src/firsttry/twin/fastpath_scan.py b/src/firsttry/twin/fastpath_scan.py
+index d2c9a102..40d4ddd9 100644
+--- a/src/firsttry/twin/fastpath_scan.py
++++ b/src/firsttry/twin/fastpath_scan.py
+@@ -13,9 +13,7 @@ from typing import List
+ _RUST_OK = False
+ _BACKEND_USED = "python"  # Track which backend was actually used
+ try:
+-    from ft_fastpath import (  # type: ignore[attr-defined]
+-        scan_repo_parallel as _scan_rust,
+-    )
++    from ft_fastpath import scan_repo_parallel as _scan_rust  # type: ignore[attr-defined]
+ 
+     _RUST_OK = True
+ except Exception:
+diff --git a/src/firsttry/twin/graph.py b/src/firsttry/twin/graph.py
+index 6f5b50ed..8cf0c8c2 100644
+--- a/src/firsttry/twin/graph.py
++++ b/src/firsttry/twin/graph.py
+@@ -1,7 +1,8 @@
+ from __future__ import annotations
+ 
+ import json
+-from dataclasses import dataclass, field
++from dataclasses import dataclass
++from dataclasses import field
+ 
+ 
+ @dataclass
+diff --git a/src/firsttry/twin/scanner_node.py b/src/firsttry/twin/scanner_node.py
+index 05e43e36..505cd2d6 100644
+--- a/src/firsttry/twin/scanner_node.py
++++ b/src/firsttry/twin/scanner_node.py
+@@ -3,7 +3,8 @@ from __future__ import annotations
+ import json
+ from pathlib import Path
+ 
+-from .graph import CodebaseTwin, ProjectNode
++from .graph import CodebaseTwin
++from .graph import ProjectNode
+ 
+ 
+ def attach_node_projects(repo_root: Path, twin: CodebaseTwin) -> None:
+diff --git a/src/firsttry/twin/scanner_python.py b/src/firsttry/twin/scanner_python.py
+index 5f6f6553..aa046b90 100644
+--- a/src/firsttry/twin/scanner_python.py
++++ b/src/firsttry/twin/scanner_python.py
+@@ -1,12 +1,16 @@
+ from __future__ import annotations
+ 
+ import ast
+-import tomllib
+ from collections.abc import Iterable
+ from pathlib import Path
+ 
+-from .graph import CodebaseTwin, FileNode, ProjectNode
+-from .hashers import hash_dir, hash_file
++import tomllib
++
++from .graph import CodebaseTwin
++from .graph import FileNode
++from .graph import ProjectNode
++from .hashers import hash_dir
++from .hashers import hash_file
+ 
+ 
+ def _iter_py_files(root: Path) -> Iterable[Path]:
+diff --git a/src/firsttry/utils/proc.py b/src/firsttry/utils/proc.py
+index 8743543b..02904ebc 100644
+--- a/src/firsttry/utils/proc.py
++++ b/src/firsttry/utils/proc.py
+@@ -5,7 +5,8 @@ from __future__ import annotations
+ import os
+ import shlex
+ import subprocess
+-from typing import Tuple, Union
++from typing import Tuple
++from typing import Union
+ 
+ DEFAULT_TIMEOUT = int(os.getenv("FT_TOOL_TIMEOUT_SEC", "30"))
+ 
+-- 
+2.49.0
+

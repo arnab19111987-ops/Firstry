@@ -2,8 +2,8 @@
 """Find orphaned Python modules not reachable from entry points."""
 import ast
 import os
-import sys
 import pathlib
+import sys
 
 PKG = "firsttry"  # package root
 SRC = pathlib.Path("src") / PKG
@@ -105,7 +105,7 @@ print("# ================================================")
 for fp, mod in sorted(orphans):
     print(f"{fp:60} ({mod})")
 
-print(f"\n# Summary:")
+print("\n# Summary:")
 print(f"# Total modules analyzed: {len(mod_to_file)}")
 print(f"# Reachable from roots: {len(seen)}")
 print(f"# Orphan candidates: {len(orphans)}")
