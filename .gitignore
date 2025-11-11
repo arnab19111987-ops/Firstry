@@ -127,3 +127,15 @@ build/
 .DS_Store
 
 .venv-parity/
+# local envs & caches
+.venv/
+.venv-parity/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+# coverage & build
+.coverage
+htmlcov/
+dist/
+build/

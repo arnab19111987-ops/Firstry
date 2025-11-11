@@ -4,8 +4,13 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
-from .base import CheckRunner, RunResult, _hash_config, _hash_targets
+from ..twin.hashers import env_fingerprint
+from ..twin.hashers import hash_bytes
+from ..twin.hashers import tool_version_hash
+from .base import CheckRunner
+from .base import RunResult
+from .base import _hash_config
+from .base import _hash_targets
 
 
 class NpmLintRunner(CheckRunner):

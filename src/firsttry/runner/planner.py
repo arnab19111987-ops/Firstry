@@ -15,9 +15,13 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
 
-from .model import DAG, Task
+from .model import DAG
+from .model import Task
 
 PLAN_CACHE_DIR = ".firsttry/cache"
 PLAN_CACHE_PREFIX = "plan_"

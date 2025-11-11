@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from .base import Gate, GateResult
+from .base import Gate
+from .base import GateResult
 
 
 class EnvToolsGate(Gate):

@@ -10,7 +10,9 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any
+from typing import Dict
+from typing import Iterable
 
 B3 = hashlib.blake2b
 DIR = Path(".firsttry/cache/tasks")

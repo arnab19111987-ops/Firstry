@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 
 class PipAuditRunner(BaseRunner):

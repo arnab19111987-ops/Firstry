@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from ..license_guard import get_tier
-from .tier_map import LOCKED_MESSAGE, TIER_CHECKS, get_checks_for_tier, get_tier_meta
+from .tier_map import LOCKED_MESSAGE
+from .tier_map import TIER_CHECKS
+from .tier_map import get_checks_for_tier
+from .tier_map import get_tier_meta
 
 
 # simple color helper for legacy paths (no-op if Rich not used)

@@ -12,7 +12,9 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any
+from typing import Dict
+from typing import Iterable
 
 B3 = hashlib.blake2b
 CACHE_DIR = Path(".firsttry/cache")
