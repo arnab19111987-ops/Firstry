@@ -7,7 +7,10 @@ from firsttry.cache import update_gate_cache  # type: ignore[attr-defined]
 def test_load_cache_when_missing(tmp_path, monkeypatch):
     # Test that load_cache returns empty structure when cache doesn't exist
     cache_file = tmp_path / "test_cache.json"
-    monkeypatch.setattr("firsttry.cache.CACHE_FILE", cache_file)
+    # Import the package to get access to the internal _legacy_cache module
+    import firsttry.cache as cache_pkg
+    if cache_pkg._legacy_cache is not None:
+        monkeypatch.setattr(cache_pkg._legacy_cache, "CACHE_FILE", cache_file)
     data = load_cache()
     assert data == {"repos": {}}
 
@@ -15,12 +18,15 @@ def test_load_cache_when_missing(tmp_path, monkeypatch):
 def test_save_and_load_cache(tmp_path, monkeypatch):
     # Test save and load cycle
     cache_file = tmp_path / "test_cache.json"
-    monkeypatch.setattr("firsttry.cache.CACHE_FILE", cache_file)
+    # Patch the legacy cache module
+    import firsttry.cache as cache_pkg
+    if cache_pkg._legacy_cache is not None:
+        monkeypatch.setattr(cache_pkg._legacy_cache, "CACHE_FILE", cache_file)
 
     data = {"hello": "world", "repos": {}}
     save_cache(data)
     loaded = load_cache()
-    assert loaded["hello"] == "world"
+    assert loaded == data
     assert "repos" in loaded
 
 

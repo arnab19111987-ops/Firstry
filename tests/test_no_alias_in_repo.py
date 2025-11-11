@@ -16,6 +16,9 @@ def test_no_global_alias_usage() -> None:
     offenders = []
     for p in root.rglob("*.py"):
         rel = p.relative_to(root).as_posix()
+        # Skip build artifacts
+        if rel.startswith("build/"):
+            continue
         if rel in ALLOWLIST:
             continue
         txt = p.read_text(encoding="utf-8", errors="ignore")

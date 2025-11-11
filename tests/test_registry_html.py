@@ -30,12 +30,18 @@ def test_html_files_written(tmp_path: Path):
     p.mkdir()
     (p / "report.json").write_text(json.dumps(report))
     # Use the local reporting html functions by loading module via path
-    from importlib.machinery import SourceFileLoader
+    import importlib.util
+    import sys
 
-    mod = SourceFileLoader(
+    spec = importlib.util.spec_from_file_location(
         "htmlmod",
         str(Path("src/firsttry/reporting/html.py").resolve()),
-    ).load_module()
+    )
+    if spec is None or spec.loader is None:
+        raise ImportError("Could not load html.py module")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["htmlmod"] = mod
+    spec.loader.exec_module(mod)
     # Create fake TaskResult-like objects for write_html_report
 
     class R:

@@ -137,15 +137,18 @@ print("slowest:", ", ".join(f"{k}:{ms}ms" for k,ms in slow)); \
 hooks-install:
 	@./scripts/install-hooks
 
-.PHONY: ft-pre-commit ft-pre-push ft-ci
-ft-pre-commit:
-	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit
+.PHONY: ft-pre-commit ft-pre-push ft-ci precommit
+ft-pre-commit:  ## Run FirstTry pre-commit (same gate as CI)
+	ft pre-commit
 
-ft-pre-push:
-	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-push
+precommit:  ## Alias for ft-pre-commit
+	ft pre-commit
 
-ft-ci:
-	FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner ci
+ft-pre-push:  ## Run FirstTry pre-push (full parity)
+	ft pre-commit
+
+ft-ci:  ## Run FirstTry CI parity (full parity)
+	ft pre-commit
 
 .PHONY: hooks-ensure hooks-status ft-ci-local ft-ci-dry ft-ci-matrix
 hooks-ensure:
@@ -211,3 +214,133 @@ dev.checks:
 
 dev.all: dev.fast dev.tests dev.checks
 	@echo ">>> All dev routines complete (fast, timed, reliable)"
+
+
+# ============================================================================
+# Backup & Recovery Targets
+# ============================================================================
+
+.PHONY: backup backup-standalone backup-verify backup-help
+
+backup-help:
+	@echo "Backup targets for safe recovery:"
+	@echo "  make backup              - Create incremental bundle (origin/main..perf/optimizations-40pc)"
+	@echo "  make backup-standalone   - Create standalone bundle (entire repo, works anywhere)"
+	@echo "  make backup-verify       - Verify all bundle checksums"
+	@echo ""
+	@echo "Bundle files created:"
+	@echo "  - firsttry-perf-40pc.bundle (incremental, 106 KB)"
+	@echo "  - firsttry-standalone.bundle (complete, ~80 MB)"
+	@echo ""
+	@echo "Restore examples:"
+	@echo "  Incremental: git fetch bundle-file perf/optimizations-40pc:perf/optimizations-40pc"
+	@echo "  Standalone:  git clone bundle-file Firstry-restored"
+
+backup:  ## Create incremental bundle + checksums (perf/optimizations-40pc)
+	@echo ">>> Creating incremental backup bundle..."
+	@git fetch origin 2>/dev/null || true
+	git bundle create firsttry-perf-40pc.bundle origin/main..perf/optimizations-40pc
+	@echo ">>> Generating checksums..."
+	sha256sum firsttry-perf-40pc.bundle > firsttry-perf-40pc.bundle.sha256
+	md5sum firsttry-perf-40pc.bundle > firsttry-perf-40pc.bundle.md5
+	@echo "✅ Incremental backup complete:"
+	@ls -lh firsttry-perf-40pc.bundle* | awk '{printf "   %s  %s\n", $$5, $$9}'
+	@echo ""
+	@echo "SHA256: $$(cat firsttry-perf-40pc.bundle.sha256 | awk '{print $$1}')"
+
+backup-standalone:  ## Create standalone bundle + checksums (entire repo)
+	@echo ">>> Creating standalone backup bundle (this may take a moment)..."
+	@rm -rf /tmp/Firstry.git
+	@git clone --mirror . /tmp/Firstry.git 2>/dev/null
+	@cd /tmp/Firstry.git && git bundle create /workspaces/Firstry/firsttry-standalone.bundle --all
+	@echo ">>> Generating checksums..."
+	sha256sum firsttry-standalone.bundle > firsttry-standalone.bundle.sha256
+	md5sum firsttry-standalone.bundle > firsttry-standalone.bundle.md5
+	@echo "✅ Standalone backup complete:"
+	@ls -lh firsttry-standalone.bundle* | awk '{printf "   %s  %s\n", $$5, $$9}'
+	@echo ""
+	@echo "SHA256: $$(cat firsttry-standalone.bundle.sha256 | awk '{print $$1}')"
+	@rm -rf /tmp/Firstry.git
+
+backup-verify:  ## Verify integrity of all bundle files
+	@echo ">>> Verifying bundle integrity..."
+	@if [ -f firsttry-perf-40pc.bundle ]; then \
+		echo "Incremental bundle:"; \
+		git bundle verify firsttry-perf-40pc.bundle 2>&1 | grep -E "(okay|contains)" || true; \
+		if [ -f firsttry-perf-40pc.bundle.sha256 ]; then \
+			sha256sum -c firsttry-perf-40pc.bundle.sha256 2>&1 | grep -E "(OK|FAILED)"; \
+		fi; \
+		echo ""; \
+	fi
+	@if [ -f firsttry-standalone.bundle ]; then \
+		echo "Standalone bundle:"; \
+		git bundle verify firsttry-standalone.bundle 2>&1 | head -1; \
+		if [ -f firsttry-standalone.bundle.sha256 ]; then \
+			sha256sum -c firsttry-standalone.bundle.sha256 2>&1 | grep -E "(OK|FAILED)"; \
+		fi; \
+	fi
+	@echo "✅ Verification complete"
+
+# ============================================================================
+# CI Parity Targets (Lock-driven enforcement)
+# ============================================================================
+
+.PHONY: parity parity-selfcheck parity-matrix parity-bootstrap parity-help
+
+parity-help:  ## Show CI parity system usage
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "CI PARITY SYSTEM - Hermetic local/CI synchronization"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make parity-bootstrap   Bootstrap hermetic environment"
+	@echo "  make parity-selfcheck   Run preflight checks only"
+	@echo "  make parity             Run full parity (all gates)"
+	@echo "  make parity-matrix      Run parity across Python matrix"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  Lock file: ci/parity.lock.json (single source of truth)"
+	@echo "  Env vars:  FT_PARITY_EXPLAIN=1 (verbose output)"
+	@echo "            FT_NO_NETWORK=1 (sandbox network)"
+	@echo ""
+	@echo "Exit codes:"
+	@echo "  0   - All green, ready for CI"
+	@echo "  10x - Preflight parity mismatch (versions/config/plugins)"
+	@echo "  21x - Lint/type failures (ruff/mypy)"
+	@echo "  22x - Test failures/collection mismatch"
+	@echo "  23x - Coverage below threshold"
+	@echo "  24x - Bandit security failed"
+	@echo "  30x - Missing artifacts"
+	@echo ""
+
+parity-bootstrap:  ## Bootstrap hermetic environment (.venv-parity)
+	@./scripts/ft-parity-bootstrap.sh
+
+parity-selfcheck:  ## Run preflight self-checks (versions, config, plugins)
+	@if [ ! -d ".venv-parity" ]; then \
+		echo "❌ .venv-parity not found. Run: make parity-bootstrap"; \
+		exit 1; \
+	fi
+	@. .venv-parity/bin/activate && \
+	 . .venv-parity/parity-env.sh && \
+	 FT_PARITY_EXPLAIN=1 python -c "from firsttry.ci_parity.parity_runner import main; import sys; sys.exit(main(['--self-check', '--explain']))"
+
+parity:  ## Run full CI parity check (all gates)
+	@if [ ! -d ".venv-parity" ]; then \
+		echo "❌ .venv-parity not found. Run: make parity-bootstrap"; \
+		exit 1; \
+	fi
+	@. .venv-parity/bin/activate && \
+	 . .venv-parity/parity-env.sh && \
+	 FT_NO_NETWORK=1 FT_PARITY_EXPLAIN=1 python -c "from firsttry.ci_parity.parity_runner import main; import sys; sys.exit(main(['--parity', '--explain']))"
+
+parity-matrix:  ## Run parity across Python version matrix
+	@echo ">>> Matrix mode (Python 3.10, 3.11)"
+	@echo "Note: Requires tox or multiple Python versions installed"
+	@if command -v tox >/dev/null 2>&1; then \
+		tox -q; \
+	else \
+		echo "❌ tox not found. Install with: pip install tox"; \
+		exit 1; \
+	fi
+

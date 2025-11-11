@@ -1,4 +1,5 @@
 # firsttry/executor.py
+import shlex
 import shutil
 import subprocess
 from typing import Any
@@ -6,9 +7,10 @@ from typing import Any
 
 def run_command(cmd: str, cwd: str) -> dict:
     try:
+        # Use shlex.split instead of shell=True for security
+        cmd_list = shlex.split(cmd) if isinstance(cmd, str) else cmd
         proc = subprocess.run(
-            cmd,
-            shell=True,
+            cmd_list,
             cwd=cwd,
             capture_output=True,
             text=True,

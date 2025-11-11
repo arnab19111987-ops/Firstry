@@ -25,10 +25,21 @@ dependencies = [
 [project.optional-dependencies]
 enterprise = ["boto3>=1.34"]
 test = ["moto[boto3]>=5.0.0", "boto3>=1.34.0", "botocore>=1.34.0"]
+dev = [
+  "ruff==0.6.9",
+  "mypy==1.11.2",
+  "pytest==8.3.3",
+  "pytest-cov==6.0.0",
+  "pytest-timeout==2.3.1",
+  "pytest-rerunfailures==15.0",
+  "pytest-xdist==3.6.1",
+  "bandit==1.7.9",
+]
 
 [project.scripts]
 firsttry = "firsttry.cli:main"
-ft = "firsttry.cli_aliases:main"
+ft = "firsttry.cli:main"
+ft-parity = "firsttry.ci_parity.parity_runner:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

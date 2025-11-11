@@ -1,7 +1,52 @@
 ## Local parity checks
-## Local parity checks
 
 Quick guide for developers to run the repo-adaptive CI parity checks locally.
+
+### Auto-Bootstrap (Recommended)
+
+**The parity environment sets up automatically on first `ft` command run!**
+
+When you run any `ft` command in a Git repository with `ci/parity.lock.json`, FirstTry will:
+1. Create `.venv-parity` environment (if needed)
+2. Install all parity tools (ruff, mypy, pytest, bandit)
+3. Install Git hooks for automatic checking (pre-commit + pre-push)
+
+**No manual setup required!** Just run:
+
+```bash
+ft --version   # Triggers auto-bootstrap on first run
+```
+
+**Opt-out (for end-users or custom CI):**
+
+```bash
+export FIRSTTRY_DISABLE_AUTO_PARITY=1
+ft --version   # Skips auto-bootstrap
+```
+
+The auto-bootstrap only affects **developer repositories** with `ci/parity.lock.json`. End-user installations are never affected.
+
+### Git Hooks (Installed Automatically)
+
+After auto-bootstrap, Git will automatically run parity checks:
+
+- **pre-commit**: Fast self-check (`--self-check --explain`)
+  - Validates config hashes, tool versions, test collection
+  - Runs in seconds
+  - Blocks commits if parity is broken
+
+- **pre-push**: Full parity check (`--parity --explain`)
+  - Runs all checks: linting, types, tests, coverage, security
+  - Network sandboxed (FT_NO_NETWORK=1)
+  - Blocks pushes if quality gates fail
+
+**Manual hook installation** (if needed):
+
+```bash
+python -m firsttry.ci_parity.install_hooks
+```
+
+### Manual Parity Commands
 
 - Install the pre-commit hook that ensures the runner is used where configured:
 

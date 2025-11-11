@@ -6,13 +6,16 @@ try:
 
     MOTO_AVAILABLE = True
 except Exception:
-    mock_aws = None
+    # Provide a no-op decorator when moto is not available
+    def mock_aws(func):
+        return func
+
     MOTO_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(not MOTO_AVAILABLE, reason="moto not installed")
 
 
-@pytest.mark.skipif(mock_aws is None, reason="moto not available")
+@pytest.mark.skipif(not MOTO_AVAILABLE, reason="moto not available")
 @mock_aws
 def test_s3_put_get_roundtrip(monkeypatch, tmp_path):
     import boto3

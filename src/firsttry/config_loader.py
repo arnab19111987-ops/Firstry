@@ -46,11 +46,13 @@ def _get_config_cache_key() -> str:
     # Include FirstTry env vars in cache key
     ft_env = {k: v for k, v in os.environ.items() if k.startswith("FIRSTTRY_")}
     if ft_env:
-        env_hash = hashlib.sha1(str(sorted(ft_env.items())).encode()).hexdigest()
+        env_hash = hashlib.sha1(
+            str(sorted(ft_env.items())).encode(), usedforsecurity=False
+        ).hexdigest()
         keys.append(f"env:{env_hash}")
 
     # Final cache key
-    return hashlib.sha1("|".join(keys).encode()).hexdigest()
+    return hashlib.sha1("|".join(keys).encode(), usedforsecurity=False).hexdigest()
 
 
 def load_config() -> dict[str, Any]:

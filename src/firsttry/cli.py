@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
+import subprocess
 import sys
 
 # sync_with_ci is imported lazily in cmd_sync to avoid optional deps at module import
@@ -18,8 +20,8 @@ from firsttry.run_swarm import run_plan
 from . import __version__
 from .agent_manager import SmartAgentManager
 
-# CI parity runner (lightweight parity commands)
-from .ci_parity import runner as ci_runner
+# CI parity runner (lock-file based parity system)
+from .ci_parity import parity_runner as ci_runner
 from .config_cache import plan_from_config_with_timeout
 from .config_loader import apply_overrides_to_plan
 from .config_loader import load_config
@@ -30,6 +32,70 @@ from .repo_rules import plan_checks_for_repo
 
 # add these imports for old enhanced handlers
 # Consolidated CLI handlers migrated from cli_enhanced_old.py
+
+
+# Auto-parity bootstrap helpers
+def _in_git_repo(root: Path) -> bool:
+    """Check if directory is a Git repository."""
+    return (root / ".git").exists()
+
+
+def _has_parity_lock(root: Path) -> bool:
+    """Check if ci/parity.lock.json exists."""
+    return (root / "ci" / "parity.lock.json").exists()
+
+
+def _parity_bootstrapped(root: Path) -> bool:
+    """Check if parity environment is already bootstrapped."""
+    return (root / ".venv-parity" / "bin" / "python").exists()
+
+
+def _auto_parity_enabled() -> bool:
+    """Check if auto-parity is enabled (opt-out for end-users/CI)."""
+    return os.getenv("FIRSTTRY_DISABLE_AUTO_PARITY") not in ("1", "true", "yes")
+
+
+def _run(cmd: list[str], **kw: Any) -> None:
+    """Run command and raise on failure."""
+    subprocess.run(cmd, check=True, **kw)
+
+
+def _ensure_parity(root: Path) -> None:
+    """Auto-bootstrap parity environment and install hooks on first run."""
+    if not _auto_parity_enabled():
+        return
+    if not _in_git_repo(root) or not _has_parity_lock(root):
+        return
+    
+    # Skip in CI if it has its own bootstrap workflow
+    if os.getenv("CI") == "true":
+        return
+    
+    # Bootstrap venv once
+    venv_exists = _parity_bootstrapped(root)
+    if not venv_exists:
+        print("[firsttry] Setting up parity environment…", file=sys.stderr)
+        bootstrap_script = root / "scripts" / "ft-parity-bootstrap.sh"
+        if bootstrap_script.exists():
+            _run([str(bootstrap_script)])
+        else:
+            print("[firsttry] Warning: scripts/ft-parity-bootstrap.sh not found", file=sys.stderr)
+    
+    # Install hooks (idempotent, always check on first run or if missing)
+    # Check if hooks are already installed
+    hooks_path_raw = subprocess.run(
+        ["git", "config", "core.hooksPath"],
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.strip()
+    hooks_dir = Path(hooks_path_raw) if hooks_path_raw else root / ".git" / "hooks"
+    
+    pre_commit_exists = (hooks_dir / "pre-commit").exists()
+    pre_push_exists = (hooks_dir / "pre-push").exists()
+    
+    if not (pre_commit_exists and pre_push_exists):
+        _run([sys.executable, "-m", "firsttry.ci_parity.install_hooks"])
 
 
 def _normalize_profile(raw: str | None) -> str:
@@ -443,19 +509,64 @@ def build_parser() -> argparse.ArgumentParser:
 def cmd_pre_commit(args=None) -> int:
     """Run the ci_parity pre-commit profile (ft pre-commit).
 
-    Delegates to the ci_parity runner for a consistent parity plan.
+    Default: Fast self-check mode (~1.6s) for git commits.
+    Promotes to full parity when:
+      - Running in CI (CI=true)
+      - Called from pre-push hook (GIT_HOOK=pre-push)
+      - Manual override (FT_FORCE_PARITY=1 or --parity flag)
+    
+    Uses quiet mode for concise output.
     """
-    return ci_runner.main(["pre-commit"])
+    import os
+    import sys
+    
+    # Default: self-check on commit (fast)
+    mode = "self-check"
+    
+    # Promote to full parity when any of these are true
+    if (
+        os.getenv("CI") == "true"                 # CI always runs full parity
+        or os.getenv("GIT_HOOK") == "pre-push"    # pre-push hook → full parity
+        or os.getenv("FT_FORCE_PARITY") == "1"    # manual override
+        or "--parity" in sys.argv                 # explicit --parity flag
+        or (args and "--parity" in args)          # explicit --parity in args
+        or "--full" in sys.argv                   # convenience alias
+        or (args and "--full" in args)            # convenience alias in args
+    ):
+        mode = "parity"
+    
+    # Build arguments
+    argv = ["--self-check", "--quiet"] if mode == "self-check" else ["--parity", "--quiet"]
+    
+    return ci_runner.main(argv)
 
 
 def cmd_pre_push(args=None) -> int:
-    """Run the ci_parity pre-push profile (ft pre-push)."""
-    return ci_runner.main(["pre-push"])
+    """Run the ci_parity pre-push profile (ft pre-push).
+    
+    Runs full parity checks by setting GIT_HOOK=pre-push.
+    Uses quiet mode for concise output.
+    """
+    import os
+    
+    # Tag this as a pre-push hook so cmd_pre_commit promotes to full parity
+    os.environ["GIT_HOOK"] = "pre-push"
+    
+    return cmd_pre_commit(args)
 
 
 def cmd_ci(args=None) -> int:
-    """Run the ci_parity ci profile (ft ci)."""
-    return ci_runner.main(["ci"])
+    """Run the ci_parity ci profile (ft ci).
+    
+    Runs full parity checks by setting CI=true.
+    Uses quiet mode for concise output.
+    """
+    import os
+    
+    # Tag this as CI so cmd_pre_commit promotes to full parity
+    os.environ["CI"] = "true"
+    
+    return cmd_pre_commit(args)
 
 
 # --- DAG-run helper functions (default run path) -------------------------
@@ -888,9 +999,17 @@ def cmd_mirror_ci(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    
+    # Parse args early to determine command
     parser = build_parser()
-    # Use parse_known_args so we don't error on run-subcommand specific args
     args, _unknown = parser.parse_known_args(argv)
+    
+    # Auto-bootstrap parity environment ONLY for non-parity commands
+    # Profile commands (pre-commit, pre-push, ci) should use current environment
+    if args.cmd not in ("pre-commit", "pre-push", "ci"):
+        from pathlib import Path as _PathCls
+        repo_root = _PathCls.cwd()
+        _ensure_parity(repo_root)
 
     if args.cmd == "run":
         # NEW: Handle simplified mode system
@@ -1002,6 +1121,15 @@ def main(argv: list[str] | None = None) -> int:
 
     elif args.cmd == "list-checks":
         return cmd_list_checks()
+
+    elif args.cmd == "pre-commit":
+        return cmd_pre_commit(args)
+
+    elif args.cmd == "pre-push":
+        return cmd_pre_push(args)
+
+    elif args.cmd == "ci":
+        return cmd_ci(args)
 
     else:
         parser.print_help()

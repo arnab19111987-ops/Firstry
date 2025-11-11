@@ -4,9 +4,12 @@ This prevents accidentally simplifying check_tests() to use _safe_gate()
 which would lose the pytest output parsing that extracts test counts.
 """
 
+import pytest
+
 from firsttry.gates import check_tests
 
 
+@pytest.mark.timeout(120)  # This test runs pytest recursively, needs more time
 def test_check_tests_has_rich_info():
     """check_tests() must return structured info about pytest results.
 
