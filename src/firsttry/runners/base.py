@@ -3,11 +3,9 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-from typing import Protocol
+from typing import Any, Protocol
 
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import hash_file
+from ..twin.hashers import hash_bytes, hash_file
 
 
 @dataclass

@@ -2,16 +2,49 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
-from .cache import load_tool_cache_entry
-from .cache import save_tool_cache_entry
+from .cache import load_tool_cache_entry, save_tool_cache_entry
 from .cache_models import ToolCacheEntry
-from .cache_utils import collect_input_stats
-from .cache_utils import input_stats_match
+from .cache_utils import collect_input_stats, input_stats_match
 from .detectors import detect_stack
-from .run_profiles import RunProfile
-from .run_profiles import dev_profile
+from .run_profiles import RunProfile, dev_profile
+
+
+def _normalize_results_flat(raw: Any) -> List[Dict[str, Any]]:
+    """
+    Flatten nested results (e.g., [dict, [dict, dict]]) to List[dict],
+    and ensure each dict has a 'status' key. 'skipped'/'noop' map to exit_code=0.
+    """
+    out: List[Dict[str, Any]] = []
+
+    def _coerce(d: Dict[str, Any]) -> Dict[str, Any]:
+        # Guarantee a status
+        if "status" not in d:
+            if "exit_code" in d:
+                d["status"] = "ok" if d.get("exit_code", 1) == 0 else "error"
+            elif "ok" in d:
+                d["status"] = "ok" if d.get("ok") else "error"
+            elif d.get("error"):
+                d["status"] = "error"
+            else:
+                d["status"] = "unknown"
+        # Non-failing semantics for skipped/noop
+        if d.get("status") in ("skipped", "noop") and "exit_code" not in d:
+            d["exit_code"] = 0
+        return d
+
+    def walk(v: Any) -> None:
+        if isinstance(v, (list, tuple)):
+            for i in v:
+                walk(i)
+        elif isinstance(v, dict):
+            out.append(_coerce(v))
+        else:
+            out.append({"status": "unknown", "value": v, "exit_code": 0})
+
+    walk(raw)
+    return out
 
 
 def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
@@ -26,6 +59,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
     if cache_entry and current_stats and input_stats_match(cache_entry.input_files, current_stats):
         # Get the last real duration for analytics
         last_duration = cache_entry.extra.get("elapsed", 0.0)
+        exit_code = cache_entry.extra.get("exit_code", 0 if cache_entry.status == "ok" else 1)
 
         # replay failed => visible fast run
         if cache_entry.status == "fail":
@@ -37,6 +71,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
                 "meta": cache_entry.extra,
                 "duration_s": 0.0,  # cached -> always 0
                 "last_duration_s": last_duration,  # preserve for analytics
+                "exit_code": exit_code,
             }
         return {
             "name": tool.name,
@@ -46,6 +81,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
             "meta": cache_entry.extra,
             "duration_s": 0.0,  # cached -> always 0
             "last_duration_s": last_duration,  # preserve for analytics
+            "exit_code": exit_code,
         }
 
     # SLOW PATH: something changed -> run the tool
@@ -55,6 +91,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
 
     # Update meta with timing
     meta["elapsed"] = duration_s
+    exit_code = meta.get("exit_code", 0 if status == "ok" else 1)
 
     # Save to cache (only if we have valid stats)
     if current_stats is not None:
@@ -75,6 +112,7 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> dict[str, Any]:
         "cache_state": "miss",
         "meta": meta,
         "duration_s": duration_s,
+        "exit_code": exit_code,
     }
 
 
@@ -163,4 +201,5 @@ def run_profile_for_repo(
     # if report_path is not None:
     #     write_report_async(report_path, report, enabled=True)
 
-    return results, report
+    # existing code builds/collects results into `results`
+    return _normalize_results_flat(results), report

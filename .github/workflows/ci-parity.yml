@@ -1,0 +1,92 @@
+# CI Parity Workflow
+# Ensures CI runs exactly what local pre-commit runs (SSOT = single source of truth)
+# If pre-commit passes locally, CI will pass
+name: CI Parity
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  precommit-parity:
+    name: FirstTry Pre-commit Parity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python (pin same version as devs)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dev tooling (pinned versions)
+        run: |
+          python -m pip install --upgrade pip
+          # Prefer project dev extra if available, else requirements-dev.txt
+          (pip install -e '.[dev]' 2>/dev/null || true)
+          (test -f requirements-dev.txt && pip install -r requirements-dev.txt) || true
+          pip install pre-commit
+
+      - name: Show tool versions (diagnostic)
+        run: |
+          echo "=== Environment ==="
+          python -V
+          pip --version
+          echo ""
+          echo "=== Pre-commit ===" 
+          pre-commit --version || echo "pre-commit not found"
+          echo ""
+          echo "=== Linters/Formatters ==="
+          ruff --version || echo "ruff not found"
+          black --version || echo "black not found"
+          isort --version || echo "isort not found"
+          echo ""
+          echo "=== Type Checking ==="
+          mypy --version || echo "mypy not found"
+          echo ""
+          echo "=== Testing ==="
+          pytest --version || echo "pytest not found"
+          echo ""
+          echo "=== FirstTry CLI ==="
+          firsttry --version 2>&1 || echo "firsttry command not found"
+          ft --version 2>&1 || echo "ft command not found"
+
+      - name: Enforce identical environment to local dev
+        run: |
+          echo "PYTHONHASHSEED=0" >> $GITHUB_ENV
+          echo "LC_ALL=C.UTF-8" >> $GITHUB_ENV
+          echo "LANG=C.UTF-8" >> $GITHUB_ENV
+          echo "PIP_DISABLE_PIP_VERSION_CHECK=1" >> $GITHUB_ENV
+          echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
+          echo "FT_SKIP_TOOL_EXEC=1" >> $GITHUB_ENV
+
+      - name: Run FirstTry pre-commit parity (CI = local)
+        # This executes ALL hooks including our ft-pre-commit-parity hook
+        # which is the single source of truth for "green means green"
+        env:
+          PRE_COMMIT_COLOR: always
+        run: |
+          # Ensure clean state
+          git reset --hard
+          
+          # Run pre-commit on all files (same as local dev would run)
+          pre-commit run --all-files --show-diff-on-failure --color=always
+
+      - name: Upload parity logs (diagnostic)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ft-precommit-parity-logs
+          path: |
+            .firsttry/audit_logs/**
+            .firsttry/**/*.log
+            .pytest_cache/**
+            .ruff_cache/**
+            .mypy_cache/**
+          retention-days: 7
+          if-no-files-found: ignore

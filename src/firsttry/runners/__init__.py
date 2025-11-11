@@ -65,12 +65,14 @@ if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
     # Optional: if you have real runner modules, import and export them here.
     # Keeping try/except so test envs without real deps don't break.
     try:
-        from .real import coverage_gate as _real_coverage_gate
-        from .real import run_black_check as _real_run_black_check
-        from .real import run_coverage_xml as _real_run_coverage_xml
-        from .real import run_mypy as _real_run_mypy
-        from .real import run_pytest_kexpr as _real_run_pytest_kexpr
-        from .real import run_ruff as _real_run_ruff
+        from .real import (
+            coverage_gate as _real_coverage_gate,
+            run_black_check as _real_run_black_check,
+            run_coverage_xml as _real_run_coverage_xml,
+            run_mypy as _real_run_mypy,
+            run_pytest_kexpr as _real_run_pytest_kexpr,
+            run_ruff as _real_run_ruff,
+        )
 
         run_ruff = _real_run_ruff
         run_black_check = _real_run_black_check

@@ -3,8 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from .base import Gate
-from .base import GateResult
+from .base import Gate, GateResult
 
 REQUIRED_TOOLS = [
     ("python:ruff", "ruff"),

@@ -6,12 +6,8 @@ topological sorting and edge validation.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Dict
-from typing import List
-from typing import Set
-from typing import Tuple
+from dataclasses import dataclass, field
+from typing import Dict, List, Set, Tuple
 
 
 @dataclass(frozen=True)

@@ -11,8 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
-from firsttry.planner.dag import Plan
-from firsttry.planner.dag import Task
+from firsttry.planner.dag import Plan, Task
 from firsttry.run_swarm import run_plan
 
 from . import __version__
@@ -21,10 +20,8 @@ from .agent_manager import SmartAgentManager
 # CI parity runner (lightweight parity commands)
 from .ci_parity import runner as ci_runner
 from .config_cache import plan_from_config_with_timeout
-from .config_loader import apply_overrides_to_plan
-from .config_loader import load_config
-from .context_builders import build_context
-from .context_builders import build_repo_profile
+from .config_loader import apply_overrides_to_plan, load_config
+from .context_builders import build_context, build_repo_profile
 from .license_guard import get_tier
 from .repo_rules import plan_checks_for_repo
 
@@ -275,6 +272,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-cache",
         action="store_true",
         help="Disable result caching and run all checks fresh",
+    )
+    p_run.add_argument(
+        "--no-ui",
+        action="store_true",
+        help="Disable rich/emoji styling for maximum speed (plain text output)",
     )
     p_run.add_argument(
         "--cache-only",
@@ -780,8 +782,7 @@ def handle_status(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Handle the doctor command."""
     try:
-        from .doctor import render_human
-        from .doctor import run_doctor_report
+        from .doctor import render_human, run_doctor_report
 
         report = run_doctor_report()
         human_output = render_human(report)
@@ -911,6 +912,20 @@ def main(argv: list[str] | None = None) -> int:
         profile = _normalize_profile(getattr(args, "profile", None))
         # Update args.profile with normalized value for downstream functions
         args.profile = profile
+
+        # FAST PATH: Lazy import for lite/fast tiers (avoid loading full DAG machinery)
+        tier = getattr(args, "tier", None) or getattr(args, "mode", None) or "lite"
+        if tier in ("fast", "free-lite", "lite"):
+            # Lazy import only the fast runner
+            from firsttry.runners.fast import run as run_fast
+
+            return run_fast(args)
+        elif tier in ("strict", "free-strict", "strict-lite"):
+            # Lazy import only the strict runner
+            from firsttry.runners.strict import run as run_strict
+
+            return run_strict(args)
+
         # Route to the new DAG-run helper by default. Preserve the
         # license/profile env and then delegate to cmd_run so the
         # simplified DAG path is used.
@@ -1467,13 +1482,10 @@ async def run_fast_pipeline(*, args=None) -> int:
     # DRY-RUN MODE: Build plan preview with tier lockout without executing
     dry_run = getattr(args, "dry_run", False) if args else False
     if dry_run:
-        from datetime import datetime
-        from datetime import timezone
+        from datetime import datetime, timezone
         from pathlib import Path
 
-        from .checks_orchestrator import FAST_FAMILIES
-        from .checks_orchestrator import MUTATING_FAMILIES
-        from .checks_orchestrator import SLOW_FAMILIES
+        from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
         from .reports.tier_map import get_checks_for_tier
 
         allowed = set(get_checks_for_tier(tier)) if tier else set()
@@ -1573,13 +1585,14 @@ async def run_fast_pipeline(*, args=None) -> int:
     report_json_path = getattr(args, "report_json", None) if args else None
     if report_json_path:
         try:
-            from datetime import datetime
-            from datetime import timezone
+            from datetime import datetime, timezone
             from pathlib import Path
 
-            from .checks_orchestrator import FAST_FAMILIES
-            from .checks_orchestrator import MUTATING_FAMILIES
-            from .checks_orchestrator import SLOW_FAMILIES
+            from .checks_orchestrator import (
+                FAST_FAMILIES,
+                MUTATING_FAMILIES,
+                SLOW_FAMILIES,
+            )
             from .reporting import write_report_async  # type: ignore
             from .reports.tier_map import get_checks_for_tier
 

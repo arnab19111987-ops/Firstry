@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 # src/firsttry/config_loader.py
+import hashlib
+import json
+import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,27 +16,93 @@ except Exception:
     except Exception:
         tomllib = None  # type: ignore
 
+# Cache directory for memoized config
+_CACHE_DIR = Path(".firsttry/cache")
+_CACHE_FILE = _CACHE_DIR / "config_cache.json"
+
+
+def _get_config_cache_key() -> str:
+    """Generate cache key based on file mtimes, Python version, and FirstTry version."""
+    root = Path().resolve()
+    pyproject = root / "pyproject.toml"
+    firsttry_toml = root / "firsttry.toml"
+    setup_cfg = root / "setup.cfg"
+
+    # Get FirstTry version
+    try:
+        from . import __version__ as ft_version
+    except Exception:
+        ft_version = "0.0.0"
+
+    # Build cache key components
+    keys = [
+        f"py:{sys.version_info.major}.{sys.version_info.minor}",
+        f"ft:{ft_version}",
+        f"mtime:pyproject={pyproject.stat().st_mtime if pyproject.exists() else 0}",
+        f"mtime:firsttry={firsttry_toml.stat().st_mtime if firsttry_toml.exists() else 0}",
+        f"mtime:setup={setup_cfg.stat().st_mtime if setup_cfg.exists() else 0}",
+    ]
+
+    # Include FirstTry env vars in cache key
+    ft_env = {k: v for k, v in os.environ.items() if k.startswith("FIRSTTRY_")}
+    if ft_env:
+        env_hash = hashlib.sha1(str(sorted(ft_env.items())).encode()).hexdigest()
+        keys.append(f"env:{env_hash}")
+
+    # Final cache key
+    return hashlib.sha1("|".join(keys).encode()).hexdigest()
+
 
 def load_config() -> dict[str, Any]:
     """Load team / user config from:
     1. ./firsttry.toml
     2. ./pyproject.toml [tool.firsttry]
+
+    Results are cached in .firsttry/cache/config_cache.json keyed by:
+    - File modification times (pyproject.toml, firsttry.toml, setup.cfg)
+    - Python version
+    - FirstTry version
+    - FIRSTTRY_* environment variables
     """
+    # Try to load from cache first
+    cache_key = _get_config_cache_key()
+    if _CACHE_FILE.exists():
+        try:
+            cache_data = json.loads(_CACHE_FILE.read_text())
+            if cache_data.get("key") == cache_key and "config" in cache_data:
+                return cache_data["config"]
+        except Exception:
+            pass  # Cache miss or corruption, continue to parse
+
+    # Cache miss - parse config the expensive way
     root = Path().resolve()
 
     ft = root / "firsttry.toml"
     if ft.exists() and tomllib is not None:
-        return tomllib.loads(ft.read_text())
+        config = tomllib.loads(ft.read_text())
+    else:
+        pp = root / "pyproject.toml"
+        if pp.exists() and tomllib is not None:
+            data = tomllib.loads(pp.read_text())
+            tool = data.get("tool") or {}
+            ft_conf = tool.get("firsttry")
+            config = ft_conf if isinstance(ft_conf, dict) else {}
+        else:
+            config = {}
 
-    pp = root / "pyproject.toml"
-    if pp.exists() and tomllib is not None:
-        data = tomllib.loads(pp.read_text())
-        tool = data.get("tool") or {}
-        ft_conf = tool.get("firsttry")
-        if isinstance(ft_conf, dict):
-            return ft_conf
+    # Write to cache
+    try:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        _CACHE_FILE.write_text(
+            json.dumps(
+                {"key": cache_key, "config": config},
+                separators=(",", ":"),
+            ),
+        )
+    except Exception:
+        pass  # Cache write failure is not critical
 
-    return {}
+    return config
 
 
 def plan_from_config(config: dict[str, Any]) -> list[dict[str, Any]] | None:

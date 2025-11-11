@@ -61,7 +61,7 @@ def test_lazy_orchestrator():
 
     # Run with dev profile
     start = time.monotonic()
-    results = run_profile_for_repo(
+    results, report = run_profile_for_repo(
         repo_root=repo_root,
         profile=dev_profile(),
         report_path=report_path,
@@ -71,7 +71,27 @@ def test_lazy_orchestrator():
     print(f"📊 Total execution time: {total_time:.3f}s")
     print(f"📊 Tools executed: {len(results)}")
 
-    # Show results
+    # --- normalize results to a flat list of dicts ---
+    _flat = []
+    for _item in results:
+        if isinstance(_item, (list, tuple)):
+            _flat.extend(_item)
+        else:
+            _flat.append(_item)
+    results = _flat
+    # --- end normalize ---
+    # --- coerce missing status from exit_code/ok/error ---
+    for _r in results:
+        if isinstance(_r, dict) and "status" not in _r:
+            if "exit_code" in _r:
+                _r["status"] = "ok" if (_r.get("exit_code", 1) == 0) else "error"
+            elif "ok" in _r:
+                _r["status"] = "ok" if _r.get("ok") else "error"
+            elif _r.get("error"):
+                _r["status"] = "error"
+            else:
+                _r["status"] = "unknown"
+    # --- end coerce ---
     for result in results:
         status_emoji = "✅" if result["status"] == "ok" else "❌"
         cache_info = " (cached)" if result.get("from_cache") else ""

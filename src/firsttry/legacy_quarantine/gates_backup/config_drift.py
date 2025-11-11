@@ -4,8 +4,7 @@ import hashlib
 from pathlib import Path
 
 from .. import cache as cache_mod
-from .base import Gate
-from .base import GateResult
+from .base import Gate, GateResult
 
 try:
     import tomllib  # py3.11+

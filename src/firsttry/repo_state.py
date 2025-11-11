@@ -1,8 +1,7 @@
 import hashlib
 import json
 import subprocess
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 

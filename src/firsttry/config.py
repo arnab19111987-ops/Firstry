@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass
-from dataclasses import field
+from dataclasses import dataclass, field
 from pathlib import Path
 
 try:

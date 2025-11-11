@@ -10,13 +10,17 @@ from typing import Any
 # console may be a rich Console or None when rich isn't available
 _console: Any = None
 _HAS_RICH: bool = False
+_NO_UI_MODE: bool = False  # Performance mode flag
+
 try:
     from rich.console import Console
-    from rich.progress import BarColumn
-    from rich.progress import Progress
-    from rich.progress import SpinnerColumn
-    from rich.progress import TextColumn
-    from rich.progress import TimeElapsedColumn
+    from rich.progress import (
+        BarColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
 
     _HAS_RICH = True
     _console = Console()
@@ -25,7 +29,27 @@ except Exception:  # pragma: no cover
     _console = None
 
 
+def set_no_ui(enabled: bool) -> None:
+    """Enable/disable rich UI features for maximum performance.
+
+    When enabled (no_ui=True):
+    - Disables rich console formatting
+    - Disables emoji/ANSI styling
+    - Disables spinners and progress bars
+    - Uses plain text output only
+
+    This can save several milliseconds per invocation.
+    """
+    global _NO_UI_MODE, _HAS_RICH
+    _NO_UI_MODE = enabled
+    if enabled:
+        # Temporarily disable rich features
+        _HAS_RICH = False
+
+
 def _supports_color() -> bool:
+    if _NO_UI_MODE:
+        return False
     if _HAS_RICH:
         return True
     if not sys.stdout.isatty():

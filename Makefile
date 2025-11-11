@@ -23,6 +23,14 @@ ruff-fix:  ## auto-fix ruff lint issues and format with black
 	python -m ruff check . --fix
 	python -m black . || true
 
+.PHONY: fmt-imports
+fmt-imports:  ## auto-fix import sorting with isort
+	isort .
+
+.PHONY: check-imports
+check-imports:  ## check import sorting without modifying files
+	isort --check-only .
+
 .PHONY: stub-check
 stub-check:  ## scan for unowned STUB/TODO markers and stray NotImplementedError
 	@echo "[stub-check] checking for unowned STUB/TODO markers..."
@@ -155,3 +163,51 @@ ft-ci-dry:
 ft-ci-matrix:
 	@PYVERS=$${PYVERS:-"3.10,3.11"} ./scripts/ft-ci-local
 
+
+# ============================================================================
+# Ultra-fast development targets (deterministic + no-hang)
+# ============================================================================
+TIMEOUT := timeout --preserve-status -k 5s
+PYTEST := PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 FT_SKIP_TOOL_EXEC=1 pytest -q --maxfail=1 --no-header --no-summary
+
+# Helper to conditionally run tools (skip if not installed)
+define maybe_run
+	if command -v $(1) >/dev/null 2>&1; then \
+		echo ">>> $(1): $(2)"; \
+		$(TIMEOUT) $(3) bash -lc '$(1) $(2)'; \
+	else \
+		echo "SKIP ($(1) not found)"; \
+	fi
+endef
+
+.PHONY: dev.fast dev.tests dev.checks dev.all dev.help
+
+dev.help:
+	@echo "Fast development targets (all with timeouts):"
+	@echo "  make dev.fast    - Quick smoke test + CLI ping"
+	@echo "  make dev.tests   - Fast test suite (non-slow tests)"
+	@echo "  make dev.checks  - Parallel linting/type-checking + coverage"
+	@echo "  make dev.all     - Run all dev routines"
+
+dev.fast:
+	@echo ">>> Fast dev ping"
+	@$(PYTEST) -k "import or smoke" || true
+	@($(TIMEOUT) 20s python -m firsttry --help >/dev/null 2>&1 || $(TIMEOUT) 20s firsttry --help >/dev/null 2>&1 || true)
+
+dev.tests:
+	@echo ">>> Fast tests"
+	@$(TIMEOUT) 120s $(PYTEST) -k "not slow"
+
+dev.checks:
+	@echo ">>> Fast checks (parallel)"
+	@set -e; \
+	( $(call maybe_run,ruff,check .,"60s") ) & \
+	( $(call maybe_run,black,--check .,"60s") ) & \
+	( $(call maybe_run,isort,--check-only .,"60s") ) & \
+	( $(call maybe_run,mypy,src,"120s") ) & \
+	wait; \
+	echo ">>> Coverage (non-blocking)"; \
+	$(TIMEOUT) 120s $(PYTEST) --cov=src/firsttry --cov-branch --cov-report=term-missing || true
+
+dev.all: dev.fast dev.tests dev.checks
+	@echo ">>> All dev routines complete (fast, timed, reliable)"

@@ -3,8 +3,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from .base import Gate
-from .base import GateResult
+from .base import Gate, GateResult
 
 
 class PythonPytestGate(Gate):

@@ -28,6 +28,15 @@ repos:
         stages: [push]        # no --strict here; respect mypy.ini
         additional_dependencies: []
 
+  # --- isort import sorting (Black-compatible) ---
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (imports sorted)
+        args: ["--profile=black", "--filter-files"]
+        stages: [commit, push]
+
   # --- Heavy parity occurs in pre-push hook (containerized) ---
   # We don’t wire it here; .githooks/pre-push calls ./scripts/ft-ci-local
 repos:
@@ -71,3 +80,11 @@ repos:
         entry: bash -lc 'FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit'
         language: system
         pass_filenames: false
+
+      # === NEW: CI Parity Hook (SSOT) ===
+      - id: ft-pre-commit-parity
+        name: FirstTry pre-commit (repo-adaptive, CI-parity, timed)
+        entry: bash -lc 'scripts/ft_precommit_parity.sh'
+        language: system
+        pass_filenames: false
+        stages: [commit, push]

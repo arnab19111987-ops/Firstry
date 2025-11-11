@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Dict
+from typing import Any, Dict, List
 
 from ...agents.base import Agent, AgentResult
 from ...ci_parser import resolve_ci_plan

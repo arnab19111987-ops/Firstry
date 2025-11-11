@@ -9,12 +9,9 @@ import os
 import pathlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class HTTPResponseLike(Protocol):
