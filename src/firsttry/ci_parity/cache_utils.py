@@ -14,7 +14,8 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
+from typing import Tuple
 
 ARTIFACTS = Path("artifacts")
 WARM_DIR = Path(".firsttry/warm")
@@ -56,34 +57,32 @@ def compute_local_fingerprint() -> str:
 
 def read_remote_fingerprint(ref: str = "origin/main") -> str:
     """Read cache fingerprint from remote ref. Non-blocking, best effort."""
-    code, out = _run(
-        ["git", "show", f"{ref}:.firsttry/warm/fingerprint.txt"], timeout=1.0
-    )
+    code, out = _run(["git", "show", f"{ref}:.firsttry/warm/fingerprint.txt"], timeout=1.0)
     return out.strip() if code == 0 else ""
 
 
 def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
     """Run on EVERY ft command. Silent, ~1s budget. Keeps first run warm.
-    
+
     Fetches latest main and checks if cache fingerprint changed.
     If changed, attempts to update cache from CI artifacts.
     """
     ensure_dirs()
     # Fetch latest (shallow, quiet)
     _run(["git", "fetch", fetch_ref.split("/")[0], "--quiet", "--depth=1"], timeout=1.0)
-    
+
     local = compute_local_fingerprint()
     remote = read_remote_fingerprint(fetch_ref)
-    
+
     if not remote or remote == local:
         return
-    
+
     # Check if fingerprint file is stale (>1s old)
     try:
         mtime = FINGERPRINT_FILE.stat().st_mtime
     except FileNotFoundError:
         mtime = 0
-    
+
     if time.time() - mtime > 1:
         try:
             update_cache(remote_fingerprint=remote)
@@ -93,21 +92,17 @@ def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
 
 def update_cache(remote_fingerprint: Optional[str] = None) -> None:
     """Download warm-cache-<fingerprint>.zip artifact via gh CLI (preferred).
-    
+
     Args:
         remote_fingerprint: Explicit fingerprint to use. If None, auto-detect.
     """
     ensure_dirs()
-    fp = (
-        remote_fingerprint
-        or compute_local_fingerprint()
-        or read_remote_fingerprint("origin/main")
-    )
+    fp = remote_fingerprint or compute_local_fingerprint() or read_remote_fingerprint("origin/main")
     if not fp:
         return
-    
+
     artifact = f"warm-cache-{fp}.zip"
-    
+
     # GitHub CLI path (preferred in CI)
     rc, _ = _run(["which", "gh"], timeout=0.5)
     if rc == 0:
@@ -132,7 +127,7 @@ def _extract_zip(zip_path: Path, dest: Path) -> None:
 
 def read_flaky_tests() -> list[str]:
     """Read list of known flaky test nodeids from persistent storage.
-    
+
     Returns:
         List of test nodeids (e.g., ["tests/test_foo.py::test_bar"])
     """

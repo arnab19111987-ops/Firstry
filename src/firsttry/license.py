@@ -214,11 +214,12 @@ if not _raw_secret:
         # Local dev fallback - NOT for production use
         _raw_secret = "dev-only-insecure-fallback"
         import warnings
+
         warnings.warn(
             "FIRSTTRY_SHARED_SECRET not set - using insecure dev fallback. "
             "Set FIRSTTRY_SHARED_SECRET in production!",
             UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
     else:
         raise RuntimeError(

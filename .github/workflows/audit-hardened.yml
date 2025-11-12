@@ -137,7 +137,7 @@ jobs:
 
       - name: Upload audit report
         if: always()
-        uses: actions/upload-artifact@v3  # v3
+        uses: actions/upload-artifact@v4  # v3
         with:
           name: audit-report-${{ github.run_number }}
           path: /tmp/audit_report.md

@@ -5,8 +5,9 @@ All real code lives in top-level `firsttry` package.
 """
 
 # Import the aliased module which points to root firsttry
-from .firsttry import *  # noqa: F403
 import sys
+
+from .firsttry import *  # noqa: F403
 
 # Make tools.firsttry fully transparent to the root firsttry package
 # by making this module object be the same as the root package

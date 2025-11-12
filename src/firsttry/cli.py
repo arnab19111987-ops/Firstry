@@ -24,19 +24,20 @@ from .agent_manager import SmartAgentManager
 from .ci_parity import parity_runner as ci_runner
 
 try:
-    from .ci_parity.cache_utils import (
-        auto_refresh_golden_cache,
-        update_cache,
-        clear_cache,
-    )
+    from .ci_parity.cache_utils import auto_refresh_golden_cache
+    from .ci_parity.cache_utils import clear_cache
+    from .ci_parity.cache_utils import update_cache
 except ImportError:
     # Fallback if cache_utils not available
     def auto_refresh_golden_cache(ref: str) -> None:
         pass
+
     def update_cache() -> None:
         pass
+
     def clear_cache() -> None:
         pass
+
 
 from .config_cache import plan_from_config_with_timeout
 from .config_loader import apply_overrides_to_plan
@@ -82,11 +83,11 @@ def _ensure_parity(root: Path) -> None:
         return
     if not _in_git_repo(root) or not _has_parity_lock(root):
         return
-    
+
     # Skip in CI if it has its own bootstrap workflow
     if os.getenv("CI") == "true":
         return
-    
+
     # Bootstrap venv once
     venv_exists = _parity_bootstrapped(root)
     if not venv_exists:
@@ -96,7 +97,7 @@ def _ensure_parity(root: Path) -> None:
             _run([str(bootstrap_script)])
         else:
             print("[firsttry] Warning: scripts/ft-parity-bootstrap.sh not found", file=sys.stderr)
-    
+
     # Install hooks (idempotent, always check on first run or if missing)
     # Check if hooks are already installed
     hooks_path_raw = subprocess.run(
@@ -106,10 +107,10 @@ def _ensure_parity(root: Path) -> None:
         check=False,
     ).stdout.strip()
     hooks_dir = Path(hooks_path_raw) if hooks_path_raw else root / ".git" / "hooks"
-    
+
     pre_commit_exists = (hooks_dir / "pre-commit").exists()
     pre_push_exists = (hooks_dir / "pre-push").exists()
-    
+
     if not (pre_commit_exists and pre_push_exists):
         _run([sys.executable, "-m", "firsttry.ci_parity.install_hooks"])
 
@@ -534,58 +535,58 @@ def cmd_pre_commit(args=None) -> int:
       - Running in CI (CI=true)
       - Called from pre-push hook (GIT_HOOK=pre-push)
       - Manual override (FT_FORCE_PARITY=1 or --parity flag)
-    
+
     Uses quiet mode for concise output.
     """
     import os
     import sys
-    
+
     # Default: self-check on commit (fast)
     mode = "self-check"
-    
+
     # Promote to full parity when any of these are true
     if (
-        os.getenv("CI") == "true"                 # CI always runs full parity
-        or os.getenv("GIT_HOOK") == "pre-push"    # pre-push hook → full parity
-        or os.getenv("FT_FORCE_PARITY") == "1"    # manual override
-        or "--parity" in sys.argv                 # explicit --parity flag
-        or (args and "--parity" in args)          # explicit --parity in args
-        or "--full" in sys.argv                   # convenience alias
-        or (args and "--full" in args)            # convenience alias in args
+        os.getenv("CI") == "true"  # CI always runs full parity
+        or os.getenv("GIT_HOOK") == "pre-push"  # pre-push hook → full parity
+        or os.getenv("FT_FORCE_PARITY") == "1"  # manual override
+        or "--parity" in sys.argv  # explicit --parity flag
+        or (args and "--parity" in args)  # explicit --parity in args
+        or "--full" in sys.argv  # convenience alias
+        or (args and "--full" in args)  # convenience alias in args
     ):
         mode = "parity"
-    
+
     # Build arguments
     argv = ["--self-check", "--quiet"] if mode == "self-check" else ["--parity", "--quiet"]
-    
+
     return ci_runner.main(argv)
 
 
 def cmd_pre_push(args=None) -> int:
     """Run the ci_parity pre-push profile (ft pre-push).
-    
+
     Runs full parity checks by setting GIT_HOOK=pre-push.
     Uses quiet mode for concise output.
     """
     import os
-    
+
     # Tag this as a pre-push hook so cmd_pre_commit promotes to full parity
     os.environ["GIT_HOOK"] = "pre-push"
-    
+
     return cmd_pre_commit(args)
 
 
 def cmd_ci(args=None) -> int:
     """Run the ci_parity ci profile (ft ci).
-    
+
     Runs full parity checks by setting CI=true.
     Uses quiet mode for concise output.
     """
     import os
-    
+
     # Tag this as CI so cmd_pre_commit promotes to full parity
     os.environ["CI"] = "true"
-    
+
     return cmd_pre_commit(args)
 
 
@@ -1041,22 +1042,23 @@ def cmd_mirror_ci(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
-    
+
     # Auto-refresh golden cache (silent, best-effort, ~1s budget)
     # Runs on EVERY ft command to keep cache warm
     try:
         auto_refresh_golden_cache("origin/main")
     except Exception:
         pass  # Never block user on cache refresh
-    
+
     # Parse args early to determine command
     parser = build_parser()
     args, _unknown = parser.parse_known_args(argv)
-    
+
     # Auto-bootstrap parity environment ONLY for non-parity commands
     # Profile commands (pre-commit, pre-push, ci) should use current environment
     if args.cmd not in ("pre-commit", "pre-push", "ci"):
         from pathlib import Path as _PathCls
+
         repo_root = _PathCls.cwd()
         _ensure_parity(repo_root)
 

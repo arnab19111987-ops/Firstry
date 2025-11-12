@@ -7,19 +7,19 @@ print("# DEAD CODE ANALYSIS REPORT")
 print("# " + "=" * 78)
 
 # Load coverage data
-with open('coverage.json') as f:
+with open("coverage.json") as f:
     cov_data = json.load(f)
 
-files_data = cov_data.get('files', {})
+files_data = cov_data.get("files", {})
 zero_cov_files = set()
 
 for path, info in files_data.items():
-    if not path.startswith('src/firsttry'):
+    if not path.startswith("src/firsttry"):
         continue
-    if path.startswith('src/firsttry/tests/'):
+    if path.startswith("src/firsttry/tests/"):
         continue
-    summary = info.get('summary', {})
-    if summary.get('percent_covered', 0) == 0:
+    summary = info.get("summary", {})
+    if summary.get("percent_covered", 0) == 0:
         zero_cov_files.add(path)
 
 # Read orphan list from previous run
@@ -124,7 +124,7 @@ for f in sorted(orphans_from_import_graph - zero_cov_files):
 print("\n## SPECIAL CASE: legacy_quarantine/ directory")
 print("## This entire directory appears to be orphaned (0 external references)")
 print("# " + "-" * 78)
-legacy_files = [f for f in orphans_from_import_graph if 'legacy_quarantine' in f]
+legacy_files = [f for f in orphans_from_import_graph if "legacy_quarantine" in f]
 print(f"  Files in legacy_quarantine/: {len(legacy_files)}")
 for f in sorted(legacy_files)[:5]:
     print(f"    {f}")
@@ -142,7 +142,9 @@ print(f"  HIGH CONFIDENCE deletions: {len(high_confidence_broken)}")
 print(f"  VERY SAFE deletions: {len(high_confidence - broken_imports)}")
 print(f"  LIKELY DEAD: {len(orphans_from_import_graph - zero_cov_files)}")
 print("  ")
-print(f"  TOTAL SAFE TO DELETE: {len(high_confidence) + len(orphans_from_import_graph - zero_cov_files)}")
+print(
+    f"  TOTAL SAFE TO DELETE: {len(high_confidence) + len(orphans_from_import_graph - zero_cov_files)}"
+)
 
 print("\n## RECOMMENDED ACTION PLAN")
 print("# " + "=" * 78)
@@ -156,13 +158,13 @@ print("\n## SPECIFIC FILES TO DELETE (Quick Win)")
 print("# " + "=" * 78)
 quick_wins = [
     "src/firsttry/legacy_quarantine/",  # entire directory
-    "src/firsttry/vscode_skel.py",      # 0 refs, 0% cov
-    "src/firsttry/sync.py",              # self-ref only, 0% cov
-    "src/firsttry/setup_wizard.py",      # self-ref only, 0% cov
-    "src/firsttry/cli_pipelines.py",     # broken import
-    "src/firsttry/cli_run_profile.py",   # broken import
+    "src/firsttry/vscode_skel.py",  # 0 refs, 0% cov
+    "src/firsttry/sync.py",  # self-ref only, 0% cov
+    "src/firsttry/setup_wizard.py",  # self-ref only, 0% cov
+    "src/firsttry/cli_pipelines.py",  # broken import
+    "src/firsttry/cli_run_profile.py",  # broken import
     "src/firsttry/cli_runner_light.py",  # broken import
-    "src/firsttry/cli_v2.py",            # broken import
+    "src/firsttry/cli_v2.py",  # broken import
 ]
 for f in quick_wins:
     print(f"  {f}")

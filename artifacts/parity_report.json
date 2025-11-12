@@ -1,26 +1,7 @@
 {
   "ok": true,
+  "type": "self-check",
   "python": "3.11.7",
-  "tool_versions": {
-    "ruff": "0.14.4",
-    "mypy": "1.18.2",
-    "pytest": "9.0.0",
-    "bandit": "1.7.9"
-  },
-  "durations_sec": {
-    "ruff": 0.04585981369018555,
-    "mypy": 3.7533013820648193,
-    "pytest": 209.48182845115662,
-    "bandit": 1.9821300506591797
-  },
-  "thresholds": {
-    "coverage_min": 0.15,
-    "coverage_total": 0.4048
-  },
-  "collection": {
-    "expected_count": 1055,
-    "expected_hash": "6a153d8d6547bf0354ca40f5090a443599d852f6a7e3ae34b087fa7cc1c99972",
-    "allow_uncollected": true
-  },
+  "timestamp": 1762925443.687059,
   "failures": []
 }
