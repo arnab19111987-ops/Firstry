@@ -2,19 +2,16 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from concurrent.futures import Future
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
 
-from ..cache.base import BaseCache
-from ..cache.base import CacheHit
+from ..cache.base import BaseCache, CacheHit
 from ..cache.local import LocalCache
 from ..cache.s3 import S3Cache
 from ..planner.dag import Plan
-from ..runners.base import CheckRunner
-from ..runners.base import RunResult
+from ..runners.base import CheckRunner, RunResult
 from ..runners.registry import default_registry
 
 

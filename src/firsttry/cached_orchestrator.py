@@ -5,13 +5,10 @@ import os
 from pathlib import Path
 from typing import Any
 
-from . import cache as ft_cache
-from . import progress
-from .cache_utils import collect_input_stats
-from .cache_utils import input_stats_match
+from . import cache as ft_cache, progress
+from .cache_utils import collect_input_stats, input_stats_match
 from .check_dependencies import should_skip_due_to_dependencies
-from .check_registry import CHECK_REGISTRY
-from .check_registry import get_check_inputs
+from .check_registry import CHECK_REGISTRY, get_check_inputs
 from .run_profiles import get_pytest_mode_for_profile
 from .smart_npm import run_smart_npm_test
 from .smart_pytest import run_smart_pytest

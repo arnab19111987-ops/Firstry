@@ -2,18 +2,13 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
+from typing import Any, Dict, List
 
-from .cache import load_tool_cache_entry
-from .cache import save_tool_cache_entry
+from .cache import load_tool_cache_entry, save_tool_cache_entry
 from .cache_models import ToolCacheEntry
-from .cache_utils import collect_input_stats
-from .cache_utils import input_stats_match
+from .cache_utils import collect_input_stats, input_stats_match
 from .detectors import detect_stack
-from .run_profiles import RunProfile
-from .run_profiles import dev_profile
+from .run_profiles import RunProfile, dev_profile
 
 
 def _normalize_results_flat(raw: Any) -> List[Dict[str, Any]]:

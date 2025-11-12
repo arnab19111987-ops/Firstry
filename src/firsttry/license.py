@@ -9,12 +9,9 @@ import os
 import pathlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class HTTPResponseLike(Protocol):
@@ -214,11 +211,12 @@ if not _raw_secret:
         # Local dev fallback - NOT for production use
         _raw_secret = "dev-only-insecure-fallback"
         import warnings
+
         warnings.warn(
             "FIRSTTRY_SHARED_SECRET not set - using insecure dev fallback. "
             "Set FIRSTTRY_SHARED_SECRET in production!",
             UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
     else:
         raise RuntimeError(

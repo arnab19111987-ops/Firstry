@@ -51,14 +51,16 @@ def main() -> None:
         hooks_dir = Path(".git/hooks")
     else:
         hooks_dir = Path(hooks_path)
-    
+
     if not hooks_dir.parent.exists():
         print("[firsttry] Not in a Git repository, skipping hook installation", file=sys.stderr)
         return
-    
+
     _write_hook(hooks_dir / "pre-commit", PRE_COMMIT)
     _write_hook(hooks_dir / "pre-push", PRE_PUSH)
-    print(f"[firsttry] Installed parity pre-commit and pre-push hooks to {hooks_dir}", file=sys.stderr)
+    print(
+        f"[firsttry] Installed parity pre-commit and pre-push hooks to {hooks_dir}", file=sys.stderr
+    )
 
 
 if __name__ == "__main__":

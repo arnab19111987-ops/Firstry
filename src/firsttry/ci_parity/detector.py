@@ -2,15 +2,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import TypedDict
-from typing import Union
+from typing import Dict, List, Optional, TypedDict, Union
 
-from .util import current_repo_root
-from .util import normalize_cmd
-from .util import tokenize_shell_line
+from .util import current_repo_root, normalize_cmd, tokenize_shell_line
 
 TOOLS = (
     "black",

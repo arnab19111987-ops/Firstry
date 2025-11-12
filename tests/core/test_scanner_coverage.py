@@ -6,11 +6,8 @@ This suite targets:
 - Coverage threshold constants
 """
 
-from firsttry.models import Issue
-from firsttry.models import ScanResult
-from firsttry.models import SectionSummary
-from firsttry.scanner import COVERAGE_REQUIRED_DEFAULT
-from firsttry.scanner import _run_cmd
+from firsttry.models import Issue, ScanResult, SectionSummary
+from firsttry.scanner import COVERAGE_REQUIRED_DEFAULT, _run_cmd
 
 
 class TestRunCmd:

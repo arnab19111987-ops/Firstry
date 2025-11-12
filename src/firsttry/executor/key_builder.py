@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..twin.hashers import env_fingerprint
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import hash_file
-from ..twin.hashers import tool_version_hash
+from ..twin.hashers import env_fingerprint, hash_bytes, hash_file, tool_version_hash
 
 
 def build_cache_key(repo_root: Path, cmd: list[str], inputs: set[str]) -> str:

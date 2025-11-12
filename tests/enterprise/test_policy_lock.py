@@ -11,8 +11,7 @@ Tests for:
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
-from typing import Dict
+from typing import Any, Dict
 
 import pytest
 

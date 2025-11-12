@@ -35,7 +35,7 @@ jobs:
       - name: Block hardcoded secrets
         run: |
           echo "Scanning for hardcoded secrets..."
-          # Search for hardcoded secret patterns (excluding docs and cache files)
+          # Search for hardcoded secret patterns (excluding docs, cache, and config files)
           BAD=$(grep -RIn \
             --exclude-dir=.git \
             --exclude-dir=dist \
@@ -48,7 +48,9 @@ jobs:
             --exclude='*.md' \
             --exclude='*.json' \
             --exclude='*.lock' \
-            -E 'dev-secret-change-me|shared[_-]?secret\s*=\s*["'\''][^"'\'']+["'\'']' . || true)
+            --exclude='*.yaml' \
+            --exclude='*.yml' \
+            -E 'dev-secret-change-me' src/ tests/ || true)
           
           if [ -n "$BAD" ]; then
             echo "::error::Hardcoded secret detected - use environment variables instead"

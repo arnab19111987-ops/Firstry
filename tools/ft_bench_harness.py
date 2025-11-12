@@ -29,11 +29,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Optional S3 support
 try:

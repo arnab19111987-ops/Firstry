@@ -24,10 +24,7 @@ def _maybe_call(obj, name, *a, **kw):
 
 def test_low_risk_calls():
     try:
-        from firsttry import planner
-        from firsttry import scanner
-        from firsttry import smart_pytest
-        from firsttry import state
+        from firsttry import planner, scanner, smart_pytest, state
     except Exception:
         return
 

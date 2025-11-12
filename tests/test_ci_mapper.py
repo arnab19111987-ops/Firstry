@@ -1,7 +1,6 @@
 import textwrap
 
-from firsttry.ci_mapper import build_ci_plan
-from firsttry.ci_mapper import rewrite_run_cmd
+from firsttry.ci_mapper import build_ci_plan, rewrite_run_cmd
 
 
 def test_build_ci_plan_basic(tmp_path):

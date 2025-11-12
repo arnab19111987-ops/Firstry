@@ -27,22 +27,22 @@ edges = {}
 
 for py in SRC.rglob("*.py"):
     # Skip __pycache__ and hidden directories
-    if "__pycache__" in py.parts or any(p.startswith('.') for p in py.parts):
+    if "__pycache__" in py.parts or any(p.startswith(".") for p in py.parts):
         continue
-    
+
     mod = str(py.relative_to(SRC)).replace(os.sep, ".")[:-3]  # strip .py
     if mod.endswith(".__init__"):
         mod = mod[: -len(".__init__")]
-    
+
     mod_to_file[mod] = py
     edges[mod] = set()
-    
+
     try:
         tree = ast.parse(py.read_text(encoding="utf-8"))
     except Exception as e:
         print(f"# Warning: could not parse {py}: {e}", file=sys.stderr)
         continue
-    
+
     for n in ast.walk(tree):
         if isinstance(n, ast.Import):
             for a in n.names:
@@ -56,7 +56,7 @@ for py in SRC.rglob("*.py"):
                     # Relative import - reconstruct full module name
                     parts = mod.split(".")
                     if n.level <= len(parts):
-                        base_parts = parts[:-n.level] if n.level < len(parts) else []
+                        base_parts = parts[: -n.level] if n.level < len(parts) else []
                         if n.module:
                             full_mod = ".".join(base_parts + [n.module])
                         else:

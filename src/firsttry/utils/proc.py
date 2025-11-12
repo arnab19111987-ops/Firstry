@@ -5,8 +5,7 @@ from __future__ import annotations
 import os
 import shlex
 import subprocess
-from typing import Tuple
-from typing import Union
+from typing import Tuple, Union
 
 DEFAULT_TIMEOUT = int(os.getenv("FT_TOOL_TIMEOUT_SEC", "30"))
 

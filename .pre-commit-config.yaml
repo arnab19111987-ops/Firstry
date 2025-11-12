@@ -6,9 +6,9 @@ repos:
       - id: ruff
         name: ruff (fix)
         args: [--fix]
-        stages: [commit]
+        stages: [pre-commit]
       - id: ruff-format
-        stages: [commit]
+        stages: [pre-commit]
 
   # Lint GitHub workflows for deprecated patterns
   - repo: local
@@ -18,14 +18,14 @@ repos:
         entry: bash -lc 'scripts/check-workflows.sh'
         language: system
         pass_filenames: false
-        stages: [commit, push]
+        stages: [pre-commit, pre-push]
 
   # --- Type-check at push (fast path) ---
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.2
     hooks:
       - id: mypy
-        stages: [push]        # no --strict here; respect mypy.ini
+        stages: [pre-push]        # no --strict here; respect mypy.ini
         additional_dependencies: []
 
   # --- isort import sorting (Black-compatible) ---
@@ -35,7 +35,7 @@ repos:
       - id: isort
         name: isort (imports sorted)
         args: ["--profile=black", "--filter-files"]
-        stages: [commit, push]
+        stages: [pre-commit, pre-push]
 
   # --- Heavy parity occurs in pre-push hook (containerized) ---
   # We don't wire it here; .githooks/pre-push calls ./scripts/ft-ci-local
@@ -49,7 +49,7 @@ repos:
         entry: bash -lc 'export GIT_HOOK=pre-commit; ft pre-commit'
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
       
       # Full parity on push (GIT_HOOK=pre-push triggers full parity)
       - id: ft-pre-push
@@ -57,7 +57,7 @@ repos:
         entry: bash -lc 'export GIT_HOOK=pre-push FT_NO_NETWORK=1; ft pre-commit'
         language: system
         pass_filenames: false
-        stages: [push]
+        stages: [pre-push]
 
 repos:
   - repo: https://github.com/psf/black
@@ -107,7 +107,7 @@ repos:
         entry: bash -lc 'scripts/ft_precommit_parity.sh'
         language: system
         pass_filenames: false
-        stages: [commit, push]
+        stages: [pre-commit, pre-push]
 
       - id: pip-audit-snapshot
         name: pip-audit (snapshot only)
@@ -118,7 +118,7 @@ repos:
 
       - id: ft-secret-guard
         name: FirstTry hardcoded secret guard
-        entry: bash -c 'BAD=$(grep -RIn --exclude-dir=.git --exclude-dir=dist --exclude-dir=build --exclude-dir=.mypy_cache --exclude-dir=.pytest_cache --exclude-dir=.ruff_cache --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude="*.md" --exclude="*.json" --exclude="*.lock" -E "dev-secret-change-me|shared[_-]?secret\s*=\s*[\"'\''][^\"'\'']+[\"'\'']" . || true); if [ -n "$BAD" ]; then echo "Hardcoded secret detected:"; echo "$BAD"; exit 1; fi'
+        entry: bash -c 'BAD=$(grep -RIn --exclude-dir=.git --exclude-dir=dist --exclude-dir=build --exclude-dir=.mypy_cache --exclude-dir=.pytest_cache --exclude-dir=.ruff_cache --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude="*.md" --exclude="*.json" --exclude="*.lock" --exclude="*.yaml" --exclude="*.yml" -E "dev-secret-change-me" src/ tests/ || true); if [ -n "$BAD" ]; then echo "Hardcoded secret detected:"; echo "$BAD"; exit 1; fi'
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]

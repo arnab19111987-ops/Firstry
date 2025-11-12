@@ -7,8 +7,7 @@ from ..agents.ci.deps_parity import DependencyParityAgent
 from ..agents.ci.env_parity import EnvParityAgent
 from ..agents.ci.validation_parity import ValidationParityAgent
 from ..ci_parser import resolve_ci_plan
-from .base import BaseRunner
-from .base import RunnerResult
+from .base import BaseRunner, RunnerResult
 
 
 class CiParityRunner(BaseRunner):

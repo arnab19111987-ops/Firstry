@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter

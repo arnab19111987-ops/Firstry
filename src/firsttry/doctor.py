@@ -5,13 +5,9 @@ import json
 import os
 import subprocess
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import as_completed
-from dataclasses import asdict
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
-from typing import Protocol
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass, field
+from typing import Any, Protocol
 
 from .quickfix import generate_quickfix_suggestions
 

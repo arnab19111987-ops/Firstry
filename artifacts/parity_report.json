@@ -1,45 +1,50 @@
 {
   "ok": false,
+  "type": "self-check",
   "python": "3.11.7",
-  "tool_versions": {
-    "ruff": "0.14.4",
-    "mypy": "1.18.2",
-    "pytest": "8.4.2",
-    "bandit": "1.7.9"
-  },
-  "durations_sec": {
-    "ruff": 2.5423192977905273,
-    "mypy": 6.525702238082886,
-    "pytest": 0.6081521511077881,
-    "bandit": 6.023049831390381
-  },
-  "thresholds": {
-    "coverage_min": 0.15,
-    "coverage_total": 0.361
-  },
-  "collection": {
-    "expected_count": 1055,
-    "expected_hash": "6a153d8d6547bf0354ca40f5090a443599d852f6a7e3ae34b087fa7cc1c99972",
-    "allow_uncollected": true
-  },
+  "timestamp": 1762925237.2933538,
   "failures": [
     {
-      "code": "PARITY-211",
-      "gate": "lint",
-      "msg": "Ruff linting failed",
-      "hint": "Run: ruff check --fix ."
+      "code": "PARITY-001",
+      "gate": "version",
+      "msg": "Version drift: pytest 9.0.0 != 8.4.2 (lock)",
+      "hint": "Run: pip install pytest==8.4.2"
     },
     {
-      "code": "PARITY-212",
-      "gate": "types",
-      "msg": "MyPy type checking failed",
-      "hint": "Fix type errors or add type: ignore comments"
+      "code": "PARITY-001",
+      "gate": "version",
+      "msg": "Version drift: bandit not-installed != 1.7.9 (lock)",
+      "hint": "Run: pip install bandit==1.7.9"
     },
     {
-      "code": "PARITY-221",
-      "gate": "tests",
-      "msg": "Pytest failed",
-      "hint": "Fix failing tests"
+      "code": "PARITY-034",
+      "gate": "plugins",
+      "msg": "Missing plugin: pytest_timeout",
+      "hint": "Run: pip install pytest-timeout"
+    },
+    {
+      "code": "PARITY-034",
+      "gate": "plugins",
+      "msg": "Missing plugin: pytest_xdist",
+      "hint": "Run: pip install pytest-xdist"
+    },
+    {
+      "code": "PARITY-034",
+      "gate": "plugins",
+      "msg": "Missing plugin: pytest_rerunfailures",
+      "hint": "Run: pip install pytest-rerunfailures"
+    },
+    {
+      "code": "PARITY-034",
+      "gate": "plugins",
+      "msg": "Missing plugin: pytest_testmon",
+      "hint": "Run: pip install pytest-testmon"
+    },
+    {
+      "code": "PARITY-034",
+      "gate": "plugins",
+      "msg": "Missing plugin: pytest_json_report",
+      "hint": "Run: pip install pytest-json-report"
     }
   ]
 }

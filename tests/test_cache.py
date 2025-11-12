@@ -9,6 +9,7 @@ def test_load_cache_when_missing(tmp_path, monkeypatch):
     cache_file = tmp_path / "test_cache.json"
     # Import the package to get access to the internal _legacy_cache module
     import firsttry.cache as cache_pkg
+
     if cache_pkg._legacy_cache is not None:
         monkeypatch.setattr(cache_pkg._legacy_cache, "CACHE_FILE", cache_file)
     data = load_cache()
@@ -20,6 +21,7 @@ def test_save_and_load_cache(tmp_path, monkeypatch):
     cache_file = tmp_path / "test_cache.json"
     # Patch the legacy cache module
     import firsttry.cache as cache_pkg
+
     if cache_pkg._legacy_cache is not None:
         monkeypatch.setattr(cache_pkg._legacy_cache, "CACHE_FILE", cache_file)
 
