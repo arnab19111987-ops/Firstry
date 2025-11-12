@@ -206,9 +206,27 @@ def ensure_trial_license_if_missing(days: int = 3, plan: str = "trial") -> Licen
 # HMAC signing + Pro gating
 # -----------------------------
 
-# For dev/tests only. In production load from env/secret store.
-# Prefer reading from environment so secrets aren't hardcoded in source.
-DEFAULT_SHARED_SECRET = os.getenv("FIRSTTRY_SHARED_SECRET", "dev-secret-change-me")
+# SECURITY: Secret MUST be provided via environment variable in production.
+# Development mode allows fallback for local testing only.
+_raw_secret = os.getenv("FIRSTTRY_SHARED_SECRET")
+if not _raw_secret:
+    if os.getenv("FIRSTTRY_ENV") == "development" or os.getenv("CI") != "true":
+        # Local dev fallback - NOT for production use
+        _raw_secret = "dev-only-insecure-fallback"
+        import warnings
+        warnings.warn(
+            "FIRSTTRY_SHARED_SECRET not set - using insecure dev fallback. "
+            "Set FIRSTTRY_SHARED_SECRET in production!",
+            UserWarning,
+            stacklevel=2
+        )
+    else:
+        raise RuntimeError(
+            "FIRSTTRY_SHARED_SECRET environment variable is required in production. "
+            "Set it to a secure random string (minimum 32 characters)."
+        )
+
+DEFAULT_SHARED_SECRET = _raw_secret
 
 
 def _license_cache_path() -> Path:
