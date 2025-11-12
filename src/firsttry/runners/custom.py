@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 
 class CustomRunner(BaseRunner):

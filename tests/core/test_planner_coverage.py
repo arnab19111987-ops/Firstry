@@ -12,19 +12,19 @@ This suite targets:
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 
 import pytest
 
-from firsttry.runner.model import DAG, Task
-from firsttry.runner.planner import (
-    PLAN_CACHE_PREFIX,
-    Planner,
-    _compute_levels,
-    _hash_bytes,
-    _load_config_bytes,
-    _plan_cache_key,
-)
+from firsttry.runner.model import DAG
+from firsttry.runner.model import Task
+from firsttry.runner.planner import PLAN_CACHE_PREFIX
+from firsttry.runner.planner import Planner
+from firsttry.runner.planner import _compute_levels
+from firsttry.runner.planner import _hash_bytes
+from firsttry.runner.planner import _load_config_bytes
+from firsttry.runner.planner import _plan_cache_key
 
 
 class TestPlannerBasics:

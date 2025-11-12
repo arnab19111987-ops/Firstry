@@ -1,6 +1,8 @@
 import json
 
-from firsttry.license import DEFAULT_SHARED_SECRET, build_license_payload, verify_sig
+from firsttry.license import DEFAULT_SHARED_SECRET
+from firsttry.license import build_license_payload
+from firsttry.license import verify_sig
 
 
 def test_license_payload_is_signed_and_verifies():

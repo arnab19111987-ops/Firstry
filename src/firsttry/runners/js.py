@@ -4,7 +4,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 _ESLINT_RULE_RE = re.compile(r"\(([^()]+)\)\s*$")
 

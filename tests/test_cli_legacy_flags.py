@@ -2,7 +2,8 @@
 the flags are no longer part of the official API.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import firsttry.cli as cli_module
 

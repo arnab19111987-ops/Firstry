@@ -3,10 +3,15 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
 
 from . import util
-from .detector import detect, load_user_overrides
+from .detector import detect
+from .detector import load_user_overrides
 from .util import Step
 
 

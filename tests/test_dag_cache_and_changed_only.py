@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from firsttry.planner.dag import Plan, Task
+from firsttry.planner.dag import Plan
+from firsttry.planner.dag import Task
 from firsttry.run_swarm import run_plan
 
 pytestmark = pytest.mark.skipif(

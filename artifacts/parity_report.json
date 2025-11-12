@@ -1,50 +1,7 @@
 {
-  "ok": false,
+  "ok": true,
   "type": "self-check",
   "python": "3.11.7",
-  "timestamp": 1762925237.2933538,
-  "failures": [
-    {
-      "code": "PARITY-001",
-      "gate": "version",
-      "msg": "Version drift: pytest 9.0.0 != 8.4.2 (lock)",
-      "hint": "Run: pip install pytest==8.4.2"
-    },
-    {
-      "code": "PARITY-001",
-      "gate": "version",
-      "msg": "Version drift: bandit not-installed != 1.7.9 (lock)",
-      "hint": "Run: pip install bandit==1.7.9"
-    },
-    {
-      "code": "PARITY-034",
-      "gate": "plugins",
-      "msg": "Missing plugin: pytest_timeout",
-      "hint": "Run: pip install pytest-timeout"
-    },
-    {
-      "code": "PARITY-034",
-      "gate": "plugins",
-      "msg": "Missing plugin: pytest_xdist",
-      "hint": "Run: pip install pytest-xdist"
-    },
-    {
-      "code": "PARITY-034",
-      "gate": "plugins",
-      "msg": "Missing plugin: pytest_rerunfailures",
-      "hint": "Run: pip install pytest-rerunfailures"
-    },
-    {
-      "code": "PARITY-034",
-      "gate": "plugins",
-      "msg": "Missing plugin: pytest_testmon",
-      "hint": "Run: pip install pytest-testmon"
-    },
-    {
-      "code": "PARITY-034",
-      "gate": "plugins",
-      "msg": "Missing plugin: pytest_json_report",
-      "hint": "Run: pip install pytest-json-report"
-    }
-  ]
+  "timestamp": 1762925443.687059,
+  "failures": []
 }

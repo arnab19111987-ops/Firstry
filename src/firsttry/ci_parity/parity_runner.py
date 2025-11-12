@@ -29,12 +29,10 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .cache_utils import (
-        ARTIFACTS,
-        auto_refresh_golden_cache,
-        ensure_dirs,
-        read_flaky_tests,
-    )
+    from .cache_utils import ARTIFACTS
+    from .cache_utils import auto_refresh_golden_cache
+    from .cache_utils import ensure_dirs
+    from .cache_utils import read_flaky_tests
 except ImportError:
     # Fallback if cache_utils not available yet
     ARTIFACTS = Path("artifacts")

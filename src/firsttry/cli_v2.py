@@ -8,14 +8,12 @@ from typing import Any
 
 from .cache import save_cache
 from .gates.base import GateResult
-from .runner_light import (
-    GATE_REGISTRY,
-    get_changed_files,
-    get_profile,
-    load_cache,
-    should_skip_gate,
-    update_gate_cache,
-)
+from .runner_light import GATE_REGISTRY
+from .runner_light import get_changed_files
+from .runner_light import get_profile
+from .runner_light import load_cache
+from .runner_light import should_skip_gate
+from .runner_light import update_gate_cache
 
 AUTOFIX_HINTS = {
     "python:ruff": "ruff fix .",
@@ -88,7 +86,8 @@ def run_pipeline(profile: str, since: str | None) -> list[GateResult]:
         to_run.append(gate_id)
 
     # run in parallel
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import as_completed
 
     with ThreadPoolExecutor(max_workers=4) as ex:
         fut_map = {}

@@ -4,7 +4,8 @@ import os
 import stat
 from pathlib import Path
 
-from .license import ensure_trial_license_if_missing, license_summary_for_humans
+from .license import ensure_trial_license_if_missing
+from .license import license_summary_for_humans
 
 PRE_COMMIT_SCRIPT = """#!/bin/sh
 # FirstTry pre-commit hook

@@ -15,7 +15,9 @@ Enterprise requirement: Produce cryptographically signed SBOMs for supply chain 
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
+from typing import Dict
+from typing import List
 
 import pytest
 

@@ -12,16 +12,15 @@ This suite targets:
 
 import json
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
-from firsttry.smart_pytest import (
-    build_pytest_command,
-    get_failed_tests,
-    get_pytest_cache_dir,
-    get_smoke_tests,
-    get_test_files_for_changes,
-    has_pytest_xdist,
-)
+from firsttry.smart_pytest import build_pytest_command
+from firsttry.smart_pytest import get_failed_tests
+from firsttry.smart_pytest import get_pytest_cache_dir
+from firsttry.smart_pytest import get_smoke_tests
+from firsttry.smart_pytest import get_test_files_for_changes
+from firsttry.smart_pytest import has_pytest_xdist
 
 
 class TestPytestCacheDir:

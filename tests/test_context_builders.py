@@ -1,6 +1,7 @@
 """Test context builders for repo profiling."""
 
-from firsttry.context_builders import build_context, build_repo_profile
+from firsttry.context_builders import build_context
+from firsttry.context_builders import build_repo_profile
 
 
 def test_build_context_returns_dict():

@@ -14,7 +14,8 @@ try:
 except ImportError:
     pytest.importorskip("sqlalchemy", reason="SQLAlchemy required for DB tests")
 
-from firsttry.db_sqlite import _extract_upgrade_body, run_sqlite_probe
+from firsttry.db_sqlite import _extract_upgrade_body
+from firsttry.db_sqlite import run_sqlite_probe
 
 
 def _install_fake_backend_module(mod_name: str = "backend"):

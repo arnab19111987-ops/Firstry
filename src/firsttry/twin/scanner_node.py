@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .graph import CodebaseTwin, ProjectNode
+from .graph import CodebaseTwin
+from .graph import ProjectNode
 
 
 def attach_node_projects(repo_root: Path, twin: CodebaseTwin) -> None:

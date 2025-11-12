@@ -8,7 +8,8 @@ Tests for:
 5. CI vs local parallel execution parity
 """
 
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 
 import pytest
 

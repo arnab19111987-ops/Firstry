@@ -7,7 +7,8 @@ Verifies that:
 4. Dependent chain is included transitively
 """
 
-from firsttry.runner.model import DAG, Task
+from firsttry.runner.model import DAG
+from firsttry.runner.model import Task
 
 
 def _mock_repo_deps():

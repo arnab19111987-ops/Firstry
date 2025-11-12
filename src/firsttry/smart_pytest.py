@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 from . import cache as ft_cache
-from .parallel_pytest import analyze_test_suite, run_parallel_pytest
+from .parallel_pytest import analyze_test_suite
+from .parallel_pytest import run_parallel_pytest
 
 
 def get_pytest_cache_dir(repo_root: str) -> Path:

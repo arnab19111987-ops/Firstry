@@ -1,6 +1,7 @@
 import pytest
 
-from firsttry.profiles import get_profile, list_profiles
+from firsttry.profiles import get_profile
+from firsttry.profiles import list_profiles
 
 
 def test_list_profiles_has_core():

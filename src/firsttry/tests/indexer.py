@@ -10,7 +10,9 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from typing import Dict, List, Set
+from typing import Dict
+from typing import List
+from typing import Set
 
 INDEX_CACHE_DIR = ".firsttry/cache"
 PYTEST_INDEX_FILE = os.path.join(INDEX_CACHE_DIR, "pytest_index.json")

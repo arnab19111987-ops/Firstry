@@ -4,13 +4,17 @@ import argparse
 import datetime as _dt
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
 
 from firsttry.reporting.jsonio import write_report
 from firsttry.runner.config import load_graph_from_config
 from firsttry.runner.executor import Executor
-from firsttry.runner.planner import compute_levels, plan_levels_cached
-from firsttry.runner.state import load_last_green, repo_fingerprint, save_last_green
+from firsttry.runner.planner import compute_levels
+from firsttry.runner.planner import plan_levels_cached
+from firsttry.runner.state import load_last_green
+from firsttry.runner.state import repo_fingerprint
+from firsttry.runner.state import save_last_green
 
 
 def _now_iso() -> str:
