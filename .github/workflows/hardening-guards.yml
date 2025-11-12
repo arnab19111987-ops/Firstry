@@ -1,0 +1,68 @@
+name: Hardening Guards
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hardening-guards:
+    name: Security & Governance Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Require LICENSE and governance docs
+        run: |
+          echo "Checking required governance files..."
+          MISSING=""
+          for f in LICENSE SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md; do
+            if [ ! -s "$f" ]; then
+              MISSING="$MISSING $f"
+              echo "::error file=$f::Missing required file: $f"
+            else
+              echo "✅ $f present"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing required files:$MISSING"
+            exit 1
+          fi
+          echo "All governance files present ✅"
+      
+      - name: Block hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          # Search for hardcoded secret patterns (excluding docs and cache files)
+          BAD=$(grep -RIn \
+            --exclude-dir=.git \
+            --exclude-dir=dist \
+            --exclude-dir=build \
+            --exclude-dir=.mypy_cache \
+            --exclude-dir=.pytest_cache \
+            --exclude-dir=.ruff_cache \
+            --exclude-dir=node_modules \
+            --exclude-dir=__pycache__ \
+            --exclude='*.md' \
+            --exclude='*.json' \
+            --exclude='*.lock' \
+            -E 'dev-secret-change-me|shared[_-]?secret\s*=\s*["'\''][^"'\'']+["'\'']' . || true)
+          
+          if [ -n "$BAD" ]; then
+            echo "::error::Hardcoded secret detected - use environment variables instead"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "No hardcoded secrets found ✅"
+      
+      - name: Verify secret enforcement in code
+        run: |
+          echo "Checking that production requires FIRSTTRY_SHARED_SECRET..."
+          # Ensure the code has the RuntimeError guard
+          if ! grep -q 'raise RuntimeError.*FIRSTTRY_SHARED_SECRET.*required in production' src/firsttry/license.py; then
+            echo "::error file=src/firsttry/license.py::Missing production secret enforcement guard"
+            exit 1
+          fi
+          echo "Secret enforcement guard present ✅"

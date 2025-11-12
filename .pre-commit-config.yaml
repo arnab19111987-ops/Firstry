@@ -115,3 +115,10 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      - id: ft-secret-guard
+        name: FirstTry hardcoded secret guard
+        entry: bash -c 'BAD=$(grep -RIn --exclude-dir=.git --exclude-dir=dist --exclude-dir=build --exclude-dir=.mypy_cache --exclude-dir=.pytest_cache --exclude-dir=.ruff_cache --exclude-dir=node_modules --exclude-dir=__pycache__ --exclude="*.md" --exclude="*.json" --exclude="*.lock" -E "dev-secret-change-me|shared[_-]?secret\s*=\s*[\"'\''][^\"'\'']+[\"'\'']" . || true); if [ -n "$BAD" ]; then echo "Hardcoded secret detected:"; echo "$BAD"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        stages: [commit]
