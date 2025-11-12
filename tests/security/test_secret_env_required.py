@@ -1,26 +1,42 @@
 """Test that FIRSTTRY_SHARED_SECRET is required in production mode."""
+import subprocess
 import sys
 
 import pytest
 
 
-def test_secret_env_required_in_production(monkeypatch):
+def test_secret_env_required_in_production():
     """Verify that missing FIRSTTRY_SHARED_SECRET raises in production."""
-    # Clear all secret-related env vars
-    monkeypatch.delenv("FIRSTTRY_SHARED_SECRET", raising=False)
-    monkeypatch.delenv("FT_SHARED_SECRET", raising=False)
+    # Run in subprocess to avoid module import pollution
+    code = """
+import os
+import sys
+
+# Simulate production: CI=true, no FIRSTTRY_SHARED_SECRET
+os.environ['CI'] = 'true'
+os.environ.pop('FIRSTTRY_SHARED_SECRET', None)
+os.environ.pop('FIRSTTRY_ENV', None)
+
+try:
+    import firsttry.license
+    sys.exit(1)  # Should not reach here
+except RuntimeError as e:
+    if 'FIRSTTRY_SHARED_SECRET' in str(e) and 'required in production' in str(e):
+        sys.exit(0)  # Expected error
+    else:
+        print(f"Wrong error: {e}", file=sys.stderr)
+        sys.exit(2)
+"""
     
-    # Simulate production environment
-    monkeypatch.delenv("FIRSTTRY_ENV", raising=False)
-    monkeypatch.setenv("CI", "true")
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
     
-    # Remove module from cache to force reimport
-    if "firsttry.license" in sys.modules:
-        del sys.modules["firsttry.license"]
-    
-    # Should raise RuntimeError in production without secret
-    with pytest.raises(RuntimeError, match="FIRSTTRY_SHARED_SECRET.*required in production"):
-        pass
+    assert (
+        result.returncode == 0
+    ), f"Expected RuntimeError in production, got: {result.stderr}"
 
 
 def test_secret_dev_fallback_warns(monkeypatch):
