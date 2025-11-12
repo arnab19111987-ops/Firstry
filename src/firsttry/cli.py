@@ -24,11 +24,9 @@ from .agent_manager import SmartAgentManager
 from .ci_parity import parity_runner as ci_runner
 
 try:
-    from .ci_parity.cache_utils import (
-        auto_refresh_golden_cache,
-        update_cache,
-        clear_cache,
-    )
+    from .ci_parity.cache_utils import auto_refresh_golden_cache
+    from .ci_parity.cache_utils import clear_cache
+    from .ci_parity.cache_utils import update_cache
 except ImportError:
     # Fallback if cache_utils not available
     def auto_refresh_golden_cache(ref: str) -> None:

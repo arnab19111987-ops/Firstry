@@ -29,12 +29,10 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .cache_utils import (
-        ARTIFACTS,
-        ensure_dirs,
-        auto_refresh_golden_cache,
-        read_flaky_tests,
-    )
+    from .cache_utils import ARTIFACTS
+    from .cache_utils import auto_refresh_golden_cache
+    from .cache_utils import ensure_dirs
+    from .cache_utils import read_flaky_tests
 except ImportError:
     # Fallback if cache_utils not available yet
     ARTIFACTS = Path("artifacts")
@@ -930,7 +928,7 @@ def warm_path(explain: bool = False) -> int:
     if rc1 not in (0, 5):
         _write_report(report)
         if explain:
-            print(f"\n✗ Warm path failed at testmon stage")
+            print("\n✗ Warm path failed at testmon stage")
         return EXIT_TEST_FAILED if rc1 != EXIT_TEST_TIMEOUT else EXIT_TEST_TIMEOUT
 
     # 2) Always run CI-known flaky tests (positional nodeids, no -k, no escaping)
@@ -964,13 +962,13 @@ def warm_path(explain: bool = False) -> int:
 
         if explain:
             if rc2 == 0:
-                print(f"  ✓ flaky tests passed")
+                print("  ✓ flaky tests passed")
             else:
                 print(f"  ✗ flaky tests failed (rc={rc2}, {len(fails2)} failures)")
 
         if rc2 not in (0, 5):
             if explain:
-                print(f"\n✗ Warm path failed at flaky stage")
+                print("\n✗ Warm path failed at flaky stage")
             return EXIT_TEST_FAILED if rc2 != EXIT_TEST_TIMEOUT else EXIT_TEST_TIMEOUT
 
     # 3) Fallback smoke ONLY if testmon had no tests (rc1==5) AND no flaky list
@@ -999,7 +997,7 @@ def warm_path(explain: bool = False) -> int:
 
         if explain:
             if rc3 == 0:
-                print(f"  ✓ smoke tests passed")
+                print("  ✓ smoke tests passed")
             elif rc3 == 5:
                 print("  ⊘ no smoke tests found")
             else:
@@ -1007,7 +1005,7 @@ def warm_path(explain: bool = False) -> int:
 
         if rc3 not in (0, 5):
             if explain:
-                print(f"\n✗ Warm path failed at smoke stage")
+                print("\n✗ Warm path failed at smoke stage")
             return EXIT_TEST_FAILED if rc3 != EXIT_TEST_TIMEOUT else EXIT_TEST_TIMEOUT
 
     # (Optional) 4) If your warm path also emits coverage.xml, enforce diff-cover here
@@ -1032,7 +1030,7 @@ def warm_path(explain: bool = False) -> int:
 
         if rc4 != 0:
             if explain:
-                print(f"\n✗ Warm path failed at diff-cover stage")
+                print("\n✗ Warm path failed at diff-cover stage")
             return EXIT_COVERAGE_FAILED
 
     report["duration_sec"] = round(time.time() - start, 2)

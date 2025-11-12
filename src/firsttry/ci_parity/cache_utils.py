@@ -14,7 +14,8 @@ import os
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
+from typing import Tuple
 
 ARTIFACTS = Path("artifacts")
 WARM_DIR = Path(".firsttry/warm")

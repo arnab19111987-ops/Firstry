@@ -1,7 +1,6 @@
 """Test that FIRSTTRY_SHARED_SECRET is required in production mode."""
-import importlib
-import os
 import sys
+
 import pytest
 
 
@@ -21,7 +20,7 @@ def test_secret_env_required_in_production(monkeypatch):
     
     # Should raise RuntimeError in production without secret
     with pytest.raises(RuntimeError, match="FIRSTTRY_SHARED_SECRET.*required in production"):
-        import firsttry.license
+        pass
 
 
 def test_secret_dev_fallback_warns(monkeypatch):
