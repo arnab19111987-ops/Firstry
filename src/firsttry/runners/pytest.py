@@ -4,16 +4,16 @@ import sys
 from pathlib import Path
 
 from ..runners import run_pytest_files
-from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+from ..twin.hashers import env_fingerprint
+from ..twin.hashers import hash_bytes
+from ..twin.hashers import tool_version_hash
 
 # Use private aliases exported by base to avoid import-time masking
-from .base import (
-    CheckRunner,
-    RunResult,
-    _hash_config as hash_config,
-    _hash_targets as hash_targets,
-    ensure_bin,
-)
+from .base import CheckRunner
+from .base import RunResult
+from .base import _hash_config as hash_config
+from .base import _hash_targets as hash_targets
+from .base import ensure_bin
 
 
 def build_pytest_cmd(nodeids: list[str], extra: list[str] | None = None) -> list[str]:

@@ -7,7 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .base import BaseRunner, RunnerResult
+from .base import BaseRunner
+from .base import RunnerResult
 
 _MYPY_CODE_RE = re.compile(r"\[([a-zA-Z0-9_-]+)\]")
 

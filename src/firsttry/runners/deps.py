@@ -5,11 +5,13 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
+from typing import cast
 
 from ..twin.hashers import hash_bytes
 from ..utils.proc import to_str
-from .base import CheckRunner, RunResult
+from .base import CheckRunner
+from .base import RunResult
 
 
 class PipAuditRunner(CheckRunner):

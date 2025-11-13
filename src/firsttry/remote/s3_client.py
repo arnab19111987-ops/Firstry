@@ -4,7 +4,9 @@ import os
 import random
 import time
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
+from typing import Callable
+from typing import Optional
 
 
 class S3PolicyError(RuntimeError): ...
@@ -14,7 +16,8 @@ def retry_jitter(fn: Callable[[], Any], attempts=5, base=0.2, cap=5.0):
         try:
             return fn()
         except Exception:
-            if i == attempts - 1: raise
+            if i == attempts - 1:
+                raise
             time.sleep(min(cap, base * (2 ** i) + random.random() * base))
 
 def _client(region: Optional[str]):
@@ -23,12 +26,14 @@ def _client(region: Optional[str]):
 
 def ensure_bucket_policy(cfg) -> None:
     b = cfg.remote.s3_bucket
-    if not b: return
+    if not b:
+        return
     if cfg.remote.allow_buckets and b not in set(cfg.remote.allow_buckets):
         raise S3PolicyError(f"Bucket {b} not in allow-list")
 
 def ensure_kms_enabled(cfg) -> None:
-    if not cfg.remote.require_kms: return
+    if not cfg.remote.require_kms:
+        return
     # Soft-validate at runtime
     try:
         s3 = _client(cfg.remote.region)
@@ -40,7 +45,8 @@ def ensure_kms_enabled(cfg) -> None:
         raise S3PolicyError(f"KMS validation failed: {e}")
 
 def upload_file(cfg, local: Path, key: str):
-    ensure_bucket_policy(cfg); ensure_kms_enabled(cfg)
+    ensure_bucket_policy(cfg)
+    ensure_kms_enabled(cfg)
     s3 = _client(cfg.remote.region)
     extra = {}
     if cfg.remote.require_kms:

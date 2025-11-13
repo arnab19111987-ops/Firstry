@@ -3,22 +3,27 @@ from __future__ import annotations
 import time
 import types
 from collections.abc import Callable
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from inspect import signature
 from pathlib import Path
 from threading import Lock
-from typing import Any, Callable as _Callable, Sequence
+from typing import Any
+from typing import Callable as _Callable
+from typing import Sequence
 
 from firsttry.planner.dag import Task
 from firsttry.runner.executor import get_effective_timeout
 
 from .. import runners as runners_module
-from ..cache.base import BaseCache, CacheHit
+from ..cache.base import BaseCache
+from ..cache.base import CacheHit
 from ..cache.local import LocalCache
 from ..cache.s3 import S3Cache
 from ..planner.dag import Plan
-from ..runners.base import CheckRunner, RunResult
+from ..runners.base import CheckRunner
+from ..runners.base import RunResult
 from ..runners.registry import default_registry
 
 

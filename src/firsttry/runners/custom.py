@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .base import CheckRunner, RunResult
+from .base import CheckRunner
+from .base import RunResult
 
 
 class CustomRunner(CheckRunner):

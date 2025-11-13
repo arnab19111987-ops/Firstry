@@ -14,13 +14,11 @@ _NO_UI_MODE: bool = False  # Performance mode flag
 
 try:
     from rich.console import Console
-    from rich.progress import (
-        BarColumn,
-        Progress,
-        SpinnerColumn,
-        TextColumn,
-        TimeElapsedColumn,
-    )
+    from rich.progress import BarColumn
+    from rich.progress import Progress
+    from rich.progress import SpinnerColumn
+    from rich.progress import TextColumn
+    from rich.progress import TimeElapsedColumn
 
     _HAS_RICH = True
     _console = Console()

@@ -21,9 +21,12 @@ def build_twin(root: Path) -> ProjectTwin:
     pkg_json = (root / "package.json").exists()
     pyproject = (root / "pyproject.toml").exists()
     language: Language = "unknown"
-    if pkg_json and pyproject: language = "mixed"
-    elif pyproject: language = "python"
-    elif pkg_json: language = "javascript"
+    if pkg_json and pyproject:
+        language = "mixed"
+    elif pyproject:
+        language = "python"
+    elif pkg_json:
+        language = "javascript"
 
     # Minimal, pluggable detectors (non-fatal)
     detectors = {

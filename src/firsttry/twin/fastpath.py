@@ -15,10 +15,9 @@ from typing import Iterable
 _RUST_OK = False
 try:
     import blake3  # Ensure available even when Rust path is used
-    from ft_fastpath import (  # type: ignore[attr-defined]
-        hash_files_parallel as _hash_rust,
-        scan_repo_parallel as _scan_rust,
-    )
+
+    from ft_fastpath import hash_files_parallel as _hash_rust  # type: ignore[attr-defined]
+    from ft_fastpath import scan_repo_parallel as _scan_rust  # type: ignore[attr-defined]
 
     _RUST_OK = True
 except Exception:

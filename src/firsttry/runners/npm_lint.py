@@ -5,7 +5,8 @@ import time
 from pathlib import Path
 
 from ..utils.proc import to_str
-from .base import CheckRunner, RunResult
+from .base import CheckRunner
+from .base import RunResult
 
 
 class NpmLintRunner(CheckRunner):

@@ -8,7 +8,8 @@ from pathlib import Path
 
 from ..twin.hashers import hash_bytes
 from ..utils.proc import to_str
-from .base import CheckRunner, RunResult
+from .base import CheckRunner
+from .base import RunResult
 
 _ESLINT_RULE_RE = re.compile(r"\(([^()]+)\)\s*$")
 

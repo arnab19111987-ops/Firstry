@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import ast
-import tomllib
 from collections.abc import Iterable
 from pathlib import Path
 
-from .graph import CodebaseTwin, FileNode, ProjectNode
-from .hashers import hash_file, hash_files
+import tomllib
+
+from .graph import CodebaseTwin
+from .graph import FileNode
+from .graph import ProjectNode
+from .hashers import hash_file
+from .hashers import hash_files
 
 
 def _iter_py_files(root: Path) -> Iterable[Path]:

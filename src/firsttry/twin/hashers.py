@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Any
+from typing import Any
+from typing import Iterable
 
 import blake3
 
