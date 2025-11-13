@@ -6,7 +6,9 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel
+from pydantic import Field
+from pydantic import ValidationError
 
 
 class LicenseCfg(BaseModel):
