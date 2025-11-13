@@ -16,7 +16,6 @@ import jaraco.path
 import pytest
 from packaging.metadata import Metadata
 from packaging.requirements import Requirement
-
 from setuptools import _reqs, sic
 from setuptools._core_metadata import rfc822_escape, rfc822_unescape
 from setuptools.command.egg_info import egg_info, write_requirements

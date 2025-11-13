@@ -5,10 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..license_guard import get_tier
-from .tier_map import LOCKED_MESSAGE
-from .tier_map import TIER_CHECKS
-from .tier_map import get_checks_for_tier
-from .tier_map import get_tier_meta
+from .tier_map import LOCKED_MESSAGE, TIER_CHECKS, get_checks_for_tier, get_tier_meta
 
 
 # simple color helper for legacy paths (no-op if Rich not used)
@@ -31,7 +28,7 @@ def render_locked_report(*_args, **_kwargs) -> None:
 
 # you probably already have a Rich detection; keep it
 # console may be a rich Console or None when rich isn't available
-console: Any = None
+console: Any | None = None
 _HAS_RICH: bool = False
 try:
     from rich.console import Console
@@ -59,10 +56,24 @@ def render_summary(report: dict) -> None:
     meta = get_tier_meta(tier)
     allowed_checks = set(get_checks_for_tier(tier))
 
-    title = meta["title"]
-    subtitle = meta["subtitle"]
+    # Defensive: `report` may be a mapping or an object-like structure in
+    # some code paths. Normalize to a plain dict for downstream access to
+    # avoid union-attribute mypy complaints and runtime attribute errors.
+    if isinstance(report, dict):
+        results = report.get("results", {}) or {}
+        title = (meta.get("title") if meta else None) or "FirstTry"
+        subtitle = (meta.get("subtitle") if meta else None) or ""
+    else:
+        # fallback for object-like reports
+        results = getattr(report, "results", {}) or {}
+        title = (getattr(meta, "title", None) if meta else None) or "FirstTry"
+        subtitle = (getattr(meta, "subtitle", None) if meta else None) or ""
 
     if _HAS_RICH:
+        # Narrow `console` for the type-checker: when _HAS_RICH is True we
+        # should have initialized `console` above. Assert to help mypy
+        # understand that `console` is not None.
+        assert console is not None
         console.rule(f"[bold cyan]{title}[/bold cyan]")
         console.print(f"[dim]{subtitle}[/dim]\n")
 
@@ -71,7 +82,7 @@ def render_summary(report: dict) -> None:
         table.add_column("Status")
         table.add_column("Details")
 
-        all_checks_in_report = list(report.get("results", {}).keys())
+        all_checks_in_report = list(results.keys())
 
         # Always show in THIS order: whatever is in TIER_CHECKS master order
         master_order = []
@@ -79,13 +90,14 @@ def render_summary(report: dict) -> None:
             for chk in checks:
                 if chk not in master_order:
                     master_order.append(chk)
+
         # plus anything else that was actually run
         for chk in all_checks_in_report:
             if chk not in master_order:
                 master_order.append(chk)
 
         for chk in master_order:
-            res = report.get("results", {}).get(chk)
+            res = results.get(chk)
             if chk in allowed_checks:
                 status = res.get("status", "unknown") if res else "unknown"
                 emoji = "✅" if status == "ok" else "❌"
@@ -100,10 +112,10 @@ def render_summary(report: dict) -> None:
         print(f"{title}")
         print(f"{subtitle}")
         print()
-        all_checks_in_report = list(report.get("results", {}).keys())
+        all_checks_in_report = list(results.keys())
         for chk in all_checks_in_report:
             if chk in allowed_checks:
-                res = report["results"].get(chk, {})
+                res = results.get(chk, {})
                 status = res.get("status", "unknown")
                 emoji = "✅" if status == "ok" else "❌"
                 print(f"  {emoji} {chk}: {res.get('message', '')}")

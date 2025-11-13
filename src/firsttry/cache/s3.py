@@ -5,8 +5,7 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from .base import BaseCache
-from .base import CacheHit
+from .base import BaseCache, CacheHit
 
 
 def _has_boto3() -> bool:
@@ -16,6 +15,23 @@ def _has_boto3() -> bool:
         return True
     except Exception:
         return False
+
+
+def s3_enabled() -> bool:
+    """Return True if remote cache is explicitly enabled via environment.
+
+    Defaults to False for safety.
+    """
+    return os.getenv("FIRSTTRY_REMOTE_CACHE", "0").lower() in ("1", "true", "yes")
+
+
+def require_s3_config_or_raise():
+    if not s3_enabled():
+        raise RuntimeError(
+            "Remote cache disabled. Set FIRSTTRY_REMOTE_CACHE=1 to enable.\n"
+            "Fix: add under [remote] in ~/.config/firsttry/config.toml:\n"
+            '[remote]\n  enable_cache = true\n  bucket = "..."\n  prefix = "..."'
+        )
 
 
 @dataclass

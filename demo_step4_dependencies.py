@@ -7,24 +7,24 @@ implementing fail-fast logic to save significant execution time.
 """
 
 import asyncio
-import tempfile
-from pathlib import Path
 
 # Import FirstTry modules
 import sys
+import tempfile
+from pathlib import Path
 
 sys.path.insert(0, "/workspaces/Firstry/src")
 
+from firsttry.cached_orchestrator import run_checks_for_profile
 from firsttry.check_dependencies import (
     DEPENDENCY_RULES,
-    get_dependency_graph,
-    should_skip_due_to_dependencies,
     analyze_dependency_impact,
-    get_execution_order,
+    get_dependency_graph,
     get_dependency_insights,
+    get_execution_order,
+    should_skip_due_to_dependencies,
     validate_dependency_rules,
 )
-from firsttry.cached_orchestrator import run_checks_for_profile
 
 
 def demo_dependency_rules():

@@ -5,24 +5,24 @@ and realistic targets. Fixes cache reporting and performance assessment.
 """
 
 import asyncio
+import json
 import sys
 import time
-import json
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from firsttry.cached_orchestrator import run_checks_for_profile
-from firsttry.run_profiles import select_checks
 from firsttry.cache_models import CacheStats
 from firsttry.cache_utils import format_cache_report
+from firsttry.cached_orchestrator import run_checks_for_profile
 from firsttry.performance_targets import (
     PerformanceTargets,
-    validate_performance_results,
     format_performance_report,
     get_realistic_targets_summary,
+    validate_performance_results,
 )
+from firsttry.run_profiles import select_checks
 
 
 async def validate_final_performance():

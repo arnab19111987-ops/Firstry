@@ -11,12 +11,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from firsttry.smart_pytest import (
-    run_smart_pytest,
-    get_failed_tests,
-    get_test_files_for_changes,
-    get_smoke_tests,
     build_pytest_command,
+    get_failed_tests,
+    get_smoke_tests,
+    get_test_files_for_changes,
     has_pytest_xdist,
+    run_smart_pytest,
 )
 
 

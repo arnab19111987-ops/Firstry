@@ -1,6 +1,10 @@
 # Add any test-only deps your repo needs; empty is fine.
 # Examples:
+boto3>=1.34.0
+jsonschema>=4.0
+blake3>=0.4
 moto>=5.0.0
+types-PyYAML>=6.0.12
 boto3>=1.34.0
 jsonschema>=4.0
 blake3>=0.4

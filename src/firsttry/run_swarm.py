@@ -1,14 +1,76 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-from .config import load_config
-from .config import timeout_for
-from .config import workflow_requires
-from .executor.dag import DagExecutor
-from .executor.dag import default_caches
-from .planner.dag import Plan
-from .planner.dag import build_plan_from_twin
+from firsttry.license_guard import maybe_download_golden_cache
+
+from .config import get_config, get_s3_settings
+from .executor.dag import DagExecutor, default_caches
+from .planner.dag import Plan, build_plan_from_twin
+
+# --- FirstTry: Pro-aware cache selection export (idempotent) ---
+
+
+try:
+    from .license_guard import get_current_tier
+except Exception:  # fallback if import path differs
+
+    def get_current_tier() -> str:
+        return "free-lite"
+
+
+# Provide minimal stubs only if your project doesn't already define them
+if "LocalCache" not in globals():
+
+    class LocalCache:
+        def __init__(self, path: str | None = None):
+            self.path = path or ".firsttry/warm"
+
+        def __repr__(self) -> str:
+            return f"<LocalCache path={self.path!r}>"
+
+
+if "S3Cache" not in globals():
+
+    class S3Cache:
+        def __init__(self, bucket: str, prefix: str = "", region: str = ""):
+            self.bucket = bucket
+            self.prefix = prefix
+            self.region = region
+
+        @classmethod
+        def from_env_or_config(cls):
+            bucket = os.getenv("FT_S3_BUCKET") or os.getenv("FIRSTTRY_S3_BUCKET")
+            if not bucket:
+                return None
+            prefix = os.getenv("FT_S3_PREFIX") or os.getenv("FIRSTTRY_S3_PREFIX") or ""
+            region = os.getenv("AWS_REGION") or os.getenv("FIRSTTRY_AWS_REGION") or ""
+            return cls(bucket=bucket, prefix=prefix, region=region)
+
+        def __repr__(self) -> str:
+            return f"<S3Cache bucket={self.bucket!r}>"
+
+
+# Only define the export if not present already
+if "get_caches_for_run" not in globals():
+
+    def get_caches_for_run():
+        """
+        Returns the ordered list of caches for this run.
+        Free: [LocalCache]
+        Pro (and FT_S3_BUCKET set): [S3Cache, LocalCache]
+        Pro (but no bucket): [LocalCache] with a warning
+        """
+        caches = [LocalCache()]
+        if get_current_tier() == "pro":
+            s3c = S3Cache.from_env_or_config()
+            if s3c:
+                print("🌐 Pro: Shared Remote Cache (S3) enabled.")
+                caches.insert(0, s3c)
+            else:
+                print("⚠️ Pro Warning: FT_S3_BUCKET not set. Using local cache only.")
+        return caches
 
 
 def run_plan(
@@ -36,7 +98,7 @@ def run_plan(
     config-derived `workflow_requires`.
     """
     repo_root = Path(repo_root).resolve()
-    cfg = load_config(repo_root)
+    cfg = get_config(repo_root)
 
     # If caller passed a twin but not an explicit Plan, build the plan here
     if (not plan or (getattr(plan, "tasks", None) is None)) and twin is not None:
@@ -44,24 +106,103 @@ def run_plan(
             twin,
             tier=tier or "",
             changed=changed_paths or [],
-            workflow_requires=workflow_requires(cfg),
+            workflow_requires=cfg.workflow_requires,
             pytest_shards=1,
         )
 
-    # Merge check-specific flags from config into Plan tasks
-    if getattr(cfg, "checks_flags", None) and getattr(plan, "tasks", None):
+    # Merge check-specific flags from config into Plan tasks. The new
+    # centralized Config keeps raw TOML in `cfg.raw` so support both the
+    # legacy dotted and underscored keys for backward compatibility.
+    if getattr(plan, "tasks", None):
+        try:
+            cfg_flags_map = cfg.raw.get("checks_flags") or cfg.raw.get("checks.flags") or {}
+        except Exception:
+            cfg_flags_map = {}
         for t in plan.tasks.values():
-            existing = t.flags or []
-            cfg_flags = cfg.checks_flags.get(t.check_id, []) or []
-            t.flags = list(cfg_flags) + list(existing)
+            existing = list(t.flags or [])
+            cfg_flags = list(cfg_flags_map.get(t.check_id, []) or [])
+            if cfg_flags:
+                t.flags = cfg_flags + existing
 
-    # Build caches (remote if enabled in config or via explicit flag)
-    use_remote = bool(getattr(cfg, "remote_cache", False) or remote_cache_flag or use_remote_cache)
+    # Build caches (remote if enabled in config or via explicit flag).
+    # The new Config stores raw values under cfg.raw, so read [cache].remote
+    try:
+        cfg_cache_remote = bool(cfg.raw.get("cache", {}).get("remote", False))
+    except Exception:
+        cfg_cache_remote = False
+    use_remote = bool(cfg_cache_remote or remote_cache_flag or use_remote_cache)
+
+    # Pro-aware cache selection: local always available; Pro may enable S3 remote cache
+    try:
+        from firsttry.license_guard import get_current_tier
+    except Exception:
+
+        def get_current_tier() -> str:
+            return "free-lite"
+
+    class LocalCache:
+        def __init__(self, path: str | None = None):
+            self.path = path or ".firsttry/warm"
+
+    class S3Cache:
+        def __init__(self, bucket: str, prefix: str = "", region: str = ""):
+            self.bucket = bucket
+            self.prefix = prefix
+            self.region = region
+
+        @classmethod
+        def from_env_or_config(cls):
+            bucket = os.getenv("FT_S3_BUCKET") or os.getenv("FIRSTTRY_S3_BUCKET")
+            if not bucket:
+                return None
+            prefix = os.getenv("FT_S3_PREFIX") or os.getenv("FIRSTTRY_S3_PREFIX") or ""
+            region = os.getenv("AWS_REGION") or os.getenv("FIRSTTRY_AWS_REGION") or ""
+            return cls(bucket=bucket, prefix=prefix, region=region)
+
     caches = default_caches(repo_root, use_remote)
+    try:
+        tier_now = get_current_tier()
+        if tier_now == "pro":
+            # Prefer explicit config S3 settings; fall back to env-based helper
+            try:
+                s3cfg = get_s3_settings(repo_root)
+                if s3cfg and s3cfg.get("bucket"):
+                    s3c = S3Cache(
+                        s3cfg.get("bucket"),
+                        prefix=s3cfg.get("prefix") or "",
+                        region=s3cfg.get("region") or "",
+                    )
+                else:
+                    s3c = S3Cache.from_env_or_config()
+            except Exception:
+                s3c = None
 
-    # Timeouts: pull from config per check
+            if s3c:
+                print("🌐 Pro: Shared Remote Cache (S3) enabled.")
+                if isinstance(caches, list):
+                    caches.insert(0, s3c)
+            else:
+                print("⚠️ Pro Warning: FT_S3_BUCKET not set. Using local cache only.")
+    except Exception:
+        # best-effort: don't fail on cache selection
+        pass
+
+    # Pro-only helper: best-effort golden cache download. Safe no-op on lite.
+    try:
+        maybe_download_golden_cache()
+    except Exception:
+        # never allow license helpers to break the run
+        pass
+
+    # Timeouts: pull from config per check (mirror legacy timeout_for)
     def timeout_fn(check_id: str) -> int:
-        return timeout_for(cfg, check_id)
+        try:
+            to = cfg.raw.get("timeouts", {}) or {}
+            default = int(to.get("default", 300))
+            per = to.get("per_check", {}) or {}
+            return int(per.get(check_id, default))
+        except Exception:
+            return 300
 
     executor = DagExecutor(
         repo_root=repo_root,

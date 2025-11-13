@@ -1,32 +1,60 @@
 from __future__ import annotations
 
-import hashlib
-import subprocess
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterable, Any
+
+import blake3
 
 
-def hash_bytes(b: bytes) -> str:
-    return hashlib.blake2b(b, digest_size=16).hexdigest()
+# Internal helper: one canonical BLAKE3 interface for the whole app.
+def _new_b3() -> Any:
+    # blake3's runtime object has no typed stub in this environment; use Any
+    # to keep type-checking stable while preserving runtime behaviour.
+    return blake3.blake3()
 
 
-def hash_file(p: Path) -> str:
-    h = hashlib.blake2b(digest_size=16)
-    with p.open("rb") as f:
-        for chunk in iter(lambda: f.read(1 << 16), b""):
+def hash_bytes(data: bytes) -> str:
+    """Return a hex digest for arbitrary bytes using BLAKE3.
+
+    This must remain stable across Python-only and Rust ft_fastpath paths.
+    """
+    h = _new_b3()
+    h.update(data)
+    return h.hexdigest()
+
+
+def hash_file(path: Path) -> str:
+    """Return a hex digest for a single file using BLAKE3."""
+    h = _new_b3()
+    # Stream to avoid loading big files into memory:
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
 
 
-def hash_dir(paths: list[Path]) -> str:
-    h = hashlib.blake2b(digest_size=16)
-    for p in sorted(paths):
-        h.update(p.as_posix().encode())
-        h.update(hash_file(p).encode())
+def hash_files(paths: Iterable[Path]) -> str:
+    """Return a combined digest for a set of files (order-independent)."""
+    h = _new_b3()
+    for p in sorted(map(str, paths)):
+        p_path = Path(p)
+        h.update(p_path.as_posix().encode("utf-8"))
+        if p_path.is_file():
+            with p_path.open("rb") as f:
+                for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                    h.update(chunk)
     return h.hexdigest()
 
 
 def tool_version_hash(tool_cmd: list[str]) -> str:
+    """Return a digest representing the stdout/stderr of a tool invocation.
+
+    Kept for compatibility with existing callers.
+    """
     try:
+        import subprocess
+
         out = subprocess.run(tool_cmd, capture_output=True, text=True, check=False)
         data = (out.stdout or out.stderr or "").strip().encode()
         return hash_bytes(data)
@@ -35,40 +63,40 @@ def tool_version_hash(tool_cmd: list[str]) -> str:
 
 
 def env_fingerprint() -> str:
-    # Keep it cheap and deterministic: python version + platform
+    """Small, deterministic fingerprint of the runtime environment."""
     import platform
     import sys
 
     s = f"py={sys.version_info[:3]}|impl={platform.python_implementation()}|plat={platform.platform()}"
-    return hash_bytes(s.encode())
+    return hash_bytes(s.encode("utf-8"))
 
 
+@dataclass
 class Hasher:
-    """High-level hasher for computing repository file digests using BLAKE3.
+    """High-level hasher facade.
 
-    Combines fast-path scanning with BLAKE3 hashing for deterministic
-    repository fingerprinting and change detection.
+    This delegates to ft_fastpath when available or falls back to the
+    pure-Python scanner/hash functions above.
     """
 
-    def __init__(self, root: Path):
-        """Initialize hasher for a repository root."""
-        from .fastpath import scan_paths
-
-        self.root = Path(root)
-        self._scan_paths = scan_paths
+    root: Path
 
     def enumerate_files(self) -> list[Path]:
-        """Enumerate all discoverable files in the repository."""
-        files = self._scan_paths(self.root)
-        return files
+        from .fastpath import scan_paths
+
+        return scan_paths(self.root)
 
     def compute_hashes(self, files: list[Path]) -> dict[Path, str]:
-        """Compute BLAKE3 digests for given files."""
-        from .fastpath import hash_paths
+        # Prefer native parallel implementation if available
+        try:
+            from .ft_fastpath import hash_files_parallel
 
-        return hash_paths(files)
+            # hash_files_parallel returns list[(str,str)]
+            pairs = hash_files_parallel([str(p) for p in files])
+            return {Path(k): v for k, v in pairs}
+        except Exception:
+            return {p: hash_file(p) for p in files}
 
     def hash_all(self) -> dict[Path, str]:
-        """Enumerate and hash all repository files in one call."""
         files = self.enumerate_files()
         return self.compute_hashes(files)

@@ -154,12 +154,17 @@ def check_tests():
         env["FT_DISABLE_NESTED_PYTEST"] = "1"
 
         try:
+            # Disable pytest plugin autoload in child process to avoid test harness
+            # interference from loaded plugins. Also set a conservative timeout
+            # so the gate cannot hang indefinitely.
+            env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
             result = subprocess.run(
                 [sys.executable, "-m", "pytest", "-q"],
                 capture_output=True,
                 text=True,
                 check=False,
                 env=env,
+                timeout=120,
             )
         except TypeError:
             # Monkeypatch doesn't accept check parameter
@@ -193,6 +198,13 @@ def check_tests():
             skipped=True,
             reason="pytest not found",
             output="pytest not found",
+        )
+    except subprocess.TimeoutExpired as e:
+        return GateResult(
+            gate_id="tests",
+            ok=False,
+            output=getattr(e, "stdout", ""),
+            reason="pytest timed out",
         )
     except Exception as e:
         return GateResult(

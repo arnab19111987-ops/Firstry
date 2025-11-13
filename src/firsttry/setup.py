@@ -1,10 +1,8 @@
 # firsttry/setup.py
 from pathlib import Path
 
-from .detect import deps_for_stacks
-from .detect import detect_language
-from .hooks import hooks_installed
-from .hooks import install_all_hooks
+from .detect import deps_for_stacks, detect_language
+from .hooks import hooks_installed, install_all_hooks
 
 DEFAULT_CONFIG_TEMPLATE = """# FirstTry config
 version: 1

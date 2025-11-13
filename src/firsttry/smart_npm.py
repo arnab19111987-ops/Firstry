@@ -4,7 +4,7 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Optional
 
 from . import cache as ft_cache
 
@@ -85,7 +85,7 @@ def detect_js_project_type(repo_root: str) -> dict[str, Any]:
     }
 
 
-def get_js_related_files(repo_root: str, changed_files: list[str] = None) -> set[str]:
+def get_js_related_files(repo_root: str, changed_files: Optional[List[str]] = None) -> set[str]:
     """Get JavaScript/TypeScript related files from changed files or discover all"""
     repo_path = Path(repo_root)
     js_files = set()
@@ -177,7 +177,7 @@ def get_js_related_files(repo_root: str, changed_files: list[str] = None) -> set
 
 def should_skip_npm_tests(
     repo_root: str,
-    changed_files: list[str] = None,
+    changed_files: Optional[List[str]] = None,
     force_run: bool = False,
 ) -> dict[str, Any]:
     """Determine if npm tests should be skipped based on changed files and project state.
@@ -211,7 +211,7 @@ def should_skip_npm_tests(
         }
 
     # If no changed files provided, assume we should run (full mode)
-    if not changed_files:
+    if changed_files is None or not changed_files:
         return {
             "should_skip": False,
             "reason": "Full mode: no changed files filter provided",
@@ -256,13 +256,17 @@ def get_npm_test_command(repo_root: str) -> list[str]:
 
 async def run_smart_npm_test(
     repo_root: str,
-    changed_files: list[str] = None,
+    changed_files: Optional[List[str]] = None,
     force_run: bool = False,
     use_cache: bool = True,
 ) -> dict[str, Any]:
     """Run npm tests with intelligent skipping based on changes.
     Mirrors the smart pytest patterns.
     """
+    # Normalize changed_files for downstream callers (treat None as full-mode)
+    if changed_files is None:
+        changed_files = []
+
     # Check if we should skip
     skip_decision = should_skip_npm_tests(repo_root, changed_files, force_run)
 
@@ -276,6 +280,7 @@ async def run_smart_npm_test(
         }
 
     # Check cache if enabled
+    js_files = None
     if use_cache:
         # Build input hash from JS-related files
         js_files = get_js_related_files(repo_root)

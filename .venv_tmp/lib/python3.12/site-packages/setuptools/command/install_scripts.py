@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import distutils.command.install_scripts as orig
 import os
 import sys
+from distutils import log
 
 from .._path import ensure_directory
 from ..dist import Distribution
-
-import distutils.command.install_scripts as orig
-from distutils import log
 
 
 class install_scripts(orig.install_scripts):

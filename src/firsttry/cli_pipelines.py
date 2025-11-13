@@ -2,10 +2,11 @@
 import argparse
 import sys
 
-from .executor import execute_plan
+from firsttry.executor import execute_plan  # type: ignore[attr-defined]
+from firsttry.planner import build_plan  # type: ignore[attr-defined]
+from firsttry.reporting import print_report  # type: ignore[attr-defined]
+
 from .licensing import ensure_license_interactive
-from .planner import build_plan
-from .reporting import print_report
 from .setup_wizard import run_setup
 
 

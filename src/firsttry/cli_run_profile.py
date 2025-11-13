@@ -6,8 +6,9 @@ import json
 import sys
 from pathlib import Path
 
+from firsttry.reporting import write_report_async  # type: ignore[attr-defined]
+
 from .lazy_orchestrator import run_profile_for_repo
-from .reporting import write_report_async
 
 
 def main():
@@ -36,8 +37,7 @@ def main():
     )
 
     # Build comprehensive report payload from orchestrator report with locked schema
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     payload = {
         "schema_version": 1,

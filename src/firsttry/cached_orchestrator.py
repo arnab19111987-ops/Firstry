@@ -3,20 +3,34 @@ from __future__ import annotations
 import asyncio
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
-from . import cache as ft_cache
-from . import progress
-from .cache_utils import collect_input_stats
-from .cache_utils import input_stats_match
+from . import cache as ft_cache, progress
+from .cache_utils import collect_input_stats, input_stats_match
 from .check_dependencies import should_skip_due_to_dependencies
-from .check_registry import CHECK_REGISTRY
-from .check_registry import get_check_inputs
+from .check_registry import CHECK_REGISTRY, get_check_inputs
 from .run_profiles import get_pytest_mode_for_profile
 from .smart_npm import run_smart_npm_test
 from .smart_pytest import run_smart_pytest
 
 MAX_WORKERS = min(4, os.cpu_count() or 2)
+
+# Ensure optional fast helpers exist on the cache module to avoid import-time errors
+if not hasattr(ft_cache, "is_tool_cache_valid_fast"):
+
+    def _is_tool_cache_valid_fast(
+        repo_root: str, name: str, input_paths: list[str]
+    ) -> tuple[bool, str]:
+        return (False, "stub")
+
+    setattr(ft_cache, "is_tool_cache_valid_fast", _is_tool_cache_valid_fast)
+
+if not hasattr(ft_cache, "invalidate_tool_cache"):
+
+    def _invalidate_tool_cache(*args: Any, **kwargs: Any) -> None:
+        return None
+
+    setattr(ft_cache, "invalidate_tool_cache", _invalidate_tool_cache)
 
 
 def run_tool_with_smart_cache(
@@ -31,7 +45,7 @@ def run_tool_with_smart_cache(
     cache_entry = ft_cache.load_tool_cache_entry(repo_root, tool_name)
 
     # 1) FAST PATH: stats match
-    if cache_entry and input_stats_match(cache_entry.input_files, current_stats):
+    if cache_entry and current_stats and input_stats_match(cache_entry.input_files, current_stats):
         # 👉 if last run failed, just replay it instead of re-running
         if cache_entry.status == "fail":
             return {
@@ -74,7 +88,8 @@ async def run_subprocess(cmd: list[str], cwd: str | None = None) -> tuple[int, s
         stderr=asyncio.subprocess.STDOUT,
     )
     stdout, _ = await proc.communicate()
-    return proc.returncode, stdout.decode("utf-8", "replace")
+    # proc.returncode can be None in some stub annotations; coerce to int
+    return int(proc.returncode or 0), stdout.decode("utf-8", "replace")
 
 
 async def _bounded_run(cmd: list[str], sem: asyncio.Semaphore, cwd: str | None = None):
@@ -157,7 +172,7 @@ async def run_checks_for_profile(
 
     # Group checks by bucket
     t_bucketing_start = time.monotonic()
-    buckets = {"fast": [], "mutating": [], "slow": []}
+    buckets: Dict[str, List[str]] = {"fast": [], "mutating": [], "slow": []}
 
     for check in checks:
         bucket = CHECK_REGISTRY.get(check, {}).get("bucket", "slow")
@@ -240,7 +255,7 @@ async def run_checks_for_profile(
                 is_valid, cache_state = ft_cache.is_tool_cache_valid_fast(
                     repo_root,
                     chk,
-                    input_paths,
+                    input_paths or [],
                 )
                 if is_valid:
                     progress.cached(chk)
@@ -373,7 +388,7 @@ async def run_checks_for_profile(
                 is_valid, cache_state = ft_cache.is_tool_cache_valid_fast(
                     repo_root,
                     chk,
-                    input_paths,
+                    input_paths or [],
                 )
                 if is_valid:
                     progress.cached(chk)

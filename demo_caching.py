@@ -11,8 +11,8 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from firsttry.run_profiles import select_checks, get_profile_description
 from firsttry.cached_orchestrator import run_checks_for_profile
+from firsttry.run_profiles import get_profile_description, select_checks
 
 
 async def demo_cached_runs():

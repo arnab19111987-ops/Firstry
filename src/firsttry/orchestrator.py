@@ -2,12 +2,13 @@
 from pathlib import Path
 from typing import Any
 
+from firsttry.executor import execute_plan  # type: ignore[attr-defined]
+from firsttry.planner import build_plan  # type: ignore[attr-defined]
+from firsttry.reporting import print_report  # type: ignore[attr-defined]
+
 from .detectors import detect_languages
-from .executor import execute_plan  # old/stable engine
 from .gates import core_checks as g
 from .licensing import ensure_license_interactive
-from .planner import build_plan  # new/pipeline engine
-from .reporting import print_report  # enhanced reporting
 from .setup_wizard import run_setup as wizard_run
 
 LAST_REPORT: dict | None = None  # simple in-memory; later can write to ~/.firsttry

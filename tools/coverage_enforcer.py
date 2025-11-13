@@ -20,8 +20,7 @@ Exit codes:
 import json
 import sys
 from pathlib import Path
-from typing import Dict
-from typing import Tuple
+from typing import Dict, Tuple
 
 CRITICAL = {
     "src/firsttry/runner/state.py": 80.0,

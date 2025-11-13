@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 import ast
+import tomllib
 from collections.abc import Iterable
 from pathlib import Path
 
-import tomllib
-
-from .graph import CodebaseTwin
-from .graph import FileNode
-from .graph import ProjectNode
-from .hashers import hash_dir
-from .hashers import hash_file
+from .graph import CodebaseTwin, FileNode, ProjectNode
+from .hashers import hash_file, hash_files
 
 
 def _iter_py_files(root: Path) -> Iterable[Path]:
@@ -92,6 +88,6 @@ def build_python_twin(repo_root: Path) -> CodebaseTwin:
     # 4) project hash (aggregate)
     for proj in twin.projects.values():
         files = [Path(repo_root / f) for f in proj.files]
-        proj.hash = hash_dir(files) if files else None
+        proj.hash = hash_files(files) if files else None
 
     return twin

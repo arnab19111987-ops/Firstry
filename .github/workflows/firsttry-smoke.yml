@@ -1,0 +1,14 @@
+name: firsttry-smoke
+on: [pull_request, push]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt || true
+      - run: pip install -r requirements-test.txt || true
+      - run: bash scripts/verify_bouncer_and_locks.sh
+      - run: pytest -q tests/test_cache_selection.py

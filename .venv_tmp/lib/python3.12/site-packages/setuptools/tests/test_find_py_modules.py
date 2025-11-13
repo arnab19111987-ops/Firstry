@@ -3,7 +3,6 @@
 import os
 
 import pytest
-
 from setuptools.discovery import FlatLayoutModuleFinder, ModuleFinder
 
 from .compat.py39 import os_helper

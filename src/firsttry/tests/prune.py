@@ -8,8 +8,7 @@ tests (safeguard against false negatives).
 from __future__ import annotations
 
 import subprocess
-from typing import List
-from typing import Set
+from typing import List, Set
 
 from .indexer import get_or_build_index
 

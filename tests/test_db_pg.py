@@ -1,7 +1,6 @@
 import pytest
 
-from firsttry.db_pg import parse_destructive_ops
-from firsttry.db_pg import run_pg_probe
+from firsttry.db_pg import parse_destructive_ops, run_pg_probe
 
 
 def test_parse_destructive_ops_classification():

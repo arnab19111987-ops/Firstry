@@ -1,0 +1,42 @@
+name: JSON lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  json-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate JSON files (ci/*.json)
+        run: |
+          python - << 'PY'
+          import json
+          from pathlib import Path
+
+          errors = []
+          for path in Path("ci").glob("*.json"):
+              try:
+                  json.loads(path.read_text(encoding="utf-8"))
+              except Exception as exc:  # noqa: BLE001
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("Invalid JSON in repo:")
+              for e in errors:
+                  print(" -", e)
+              raise SystemExit(1)
+          else:
+              print("All ci/*.json files are valid.")
+          PY

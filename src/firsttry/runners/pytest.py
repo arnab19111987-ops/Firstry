@@ -1,16 +1,30 @@
 from __future__ import annotations
 
-import subprocess
+import sys
 from pathlib import Path
 
-from ..twin.hashers import env_fingerprint
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import tool_version_hash
-from .base import CheckRunner
-from .base import RunResult
-from .base import _hash_config
-from .base import _hash_targets
-from .base import ensure_bin
+from ..runners import run_pytest_files
+from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+
+# Use private aliases exported by base to avoid import-time masking
+from .base import (
+    CheckRunner,
+    RunResult,
+    _hash_config as hash_config,
+    _hash_targets as hash_targets,
+    ensure_bin,
+)
+
+
+def build_pytest_cmd(nodeids: list[str], extra: list[str] | None = None) -> list[str]:
+    """Build a pytest command using nodeids as positional args (no -k mangling).
+
+    Returns a list suitable for subprocess.run.
+    """
+    extra = extra or []
+    # Use the Python executable to run pytest module to ensure venv consistency
+    cmd = [sys.executable, "-m", "pytest", "-q", *extra, *nodeids]
+    return cmd
 
 
 class PytestRunner(CheckRunner):
@@ -27,37 +41,26 @@ class PytestRunner(CheckRunner):
     ) -> str:
         tv = tool_version_hash(["pytest", "--version"])
         env = env_fingerprint()
-        tgt = _hash_targets(repo_root, targets or ["tests"])
-        cfg = _hash_config(
+        tgt = hash_targets(repo_root, targets or ["tests"])
+        cfg = hash_config(
             repo_root,
             ["pyproject.toml", "pytest.ini", "tox.ini", "setup.cfg"],
         )
-        intent = hash_bytes((" ".join(sorted(flags))).encode())
+        intent = hash_bytes((" ".join(sorted(flags or []))).encode())
         return "ft-v1-pytest-" + hash_bytes(f"{tv}|{env}|{tgt}|{cfg}|{intent}".encode())
 
     def run(
         self,
         repo_root: Path,
-        targets: list[str],
-        flags: list[str],
+        files: list[str] | None = None,
+        flags: list[str] | None = None,
         *,
-        timeout_s: int,
+        timeout_s: int | None = None,
     ) -> RunResult:
-        test_targets = targets or ["tests"]
-        args = ["pytest", "-q", *test_targets, *flags]
-        try:
-            proc = subprocess.run(
-                args,
-                cwd=repo_root,
-                text=True,
-                capture_output=True,
-                timeout=timeout_s,
-                check=False,
-            )
-            return RunResult(
-                status="ok" if proc.returncode == 0 else "fail",
-                stdout=proc.stdout,
-                stderr=proc.stderr,
-            )
-        except subprocess.TimeoutExpired as e:
-            return RunResult(status="error", stdout=e.stdout or "", stderr=str(e))
+        """Run pytest on a list of files with optional flags and timeout.
+
+        This forwards to the shared runners.run_pytest_files helper so tests
+        that monkeypatch subprocess.run are respected.
+        """
+        # `run_pytest_files` expects `timeout` kwarg (subprocess timeout).
+        return run_pytest_files(files, base_args=tuple(flags), cwd=repo_root, timeout=timeout_s)

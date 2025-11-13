@@ -1,4 +1,68 @@
+import importlib
+import os
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def safe_isolated_env(monkeypatch):
+    """
+    Isolates every test from its *environment* to prevent state pollution.
+    This runs automatically for every test.
+
+    This FINAL version:
+      - Clears known FirstTry environment variables.
+      - Reloads stateful modules (like license/config) to clear their caches.
+      - Does NOT touch the filesystem (no chdir, no home patch).
+    """
+
+    # 1. Isolate Environment Variables
+    vars_to_clear = [
+        "FIRSTTRY_LICENSE_KEY",
+        "FIRSTTRY_LICENSE_URL",
+        "FIRSTTRY_LICENSE_ALLOW",
+        "FIRSTTRY_ALLOW_UNLICENSED",
+        "FIRSTTRY_FORCE_TIER",
+        "FIRSTTRY_DEMO_MODE",
+        "FIRSTTRY_SEND_TELEMETRY",
+        "FIRSTTRY_TELEMETRY_OPTOUT",
+        "FT_S3_BUCKET",
+        "FT_S3_PREFIX",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_REGION",
+    ]
+    for var in vars_to_clear:
+        monkeypatch.delenv(var, raising=False)
+
+    # 2. Isolate Module Caches (by reloading them)
+    mods_to_reload = [
+        "firsttry.license_guard",
+        "firsttry.license_cache",
+        "firsttry.config.schema",
+    ]
+    for mod_name in mods_to_reload:
+        if mod_name in importlib.sys.modules:
+            try:
+                importlib.reload(importlib.import_module(mod_name))
+            except ImportError:
+                pass  # Module might not exist in all test contexts
+
+    yield  # <--- THE TEST RUNS HERE
+
+
 """Pytest configuration and quality gate hooks."""
+
+# Ensure test collection is safe when guards run at import time. Set minimal
+# environment defaults so modules that require secrets at import do not raise
+# during collection. These are for test-time only and intentionally insecure.
+
+os.environ.setdefault("FT_ENV", "test")
+# NOTE: we intentionally do NOT set FIRSTTRY_SHARED_SECRET here; tests that need a
+# secret should set it explicitly with monkeypatch so subprocess-based tests can
+# accurately simulate missing-secret production behavior. Setting a global
+# FIRSTTRY_SHARED_SECRET at session start leaks into subprocess envs and breaks
+# assertions that validate behavior when the secret is absent.
 
 import pathlib
 from typing import Any

@@ -2,10 +2,10 @@
 import shlex
 import shutil
 import subprocess
-from typing import Any
+from typing import Any, Optional
 
 
-def run_command(cmd: str, cwd: str) -> dict:
+def run_command(cmd: str, cwd: str, timeout: Optional[int] = None) -> dict:
     try:
         # Use shlex.split instead of shell=True for security
         cmd_list = shlex.split(cmd) if isinstance(cmd, str) else cmd
@@ -15,6 +15,7 @@ def run_command(cmd: str, cwd: str) -> dict:
             capture_output=True,
             text=True,
             check=False,
+            timeout=timeout,
         )
         return {
             "ok": proc.returncode == 0,
@@ -27,6 +28,13 @@ def run_command(cmd: str, cwd: str) -> dict:
             "ok": False,
             "stdout": "",
             "stderr": f"{cmd} not found",
+            "cmd": cmd,
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "ok": False,
+            "stdout": getattr(exc, "stdout", "") or "",
+            "stderr": f"Command timed out after {timeout}s",
             "cmd": cmd,
         }
 

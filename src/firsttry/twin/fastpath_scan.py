@@ -13,7 +13,9 @@ from typing import List
 _RUST_OK = False
 _BACKEND_USED = "python"  # Track which backend was actually used
 try:
-    from ft_fastpath import scan_repo_parallel as _scan_rust  # type: ignore[attr-defined]
+    from ft_fastpath import (  # type: ignore[attr-defined]
+        scan_repo_parallel as _scan_rust,
+    )
 
     _RUST_OK = True
 except Exception:

@@ -4,7 +4,7 @@ Replaces the unrealistic "2x speedup" target with physics-friendly goals.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclass
@@ -31,7 +31,7 @@ class PerformanceTargets:
 
 def validate_performance_results(
     results: dict[str, Any],
-    targets: PerformanceTargets = None,
+    targets: Optional[PerformanceTargets] = None,
 ) -> dict[str, bool]:
     """Validate performance results against realistic targets.
 

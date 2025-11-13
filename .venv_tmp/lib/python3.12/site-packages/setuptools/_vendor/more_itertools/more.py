@@ -1,10 +1,9 @@
 import math
 import warnings
-
-from collections import Counter, defaultdict, deque, abc
+from collections import Counter, abc, defaultdict, deque
 from collections.abc import Sequence
 from functools import cached_property, partial, reduce, wraps
-from heapq import heapify, heapreplace, heappop
+from heapq import heapify, heappop, heapreplace
 from itertools import (
     chain,
     combinations,
@@ -14,32 +13,32 @@ from itertools import (
     dropwhile,
     groupby,
     islice,
+    product,
     repeat,
     starmap,
     takewhile,
     tee,
     zip_longest,
-    product,
 )
 from math import comb, e, exp, factorial, floor, fsum, log, perm, tau
+from operator import ge, gt, itemgetter, le, lt, mul, sub
 from queue import Empty, Queue
 from random import random, randrange, uniform
-from operator import itemgetter, mul, sub, gt, lt, ge, le
 from sys import hexversion, maxsize
 from time import monotonic
 
 from .recipes import (
+    UnequalIterablesError,
     _marker,
     _zip_equal,
-    UnequalIterablesError,
+    all_equal,
+    batched,
     consume,
     flatten,
     pairwise,
     powerset,
     take,
     unique_everseen,
-    all_equal,
-    batched,
 )
 
 __all__ = [

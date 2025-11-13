@@ -1,6 +1,6 @@
-from setuptools.command.setopt import config_file, edit_config, option_base
-
 from distutils.errors import DistutilsOptionError
+
+from setuptools.command.setopt import config_file, edit_config, option_base
 
 
 def shquote(arg):

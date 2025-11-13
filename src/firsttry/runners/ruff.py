@@ -3,14 +3,9 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from ..twin.hashers import env_fingerprint
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import tool_version_hash
-from .base import CheckRunner
-from .base import RunResult
-from .base import _hash_config
-from .base import _hash_targets
-from .base import ensure_bin
+from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+from ..utils.proc import to_str
+from .base import CheckRunner, RunResult, ensure_bin, hash_config, hash_targets
 
 
 class RuffRunner(CheckRunner):
@@ -27,33 +22,38 @@ class RuffRunner(CheckRunner):
     ) -> str:
         tv = tool_version_hash(["ruff", "--version"])
         env = env_fingerprint()
-        tgt = _hash_targets(repo_root, targets)
-        cfg = _hash_config(repo_root, ["pyproject.toml", ".ruff.toml", "ruff.toml"])
+        tgt = hash_targets(repo_root, targets)
+        cfg = hash_config(repo_root, ["pyproject.toml", ".ruff.toml", "ruff.toml"])
         intent = hash_bytes((" ".join(sorted(flags))).encode())
         return "ft-v1-ruff-" + hash_bytes(f"{tv}|{env}|{tgt}|{cfg}|{intent}".encode())
 
     def run(
         self,
         repo_root: Path,
-        targets: list[str],
-        flags: list[str],
+        files: list[str] | None = None,
         *,
-        timeout_s: int,
+        timeout_s: int | None = None,
     ) -> RunResult:
-        args = ["ruff", "check", *targets, *flags]
+        t0 = __import__("time").time()
+        cmd = ["ruff", "check"]
+        if files:
+            cmd += files
         try:
             proc = subprocess.run(
-                args,
-                cwd=repo_root,
+                cmd,
+                cwd=str(repo_root),
                 text=True,
                 capture_output=True,
                 timeout=timeout_s,
                 check=False,
             )
+            dur = int((__import__("time").time() - t0) * 1000)
             return RunResult(
-                status="ok" if proc.returncode == 0 else "fail",
-                stdout=proc.stdout,
-                stderr=proc.stderr,
+                name="ruff",
+                rc=proc.returncode,
+                stdout=proc.stdout or "",
+                stderr=proc.stderr or "",
+                duration_ms=dur,
             )
         except subprocess.TimeoutExpired as e:
-            return RunResult(status="error", stdout=e.stdout or "", stderr=str(e))
+            return RunResult(name="ruff", rc=2, stdout=to_str(e.stdout), stderr=str(e))

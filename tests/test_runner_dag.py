@@ -7,8 +7,7 @@ import pytest
 
 from firsttry.runner.config import ConfigLoader
 from firsttry.runner.executor import Executor
-from firsttry.runner.model import DAG
-from firsttry.runner.model import Task
+from firsttry.runner.model import DAG, Task
 from firsttry.runner.planner import Planner
 
 

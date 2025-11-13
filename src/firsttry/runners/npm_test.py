@@ -3,14 +3,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from ..twin.hashers import env_fingerprint
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import tool_version_hash
-from .base import CheckRunner
-from .base import RunResult
-from .base import _hash_config
-from .base import _hash_targets
-from .base import ensure_bin
+from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
+from .base import CheckRunner, RunResult, ensure_bin, hash_config, hash_targets
 
 
 class NpmTestRunner(CheckRunner):
@@ -23,8 +17,8 @@ class NpmTestRunner(CheckRunner):
         nv = tool_version_hash(["node", "--version"])
         pv = tool_version_hash(["npm", "--version"])
         env = env_fingerprint()
-        tgt = _hash_targets(repo_root, targets or ["."])
-        cfg = _hash_config(
+        tgt = hash_targets(repo_root, targets or ["."])
+        cfg = hash_config(
             repo_root,
             ["package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"],
         )
@@ -34,27 +28,26 @@ class NpmTestRunner(CheckRunner):
     def run(
         self,
         repo_root: Path,
-        targets: list[str],
-        flags: list[str],
+        files: list[str] | None = None,
         *,
-        timeout_s: int,
+        timeout_s: int | None = None,
     ) -> RunResult:
-        # Run once per target that has package.json; else repo root
-        targets = targets or ["."]
+        # Run npm test once per package that has package.json; else repo root
+        targets = files or ["."]
         pkgs = [repo_root / t for t in targets if (repo_root / t / "package.json").exists()] or [
             repo_root,
         ]
         out, err, rc = "", "", 0
         for pth in pkgs:
             p = subprocess.run(
-                ["npm", "test", "--silent", "--", *flags],
-                cwd=pth,
+                ["npm", "test", "--silent"],
+                cwd=str(pth),
                 text=True,
                 capture_output=True,
                 timeout=timeout_s,
                 check=False,
             )
-            out += p.stdout
-            err += p.stderr
+            out += p.stdout or ""
+            err += p.stderr or ""
             rc |= p.returncode
-        return RunResult(status="ok" if rc == 0 else "fail", stdout=out, stderr=err)
+        return RunResult(name="npm-test", rc=rc, stdout=out, stderr=err, duration_ms=0)

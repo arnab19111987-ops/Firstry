@@ -12,6 +12,14 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - run: pip install --upgrade --progress-bar=off -c .firsttry/constraints.txt -e ".[test]" -r .firsttry/ci-extra-requirements.txt build
+      - name: Install (with optional constraints)
+        run: |
+          set -e
+          if [ -f .firsttry/constraints.txt ]; then
+            pip install --upgrade --progress-bar=off -c .firsttry/constraints.txt -e ".[test]" -r .firsttry/ci-extra-requirements.txt build
+          else
+            echo "No constraints file found; installing without constraints."
+            pip install --upgrade --progress-bar=off -e ".[test]" -r .firsttry/ci-extra-requirements.txt build
+          fi
       - name: FirstTry CI-parity (config-aware)
         run: python -m firsttry.ci_parity.runner ci

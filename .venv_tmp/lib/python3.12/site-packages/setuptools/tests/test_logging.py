@@ -23,9 +23,9 @@ setup(
 )
 def test_verbosity_level(tmp_path, monkeypatch, flag, expected_level):
     """Make sure the correct verbosity level is set (issue #3038)"""
-    import setuptools  # noqa: F401  # import setuptools to monkeypatch distutils
-
     import distutils  # <- load distutils after all the patches take place
+
+    import setuptools  # noqa: F401  # import setuptools to monkeypatch distutils
 
     logger = logging.Logger(__name__)
     monkeypatch.setattr(logging, "root", logger)
@@ -60,11 +60,10 @@ def flaky_on_pypy(func):
 def test_patching_does_not_cause_problems():
     # Ensure `dist.log` is only patched if necessary
 
-    import _distutils_hack
-
-    import setuptools.logging
-
     from distutils import dist
+
+    import _distutils_hack
+    import setuptools.logging
 
     setuptools.logging.configure()
 

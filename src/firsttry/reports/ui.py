@@ -8,17 +8,19 @@ from typing import Any
 
 # try to use rich if present
 # console may be a rich Console or None when rich isn't available
-_console: Any = None
+_console: Any | None = None
 _HAS_RICH: bool = False
 _NO_UI_MODE: bool = False  # Performance mode flag
 
 try:
     from rich.console import Console
-    from rich.progress import BarColumn
-    from rich.progress import Progress
-    from rich.progress import SpinnerColumn
-    from rich.progress import TextColumn
-    from rich.progress import TimeElapsedColumn
+    from rich.progress import (
+        BarColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
 
     _HAS_RICH = True
     _console = Console()

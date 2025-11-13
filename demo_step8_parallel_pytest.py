@@ -12,8 +12,8 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from firsttry.parallel_pytest import (
     analyze_test_suite,
-    discover_all_tests,
     create_test_chunks,
+    discover_all_tests,
     run_parallel_pytest,
 )
 

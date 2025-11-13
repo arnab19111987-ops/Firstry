@@ -5,13 +5,9 @@ import datetime as dt
 import html as html_module
 import json
 import time
-from collections import Counter
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 # ------------- LEGACY: Backward compatibility functions --------
 
