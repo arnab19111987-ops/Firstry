@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from firsttry.twin.hashers import hash_bytes, hash_file, hash_files
+from firsttry.twin.hashers import hash_bytes
+from firsttry.twin.hashers import hash_file
+from firsttry.twin.hashers import hash_files
 
 
 def test_hash_bytes_is_deterministic():

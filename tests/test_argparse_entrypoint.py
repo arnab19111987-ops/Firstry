@@ -3,7 +3,8 @@ from __future__ import annotations
 import io
 import sys
 
-from firsttry import __version__, cli as cli_mod
+from firsttry import __version__
+from firsttry import cli as cli_mod
 
 
 def test_argparse_main_version(monkeypatch):

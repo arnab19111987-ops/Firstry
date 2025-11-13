@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from firsttry.config import get_config, get_s3_settings, get_workflow_requires
+from firsttry.config import get_config
+from firsttry.config import get_s3_settings
+from firsttry.config import get_workflow_requires
 
 
 def test_get_config_reads_firsttry_toml_only(tmp_path: Path, monkeypatch):

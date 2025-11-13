@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
+from typing import List
 
-from firsttry.planner.dag import Plan, build_plan_from_twin
+from firsttry.planner.dag import Plan
+from firsttry.planner.dag import build_plan_from_twin
 
 
 @dataclass

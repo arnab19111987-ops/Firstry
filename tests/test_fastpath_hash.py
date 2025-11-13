@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from firsttry.twin.fastpath import hash_paths, scan_paths
+from firsttry.twin.fastpath import hash_paths
+from firsttry.twin.fastpath import scan_paths
 from firsttry.twin.hashers import Hasher
 
 

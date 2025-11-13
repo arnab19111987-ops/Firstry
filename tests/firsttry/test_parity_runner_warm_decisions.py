@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from firsttry.ci_parity.parity_runner import WarmDecision, classify_warm_outcome
+from firsttry.ci_parity.parity_runner import WarmDecision
+from firsttry.ci_parity.parity_runner import classify_warm_outcome
 
 
 def test_classify_warm_outcome_uses_testmon_on_rc0():
