@@ -3,7 +3,7 @@ import types
 from click.testing import CliRunner
 
 from firsttry import license_cache
-from firsttry.cli import main
+import firsttry.cli as cli
 
 
 def test_cli_runs_when_license_ok(monkeypatch):
@@ -51,7 +51,7 @@ def test_cli_runs_when_license_ok(monkeypatch):
     monkeypatch.setattr("firsttry.cli.runners.coverage_gate", lambda *a, **k: ok)
 
     res = CliRunner().invoke(
-        main,
+        cli.cli_app,
         ["run", "--gate", "pre-commit", "--require-license"],
         # catch_exceptions=False,  # uncomment to see raw traceback in pytest
     )

@@ -122,7 +122,7 @@ jobs:
           echo "✅ MyPy type checking passed (zero errors)"
       - name: Upload type safety report
         if: always()
-        uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v3
         with:
           name: mypy-report
           path: |
@@ -203,7 +203,7 @@ jobs:
           PYTHONPATH=src python -m firsttry doctor --help > .firsttry/cli_doctor_help.txt
           echo "📝 CLI help files generated for drift detection"
       - name: Upload CLI help
-        uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v3
         if: matrix.test-tier == 'lite' && always()
         with:
           name: cli-help
@@ -252,7 +252,7 @@ jobs:
           python tools/check_critical_coverage.py
       - name: Upload coverage artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v3
         with:
           name: coverage-artifacts
           path: |
@@ -326,7 +326,7 @@ jobs:
             --tb=short
       - name: Upload enterprise test results
         if: always()
-        uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v3
         with:
           name: enterprise-tests
           path: |
@@ -360,7 +360,7 @@ jobs:
           gitleaks detect --verbose --exit-code 0 || true
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v3
         with:
           name: security-reports
           path: |
@@ -427,7 +427,7 @@ jobs:
           "
       - name: Upload benchmark results
         if: always()
-        uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v3
         with:
           name: benchmarks-ci
           path: .firsttry/bench_ci.json

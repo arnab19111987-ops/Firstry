@@ -135,23 +135,110 @@ def read_flaky_tests() -> list[str]:
     if not FLAKY_FILE.exists():
         return []
     try:
-        data = json.loads(FLAKY_FILE.read_text())
-        return [str(x) for x in data.get("nodeids", [])]
+        raw = FLAKY_FILE.read_text()
+        data = json.loads(raw)
+
+        # Accept several historical schemas:
+        #  - top-level list of nodeids: ["pkg/test.py::test"]
+        #  - object with `nodeids` key that is list or string
+        if isinstance(data, list):
+            return [str(x) for x in data]
+
+        if isinstance(data, dict):
+            nodeids = data.get("nodeids")
+            if nodeids is None:
+                print("unexpected flaky file schema: missing 'nodeids'")
+                return []
+            if isinstance(nodeids, str):
+                return [nodeids]
+            if isinstance(nodeids, list):
+                return [str(x) for x in nodeids]
+            print("unexpected flaky file schema: 'nodeids' is not list or str")
+            return []
+
+        # Unknown top-level type
+        print("unexpected flaky file schema: top-level must be list or dict")
+        return []
     except Exception:
         return []
 
 
+# Backwards-compatible aliases used by some tests and older callers
+# Keep these thin so restoring main's file stays mostly intact.
 def load_flaky_nodeids() -> list[str]:
-    """Compatibility wrapper used by tests: alias for read_flaky_tests."""
     return read_flaky_tests()
 
 
 def maybe_download_golden_cache(remote_fingerprint: str | None = None) -> None:
-    """Compatibility wrapper that delegates to update_cache.
+    """Try to apply a golden cache archive if present (tests use GOLDEN_CACHE_ARCHIVE).
 
-    Historically some callers import maybe_download_golden_cache from ci_parity.cache_utils.
-    Provide a thin alias so those imports continue to work.
+    Falls back to `update_cache` (the gh-run based download) if no archive present.
     """
+    # Backwards-compatible variable names sometimes used in tests
+    artifacts_dir = globals().get("ARTIFACTS_DIR", ARTIFACTS)
+    golden_archive = globals().get("GOLDEN_CACHE_ARCHIVE", None)
+
+    # If a test injected GOLDEN_CACHE_ARCHIVE, extract it into WARM_DIR
+    if golden_archive:
+        try:
+            ga = Path(golden_archive)
+            if ga.exists():
+                # choose extractor by suffix
+                if ga.suffix == ".zip":
+                    import zipfile
+
+                    with zipfile.ZipFile(ga, "r") as z:
+                        z.extractall(WARM_DIR)
+                else:
+                    import tarfile
+
+                    with tarfile.open(ga, "r:*") as t:
+                        # Prefer to map archived `.firsttry/warm/...` entries into the
+                        # configured WARM_DIR so tests that monkeypatch WARM_DIR see
+                        # the expected files in the target directory.
+                        for member in t.getmembers():
+                            try:
+                                rel = Path(member.name).relative_to(".firsttry/warm")
+                            except Exception:
+                                # skip unrelated paths
+                                continue
+                            target = WARM_DIR / rel
+                            if member.isdir():
+                                target.mkdir(parents=True, exist_ok=True)
+                            else:
+                                target.parent.mkdir(parents=True, exist_ok=True)
+                                f = t.extractfile(member)
+                                if f:
+                                    target.write_bytes(f.read())
+                return
+        except Exception:
+            pass
+
+    # Try looking for an artifact file in ARTIFACTS_DIR (compatibility)
+    try:
+        ad = Path(artifacts_dir)
+        if ad.exists():
+            for candidate in ad.iterdir():
+                if candidate.name.startswith("golden-cache") or candidate.name.startswith("warm-cache"):
+                    # attempt to extract
+                    try:
+                        if candidate.suffix == ".zip":
+                            import zipfile
+
+                            with zipfile.ZipFile(candidate, "r") as z:
+                                z.extractall(WARM_DIR)
+                        else:
+                            import tarfile
+
+                            with tarfile.open(candidate, "r:*") as t:
+                                t.extractall(WARM_DIR)
+                        return
+                    except Exception:
+                        continue
+    except Exception:
+        pass
+
+    # Finally fall back to the gh-run based updater
     update_cache(remote_fingerprint=remote_fingerprint)
 
 

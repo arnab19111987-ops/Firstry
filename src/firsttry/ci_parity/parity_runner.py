@@ -27,6 +27,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any
+from enum import Enum
 
 try:
     from .cache_utils import ARTIFACTS
@@ -100,6 +101,31 @@ def load_lock() -> dict[str, Any]:
         sys.exit(EXIT_CONFIG_DRIFT)
 
     return lock
+
+
+# Warm-cache decision helpers (used by tests)
+class WarmDecision(Enum):
+    USE_TESTMON = "use_testmon"
+    RUN_SMOKE = "run_smoke"
+    RUN_FLAKY_ONLY = "run_flaky_only"
+    FAIL = "fail"
+
+
+def classify_warm_outcome(testmon_rc: int, flaky_nodeids: list[str] | None = None) -> WarmDecision:
+    """Classify the warm-cache test outcome into a decision for subsequent runs.
+
+    Rules (kept intentionally small for test stability):
+      - rc == 0 -> use testmon cache (USE_TESTMON)
+      - rc == 5 and no flaky_nodeids -> run smoke tests (RUN_SMOKE)
+      - rc == 5 and flaky_nodeids present -> run flaky-only (RUN_FLAKY_ONLY)
+      - otherwise -> FAIL
+    """
+    flaky = flaky_nodeids or []
+    if testmon_rc == 0:
+        return WarmDecision.USE_TESTMON
+    if testmon_rc == 5:
+        return WarmDecision.RUN_FLAKY_ONLY if flaky else WarmDecision.RUN_SMOKE
+    return WarmDecision.FAIL
 
 
 def run(

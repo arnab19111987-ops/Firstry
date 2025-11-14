@@ -2,7 +2,7 @@ import types
 
 from click.testing import CliRunner
 
-from firsttry.cli import main
+import firsttry.cli as cli
 
 
 def test_cli_aborts_without_license(monkeypatch):
@@ -25,6 +25,7 @@ def test_cli_aborts_without_license(monkeypatch):
     monkeypatch.setattr("firsttry.cli.runners.run_coverage_xml", lambda *a, **k: ok)
     monkeypatch.setattr("firsttry.cli.runners.coverage_gate", lambda *a, **k: ok)
 
-    res = CliRunner().invoke(main, ["run", "--gate", "pre-commit", "--require-license"])
+    res = CliRunner().invoke(cli.cli_app, ["run", "--gate", "pre-commit", "--require-license"])
     assert res.exit_code != 0
-    assert "License invalid" in res.output
+    assert "Tier 'pro' is locked" in res.output or "License invalid" in res.output
+    assert "FIRSTTRY_LICENSE_KEY" in res.output

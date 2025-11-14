@@ -22,4 +22,7 @@ def test_fastfail_when_pro_requested_without_license():
     proc = run_cli(["run", "--tier", "pro"])
     # Should exit quickly with non-zero (2) and show the guard message
     assert proc.returncode == 2
-    assert "Pro tier requested via --tier" in proc.stdout
+    out = proc.stdout
+    assert "Tier 'pro' is locked" in out
+    assert "FIRSTTRY_LICENSE_KEY" in out
+    assert "firsttry.com/pricing" in out
