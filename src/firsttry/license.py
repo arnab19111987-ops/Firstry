@@ -316,7 +316,7 @@ def get_active_license_key():
 # Backwards-compatible proxy for tier gating decorators used elsewhere in tests
 try:
     # Import lazily to avoid cycles during module import
-    from .tier import require_tier  # type: ignore
+    from .tier import require_tier
 except Exception:
     # If tier is unavailable for any reason, provide a fallback that raises when used.
     from typing import Any, Callable

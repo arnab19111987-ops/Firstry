@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Callable
+from typing import Callable, Any
 
 from . import license_guard
 
@@ -50,7 +50,7 @@ def tier_allowed(current_tier: str | None, min_tier: str) -> bool:
     return order[cur_norm] >= order[min_norm]
 
 
-def require_tier(min_tier: str) -> Callable:
+def require_tier(min_tier: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator requiring at least `min_tier`.
 
     On failure prints a short message and exits with code 2.
