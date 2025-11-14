@@ -1,8 +1,10 @@
 # src/firsttry/agents/base.py
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from abc import ABC
+from abc import abstractmethod
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Any
 
 

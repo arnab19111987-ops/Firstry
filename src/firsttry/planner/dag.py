@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, field
-from typing import FrozenSet, Iterable, Mapping, Optional
+from dataclasses import dataclass
+from dataclasses import field
+from typing import FrozenSet
+from typing import Iterable
+from typing import Mapping
+from typing import Optional
 
 from ..twin.graph import CodebaseTwin
 

@@ -36,11 +36,16 @@ def main(argv=None):
     # Lazy imports to avoid importing optional subsystems during light-weight
     # CLI invocations (dag-only, help, etc.). Import inside the function so
     # tests that monkeypatch modules can do so reliably.
-    from .audit.policy import policy_hash, write_audit_bundle
-    from .config.schema import fingerprint, load_config
-    from .license_guard import emit_license_row, resolve_license
-    from .net.guard import NetworkDisabled, NetworkGuard
-    from .observability.logging import new_run_id, setup_json_logging
+    from .audit.policy import policy_hash
+    from .audit.policy import write_audit_bundle
+    from .config.schema import fingerprint
+    from .config.schema import load_config
+    from .license_guard import emit_license_row
+    from .license_guard import resolve_license
+    from .net.guard import NetworkDisabled
+    from .net.guard import NetworkGuard
+    from .observability.logging import new_run_id
+    from .observability.logging import setup_json_logging
 
     cfg = load_config(cli_overrides)
     lic = resolve_license(cfg)

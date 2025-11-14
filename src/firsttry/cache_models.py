@@ -5,7 +5,8 @@ Avoids expensive file hashing when file metadata (size, mtime) hasn't changed.
 
 import json
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from typing import Any
 
 

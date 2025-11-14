@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Iterable, Set
+from typing import Any
+from typing import Iterable
+from typing import Set
 
 # ---------------------------------------------------------------------------
 # Canonical tier names (new)
@@ -296,6 +298,7 @@ def maybe_include_flaky_tests(tests_to_run: Iterable[str]) -> Set[str]:
 
 import sys
 from typing import Optional
+
 
 # Define a uniquely-named placeholder resolver and bind it to the public
 # name only if a richer implementation doesn't already exist. Using a

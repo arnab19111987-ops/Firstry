@@ -1,7 +1,8 @@
 # src/firsttry/cli_enhanced.py
 from __future__ import annotations
 
-from .cli import build_parser as _build_parser, main as _main
+from .cli import build_parser as _build_parser
+from .cli import main as _main
 
 
 def build_parser() -> object:

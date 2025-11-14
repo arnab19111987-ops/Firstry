@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...agents.base import Agent, AgentResult
+from ...agents.base import Agent
+from ...agents.base import AgentResult
 from ...ci_parser import detect_ci_deps
 from ...deps import read_local_deps
 

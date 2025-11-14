@@ -4,7 +4,9 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
+from typing import List
+from typing import Optional
 
 from . import cache as ft_cache
 
