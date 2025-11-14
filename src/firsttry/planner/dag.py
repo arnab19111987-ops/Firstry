@@ -34,7 +34,7 @@ def _add_tests_to_plan(plan, nodeids: list[str]) -> None:
         return
     add = getattr(plan, "add_tests", None) or getattr(plan, "include_tests", None)
     if callable(add):
-        add(nodeids)  # type: ignore[misc]
+        add(nodeids)
 
 
 def maybe_apply_team_intel(plan) -> None:
@@ -89,9 +89,10 @@ def _group_impacted_by_project(
     # - twin.impacted_files(changed) -> iterable of file paths
     # - twin.impacted -> mapping proj -> list[str]
     # - twin.files -> mapping file -> metadata
+    out: dict[str, set[str]] = {}
     if hasattr(twin, "impacted_files") and callable(getattr(twin, "impacted_files")):
         impacted = twin.impacted_files(changed) if changed else set(twin.files.keys())
-        out: dict[str, set[str]] = {}
+        out = {}
         for f in impacted:
             proj = getattr(twin, "project_of_file", lambda _f: "_root")(f) or "_root"
             out.setdefault(proj, set()).add(f)
@@ -100,7 +101,7 @@ def _group_impacted_by_project(
     # If twin exposes an 'impacted' mapping (tests use this), mirror it
     if hasattr(twin, "impacted") and isinstance(getattr(twin, "impacted"), dict):
         raw = getattr(twin, "impacted")
-        out: dict[str, set[str]] = {}
+        out = {}
         for proj, files in raw.items():
             out[proj] = set(files or [])
         return out
@@ -275,7 +276,7 @@ def build_plan_from_twin(
     def _add_tests_to_plan(plan, nodeids: list[str]) -> None:
         add = getattr(plan, "add_tests", None) or getattr(plan, "include_tests", None)
         if callable(add) and nodeids:
-            add(nodeids)  # type: ignore[misc]
+            add(nodeids)
 
     def maybe_apply_team_intel(plan) -> None:
         if get_current_tier() == "pro":
