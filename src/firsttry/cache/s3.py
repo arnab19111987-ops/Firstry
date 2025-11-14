@@ -5,7 +5,8 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from .base import BaseCache, CacheHit
+from .base import BaseCache
+from .base import CacheHit
 
 
 def _has_boto3() -> bool:
