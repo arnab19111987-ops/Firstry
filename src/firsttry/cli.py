@@ -33,10 +33,11 @@ try:
     from .ci_parity.cache_utils import update_cache
 except ImportError:
     # Fallback if cache_utils not available
-    def auto_refresh_golden_cache(ref: str) -> None:
+    def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
+        # Fallback signature should match the implementation in ci_parity.cache_utils
         pass
 
-    def update_cache() -> None:
+    def update_cache(remote_fingerprint: str | None = None) -> None:
         pass
 
     def clear_cache() -> None:
@@ -630,12 +631,12 @@ def _build_plan_for_tier(repo_root: Path, tier: str) -> Plan:
         elif cid == "mypy":
             targets = [src_target] if (repo_root / src_target).exists() else ["."]
 
-        plan.tasks[f"{cid}:_root"] = Task(
+            plan.tasks[f"{cid}:_root"] = Task(
             id=f"{cid}:_root",
             check_id=cid,
             targets=targets,
             flags=[],
-            deps=set(),
+                deps=frozenset(),
         )
     return plan
 
@@ -1744,7 +1745,7 @@ async def run_fast_pipeline(*, args=None) -> int:
         # Write to report-json if requested
         report_json_path = getattr(args, "report_json", None)
         if report_json_path:
-            from .reporting import write_report_async  # type: ignore
+            from .reporting import write_report_async
 
             path = Path(report_json_path)
             try:
@@ -1788,7 +1789,7 @@ async def run_fast_pipeline(*, args=None) -> int:
             from .checks_orchestrator import FAST_FAMILIES
             from .checks_orchestrator import MUTATING_FAMILIES
             from .checks_orchestrator import SLOW_FAMILIES
-            from .reporting import write_report_async  # type: ignore
+            from .reporting import write_report_async
             from .reports.tier_map import get_checks_for_tier
 
             allowed = set(get_checks_for_tier(tier)) if tier else set()

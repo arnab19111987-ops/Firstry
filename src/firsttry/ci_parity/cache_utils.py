@@ -141,6 +141,20 @@ def read_flaky_tests() -> list[str]:
         return []
 
 
+def load_flaky_nodeids() -> list[str]:
+    """Compatibility wrapper used by tests: alias for read_flaky_tests."""
+    return read_flaky_tests()
+
+
+def maybe_download_golden_cache(remote_fingerprint: str | None = None) -> None:
+    """Compatibility wrapper that delegates to update_cache.
+
+    Historically some callers import maybe_download_golden_cache from ci_parity.cache_utils.
+    Provide a thin alias so those imports continue to work.
+    """
+    update_cache(remote_fingerprint=remote_fingerprint)
+
+
 def clear_cache() -> None:
     """Nuke all local caches (warm, mypy, ruff, testmon)."""
     for p in (WARM_DIR, Path(".mypy_cache"), Path(".ruff_cache")):

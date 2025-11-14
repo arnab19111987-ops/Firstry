@@ -40,7 +40,8 @@ except ImportError:
     def ensure_dirs() -> None:
         ARTIFACTS.mkdir(exist_ok=True)
 
-    def auto_refresh_golden_cache(ref: str) -> None:
+    def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
+        # fallback signature must match the real implementation in cache_utils
         pass
 
     def read_flaky_tests() -> list[str]:
@@ -180,6 +181,36 @@ def check_versions(lock: dict[str, Any], explain: bool = False) -> list[ParityEr
                     print(f"  Hint: {error.hint}")
 
     return errors
+
+
+# --- Warm decision helpers (used by tests) ---------------------------------
+from enum import Enum
+
+
+class WarmDecision(Enum):
+    USE_TESTMON = "use_testmon"
+    RUN_SMOKE = "run_smoke"
+    RUN_FLAKY_ONLY = "run_flaky_only"
+    FAIL = "fail"
+
+
+def classify_warm_outcome(testmon_rc: int, flaky_nodeids: list[str] | None) -> WarmDecision:
+    """Classify what to do with warm-test artifacts given testmon return code.
+
+    Simple rules used by tests:
+      - rc == 0 -> USE_TESTMON
+      - rc == 5 and no flaky_nodeids -> RUN_SMOKE
+      - rc == 5 and flaky_nodeids -> RUN_FLAKY_ONLY
+      - otherwise -> FAIL
+    """
+    flaky = bool(flaky_nodeids)
+    if testmon_rc == 0:
+        return WarmDecision.USE_TESTMON
+    if testmon_rc == 5 and not flaky:
+        return WarmDecision.RUN_SMOKE
+    if testmon_rc == 5 and flaky:
+        return WarmDecision.RUN_FLAKY_ONLY
+    return WarmDecision.FAIL
 
 
 def check_plugins(lock: dict[str, Any], explain: bool = False) -> list[ParityError]:

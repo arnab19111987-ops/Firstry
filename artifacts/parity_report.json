@@ -1,7 +1,20 @@
 {
-  "ok": true,
+  "ok": false,
   "type": "self-check",
   "python": "3.11.7",
-  "timestamp": 1762925443.687059,
-  "failures": []
+  "timestamp": 1763101986.7700539,
+  "failures": [
+    {
+      "code": "PARITY-012",
+      "gate": "config",
+      "msg": "Config drift: pyproject.toml sha256 eef81290d798c67a... != d35ad31bdae699de... (lock)",
+      "hint": "Update ci/parity.lock.json or revert pyproject.toml"
+    },
+    {
+      "code": "PARITY-012",
+      "gate": "config",
+      "msg": "Config drift: pytest.ini sha256 09bfc3fbb8787fd9... != e25b2ee8fe9af034... (lock)",
+      "hint": "Update ci/parity.lock.json or revert pytest.ini"
+    }
+  ]
 }
