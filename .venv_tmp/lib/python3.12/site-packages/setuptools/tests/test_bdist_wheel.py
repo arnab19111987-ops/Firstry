@@ -10,19 +10,17 @@ import struct
 import sys
 import sysconfig
 from contextlib import suppress
+from distutils.core import run_setup
 from inspect import cleandoc
 from zipfile import ZipFile
 
 import jaraco.path
 import pytest
-from packaging import tags
-
 import setuptools
+from packaging import tags
 from setuptools.command.bdist_wheel import bdist_wheel, get_abi_tag
 from setuptools.dist import Distribution
 from setuptools.warnings import SetuptoolsDeprecationWarning
-
-from distutils.core import run_setup
 
 DEFAULT_FILES = {
     "dummy_dist-1.0.dist-info/top_level.txt",

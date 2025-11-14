@@ -23,15 +23,23 @@ from typing import List
 from .model import DAG
 from .model import Task
 
+# NOTE: _hash_bytes now uses hashlib.blake2b for 128-bit digests to preserve
+# historical cache/test expectations (16-byte hex / 32 chars).
+
 PLAN_CACHE_DIR = ".firsttry/cache"
 PLAN_CACHE_PREFIX = "plan_"
 FIRSTTRY_VERSION = os.environ.get("FIRSTTRY_VERSION", "1")
 
 
 def _hash_bytes(b: bytes) -> str:
-    """Fast 128-bit BLAKE2b hash."""
-    h = hashlib.blake2b(digest_size=16)
-    h.update(b)
+    """Return 128-bit BLAKE2b hash as 32-char hex string.
+
+    Tests and cache keys in this repository expect a 16-byte (128-bit)
+    digest represented as 32 hex characters. Historically we used
+    hashlib.blake2b(digest_size=16) for this purpose; keep that explicit
+    here to preserve test expectations and stable cache keys.
+    """
+    h = hashlib.blake2b(b, digest_size=16)
     return h.hexdigest()
 
 

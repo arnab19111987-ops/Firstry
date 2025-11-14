@@ -376,12 +376,11 @@ class BenchRunner:
         lines.append(f"- **OS:** {host.get('os', '?')} ({host.get('arch', '?')})")
         lines.append(f"- **Kernel:** {host.get('kernel', '?')}")
         lines.append(
-            f"- **CPU:** {host.get('cpu_cores', '?')} cores, "
-            f"{host.get('total_ram_gb', '?')} GB RAM"
+            f"- **CPU:** {host.get('cpu_cores', '?')} cores, {host.get('total_ram_gb', '?')} GB RAM"
         )
         lines.append(f"- **Disk Free:** {host.get('disk_free_gb', '?')} GB")
         lines.append(
-            f"- **Python:** {python.get('version', '?')} " f"({python.get('executable', '?')})"
+            f"- **Python:** {python.get('version', '?')} ({python.get('executable', '?')})"
         )
         lines.append(f"- **FirstTry:** {self.data.get('firsttry', {}).get('version', '?')}")
         lines.append("")

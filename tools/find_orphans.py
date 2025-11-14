@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Find orphaned Python modules not reachable from entry points."""
+
 import ast
 import os
 import pathlib

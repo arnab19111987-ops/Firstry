@@ -4,7 +4,6 @@ import sys
 from unittest import mock
 
 import pytest
-
 from setuptools import SetuptoolsDeprecationWarning
 from setuptools.dist import Distribution
 

@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import time
 from pathlib import Path
 from typing import Any
 
 try:  # stdlib HTTP client
+    from urllib import error
     from urllib import request
 except Exception:  # pragma: no cover
     request = None  # type: ignore
+    error = None  # type: ignore
 
 
 def _write_report(path: Path, payload: dict[str, Any]) -> None:
@@ -34,7 +37,7 @@ def write_report_async(
     th.start()
 
 
-# --- Telemetry (opt-in) --------------------------------------------------
+# --- Telemetry (opt-in with opt-out envs) -------------------------------
 
 TELEMETRY_URL = os.environ.get(
     "FIRSTTRY_TELEMETRY_URL",
@@ -60,8 +63,51 @@ def _write_status(ok: bool, message: str = "") -> None:
         pass
 
 
+def _check_opt_out() -> bool:
+    """Return True if telemetry must not send."""
+    if os.getenv("FIRSTTRY_TELEMETRY_OPTOUT", "").lower() in {"1", "true", "yes"}:
+        return True
+    if os.getenv("DO_NOT_TRACK", "").lower() in {"1", "true", "yes"}:
+        return True
+    return False
+
+
+def _check_opt_in() -> bool:
+    """
+    Return True only if telemetry is explicitly enabled.
+    """
+    return os.getenv("FIRSTTRY_SEND_TELEMETRY", "").lower() in {"1", "true", "yes"}
+
+
+def _notify_user_once() -> None:
+    """Print a one-time notice to stderr that telemetry can be disabled."""
+    try:
+        if not STATUS_FILE.exists():
+            STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            STATUS_FILE.write_text(json.dumps({"notified_at": time.time()}))
+            print(
+                "FirstTry may send anonymous usage data to improve the tool.\n"
+                "Telemetry will only be sent if FIRSTTRY_SEND_TELEMETRY=1 is set,\n"
+                "and may be disabled with FIRSTTRY_TELEMETRY_OPTOUT=1.",
+                file=sys.stderr,
+            )
+    except Exception:
+        # Never block the CLI on telemetry IO
+        pass
+
+
 def send_report(report: dict[str, Any]) -> None:
     """Best-effort telemetry sender using stdlib HTTP; never raises."""
+    # Hard opt-out wins
+    if _check_opt_out():
+        return
+
+    # Strict opt-in: do nothing unless explicitly enabled
+    if not _check_opt_in():
+        return
+
+    _notify_user_once()
+
     try:
         if request is None:
             _write_status(False, "urllib not available")
@@ -92,4 +138,11 @@ def send_report(report: dict[str, Any]) -> None:
             ok = 200 <= getattr(resp, "status", 200) < 300
             _write_status(ok, f"status={getattr(resp, 'status', 200)}")
     except Exception as e:  # pragma: no cover (network)
+        # Prefer handling network-specific errors distinctly
+        try:
+            if error is not None and isinstance(e, error.URLError):
+                _write_status(False, "network error")
+                return
+        except Exception:
+            pass
         _write_status(False, str(e))

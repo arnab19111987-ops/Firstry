@@ -1,24 +1,26 @@
-# src/firsttry/runners/custom.py
 from __future__ import annotations
 
-from typing import Any
+from pathlib import Path
 
-from .base import BaseRunner
-from .base import RunnerResult
+from .base import CheckRunner
+from .base import RunResult
 
 
-class CustomRunner(BaseRunner):
-    tool = "custom"
+class CustomRunner(CheckRunner):
+    check_id = "custom"
 
-    async def run(
+    def prereq_check(self) -> str | None:
+        return None
+
+    def build_cache_key(self, repo_root: Path, targets: list[str], flags: list[str]) -> str:
+        return "ft-v1-custom-0"
+
+    def run(
         self,
-        idx: int,
-        ctx: dict[str, Any],
-        item: dict[str, Any],
-    ) -> RunnerResult:
-        display_name = item.get("tool") or item.get("name") or "custom"
-        name = f"{display_name}[{idx}]"
-        cmd = item.get("cmd")
-        if not cmd:
-            return RunnerResult(name=name, ok=True, message="no cmd", tool=display_name)
-        return await self.run_cmd(name, display_name, cmd)
+        repo_root: Path,
+        files: list[str] | None = None,
+        *,
+        timeout_s: int | None = None,
+    ) -> RunResult:
+        # No-op placeholder; extend as needed
+        return RunResult(name="custom", rc=0, stdout="", stderr="", duration_ms=0)

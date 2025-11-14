@@ -1,0 +1,115 @@
+name: ft-fastpath-parity
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ft-fastpath:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install maturin
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin
+
+      - name: Build ft_fastpath wheel
+        working-directory: .
+        run: |
+          # Adjust path if your Cargo.toml for ft_fastpath lives elsewhere
+          maturin build --release --locked -m src/firsttry/ft_fastpath/Cargo.toml
+          ls -R target/wheels
+
+      - name: Install ft_fastpath wheel + project
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          # Install the freshly built wheel
+          pip install target/wheels/*.whl
+          # Install FirstTry itself (editable or normal)
+          pip install -e .
+
+      - name: Run ft_fastpath parity tests
+        run: |
+          . .venv/bin/activate
+          pytest -q tests/firsttry/test_ft_fastpath_parity.py
+name: ft-fastpath
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-test-ft-fastpath:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install maturin
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin
+
+      - name: Build ft_fastpath wheel
+        run: |
+          cd src/firsttry/ft_fastpath
+          maturin build --release --no-sdist || true
+
+      - name: Install built wheel
+        run: |
+          WHEEL=$(find src/firsttry/ft_fastpath/target/wheels -name "*.whl" | head -n 1)
+          echo "Wheel: $WHEEL"
+          if [ -n "$WHEEL" ]; then
+            python -m pip install "$WHEEL"
+          fi
+
+      - name: Sanity import and digest check
+        run: |
+          python - << 'PY'
+          from pathlib import Path
+
+          import blake3
+          import firsttry.ft_fastpath as native
+          from firsttry.twin.hashers import hash_file
+
+          tmp = Path("ft_fastpath_test.txt")
+          tmp.write_text("hello ft_fastpath", encoding="utf-8")
+
+          py_digest = hash_file(tmp)
+          native_pairs = native.hash_files_parallel([str(tmp)])
+          native_digest = native_pairs[0][1] if native_pairs else None
+
+          print("py_digest    =", py_digest)
+          print("native_digest=", native_digest)
+
+          if native_digest is None:
+              raise SystemExit("ft_fastpath did not return a digest")
+          if py_digest != native_digest:
+              raise SystemExit("Digest mismatch between Python and native ft_fastpath")
+          PY

@@ -1,3 +1,4 @@
+import distutils.core
 import os
 import sys
 from configparser import ConfigParser
@@ -6,9 +7,8 @@ from typing import cast
 
 import jaraco.path
 import pytest
-from path import Path
-
 import setuptools  # noqa: F401 # force distutils.core to be patched
+from path import Path
 from setuptools.command.sdist import sdist
 from setuptools.discovery import find_package_path, find_parent_package
 from setuptools.dist import Distribution
@@ -17,8 +17,6 @@ from setuptools.errors import PackageDiscoveryError
 from .contexts import quiet
 from .integration.helpers import get_sdist_members, get_wheel_members, run
 from .textwrap import DALS
-
-import distutils.core
 
 
 class TestFindParentPackage:

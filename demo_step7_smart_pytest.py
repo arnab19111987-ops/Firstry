@@ -10,8 +10,8 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from firsttry.run_profiles import select_checks, get_pytest_mode_for_profile
 from firsttry.cached_orchestrator import run_checks_for_profile
+from firsttry.run_profiles import get_pytest_mode_for_profile, select_checks
 
 
 async def demo_step7_smart_pytest():

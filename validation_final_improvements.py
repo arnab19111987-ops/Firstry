@@ -9,19 +9,19 @@ Final validation script to test all improvements from user feedback:
 
 import asyncio
 import json
-import time
-from pathlib import Path
 
 # Import the firsttry modules
 import sys
+import time
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from firsttry.cached_orchestrator import run_checks_for_profile
-from firsttry.run_profiles import select_checks
-from firsttry.reporting import normalize_cache_state, format_cache_summary
-from firsttry.performance_targets import PerformanceTargets
 from firsttry import cache as ft_cache
+from firsttry.cached_orchestrator import run_checks_for_profile
+from firsttry.performance_targets import PerformanceTargets
+from firsttry.reporting import format_cache_summary, normalize_cache_state
+from firsttry.run_profiles import select_checks
 
 
 async def test_honest_performance_claims():

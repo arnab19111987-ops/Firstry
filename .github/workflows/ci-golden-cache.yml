@@ -1,0 +1,95 @@
+name: ci-golden-cache
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build-golden-cache:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create virtualenv and install project
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          pip install -e .[dev] || pip install -e .
+
+      - name: Build warm cache
+        run: |
+          . .venv/bin/activate
+          # 🔧 Replace this with your real warm-cache command
+          # Example: python -m firsttry.cli run --gate pre-commit
+          python -m firsttry.cli run --gate pre-commit || true
+
+      - name: Package golden cache
+        run: |
+          mkdir -p .firsttry/artifacts
+          if [ -d ".firsttry/warm" ]; then
+            tar -czf .firsttry/artifacts/golden-cache.tar.gz -C .firsttry warm
+          else
+            echo "No .firsttry/warm directory created; skipping archive" >&2
+            exit 1
+          fi
+          ls -R .firsttry
+
+      - name: Upload golden cache artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-cache
+          path: .firsttry/artifacts/golden-cache.tar.gz
+
+      - name: Run golden cache unit tests
+        run: |
+          . .venv/bin/activate
+          pytest -q tests/firsttry/test_golden_cache_utils.py
+name: golden-cache
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-golden-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install FirstTry (editable)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build warm cache
+        run: |
+          # Adjust this to your real warm-path command
+          python -m firsttry.cli pre-commit --warm-only || true
+          ls -R .firsttry || true
+
+      - name: Archive warm cache
+        run: |
+          mkdir -p .firsttry/artifacts
+          tar -czf .firsttry/artifacts/golden-cache.tar.gz .firsttry/warm || true
+
+      - name: Upload golden cache artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-cache
+          path: .firsttry/artifacts/golden-cache.tar.gz

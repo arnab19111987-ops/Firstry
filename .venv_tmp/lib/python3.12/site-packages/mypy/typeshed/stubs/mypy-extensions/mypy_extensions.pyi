@@ -3,12 +3,20 @@
 
 import abc
 import sys
-from _collections_abc import dict_items, dict_keys, dict_values
-from _typeshed import IdentityFunction, Self
 from collections.abc import Mapping
-from typing import Any, ClassVar, Generic, SupportsInt, TypeVar, overload, type_check_only
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    SupportsInt,
+    TypeVar,
+    overload,
+    type_check_only,
+)
+
+from _collections_abc import dict_items, dict_keys, dict_values
+from _typeshed import IdentityFunction, ReadableBuffer, Self, SupportsTrunc
 from typing_extensions import Never, SupportsIndex
-from _typeshed import ReadableBuffer, SupportsTrunc
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")

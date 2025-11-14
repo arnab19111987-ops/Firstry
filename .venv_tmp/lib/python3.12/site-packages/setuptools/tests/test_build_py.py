@@ -7,7 +7,6 @@ from unittest.mock import Mock
 
 import jaraco.path
 import pytest
-
 from setuptools import SetuptoolsDeprecationWarning
 from setuptools.dist import Distribution
 

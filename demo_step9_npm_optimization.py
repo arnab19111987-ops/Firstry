@@ -7,22 +7,22 @@ with manual override --run-npm-anyway for edge cases.
 """
 
 import asyncio
-import tempfile
-import shutil
-from pathlib import Path
 import json
+import shutil
 
 # Import FirstTry modules
 import sys
+import tempfile
+from pathlib import Path
 
 sys.path.insert(0, "/workspaces/Firstry/src")
 
-from firsttry.smart_npm import (
-    should_skip_npm_tests,
-    run_smart_npm_test,
-    analyze_npm_project,
-)
 from firsttry.cached_orchestrator import run_checks_for_profile
+from firsttry.smart_npm import (
+    analyze_npm_project,
+    run_smart_npm_test,
+    should_skip_npm_tests,
+)
 
 
 def create_sample_js_project(repo_dir: Path):

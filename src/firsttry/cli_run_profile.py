@@ -6,8 +6,9 @@ import json
 import sys
 from pathlib import Path
 
+from firsttry.reporting import write_report_async  # type: ignore[attr-defined]
+
 from .lazy_orchestrator import run_profile_for_repo
-from .reporting import write_report_async
 
 
 def main():

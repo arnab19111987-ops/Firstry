@@ -15,7 +15,6 @@ from zipfile import ZipFile
 import pytest
 from jaraco import path
 from packaging.requirements import Requirement
-
 from setuptools.warnings import SetuptoolsDeprecationWarning
 
 from .textwrap import DALS

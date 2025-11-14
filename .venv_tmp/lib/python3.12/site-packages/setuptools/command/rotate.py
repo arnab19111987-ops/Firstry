@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import os
-from typing import ClassVar
-
-from .. import Command, _shutil
-
 from distutils import log
 from distutils.errors import DistutilsOptionError
 from distutils.util import convert_path
+from typing import ClassVar
+
+from .. import Command, _shutil
 
 
 class rotate(Command):

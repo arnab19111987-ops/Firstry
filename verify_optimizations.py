@@ -3,6 +3,7 @@
 Final Verification Script for Performance Optimizations
 Demonstrates all 4 optimizations working together
 """
+
 import os
 import subprocess
 import sys
@@ -71,8 +72,7 @@ if os.path.exists(".firsttry/cache/config_cache.json"):
 
     # Check cache key
     _, cache_key = run_cmd(
-        "cat .firsttry/cache/config_cache.json | python -m json.tool | "
-        "grep '\"key\"' | head -c 50",
+        "cat .firsttry/cache/config_cache.json | python -m json.tool | grep '\"key\"' | head -c 50",
         silent=True,
     )
     print(f"   Cache key: {cache_key.strip()}...")

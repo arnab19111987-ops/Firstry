@@ -7,20 +7,15 @@ are unchanged, it can be skipped with a cache hit.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Iterable
 
-B3 = hashlib.blake2b
+from firsttry.twin.hashers import hash_bytes
+
 DIR = Path(".firsttry/cache/tasks")
-
-
-def _h() -> hashlib._blake2.blake2b:  # type: ignore
-    """Create a new BLAKE2b hasher."""
-    return B3(digest_size=16)
 
 
 def key_for(task_id: str, cmd: list[str], inputs: Iterable[str], salt: Dict[str, Any]) -> str:
@@ -35,26 +30,25 @@ def key_for(task_id: str, cmd: list[str], inputs: Iterable[str], salt: Dict[str,
     Returns:
         Hex digest cache key
     """
-    h = _h()
-    h.update(("id:" + task_id).encode())
-    h.update(("cmd:" + " ".join(cmd)).encode())
+    # Build a deterministic payload and return a BLAKE3 digest
+    parts: list[bytes] = []
+    parts.append(("id:" + task_id).encode())
+    parts.append(("cmd:" + " ".join(cmd)).encode())
     for s in sorted(salt.items()):
-        h.update(str(s).encode())
+        parts.append(str(s).encode())
     for p in sorted(inputs):
         P = Path(p)
         if not P.exists():
             continue
         if P.is_dir():
-            # Hash all files in directory recursively
             for f in sorted(P.rglob("*.py")):
                 if f.is_file():
-                    h.update(("f:" + str(f)).encode())
-                    h.update(f.read_bytes())
+                    parts.append(("f:" + str(f)).encode())
+                    parts.append(f.read_bytes())
         else:
-            # Hash single file
-            h.update(("f:" + str(P)).encode())
-            h.update(P.read_bytes())
-    return h.hexdigest()
+            parts.append(("f:" + str(P)).encode())
+            parts.append(P.read_bytes())
+    return hash_bytes(b"||".join(parts))
 
 
 def get(task_id: str, key: str) -> Dict[str, Any] | None:

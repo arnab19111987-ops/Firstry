@@ -15,9 +15,25 @@ def _to_str(x: Union[bytes, str, None]) -> str:
     """Convert bytes, str, or None to str for type safety."""
     if x is None:
         return ""
-    if isinstance(x, bytes):
-        return x.decode("utf-8", errors="replace")
-    return x
+    if isinstance(x, (bytes, bytearray, memoryview)):
+        try:
+            return bytes(x).decode("utf-8", errors="replace")
+        except Exception:
+            return str(x)
+    if isinstance(x, str):
+        return x
+    # Fallback: coerce to str
+    return str(x)
+
+
+def to_str(x: Union[bytes, str, None]) -> str:
+    """Public wrapper for converting bytes/None to str.
+
+    Some modules used in the project previously imported the private
+    `_to_str`. Expose a stable public `to_str` helper and keep `_to_str`
+    for backward compatibility.
+    """
+    return _to_str(x)
 
 
 def run_cmd(cmd: str, timeout: int | None = None) -> Tuple[int, str, str]:

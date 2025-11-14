@@ -5,9 +5,9 @@ Tests all optimizations including enhanced orchestrator with timing & cache inva
 """
 
 import asyncio
+import json
 import sys
 import time
-import json
 from pathlib import Path
 
 # Add src to path

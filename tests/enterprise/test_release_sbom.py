@@ -19,7 +19,10 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+# Module-level placeholder for vulnerability lists used in tests/helpers.
 import pytest
+
+vulnerabilities: List[Dict[str, Any]] = []
 
 
 class SBOMComponent:

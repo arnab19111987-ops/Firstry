@@ -7,21 +7,20 @@ Shows all 11 optimization steps working together to achieve 120s → <60s target
 """
 
 import asyncio
-import tempfile
-from pathlib import Path
 import json
 
 # Import FirstTry modules
 import sys
+import tempfile
+from pathlib import Path
 
 sys.path.insert(0, "/workspaces/Firstry/src")
 
-from firsttry.performance_validator import PerformanceBenchmark, create_test_project
-from firsttry.run_profiles import get_profile_description
-from firsttry.check_dependencies import get_dependency_insights
-
 # from firsttry.cache import get_cache_stats  # Not implemented yet
 from firsttry import __version__
+from firsttry.check_dependencies import get_dependency_insights
+from firsttry.performance_validator import PerformanceBenchmark, create_test_project
+from firsttry.run_profiles import get_profile_description
 
 
 def demo_optimization_summary():
@@ -161,8 +160,9 @@ async def demo_benchmark_system():
         benchmark = PerformanceBenchmark(str(test_project))
 
         # Simulate benchmark results for demo (actual benchmarking would take too long)
-        from firsttry.performance_validator import BenchmarkResult
         from datetime import datetime
+
+        from firsttry.performance_validator import BenchmarkResult
 
         # Simulate baseline (slow)
         baseline_result = BenchmarkResult(

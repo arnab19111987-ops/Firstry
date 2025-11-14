@@ -133,8 +133,8 @@ def main():
     if rows:
         print("\nCritical coverage summary:")
         w = max(len(p) for p, _ in rows)
-        print(f"{ 'File'.ljust(w) }  |  Covered")
-        print(f"{ '-'*w }--+----------")
+        print(f"{'File'.ljust(w)}  |  Covered")
+        print(f"{'-' * w}--+----------")
         for p, pct in rows:
             print(f"{p.ljust(w)}  |  {pct}")
         print("")

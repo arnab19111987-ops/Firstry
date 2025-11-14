@@ -6,10 +6,10 @@ Practical examples of using the demo license key in tests and development.
 """
 
 import os
-from pathlib import Path
 
 # Add src to path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 

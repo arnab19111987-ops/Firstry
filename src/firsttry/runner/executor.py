@@ -23,6 +23,76 @@ from .model import Task
 
 LOG_DIR = ".firsttry/logs"
 
+
+# Simple module-level runner helpers (compat layer for tests and callers)
+DEFAULT_TASK_TIMEOUT_S = 600
+
+
+def get_effective_timeout(task: Any) -> int:
+    """Return per-task timeout, falling back to a global default.
+
+    This helper is a compatibility shim for code/tests that operate on
+    planner-level Task envelopes as well as runner.model.Task.
+    """
+    try:
+        t = getattr(task, "timeout_s", None)
+    except Exception:
+        t = None
+    return DEFAULT_TASK_TIMEOUT_S if t is None else int(t)
+
+
+def build_command_for_task(task: Task) -> list[str]:
+    """Build a concrete command list for a Task.
+
+    Supports both runner.model.Task (which already provides `cmd`) and
+    planner.dag.Task (which exposes check_id, flags, targets).
+    """
+    # runner.model.Task already contains a cmd list
+    if hasattr(task, "cmd") and isinstance(getattr(task, "cmd"), list):
+        return list(task.cmd)
+
+    # planner.dag.Task: map check_id to a basic command
+    cid = getattr(task, "check_id", "")
+    flags = list(getattr(task, "flags", []) or [])
+    targets = list(getattr(task, "targets", []) or [])
+
+    if cid == "pytest":
+        return ["pytest", *flags, *targets]
+    if cid == "ruff":
+        return ["ruff", "check", *targets]
+    if cid == "mypy":
+        return ["mypy", *targets]
+    # Fallback: attempt to craft a noop command
+    return ["/bin/true"]
+
+
+def run_command(cmd: list[str] | str, cwd: str, timeout: int | None = None):
+    """Run a command and return the subprocess.CompletedProcess-like result.
+
+    Tests may monkeypatch this function to observe the timeout parameter.
+    """
+    if isinstance(cmd, str):
+        cmd_list = cmd.split()
+    else:
+        cmd_list = list(cmd)
+    try:
+        p = subprocess.run(
+            cmd_list, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False
+        )
+        return p
+    except subprocess.TimeoutExpired as e:  # pragma: no cover - live behavior
+        return e
+
+
+def run_task(task: Task, cwd: str) -> int:
+    """Execute a Task using the simple compatibility runner and return exit code."""
+    cmd = build_command_for_task(task)
+    timeout = get_effective_timeout(task)
+    res = run_command(cmd, cwd=cwd, timeout=timeout)
+    # CompletedProcess has returncode; TimeoutExpired may not — normalize
+    return getattr(res, "returncode", 124)
+
+
 # Check for Rust fast-path backend
 _RUST_OK = False
 try:
@@ -54,9 +124,9 @@ class Executor:
             self.use_rust = use_rust and _RUST_OK
 
         self.use_external_logs = use_external_logs
-        self.task_logs: Dict[str, Dict[str, str]] = (
-            {}
-        )  # task_id -> {"stdout": path, "stderr": path}
+        self.task_logs: Dict[
+            str, Dict[str, str]
+        ] = {}  # task_id -> {"stdout": path, "stderr": path}
 
     def execute(self) -> Dict[str, int]:
         """Execute all tasks in topological order.

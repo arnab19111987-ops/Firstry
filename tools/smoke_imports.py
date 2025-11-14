@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Smoke test all module imports to find broken/unused modules."""
+
 import importlib
 import os
 import pkgutil

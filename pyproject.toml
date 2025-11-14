@@ -84,6 +84,13 @@ select = ["E", "F"]
 [tool.ruff.lint.per-file-ignores]
 # Tests may use dynamic names and type comparisons in legacy cases
 "tests/**" = ["F821", "E721", "F841"]
+"tests/conftest.py" = ["E402"]
+
+[tool.ruff.per-file-ignores]
+# Keep a short set of intentional E402 placements for modules that deliberately
+# perform lazy or conditional imports to avoid heavy optional dependencies at
+# import time. These are intentional and documented in-place.
+"tests/conftest.py" = ["E402"]
 
 [tool.black]
 # Black configuration made authoritative for this repository

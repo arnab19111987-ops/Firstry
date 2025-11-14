@@ -26,18 +26,11 @@ with contextlib.suppress(ImportError):
 from itertools import count
 
 from ..._log import log
-from ...errors import (
-    DistutilsExecError,
-    DistutilsPlatformError,
-)
+from ...errors import DistutilsExecError, DistutilsPlatformError
 from ...util import get_host_platform, get_platform
 from . import base
 from .base import gen_lib_options
-from .errors import (
-    CompileError,
-    LibError,
-    LinkError,
-)
+from .errors import CompileError, LibError, LinkError
 
 
 def _find_vc2015():

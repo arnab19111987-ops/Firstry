@@ -63,15 +63,15 @@ class TestCIWorkflowStructure:
 
     def test_remote_cache_workflow_exists(self):
         """Remote cache workflow file must exist."""
-        assert (
-            self.CACHE_WORKFLOW_PATH.exists()
-        ), f"Cache workflow not found: {self.CACHE_WORKFLOW_PATH}"
+        assert self.CACHE_WORKFLOW_PATH.exists(), (
+            f"Cache workflow not found: {self.CACHE_WORKFLOW_PATH}"
+        )
 
     def test_audit_workflow_exists(self):
         """Audit workflow file must exist."""
-        assert (
-            self.AUDIT_WORKFLOW_PATH.exists()
-        ), f"Audit workflow not found: {self.AUDIT_WORKFLOW_PATH}"
+        assert self.AUDIT_WORKFLOW_PATH.exists(), (
+            f"Audit workflow not found: {self.AUDIT_WORKFLOW_PATH}"
+        )
 
     def test_ci_workflow_has_required_jobs(self):
         """CI workflow must have all required jobs."""
@@ -153,9 +153,9 @@ class TestCIWorkflowStructure:
         content = self.CI_WORKFLOW_PATH.read_text()
 
         assert "audit-schema" in content, "Audit schema job not found"
-        assert (
-            "audit_emit" in content or "emit_audit_report" in content
-        ), "Audit emission module not used in workflow"
+        assert "audit_emit" in content or "emit_audit_report" in content, (
+            "Audit emission module not used in workflow"
+        )
 
 
 class TestGitHubActionsSemantics:
@@ -176,7 +176,8 @@ class TestGitHubActionsSemantics:
     def test_uses_upload_artifact_v3(self):
         """Workflows must use actions/upload-artifact@v3."""
         content = self.CI_WORKFLOW_PATH.read_text()
-        assert "actions/upload-artifact@v3" in content
+        # GitHub Actions upload artifact has moved to v4; accept v4 here.
+        assert "actions/upload-artifact@v4" in content or "actions/upload-artifact@v3" in content
 
     def test_permissions_configured(self):
         """Workflows must configure permissions."""
@@ -203,9 +204,9 @@ class TestGitHubActionsSemantics:
         """PR comment steps should only run on PRs."""
         content = self.CI_WORKFLOW_PATH.read_text()
         # Look for PR-specific conditions
-        assert (
-            "github.event_name == 'pull_request'" in content or "pull_request" in content
-        ), "No PR-specific conditions found"
+        assert "github.event_name == 'pull_request'" in content or "pull_request" in content, (
+            "No PR-specific conditions found"
+        )
 
 
 class TestCIGateExecution:
@@ -318,16 +319,16 @@ class TestAuditWorkflow:
     def test_audit_workflow_has_dependency_audit(self):
         """Audit workflow must audit dependencies."""
         content = self.AUDIT_WORKFLOW_PATH.read_text()
-        assert (
-            "pip-audit" in content or "dependency" in content.lower()
-        ), "Dependency audit not found"
+        assert "pip-audit" in content or "dependency" in content.lower(), (
+            "Dependency audit not found"
+        )
 
     def test_audit_workflow_generates_sbom(self):
         """Audit workflow must generate SBOM."""
         content = self.AUDIT_WORKFLOW_PATH.read_text()
-        assert (
-            "sbom" in content.lower() or "cyclonedx" in content.lower()
-        ), "SBOM generation not found"
+        assert "sbom" in content.lower() or "cyclonedx" in content.lower(), (
+            "SBOM generation not found"
+        )
 
     def test_audit_workflow_generates_compliance_report(self):
         """Audit workflow must generate compliance report."""
@@ -337,9 +338,9 @@ class TestAuditWorkflow:
     def test_release_readiness_job_exists(self):
         """Release readiness check job must exist."""
         content = self.AUDIT_WORKFLOW_PATH.read_text()
-        assert (
-            "release-readiness" in content or "release" in content.lower()
-        ), "Release readiness check not found"
+        assert "release-readiness" in content or "release" in content.lower(), (
+            "Release readiness check not found"
+        )
 
 
 class TestDeploymentReadiness:
@@ -453,9 +454,9 @@ class TestCIWorkflowIntegration:
         ci_path = Path(".github/workflows/ci.yml")
         content = ci_path.read_text()
 
-        assert (
-            "final-status" in content.lower() or "Final CI Status" in content
-        ), "No final status reporting job found"
+        assert "final-status" in content.lower() or "Final CI Status" in content, (
+            "No final status reporting job found"
+        )
 
 
 class TestPhase4Completeness:
@@ -487,9 +488,9 @@ class TestPhase4Completeness:
 
         # MyPy must be in CI workflow
         assert "mypy" in content.lower(), "MyPy type checking not integrated into Phase 4"
-        assert (
-            "strict" in content.lower() or "mypy.ini" in content
-        ), "MyPy strict mode not configured in Phase 4"
+        assert "strict" in content.lower() or "mypy.ini" in content, (
+            "MyPy strict mode not configured in Phase 4"
+        )
 
     def test_phase_4_audit_schema_integration(self):
         """Phase 4 must emit audit reports using Phase 3.2 schema."""
@@ -498,9 +499,9 @@ class TestPhase4Completeness:
 
         # Audit emission must be in CI
         assert "audit" in content.lower(), "Audit schema not integrated into Phase 4"
-        assert (
-            "emit_audit" in content or "audit_emit" in content
-        ), "Audit emission module not used in Phase 4"
+        assert "emit_audit" in content or "audit_emit" in content, (
+            "Audit emission module not used in Phase 4"
+        )
 
 
 if __name__ == "__main__":

@@ -29,6 +29,7 @@ Again, this is not a formal definition! Just a "taste" of the module.
 from __future__ import annotations
 
 import contextlib
+import distutils
 import io
 import os
 import shlex
@@ -38,6 +39,7 @@ import tempfile
 import tokenize
 import warnings
 from collections.abc import Iterable, Iterator, Mapping
+from distutils.util import strtobool
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
@@ -47,9 +49,6 @@ from . import errors
 from ._path import StrPath, same_path
 from ._reqs import parse_strings
 from .warnings import SetuptoolsDeprecationWarning
-
-import distutils
-from distutils.util import strtobool
 
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias

@@ -6,11 +6,7 @@ from typing import Any, Callable, NoReturn, TypeVar, Union, overload
 
 from . import _suppression
 from ._checkers import BINARY_MAGIC_METHODS, check_type_internal
-from ._config import (
-    CollectionCheckStrategy,
-    ForwardRefPolicy,
-    TypeCheckConfiguration,
-)
+from ._config import CollectionCheckStrategy, ForwardRefPolicy, TypeCheckConfiguration
 from ._exceptions import TypeCheckError, TypeCheckWarning
 from ._memo import TypeCheckMemo
 from ._utils import get_stacklevel, qualified_name

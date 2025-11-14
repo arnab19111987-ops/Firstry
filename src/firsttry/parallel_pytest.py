@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-import math
 import os
 import subprocess
 import time
 from pathlib import Path
 from typing import Any
+from typing import List
+from typing import Optional
 
 from . import cache as ft_cache
 
@@ -126,9 +127,9 @@ def analyze_test_suite(repo_root: str) -> dict[str, Any]:
 
 
 def create_test_chunks(
-    test_files: list[str],
-    max_workers: int = None,
-    target_chunk_size: int = None,
+    test_files: List[str],
+    max_workers: Optional[int] = None,
+    target_chunk_size: Optional[int] = None,
 ) -> list[list[str]]:
     """Split test files into balanced chunks for parallel execution"""
     if not test_files:
@@ -143,7 +144,8 @@ def create_test_chunks(
         target_chunk_size = max(1, len(test_files) // max_workers)
         target_chunk_size = min(50, max(10, target_chunk_size))
 
-    chunk_count = min(max_workers, int(math.ceil(len(test_files) / target_chunk_size)))
+    # Use integer math to compute ceiling to avoid stub/type issues with math.ceil
+    chunk_count = min(max_workers, (len(test_files) + target_chunk_size - 1) // target_chunk_size)
 
     # Simple round-robin distribution
     chunks: list[list[str]] = [[] for _ in range(chunk_count)]
@@ -157,9 +159,9 @@ def create_test_chunks(
 
 async def run_pytest_chunk(
     repo_root: str,
-    chunk_files: list[str],
+    chunk_files: List[str],
     chunk_id: int,
-    extra_args: list[str] = None,
+    extra_args: Optional[List[str]] = None,
 ) -> dict[str, Any]:
     """Run pytest on a specific chunk of test files"""
     if not chunk_files:
@@ -284,10 +286,10 @@ def aggregate_chunk_results(chunk_results: list[dict[str, Any]]) -> dict[str, An
 
 async def run_parallel_pytest(
     repo_root: str,
-    test_files: list[str] | None = None,
-    max_workers: int = None,
+    test_files: Optional[List[str]] = None,
+    max_workers: Optional[int] = None,
     use_cache: bool = True,
-    extra_args: list[str] = None,
+    extra_args: Optional[List[str]] = None,
 ) -> dict[str, Any]:
     """Run pytest in parallel chunks for large test suites.
     Falls back to regular pytest for small suites.
@@ -370,8 +372,8 @@ async def run_parallel_pytest(
 
 async def _run_single_pytest(
     repo_root: str,
-    test_files: list[str] | None,
-    extra_args: list[str] | None = None,
+    test_files: Optional[List[str]] = None,
+    extra_args: Optional[List[str]] = None,
 ) -> dict[str, Any]:
     """Run pytest normally (non-chunked) for small test suites"""
     cmd = ["python", "-m", "pytest", "-v", "--tb=short"]

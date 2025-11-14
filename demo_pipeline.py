@@ -3,13 +3,13 @@
 Demo script for the new FirstTry pipeline system.
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from firsttry.planner import build_plan
 from firsttry.executor import execute_plan
+from firsttry.planner import build_plan
 
 
 def demo_pipeline():

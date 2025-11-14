@@ -276,18 +276,21 @@ async def run_comprehensive_benchmark(repo_root: str) -> PerformanceBenchmark:
     for scenario in scenarios:
         print(f"\n🎯 Benchmarking: {scenario['name']}")
         print(f"   {scenario['description']}")
-
-        # Get checks for the profile
-        checks = select_checks(scenario["profile"])
+        # Get checks for the profile (coerce to str to satisfy callers)
+        checks = select_checks(str(scenario["profile"]))
 
         # Run benchmark
         scenario_results = await benchmark.benchmark_scenario(
-            scenario=scenario["name"],
-            profile=scenario["profile"],
+            scenario=str(scenario["name"]),
+            profile=str(scenario["profile"]),
             checks=checks,
-            use_cache=scenario["use_cache"],
-            changed_files=scenario["changed_files"],
-            runs=3,
+            use_cache=bool(scenario.get("use_cache")),
+            changed_files=(
+                list(scenario["changed_files"])
+                if scenario.get("changed_files") is not None
+                else None
+            ),
+            runs=int(3),
         )
 
         results_by_scenario[scenario["name"]] = scenario_results

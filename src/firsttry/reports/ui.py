@@ -8,7 +8,7 @@ from typing import Any
 
 # try to use rich if present
 # console may be a rich Console or None when rich isn't available
-_console: Any = None
+_console: Any | None = None
 _HAS_RICH: bool = False
 _NO_UI_MODE: bool = False  # Performance mode flag
 

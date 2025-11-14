@@ -4,8 +4,8 @@ Quick validation of the caching system performance
 """
 
 import asyncio
-import time
 import sys
+import time
 from pathlib import Path
 
 # Add src to path for imports

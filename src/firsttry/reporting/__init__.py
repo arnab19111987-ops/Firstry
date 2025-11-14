@@ -1,13 +1,16 @@
 # src/firsttry/reporting/__init__.py
 """FirstTry reporting modules."""
 
+# Public, circular-safe re-exports
+from ..compat_shims import print_report  # noqa: F401
+from ..compat_shims import write_report_async  # noqa: F401
 from ..gates.base import GateResult
 from .renderer import write_json
 
 # Re-export from local modules
 from .tty import render_tty
 
-__all__ = ["print_summary", "render_tty", "write_json"]
+__all__ = ["print_summary", "render_tty", "write_json", "print_report", "write_report_async"]
 
 
 def print_summary(results: list[GateResult]) -> None:

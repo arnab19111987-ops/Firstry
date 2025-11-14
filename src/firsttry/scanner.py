@@ -275,9 +275,9 @@ def _collect_type_section() -> tuple[list[Issue], SectionSummary]:
 # -----------------------------------------------------------------------------
 
 
-def _collect_security_section() -> (
-    tuple[list[Issue], SectionSummary, bool, int, int, list[str], list[str]]
-):
+def _collect_security_section() -> tuple[
+    list[Issue], SectionSummary, bool, int, int, list[str], list[str]
+]:
     """Run bandit with JSON output and capture findings.
 
     HIGH severity == hard blocker.

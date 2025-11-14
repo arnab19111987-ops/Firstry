@@ -30,11 +30,10 @@ from ..warnings import SetuptoolsDeprecationWarning
 from . import expand
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from distutils.dist import DistributionMetadata
 
     from setuptools.dist import Distribution
-
-    from distutils.dist import DistributionMetadata
+    from typing_extensions import TypeAlias
 
 SingleCommandOptions: TypeAlias = dict[str, tuple[str, Any]]
 """Dict that associate the name of the options of a particular command to a

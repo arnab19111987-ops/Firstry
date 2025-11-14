@@ -5,9 +5,10 @@
 # See the README.md file in this directory for more information.
 
 import sys
-from _typeshed import OptExcInfo
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, Protocol
+
+from _typeshed import OptExcInfo
 from typing_extensions import TypeAlias
 
 class _Readable(Protocol):

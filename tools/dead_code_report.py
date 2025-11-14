@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Combine all dead code signals into one report."""
+
 import json
 
 print("# " + "=" * 78)

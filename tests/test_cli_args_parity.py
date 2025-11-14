@@ -73,9 +73,9 @@ def test_cli_no_ambiguous_flags():
     result = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=5, check=False)
 
     # Check for any mention of "ambiguous" in help or error
-    assert (
-        "ambiguous" not in result.stderr.lower()
-    ), f"Ambiguous options found in CLI parser:\n{result.stderr}"
+    assert "ambiguous" not in result.stderr.lower(), (
+        f"Ambiguous options found in CLI parser:\n{result.stderr}"
+    )
 
     # Ensure common flags are documented
     assert "--tier" in result.stdout, "Missing --tier flag in CLI"

@@ -12,7 +12,6 @@ from unittest import mock
 
 import pytest
 from jaraco import path
-
 from setuptools import errors
 from setuptools.command.egg_info import egg_info, manifest_maker, write_entries
 from setuptools.dist import Distribution

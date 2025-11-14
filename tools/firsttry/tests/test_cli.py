@@ -2,7 +2,7 @@ import types
 
 from click.testing import CliRunner
 
-from firsttry.cli import main
+import firsttry.cli as cli
 
 
 def test_cli_runs_and_summarizes(monkeypatch, tmp_path):
@@ -35,6 +35,6 @@ def test_cli_runs_and_summarizes(monkeypatch, tmp_path):
     monkeypatch.setattr("firsttry.cli.runners.coverage_gate", ok_step)
 
     runner = CliRunner()
-    res = runner.invoke(main, ["run", "--gate", "pre-commit"])
+    res = runner.invoke(cli.cli_app, ["run", "--gate", "pre-commit"])
     assert res.exit_code == 0
     assert "Gate Summary" in res.output
