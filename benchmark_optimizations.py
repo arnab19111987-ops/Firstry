@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Benchmark performance improvements from optimizations."""
+
 import statistics
 import subprocess
 import time

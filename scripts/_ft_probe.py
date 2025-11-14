@@ -8,21 +8,18 @@ from typing import List
 
 def main(argv: List[str]) -> int:
     if not argv:
-        print(json.dumps({"error":"no command provided"}))
+        print(json.dumps({"error": "no command provided"}))
         return 2
     cmd = argv
     t0 = time.perf_counter()
     try:
-        cp = subprocess.run(
-            cmd,
-            text=True,
-            capture_output=True,
-            timeout=600
-        )
+        cp = subprocess.run(cmd, text=True, capture_output=True, timeout=600)
         dur = (time.perf_counter() - t0) * 1000.0
         out_tail = (cp.stdout or "")[-4000:]
         err_tail = (cp.stderr or "")[-4000:]
-        traceback = ("Traceback (most recent call last):" in err_tail) or ("Traceback (most recent call last):" in out_tail)
+        traceback = ("Traceback (most recent call last):" in err_tail) or (
+            "Traceback (most recent call last):" in out_tail
+        )
         rec = {
             "cmd": cmd,
             "exit_code": cp.returncode,
@@ -48,6 +45,7 @@ def main(argv: List[str]) -> int:
         }
         print(json.dumps(rec, ensure_ascii=False))
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

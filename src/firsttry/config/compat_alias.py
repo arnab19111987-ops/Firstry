@@ -5,6 +5,7 @@ repository lint/tests that forbid the legacy symbol name appearing in
 source. Consumers should import the canonical `Config` symbol from the
 package instead.
 """
+
 from __future__ import annotations
 
 try:

@@ -17,9 +17,7 @@ def test_repo_flaky_tests_json_is_valid_and_schema_ok() -> None:
 
     assert isinstance(data, dict), "flaky_tests.json must be a JSON object"
     assert "nodeids" in data, "flaky_tests.json must contain a 'nodeids' key"
-    assert isinstance(
-        data["nodeids"], list
-    ), "'nodeids' must be a JSON list (even if empty)"
+    assert isinstance(data["nodeids"], list), "'nodeids' must be a JSON list (even if empty)"
 
     # And read_flaky_tests() should see the same values
     nodeids = read_flaky_tests()

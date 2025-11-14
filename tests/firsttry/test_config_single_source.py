@@ -34,9 +34,7 @@ def test_all_get_config_entrypoints_share_same_impl(tmp_path, monkeypatch) -> No
 
     # Force a known minimal config layout by creating a temp firsttry.toml
     monkeypatch.chdir(tmp_path)
-    (Path("firsttry.toml")).write_text(
-        "[cache]\nlocal = true\nremote = false\n", encoding="utf-8"
-    )
+    (Path("firsttry.toml")).write_text("[cache]\nlocal = true\nremote = false\n", encoding="utf-8")
 
     # Collect entrypoints
     entrypoints = {
@@ -53,9 +51,7 @@ def test_all_get_config_entrypoints_share_same_impl(tmp_path, monkeypatch) -> No
     # All raw dicts must be equal
     core_raw = raw_by_name["core"]
     for name, raw in raw_by_name.items():
-        assert (
-            raw == core_raw
-        ), f"get_config from {name} diverged from core implementation"
+        assert raw == core_raw, f"get_config from {name} diverged from core implementation"
 
 
 def test_config_module_objects_are_shims_not_new_implementations() -> None:

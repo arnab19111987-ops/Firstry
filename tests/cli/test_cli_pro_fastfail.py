@@ -18,6 +18,7 @@ def run_cli(args):
         env=env,
     )
 
+
 def test_fastfail_when_pro_requested_without_license():
     proc = run_cli(["run", "--tier", "pro"])
     # Should exit quickly with non-zero (2) and show the guard message

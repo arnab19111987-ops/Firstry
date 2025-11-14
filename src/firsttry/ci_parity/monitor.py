@@ -11,11 +11,11 @@ def _load_failures(junit_path: Path) -> set[str]:
 
     t = ET.parse(junit_path)
     nodeids = set()
-    for case in t.iterfind('.//testcase'):
+    for case in t.iterfind(".//testcase"):
         # If testcase has child elements like <failure/> or <error/>
         if list(case):
-            cls = case.get('classname') or ''
-            name = case.get('name') or ''
+            cls = case.get("classname") or ""
+            name = case.get("name") or ""
             nodeids.add(f"{cls}::{name}" if cls else name)
     return nodeids
 
@@ -39,7 +39,7 @@ def main(argv=None):
         ffail = set(rep.full_fail_ids)
     else:
         if len(argv) < 3:
-            print('Usage: firsttry.ci_parity.monitor <warm-junit> <full-junit>')
+            print("Usage: firsttry.ci_parity.monitor <warm-junit> <full-junit>")
             sys.exit(2)
         w, f = Path(argv[1]), Path(argv[2])
         wfail, ffail = _load_failures(w), _load_failures(f)
@@ -48,18 +48,18 @@ def main(argv=None):
     wpass = not wfail
     fpass = not ffail
     if wpass and not fpass:
-        print('DIVERGENCE: Warm=PASS, Full=FAIL → exit 99')
+        print("DIVERGENCE: Warm=PASS, Full=FAIL → exit 99")
         sys.exit(99)
     if (not wpass) and fpass:
-        print('WEAPONIZED: Warm=FAIL, Full=PASS → flaky; allow CI to self-heal')
+        print("WEAPONIZED: Warm=FAIL, Full=PASS → flaky; allow CI to self-heal")
         sys.exit(0)
     if (not wpass) and (not fpass) and (wfail != ffail):
-        print(f'DIVERGENCE: Warm failed {sorted(wfail)}; Full failed {sorted(ffail)} → exit 99')
+        print(f"DIVERGENCE: Warm failed {sorted(wfail)}; Full failed {sorted(ffail)} → exit 99")
         sys.exit(99)
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 

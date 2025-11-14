@@ -62,7 +62,7 @@ def _explain_security_groups(result: ScanResult) -> list[str]:
 
     if high_unrev is not None:
         lines.append(
-            f"  • {_plural(high_unrev, 'unreviewed high-risk file')} " "(blocking)",
+            f"  • {_plural(high_unrev, 'unreviewed high-risk file')} (blocking)",
         )
     if known_base is not None:
         lines.append(

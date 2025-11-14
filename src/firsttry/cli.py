@@ -6,13 +6,14 @@ import asyncio
 import os
 import subprocess
 import sys
-import click
 import types
 
 # sync_with_ci is imported lazily in cmd_sync to avoid optional deps at module import
 # Imports for DAG-run helper placed at top to satisfy linters (safe/eager import)
 from pathlib import Path
 from typing import Any
+
+import click
 
 from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
 from firsttry.planner.dag import Plan
@@ -33,6 +34,7 @@ except ImportError:
     # Fallback if cache_utils not available
     def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
         pass
+
     def update_cache(remote_fingerprint: str | None = None) -> None:
         pass
 
@@ -631,7 +633,11 @@ def _run_pre_commit_gate() -> int:
         # If we're running under pytest (module loaded) or an env guard is
         # present, short-circuit the heavy pre-commit runners to keep test
         # suite runs fast and deterministic.
-        if "pytest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1":
+        if (
+            "pytest" in sys.modules
+            or os.environ.get("PYTEST_CURRENT_TEST")
+            or os.environ.get("FT_DISABLE_NESTED_PYTEST") == "1"
+        ):
             steps = [
                 types.SimpleNamespace(ok=True, name=n, duration_s=0.0)
                 for n in ("ruff", "black", "mypy", "pytest", "coverage", "coverage_gate")
@@ -1204,7 +1210,6 @@ def main_impl(argv: list[str] | None = None) -> int:
         import json as _json
 
         try:
-            ctx = build_context()
             repo_profile = build_repo_profile()
             cfg = load_config()
             # Prefer config-driven plan when available, otherwise detect
@@ -1229,7 +1234,11 @@ def main_impl(argv: list[str] | None = None) -> int:
     # runner-only summary (tests expect no parity self-check in this path).
     skip_parity = False
     gate_val_early = getattr(args, "gate", None)
-    if args.cmd == "run" and gate_val_early and str(gate_val_early).lower() in ("pre-commit", "precommit"):
+    if (
+        args.cmd == "run"
+        and gate_val_early
+        and str(gate_val_early).lower() in ("pre-commit", "precommit")
+    ):
         skip_parity = True
 
     if args.cmd not in ("pre-commit", "pre-push", "ci") and not skip_parity:
@@ -1250,13 +1259,10 @@ def main_impl(argv: list[str] | None = None) -> int:
             if gg in ("pre-commit", "precommit", "ruff"):
                 # pre-commit → use pre-commit handler after license check
                 desired_mode_for_gate = "fast"
-                call_pre_commit = True
             elif gg in ("ci", "strict", "mypy", "pytest"):
                 desired_mode_for_gate = "strict"
-                call_pre_commit = False
             else:
                 desired_mode_for_gate = "fast"
-                call_pre_commit = False
             # Ensure args.mode is populated for downstream logic
             args.mode = getattr(args, "mode", None) or desired_mode_for_gate
 
@@ -1313,7 +1319,7 @@ def main_impl(argv: list[str] | None = None) -> int:
                         print(f"❌ {e}")
                     print("💡 Get a license at https://firsttry.com/pricing")
                     return 2
-        
+
             # If this was a legacy pre-commit gate invocation, run the
             # lightweight pre-commit summary which calls the local runner
             # helpers (ruff/mypy/pytest/coverage) and prints the exact
@@ -1331,7 +1337,7 @@ def main_impl(argv: list[str] | None = None) -> int:
         # pre-commit` behaves the same whether or not a license is present.
         if gate_val and gate_val.lower() in ("pre-commit", "precommit"):
             try:
-                return _run_pre_commit_summary(args)
+                return _run_pre_commit_gate()
             except Exception:
                 return 2
 
@@ -2311,8 +2317,10 @@ def get_changed_files(base: str | None = None) -> list[str]:
     """
     try:
         base_ref = base or "HEAD"
-        p = subprocess.run(["git", "diff", "--name-only", f"{base_ref}"], capture_output=True, text=True)
-        return [l for l in p.stdout.splitlines() if l.strip()]
+        p = subprocess.run(
+            ["git", "diff", "--name-only", f"{base_ref}"], capture_output=True, text=True
+        )
+        return [line for line in p.stdout.splitlines() if line.strip()]
     except Exception:
         return []
 
@@ -2353,11 +2361,11 @@ def assert_license():
         return False
 
 
-
-
-
 # Expose Click CLI object for tests (CliRunner expects a Click Command)
-@click.group(invoke_without_command=True, context_settings={"ignore_unknown_options": True, "allow_extra_args": True})
+@click.group(
+    invoke_without_command=True,
+    context_settings={"ignore_unknown_options": True, "allow_extra_args": True},
+)
 @click.option("--dag-only", is_flag=True, default=False, help="Emit DAG plan JSON and exit")
 @click.pass_context
 def cli_app(ctx: click.Context, dag_only: bool = False) -> int:
@@ -2389,7 +2397,6 @@ def cli_app(ctx: click.Context, dag_only: bool = False) -> int:
     if rc != 0:
         raise SystemExit(rc)
     return rc
-
 
 
 @cli_app.command("run")

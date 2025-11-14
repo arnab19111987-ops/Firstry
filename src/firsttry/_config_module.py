@@ -13,10 +13,10 @@ This module only re-exports those functions and the Config dataclass
 so that older imports keep working.
 """
 
-from firsttry.config import Config
-from firsttry.config import get_config
-from firsttry.config import get_s3_settings
-from firsttry.config import get_workflow_requires
+from firsttry.config import Config  # noqa: E402
+from firsttry.config import get_config  # noqa: E402
+from firsttry.config import get_s3_settings  # noqa: E402
+from firsttry.config import get_workflow_requires  # noqa: E402
 
 __all__ = [
     "Config",

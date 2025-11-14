@@ -16,6 +16,7 @@ class LicenseCfg(BaseModel):
     file: Optional[str] = None
     grace_days: int = 0
 
+
 class RemoteCfg(BaseModel):
     s3_bucket: Optional[str] = None
     s3_prefix: Optional[str] = None
@@ -23,25 +24,30 @@ class RemoteCfg(BaseModel):
     require_kms: bool = False
     allow_buckets: list[str] = []
 
+
 class PolicyCfg(BaseModel):
     no_network: bool = False
     fips_strict: bool = False
     privacy_min: bool = False
     retention_days: int = 30
 
+
 class AppCfg(BaseModel):
     license: LicenseCfg = LicenseCfg()
     remote: RemoteCfg = RemoteCfg()
     policy: PolicyCfg = PolicyCfg()
 
+
 def _load_toml(path: Path) -> dict:
     try:
         import tomllib
+
         if path.exists():
             return tomllib.loads(path.read_text())
     except Exception:
         pass
     return {}
+
 
 def load_config(cli_overrides: dict | Path | None = None) -> AppCfg:
     """Precedence: CLI > env > ./firsttry.toml > ~/.config/firsttry/config.toml
@@ -58,9 +64,9 @@ def load_config(cli_overrides: dict | Path | None = None) -> AppCfg:
     home = Path(os.path.expanduser("~"))
     merged: dict = {}
     # global
-    merged |= _load_toml(home/".config/firsttry/config.toml")
+    merged |= _load_toml(home / ".config/firsttry/config.toml")
     # local
-    merged |= _load_toml((cwd or Path.cwd())/"firsttry.toml")
+    merged |= _load_toml((cwd or Path.cwd()) / "firsttry.toml")
     # env
     env: dict[str, dict[str, object]] = {
         "policy": {
@@ -91,7 +97,7 @@ def load_config(cli_overrides: dict | Path | None = None) -> AppCfg:
     # handled the cwd case above and there are no overrides to apply.
     if isinstance(cli_overrides, dict):
         for k, v in cli_overrides.items():
-            path = k.split('.')
+            path = k.split(".")
             cur = merged
             for p in path[:-1]:
                 cur = cur.setdefault(p, {})
@@ -100,6 +106,7 @@ def load_config(cli_overrides: dict | Path | None = None) -> AppCfg:
         return AppCfg.model_validate(merged)
     except ValidationError as e:
         raise SystemExit(f"[config] invalid configuration: {e}")
+
 
 def fingerprint(cfg: AppCfg) -> str:
     j = json.dumps(cfg.model_dump(mode="python"), sort_keys=True, separators=(",", ":"))

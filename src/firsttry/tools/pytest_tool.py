@@ -38,13 +38,16 @@ class PytestTool:
             exit_code, stdout, stderr = run_cmd("pytest -q --collect-only --maxfail=1")
             elapsed = time.monotonic() - start
             status = "ok" if exit_code == 0 else "fail"
-            return status, {
-                "stdout": stdout[-4000:],  # trim
-                "stderr": stderr[-4000:],
-                "exit_code": exit_code,
-                "elapsed": elapsed,
-                "mode": "collect-only",
-            }
+            return (
+                status,
+                {
+                    "stdout": stdout[-4000:],  # trim
+                    "stderr": stderr[-4000:],
+                    "exit_code": exit_code,
+                    "elapsed": elapsed,
+                    "mode": "collect-only",
+                },
+            )
 
         # 3) Normal path with timeout protection
         from firsttry.utils.proc import run_cmd

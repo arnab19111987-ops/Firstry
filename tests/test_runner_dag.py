@@ -296,7 +296,7 @@ class TestConfigLoader:
     def test_load_workflow(self) -> None:
         """Test loading workflow section."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
-            f.write("[workflow]\n" 'ruff_cmd = ["ruff"]\n' "[resources]\n" "memory_gb = 4\n")
+            f.write('[workflow]\nruff_cmd = ["ruff"]\n[resources]\nmemory_gb = 4\n')
             config_path = f.name
 
         try:
@@ -308,7 +308,7 @@ class TestConfigLoader:
     def test_load_resources(self) -> None:
         """Test loading resources section."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
-            f.write("[resources]\n" "memory_gb = 4\n" "timeout_s = 300\n")
+            f.write("[resources]\nmemory_gb = 4\ntimeout_s = 300\n")
             config_path = f.name
 
         try:

@@ -219,7 +219,9 @@ def maybe_download_golden_cache(remote_fingerprint: str | None = None) -> None:
         ad = Path(artifacts_dir)
         if ad.exists():
             for candidate in ad.iterdir():
-                if candidate.name.startswith("golden-cache") or candidate.name.startswith("warm-cache"):
+                if candidate.name.startswith("golden-cache") or candidate.name.startswith(
+                    "warm-cache"
+                ):
                     # attempt to extract
                     try:
                         if candidate.suffix == ".zip":

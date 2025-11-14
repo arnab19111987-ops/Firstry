@@ -175,7 +175,11 @@ def run_plan(
                 s3cfg = get_s3_settings(repo_root)
                 if s3cfg and s3cfg.get("bucket"):
                     bucket_val = s3cfg.get("bucket")
-                    s3c = S3Cache(str(bucket_val), prefix=s3cfg.get("prefix") or "", region=s3cfg.get("region") or "")
+                    s3c = S3Cache(
+                        str(bucket_val),
+                        prefix=s3cfg.get("prefix") or "",
+                        region=s3cfg.get("region") or "",
+                    )
                 else:
                     s3c = S3Cache.from_env_or_config()
             except Exception:

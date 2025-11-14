@@ -7,9 +7,12 @@
 from __future__ import annotations
 
 import os
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from typing import Iterable
+from typing import Optional
 from typing import Set
 
 # ---------------------------------------------------------------------------
@@ -296,9 +299,6 @@ def maybe_include_flaky_tests(tests_to_run: Iterable[str]) -> Set[str]:
 
 # --- FirstTry: Demo Dev Key + Velvet Rope helpers (idempotent) ---
 
-import sys
-from typing import Optional
-
 
 # Define a uniquely-named placeholder resolver and bind it to the public
 # name only if a richer implementation doesn't already exist. Using a
@@ -311,6 +311,7 @@ def _ft_placeholder_resolve_license(*args: Any, **kwargs: Any) -> Any:
     raise RuntimeError(
         "license_guard.resolve_license was called, but no resolver has been configured."
     )
+
 
 # Ensure a public `resolve_license` exists without redefining it.
 globals().setdefault("resolve_license", _ft_placeholder_resolve_license)
@@ -427,7 +428,6 @@ if "_FT_DEMO_WRAPPED" not in globals():
 
 
 # Minimal resolve_license helper expected by some tests/tools.
-from dataclasses import dataclass
 
 
 @dataclass

@@ -10,10 +10,12 @@ Public API (import from this module, not _core directly):
     from firsttry.config import Config, get_config, get_workflow_requires, get_s3_settings
 """
 
-from ._core import Config  # noqa: F401
-from ._core import get_config  # noqa: F401
-from ._core import get_s3_settings  # noqa: F401
-from ._core import get_workflow_requires as _core_get_workflow_requires  # noqa: F401
+from pathlib import Path  # noqa: E402
+
+from ._core import Config  # noqa: F401,E402
+from ._core import get_config  # noqa: F401,E402
+from ._core import get_s3_settings  # noqa: F401,E402
+from ._core import get_workflow_requires as _core_get_workflow_requires  # noqa: F401,E402
 
 __all__ = [
     "Config",
@@ -23,7 +25,6 @@ __all__ = [
 ]
 
 # Used by some tests to monkeypatch the project toml path
-from pathlib import Path
 
 PROJECT_TOML: Path = Path("firsttry.toml")
 
@@ -70,6 +71,7 @@ def get_workflow_requires(root: Path | None = None) -> list[str] | dict[str, lis
         for v in deps:
             flat.add(v)
     return list(flat)
+
 
 __all__.append("PROJECT_TOML")
 

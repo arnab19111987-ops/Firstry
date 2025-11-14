@@ -25,6 +25,7 @@ class Config:
     - workflow_requires: mapping from check_id -> list of dependency check_ids.
     - s3_bucket / s3_region / s3_prefix: remote cache / artifact settings.
     """
+
     raw: Mapping[str, Any] = field(default_factory=dict)
     workflow_requires: Dict[str, List[str]] = field(default_factory=dict)
     s3_bucket: Optional[str] = None
@@ -46,11 +47,7 @@ def _load_toml(path: Path) -> dict[str, Any]:
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     out = dict(base)
     for k, v in override.items():
-        if (
-            k in out
-            and isinstance(out[k], dict)
-            and isinstance(v, dict)
-        ):
+        if k in out and isinstance(out[k], dict) and isinstance(v, dict):
             out[k] = _deep_merge(out[k], v)
         else:
             out[k] = v

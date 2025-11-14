@@ -8,14 +8,18 @@ from pathlib import Path
 # failures when running light-weight CLIs or tests that only exercise --dag-only
 # or --no-network flags.
 
+
 def build_parser():
     p = argparse.ArgumentParser("firsttry")
     p.add_argument("--no-network", action="store_true", help="Disable all outbound network access")
-    p.add_argument("--offline", action="store_true", help="Use offline license mode for this process")
+    p.add_argument(
+        "--offline", action="store_true", help="Use offline license mode for this process"
+    )
     p.add_argument("--dag-only", action="store_true", help="Print the planned DAG and exit 0")
     p.add_subparsers(dest="cmd")
     # ... keep your existing subcommands
     return p
+
 
 def main(argv=None):
     parser = build_parser()
@@ -78,12 +82,15 @@ def main(argv=None):
     emit_license_row(report, lic)
 
     # Example: audit bundle must always exist
-    write_audit_bundle(Path(".firsttry/audit.json"), {
-        "run_id": run_id,
-        "policy_hash": pol_hash,
-        "config_fingerprint": report["config_fingerprint"],
-        "license": report["license"],
-    })
+    write_audit_bundle(
+        Path(".firsttry/audit.json"),
+        {
+            "run_id": run_id,
+            "policy_hash": pol_hash,
+            "config_fingerprint": report["config_fingerprint"],
+            "license": report["license"],
+        },
+    )
 
     # Hand off to your existing command handlers here...
     # log("info", "starting", cmd=args.cmd)
@@ -94,6 +101,7 @@ def main(argv=None):
         log("error", "network disabled prevented operation", error=str(e))
         return 2
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

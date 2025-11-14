@@ -3,6 +3,7 @@ from __future__ import annotations
 
 class NetworkDisabled(RuntimeError): ...
 
+
 class NetworkGuard:
     def __init__(self, enabled: bool):
         self.disabled = enabled

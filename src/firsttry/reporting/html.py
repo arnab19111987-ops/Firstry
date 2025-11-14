@@ -36,9 +36,9 @@ def write_html_report(repo_root: Path, results: dict, out: str = ".firsttry/repo
     html_doc = f"""<!doctype html><meta charset="utf-8">
     <title>FirstTry Report</title>
     <style>body{{font:14px system-ui}}td,th{{border:1px solid #ddd;padding:6px}}table{{border-collapse:collapse}}</style>
-    <h2>FirstTry Report — {time.strftime('%Y-%m-%d %H:%M:%S')}</h2>
+    <h2>FirstTry Report — {time.strftime("%Y-%m-%d %H:%M:%S")}</h2>
     <table><thead><tr><th>Task</th><th>Status</th><th>Duration (ms)</th><th>Cache</th></tr></thead>
-    <tbody>{''.join(rows)}</tbody></table>"""
+    <tbody>{"".join(rows)}</tbody></table>"""
     p = repo_root / out
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(html_doc)
@@ -110,7 +110,7 @@ def write_html_dashboard(repo_root: Path, out: str = ".firsttry/dashboard.html")
     <p><b>Total cache hits:</b> {total_hits} &nbsp; <b>Total local runs:</b> {total_runs} &nbsp; <b>Estimated time saved:</b> {total_saved / 1000:.2f}s</p>
     <h3>Run History</h3>
     <table><thead><tr><th>Report</th><th>When</th><th>Cache Hits</th><th>Local Runs</th><th>Saved (ms)</th></tr></thead>
-    <tbody>{''.join(rows)}</tbody></table>
+    <tbody>{"".join(rows)}</tbody></table>
     <h3>Top Failing Checks</h3>{_ol(top_fail)}
     <h3>Most Flaky Checks</h3>{_ol(flaky)}"""
     (repo_root / out).write_text(html_doc)

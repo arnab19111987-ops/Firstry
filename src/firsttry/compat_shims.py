@@ -28,9 +28,11 @@ except Exception:  # pragma: no cover
     ) -> "Plan":
         raise NotImplementedError
 
+
 # Also provide a no-op execute_plan for legacy import sites that expect it.
 def execute_plan(*_args, **_kwargs):
     return None
+
 
 # Reporting helpers expected by some legacy imports/tests. Keep them tiny and
 # async-compatible so callers can await write_report_async when present.
@@ -53,5 +55,6 @@ async def write_report_async(path, payload):  # pragma: no cover - shim
         p.write_text(__import__("json").dumps(payload, indent=2))
     except Exception:
         return None
+
 
 __all__ = ["build_plan", "execute_plan", "print_report", "write_report_async"]

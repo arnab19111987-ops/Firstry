@@ -409,7 +409,7 @@ if __name__ == "__main__":
             if "::set-output" in txt and "Check for deprecated ::set-output" not in txt:
                 bad.append(wf)
         if bad:
-            print(f"❌ Deprecated ::set-output in: {', '.join(map(str,bad))}")
+            print(f"❌ Deprecated ::set-output in: {', '.join(map(str, bad))}")
             raise SystemExit(1)
 
         print("CI self-check passed (permissions + concurrency present)")
