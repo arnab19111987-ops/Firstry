@@ -1,4 +1,8 @@
 # src/firsttry/cli.py
+# Intentional lazy/conditional imports appear later in this module to avoid
+# pulling heavy optional dependencies at import-time (CLI entrypoints).
+# These are deliberate; ruff E402 warnings for this file are acknowledged.
+# noqa: E402
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,8 @@
 # src/firsttry/license_guard.py
+# Some imports intentionally appear later in this module (lazy imports / demo
+# shims) to avoid import-time side-effects and heavy optional dependencies.
+# These E402 placements are intentional and documented here.
+# noqa: E402
 
 from __future__ import annotations
 

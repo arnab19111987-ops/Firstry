@@ -1,5 +1,7 @@
 import importlib
 import os
+import pathlib
+from typing import Any
 
 import pytest
 
@@ -63,11 +65,6 @@ os.environ.setdefault("FT_ENV", "test")
 # accurately simulate missing-secret production behavior. Setting a global
 # FIRSTTRY_SHARED_SECRET at session start leaks into subprocess envs and breaks
 # assertions that validate behavior when the secret is absent.
-
-import pathlib
-from typing import Any
-
-import pytest
 
 
 # Ensure tests run with repository root as the current working directory
