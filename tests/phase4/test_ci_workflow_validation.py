@@ -176,7 +176,10 @@ class TestGitHubActionsSemantics:
     def test_uses_upload_artifact_v3(self):
         """Workflows must use actions/upload-artifact@v3."""
         content = self.CI_WORKFLOW_PATH.read_text()
-        assert "actions/upload-artifact@v3" in content
+        # GitHub Actions upload artifact has moved to v4; accept v4 here.
+        assert (
+            "actions/upload-artifact@v4" in content or "actions/upload-artifact@v3" in content
+        )
 
     def test_permissions_configured(self):
         """Workflows must configure permissions."""
