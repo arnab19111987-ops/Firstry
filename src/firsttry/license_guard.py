@@ -245,7 +245,7 @@ def maybe_download_golden_cache() -> None:
         print("Pro license active: attempting Golden Cache download...")
         try:
             # Import inside function to avoid circular import at module load
-            from . import golden_cache  # type: ignore
+            from . import golden_cache  # type: ignore[attr-defined]  # optional runtime import
 
             if hasattr(golden_cache, "maybe_download"):
                 golden_cache.maybe_download()
@@ -270,7 +270,7 @@ def maybe_include_flaky_tests(tests_to_run: Iterable[str]) -> Set[str]:
     if is_paid_tier(tier):
         print("Pro license active: attempting to include flaky tests...")
         try:
-            from . import flaky_tests  # type: ignore
+            from . import flaky_tests  # type: ignore[attr-defined]  # optional runtime import
 
             if hasattr(flaky_tests, "load_flaky_tests"):
                 extras = flaky_tests.load_flaky_tests()
@@ -362,7 +362,7 @@ if "get_current_tier" not in globals():
         resolver = get_license_resolver()
         if callable(resolver):
             try:
-                li: Any = resolver(None)  # type: ignore[misc]
+                li: Any = resolver(None)
                 tier = getattr(li, "tier", None) or (
                     li.get("tier") if isinstance(li, dict) else None
                 )
@@ -416,7 +416,7 @@ if "_FT_DEMO_WRAPPED" not in globals():
         return _FT_ORIG_GET_TIER(*args, **kwargs)
 
     # Install the shim
-    get_current_tier = _ft_get_current_tier_demo_shim  # type: ignore[assignment]
+    get_current_tier = _ft_get_current_tier_demo_shim
 
 
 # Minimal resolve_license helper expected by some tests/tools.
