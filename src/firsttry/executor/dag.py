@@ -257,7 +257,7 @@ def _call_runner_with_timeout(
         sig = signature(runner)
     except Exception:
         # If we can't introspect, just call and try to normalize.
-        res = runner(task=task, cwd=cwd)  # type: ignore[misc]
+        res = runner(task=task, cwd=cwd)
         if isinstance(res, int):
             return res
         if hasattr(res, "returncode"):

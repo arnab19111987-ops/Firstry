@@ -62,7 +62,7 @@ def load_config(cli_overrides: dict | Path | None = None) -> AppCfg:
     # local
     merged |= _load_toml((cwd or Path.cwd())/"firsttry.toml")
     # env
-    env = {
+    env: dict[str, dict[str, object]] = {
         "policy": {
             "no_network": os.getenv("FIRSTTRY_NO_NETWORK") == "1",
             "fips_strict": os.getenv("FIRSTTRY_FIPS_STRICT") == "1",

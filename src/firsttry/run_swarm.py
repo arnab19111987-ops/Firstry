@@ -11,6 +11,9 @@ from .executor.dag import DagExecutor
 from .executor.dag import default_caches
 from .planner.dag import Plan
 from .planner.dag import build_plan_from_twin
+from dataclasses import replace
+from typing import cast
+from .cache.base import BaseCache
 
 # --- FirstTry: Pro-aware cache selection export (idempotent) ---
 
@@ -121,11 +124,12 @@ def run_plan(
             cfg_flags_map = cfg.raw.get("checks_flags") or cfg.raw.get("checks.flags") or {}
         except Exception:
             cfg_flags_map = {}
-        for t in plan.tasks.values():
+        for tid, t in list(plan.tasks.items()):
             existing = list(t.flags or [])
             cfg_flags = list(cfg_flags_map.get(t.check_id, []) or [])
             if cfg_flags:
-                t.flags = cfg_flags + existing
+                # Task dataclass is frozen; create a replacement with merged flags
+                plan.tasks[tid] = replace(t, flags=cfg_flags + existing)
 
     # Build caches (remote if enabled in config or via explicit flag).
     # The new Config stores raw values under cfg.raw, so read [cache].remote
@@ -170,11 +174,8 @@ def run_plan(
             try:
                 s3cfg = get_s3_settings(repo_root)
                 if s3cfg and s3cfg.get("bucket"):
-                    s3c = S3Cache(
-                        s3cfg.get("bucket"),
-                        prefix=s3cfg.get("prefix") or "",
-                        region=s3cfg.get("region") or "",
-                    )
+                    bucket_val = s3cfg.get("bucket")
+                    s3c = S3Cache(str(bucket_val), prefix=s3cfg.get("prefix") or "", region=s3cfg.get("region") or "")
                 else:
                     s3c = S3Cache.from_env_or_config()
             except Exception:
@@ -183,7 +184,7 @@ def run_plan(
             if s3c:
                 print("🌐 Pro: Shared Remote Cache (S3) enabled.")
                 if isinstance(caches, list):
-                    caches.insert(0, s3c)
+                    caches.insert(0, cast(BaseCache, s3c))
             else:
                 print("⚠️ Pro Warning: FT_S3_BUCKET not set. Using local cache only.")
     except Exception:

@@ -10,12 +10,9 @@ from __future__ import annotations
 try:
     from .._config_module import Config
 except Exception:
-    # Fall back to schema.Config if available; otherwise allow ImportError to
-    # bubble to callers who depend on this package.
-    try:
-        from .schema import Config
-    except Exception:
-        raise
+    # Fall back to the canonical internal config core if the legacy shim is
+    # unavailable (tests or trimmed packaging may omit the legacy module).
+    from ._core import Config
 
 __all__ = ["Config"]
 

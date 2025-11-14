@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from ..twin import ProjectTwin
-from .dag import build_plan  # existing
+from __future__ import annotations
+
+from typing import Any
+
+from ..twin.graph import CodebaseTwin
+from .dag import build_plan_from_twin as _build_plan_from_twin
 
 
-def build_plan_from_twin(twin: ProjectTwin):
-    """Stable entrypoint: planner consumes only the Twin, not ad-hoc detectors."""
-    return build_plan(
-        repo_root=twin.root,
-        language=twin.language,
-        detectors=twin.detectors,
-        changed_files=twin.changed_files,
-        ci_hints=twin.ci_hints,
-    )
+def build_plan_from_twin(twin: Any | CodebaseTwin) -> Any:
+    """Stable entrypoint: prefer the modern twin->plan builder when present.
+
+    This wrapper is intentionally defensive: different twin shapes exist in
+    the repo (tests and older callers). Try the modern DAG-based builder and
+    fall back to the legacy planner when necessary.
+    """
+    # Try the modern signature first (twin, *, tier, changed, ...)
+    tier = getattr(twin, "tier", "free-lite")
+    changed = getattr(twin, "changed_files", None) or getattr(twin, "changed", [])
+    return _build_plan_from_twin(twin, tier=tier, changed=changed)

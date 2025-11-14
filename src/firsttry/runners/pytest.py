@@ -62,5 +62,28 @@ class PytestRunner(CheckRunner):
         This forwards to the shared runners.run_pytest_files helper so tests
         that monkeypatch subprocess.run are respected.
         """
-        # `run_pytest_files` expects `timeout` kwarg (subprocess timeout).
-        return run_pytest_files(files, base_args=tuple(flags), cwd=repo_root, timeout=timeout_s)
+        # `run_pytest_files` expects Iterable/Sequence arguments and returns
+        # the lightweight RunResult defined in the package-level runners
+        # module. Convert the returned object into the canonical
+        # runners.base.RunResult dataclass so our declared return type
+        # matches and mypy is satisfied.
+        pkg_files = files or []
+        pkg_base_args = tuple(flags or ())
+        rr = run_pytest_files(pkg_files, base_args=pkg_base_args, cwd=repo_root, timeout=timeout_s)
+
+        # Normalize fields into the base.RunResult dataclass shape.
+        # Map the lightweight runner shape to the canonical dataclass used
+        # across the codebase.
+        rc = 0 if getattr(rr, "ok", False) else 1
+        dur_s = getattr(rr, "duration_s", None)
+        duration_ms = int(dur_s * 1000) if (dur_s is not None) else None
+        return RunResult(
+            name=getattr(rr, "name", "pytest"),
+            rc=rc,
+            stdout=getattr(rr, "stdout", ""),
+            stderr=getattr(rr, "stderr", ""),
+            duration_ms=duration_ms,
+            status=getattr(rr, "status", ""),
+            ok=getattr(rr, "ok", None),
+            meta=getattr(rr, "meta", None),
+        )

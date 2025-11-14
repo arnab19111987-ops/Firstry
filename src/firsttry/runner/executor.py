@@ -28,7 +28,7 @@ LOG_DIR = ".firsttry/logs"
 DEFAULT_TASK_TIMEOUT_S = 600
 
 
-def get_effective_timeout(task: Task) -> int:
+def get_effective_timeout(task: Any) -> int:
     """Return per-task timeout, falling back to a global default.
 
     This helper is a compatibility shim for code/tests that operate on
