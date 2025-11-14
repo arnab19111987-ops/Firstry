@@ -4,19 +4,33 @@ This prevents accidentally simplifying check_tests() to use _safe_gate()
 which would lose the pytest output parsing that extracts test counts.
 """
 
+from __future__ import annotations
+
+import subprocess
+
 import pytest
 
 from firsttry.gates import check_tests
+import firsttry.gates as gates_mod
 
 
 @pytest.mark.timeout(120)  # This test runs pytest recursively, needs more time
-def test_check_tests_has_rich_info():
+def test_check_tests_has_rich_info(monkeypatch):
     """check_tests() must return structured info about pytest results.
 
     If pytest is not installed, it should return a skipped result with
     a clear reason. If pytest runs, it should parse the output and
     include test information in the result.
     """
+    # Patch the gate's subprocess.run so we don't spawn a real pytest child process.
+    fake_stdout = "1 passed in 0.01s\nsome rich info\n"
+
+    def fake_run(cmd, capture_output=True, text=True, check=False, env=None, timeout=None, **kwargs):
+        # Mirror subprocess.CompletedProcess enough for the gate logic.
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=fake_stdout, stderr="")
+
+    monkeypatch.setattr(gates_mod.subprocess, "run", fake_run)
+
     res = check_tests()
 
     # Must have a GateResult-like structure
