@@ -1,7 +1,14 @@
 {
-  "ok": true,
+  "ok": false,
   "type": "self-check",
   "python": "3.11.7",
-  "timestamp": 1763124266.5357823,
-  "failures": []
+  "timestamp": 1763142468.9621797,
+  "failures": [
+    {
+      "code": "PARITY-012",
+      "gate": "config",
+      "msg": "Config drift: pyproject.toml sha256 7693d927cb22eff6... != 88adf990b1d986c2... (lock)",
+      "hint": "Update ci/parity.lock.json or revert pyproject.toml"
+    }
+  ]
 }

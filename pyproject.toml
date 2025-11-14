@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "firsttry-run"
 version = "0.1.9"
 description = "Ship code that passes CI on the first try."
+license = { text = "Apache-2.0" }
 authors = [{ name = "FirstTry", email = "founder@example.com" }]
 readme = "README.md"
 requires-python = ">=3.10"

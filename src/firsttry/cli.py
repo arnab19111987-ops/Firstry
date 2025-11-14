@@ -324,6 +324,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="dag_only",
         help="Print resolved DAG/plan as JSON and exit (no cmd required).",
     )
+    # Standard --version flag for scripts and tooling
+    p.add_argument(
+        "--version",
+        action="store_true",
+        dest="version",
+        help="Show FirstTry version and exit.",
+    )
 
     # --- run ---------------------------------------------------------------
     p_run = sub.add_parser("run", help="Run FirstTry checks on this repo")
@@ -710,6 +717,17 @@ def _run_pre_commit_gate() -> int:
     except Exception:
         # Unexpected errors produce a non-zero exit but do not raise click.Abort
         return 2
+
+
+def pre_commit_fast_gate() -> int:
+    """Public wrapper for the fast pre-commit gate.
+
+    Historically tests and internal callers used the private
+    `_run_pre_commit_gate()` function. Provide a tiny public shim so other
+    modules (like the `ft` CLI shim) can call the fast gate without
+    referencing a private symbol.
+    """
+    return _run_pre_commit_gate()
 
 
 def cmd_pre_push(args=None) -> int:
@@ -1224,6 +1242,16 @@ def main_impl(argv: list[str] | None = None) -> int:
         except Exception:
             # Fail-open: if introspection fails, don't block the CLI
             return 2
+
+    # Top-level --version handling: print a compact one-line version and exit
+    if getattr(args, "version", False):
+        # prefer package metadata version when available
+        try:
+            v = __version__
+        except Exception:
+            v = "0.0.0"
+        print(f"firsttry-run {v}")
+        return 0
 
     # Auto-bootstrap parity environment ONLY for non-parity commands
     # Profile commands (pre-commit, pre-push, ci) should use current environment
