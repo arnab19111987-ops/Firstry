@@ -79,7 +79,7 @@
     "allow_uncollected": true
   },
     "config_hashes": {
-  "pyproject.toml": "88adf990b1d986c21aaaf1568b1c170401481689c72d46d14d131dcfeec4c87b",
+  "pyproject.toml": "7693d927cb22eff6ccbf60a3d9a3d7da46af4a78ff0c28ac86fe106c04d35e5f",
     ".ruff.toml": "a39282bacace1b73f3b75311e2d8519728f53546d233b840d937c76b925e5a46",
     "mypy.ini": "84f0e870cf6c9136cb09d263a2a132360f8c5305d2cedcee877b6bb510185875",
     "pytest.ini": "09bfc3fbb8787fd91c5a73e5a2dae597807eb05a84894ee6bfb7a71fbe953dec",
@@ -135,7 +135,7 @@
   },
     "project_files": {
     "pyproject.toml": {
-      "sha256_prefix": "88adf990b1d986c2"
+      "sha256_prefix": "7693d927cb22eff6"
     }
   }
 }
