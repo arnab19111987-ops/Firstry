@@ -319,9 +319,11 @@ try:
     from .tier import require_tier  # type: ignore
 except Exception:
     # If tier is unavailable for any reason, provide a fallback that raises when used.
-    def require_tier(min_tier: str):
-        def _decorator(fn):
-            def _wrapped(*a, **k):
+    from typing import Any, Callable
+
+    def require_tier(min_tier: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        def _decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            def _wrapped(*a: Any, **k: Any) -> Any:
                 print("Tier gating not available")
                 raise SystemExit(2)
 

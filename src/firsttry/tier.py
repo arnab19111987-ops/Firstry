@@ -28,6 +28,7 @@ def get_current_tier() -> str:
     behavior; it only normalizes the various internal tier strings to a
     compact public set the CLI and gating helpers can use.
     """
+    raw: str | None = None
     try:
         raw = license_guard.get_current_tier()
     except Exception:
