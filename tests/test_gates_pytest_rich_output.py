@@ -10,8 +10,8 @@ import subprocess
 
 import pytest
 
-from firsttry.gates import check_tests
 import firsttry.gates as gates_mod
+from firsttry.gates import check_tests
 
 
 @pytest.mark.timeout(120)  # This test runs pytest recursively, needs more time
