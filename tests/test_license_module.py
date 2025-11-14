@@ -1,5 +1,5 @@
+
 import pytest
-import os
 
 from firsttry import license as ft_license
 

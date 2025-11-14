@@ -1,13 +1,13 @@
 import json
 import sys
-from click.testing import CliRunner
-import os
 import types
 
 import pytest
+from click.testing import CliRunner
 
-from firsttry import ft, tier, runners
 from firsttry import divergence
+from firsttry import ft
+from firsttry import runners
 
 
 def test_pro_and_enterprise_gates(monkeypatch):

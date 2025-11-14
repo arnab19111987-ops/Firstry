@@ -11,6 +11,7 @@ code.
 from __future__ import annotations
 
 import sys
+
 import click
 
 from . import cli as _cli
@@ -57,8 +58,9 @@ def cmd_ci_parity() -> None:
         rc = _cli.cmd_ci(None)
     # After the parity run, enforce divergence guarantee for Enterprise tier.
     try:
-        from . import divergence as _div
         from pathlib import Path
+
+        from . import divergence as _div
 
         warm = Path("artifacts/warm_parity_report.json")
         full = Path("artifacts/parity_report.json")

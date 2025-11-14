@@ -1,14 +1,39 @@
 {
   "ok": false,
-  "type": "self-check",
   "python": "3.11.7",
-  "timestamp": 1763142468.9621797,
+  "tool_versions": {
+    "ruff": "0.14.4",
+    "mypy": "1.18.2",
+    "pytest": "8.4.2",
+    "bandit": "1.7.9"
+  },
+  "durations_sec": {
+    "ruff": 0.06637310981750488,
+    "mypy": 5.304425239562988,
+    "pytest": 147.2122781276703,
+    "bandit": 2.3646836280822754
+  },
+  "thresholds": {
+    "coverage_min": 0.15,
+    "coverage_total": 0.418
+  },
+  "collection": {
+    "expected_count": 1055,
+    "expected_hash": "6a153d8d6547bf0354ca40f5090a443599d852f6a7e3ae34b087fa7cc1c99972",
+    "allow_uncollected": true
+  },
   "failures": [
     {
-      "code": "PARITY-012",
-      "gate": "config",
-      "msg": "Config drift: pyproject.toml sha256 7693d927cb22eff6... != 88adf990b1d986c2... (lock)",
-      "hint": "Update ci/parity.lock.json or revert pyproject.toml"
+      "code": "PARITY-211",
+      "gate": "lint",
+      "msg": "Ruff linting failed",
+      "hint": "Run: ruff check --fix ."
+    },
+    {
+      "code": "PARITY-212",
+      "gate": "types",
+      "msg": "MyPy type checking failed",
+      "hint": "Fix type errors or add type: ignore comments"
     }
   ]
 }
