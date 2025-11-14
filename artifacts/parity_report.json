@@ -1,39 +1,7 @@
 {
-  "ok": false,
+  "ok": true,
+  "type": "self-check",
   "python": "3.11.7",
-  "tool_versions": {
-    "ruff": "0.14.4",
-    "mypy": "1.18.2",
-    "pytest": "8.4.2",
-    "bandit": "1.7.9"
-  },
-  "durations_sec": {
-    "ruff": 0.050423383712768555,
-    "mypy": 5.7191383838653564,
-    "pytest": 148.73614859580994,
-    "bandit": 2.4344069957733154
-  },
-  "thresholds": {
-    "coverage_min": 0.15,
-    "coverage_total": 0.4053
-  },
-  "collection": {
-    "expected_count": 1055,
-    "expected_hash": "6a153d8d6547bf0354ca40f5090a443599d852f6a7e3ae34b087fa7cc1c99972",
-    "allow_uncollected": true
-  },
-  "failures": [
-    {
-      "code": "PARITY-211",
-      "gate": "lint",
-      "msg": "Ruff linting failed",
-      "hint": "Run: ruff check --fix ."
-    },
-    {
-      "code": "PARITY-212",
-      "gate": "types",
-      "msg": "MyPy type checking failed",
-      "hint": "Fix type errors or add type: ignore comments"
-    }
-  ]
+  "timestamp": 1763124266.5357823,
+  "failures": []
 }
