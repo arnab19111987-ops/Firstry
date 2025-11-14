@@ -1,17 +1,32 @@
-from __future__ import annotations
-
 # Lightweight shim so older import paths continue to work:
 #   from firsttry.compat_shims import build_plan
 # We delegate to the modern planner API when available.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Mapping, Iterable
+
+# Lightweight shim so older import paths continue to work:
 try:
-    from .planner.dag import build_plan_from_twin as build_plan  # type: ignore
+    from .planner.dag import build_plan_from_twin as build_plan
 except Exception:  # pragma: no cover
-    # Fallback: provide a no-op stub to avoid import-time crashes
-    def build_plan(*_args, **_kwargs):  # type: ignore
-        return None
+    # Fallback: provide a typed stub matching the planner signature to satisfy
+    # static checkers. We import types only for annotations to avoid runtime
+    # cyclic imports.
+    if TYPE_CHECKING:
+        from .planner.dag import CodebaseTwin, Plan
+
+    def build_plan(
+        twin: "CodebaseTwin",
+        *,
+        tier: str,
+        changed: list[str],
+        workflow_requires: Mapping[str, Iterable[str]] | None = None,
+        pytest_shards: int = 1,
+    ) -> "Plan":
+        raise NotImplementedError
 
 # Also provide a no-op execute_plan for legacy import sites that expect it.
-def execute_plan(*_args, **_kwargs):  # type: ignore
+def execute_plan(*_args, **_kwargs):
     return None
 
 # Reporting helpers expected by some legacy imports/tests. Keep them tiny and
