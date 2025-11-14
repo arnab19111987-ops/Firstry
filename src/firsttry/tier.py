@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import Callable, Any
+from typing import Any
+from typing import Callable
 
 from . import license_guard
 

@@ -51,8 +51,12 @@ def cmd_pre_commit_alias() -> None:
 def cmd_ci_parity() -> None:
     """Run the CI-parity pipeline (full CI mirror)."""
     # Reuse mirror-ci handler when available
+    import argparse
+
     try:
-        rc = _cli.cmd_mirror_ci(None)
+        # cmd_mirror_ci expects an argparse.Namespace. Provide an empty
+        # Namespace when calling from the thin shim.
+        rc = _cli.cmd_mirror_ci(argparse.Namespace())
     except Exception:
         # Fallback to cmd_ci which tags CI env
         rc = _cli.cmd_ci(None)
