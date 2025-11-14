@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable, Set
+from typing import Any, Iterable, Set
 
 # ---------------------------------------------------------------------------
 # Canonical tier names (new)
@@ -291,13 +291,31 @@ def maybe_include_flaky_tests(tests_to_run: Iterable[str]) -> Set[str]:
 # --- FirstTry: Demo Dev Key + Velvet Rope helpers (idempotent) ---
 
 import sys
-from typing import Any, Optional
+from typing import Optional
 
-# Try to reuse your richer resolver if present
-try:
-    _FT_RESOLVE_LICENSE = resolve_license  # type: ignore[name-defined]
-except Exception:
-    _FT_RESOLVE_LICENSE = None  # type: ignore[assignment]
+# Define a uniquely-named placeholder resolver and bind it to the public
+# name only if a richer implementation doesn't already exist. Using a
+# different function name avoids static analysis warnings about multiple
+# function definitions with the same name.
+def _ft_placeholder_resolve_license(*args: Any, **kwargs: Any) -> Any:
+    """Default license resolver placeholder used only when no other
+    resolver is available at import time.
+    """
+    raise RuntimeError(
+        "license_guard.resolve_license was called, but no resolver has been configured."
+    )
+
+# Ensure a public `resolve_license` exists without redefining it.
+globals().setdefault("resolve_license", _ft_placeholder_resolve_license)
+
+
+def get_license_resolver() -> Any:
+    """Return the current resolver callable (live lookup).
+
+    This avoids freezing a snapshot at import time so later overrides to
+    the public `resolve_license` symbol are visible.
+    """
+    return globals().get("resolve_license", _ft_placeholder_resolve_license)
 
 
 def _ft_resolve_tier_fallback() -> str:
@@ -338,10 +356,13 @@ if "get_current_tier" not in globals():
         if os.getenv("FIRSTTRY_DEMO_MODE") == "1":
             return "pro"
 
-        # Prefer your resolver (if available)
-        if callable(_FT_RESOLVE_LICENSE):
+        # Prefer your resolver (if available). Use a live lookup so that
+        # later overrides to the public `resolve_license` symbol are
+        # respected instead of freezing a snapshot at import-time.
+        resolver = get_license_resolver()
+        if callable(resolver):
             try:
-                li: Any = _FT_RESOLVE_LICENSE(None)  # type: ignore[misc]
+                li: Any = resolver(None)  # type: ignore[misc]
                 tier = getattr(li, "tier", None) or (
                     li.get("tier") if isinstance(li, dict) else None
                 )
