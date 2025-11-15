@@ -6,8 +6,8 @@ Goal:
     (no real network calls; everything mocked).
 """
 
-import types
 import json
+import types
 from unittest import mock
 
 import firsttry.ci_parity.cache_utils as cu

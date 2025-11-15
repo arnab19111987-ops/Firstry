@@ -1,7 +1,6 @@
 import re
 import subprocess
 import sys
-from pathlib import Path
 
 
 def _help_output(cmd):
