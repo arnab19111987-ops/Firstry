@@ -1,0 +1,22 @@
+[run]
+source = src/firsttry
+
+omit =
+    src/firsttry/cli_v2.py
+    src/firsttry/cli_main.py
+    src/firsttry/cli_pipelines.py
+    src/firsttry/cli_run_profile.py
+    src/firsttry/cli_stable.py
+    src/firsttry/cli_enhanced.py
+    src/firsttry/cli_dag.py
+    src/firsttry/pipelines.py
+    src/firsttry/performance_targets.py
+    src/firsttry/performance_validator.py
+    src/firsttry/suggestion_engine.py
+    src/firsttry/cached_orchestrator.py
+    src/firsttry/checks_orchestrator_optimized.py
+    src/firsttry/ci_parser.py
+    src/firsttry/cli_ci_parity.py
+    src/firsttry/cli_runner_light.py
+    src/firsttry/smart_npm.py
+    src/firsttry/reports/cli_summary.py
