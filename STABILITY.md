@@ -82,3 +82,27 @@ Rules
 - Update tests whenever you modify CLI contracts. The STABILITY checks and the
   nightly stability job will help detect regressions, but unit/integration
   tests are the primary contract for behavior.
+
+Public API freeze (Dev-tier CLI)
+
+From now on the Dev-tier CLI surface is treated as a public, user-facing v1 API
+for developers. Changes to the following aspects require tests that exercise
+the change and an update to this `STABILITY.md` entry explaining the rationale:
+
+- Flags: adding, removing, or changing CLI flags or their semantics.
+- Exit codes: any change to exit codes for commands (success vs specific error
+  codes) must be stated and covered by tests.
+- Output shape: changes to machine-readable output (JSON, line formats) or
+  major user-visible output text that consumers may parse.
+
+Process
+
+1. Add/modify the target behavior in code.
+2. Add or update tests that assert the new behavior (help text, exit code,
+   JSON schema, etc.).
+3. Update `STABILITY.md` with a short note describing the change and its
+   justification (include the PR number once available).
+4. Ensure the nightly stability job and the test suite are green before merge.
+
+This policy helps prevent accidental breaking changes and preserves a stable
+developer experience for the Dev tier.
