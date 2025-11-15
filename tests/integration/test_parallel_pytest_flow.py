@@ -1,5 +1,4 @@
 import asyncio
-from types import SimpleNamespace
 
 import firsttry.parallel_pytest as pp
 

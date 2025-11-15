@@ -1,6 +1,7 @@
 from types import SimpleNamespace
+
+from firsttry.reporting import html
 from firsttry.reports import summary as summary_mod
-from firsttry.reporting import tty, html
 
 
 def test_reporting_render_summary_end_to_end(tmp_path):

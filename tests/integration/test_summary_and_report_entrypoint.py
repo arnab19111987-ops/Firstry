@@ -1,8 +1,7 @@
 from types import SimpleNamespace
-from pathlib import Path
 
-from firsttry import summary as top_summary
 from firsttry import report as top_report
+from firsttry import summary as top_summary
 
 
 def test_summary_and_report_entrypoint(tmp_path, capsys):

@@ -1,7 +1,7 @@
 import os
+from types import SimpleNamespace
 
 import firsttry.cli as cli
-from types import SimpleNamespace
 
 
 def test_ci_parity_pro_flow_minimal(tmp_path, monkeypatch, capsys):

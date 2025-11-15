@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 
 import firsttry.ci_parity.parity_runner as pr
 
