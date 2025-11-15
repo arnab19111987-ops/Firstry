@@ -45,3 +45,40 @@ Nightly checks
 
 - Consider wiring `tools/test_ft_run_stability.sh` into a nightly CI job so
   we detect flaky regressions early without slowing every push.
+
+CLI surface contracts (Dev tier)
+
+We freeze and document the Dev CLI surface so that developers and users have a
+stable, narrow, and easy-to-use experience. For the Dev tier the CLI shall
+expose the following commands and semantics:
+
+- `ft run`
+  - The one boring, obvious entrypoint. Runs the default pipeline for the
+    developer's workspace. Should be deterministic and stable across repeated
+    runs (use `tools/test_ft_run_stability.sh` to validate changes).
+
+- `ft init`
+  - Initialize a workspace with sensible defaults for development. Should be
+    idempotent and non-destructive.
+
+- `ft pre-commit`
+  - Run the local pre-commit parity gate. Uses `GIT_HOOK=pre-push` semantics when
+    appropriate.
+
+- `ft cache clear`
+  - Clear local caches used by the CLI. Should be safe to run anytime.
+
+- `ft parity` (warn-only)
+  - Run parity checks but do not block local development by default; meant for
+    diagnostic usage. CI will still enforce parity strictly.
+
+Rules
+
+- Hide or remove complexity related to tiers, licenses, enterprise-only parity
+  enforcement, golden cache PRO features, or anything that dilutes the Dev
+  surface. If a feature is enterprise-only, keep it out of the Dev CLI surface
+  and document it separately under an `enterprise/` or `docs/` area.
+
+- Update tests whenever you modify CLI contracts. The STABILITY checks and the
+  nightly stability job will help detect regressions, but unit/integration
+  tests are the primary contract for behavior.
