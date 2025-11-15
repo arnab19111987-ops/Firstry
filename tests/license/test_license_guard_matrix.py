@@ -6,16 +6,17 @@ Goal:
 """
 
 import types
+
 import pytest
 
+from unittest import mock
+
 import firsttry.license_guard as lg
+from firsttry import tier as tier_mod
 
 
 def test_ensure_license_for_current_tier_noop_for_free_tier(monkeypatch):
-    """
-    For free tiers, ensure_license_for_current_tier() should be a no-op:
-    no exception, no message, returns cleanly.
-    """
+    """For free tiers, ensure_license_for_current_tier() should be a no-op."""
     monkeypatch.setattr(lg, "get_current_tier", lambda: "free-lite", raising=False)
     monkeypatch.setattr(lg, "get_tier", lambda: "free-lite", raising=False)
     monkeypatch.setattr(lg, "_get_license_key_from_env", lambda: None, raising=False)
@@ -24,17 +25,10 @@ def test_ensure_license_for_current_tier_noop_for_free_tier(monkeypatch):
 
 
 def test_ensure_license_for_current_tier_raises_on_paid_tier_without_license(monkeypatch):
-    """
-    For paid tiers, absence of a valid license should trigger a clear failure
-    (exception or SystemExit). We don't tie ourselves to the exact exception
-    type; adapt if you have a dedicated error class.
-    """
+    """Absence of a valid license on paid tiers should trigger a clear failure."""
     monkeypatch.setattr(lg, "get_current_tier", lambda: "pro", raising=False)
 
-    # Simulate "no license cached / available"
-    fake_cache = types.SimpleNamespace(
-        get_current_license=lambda: None,
-    )
+    fake_cache = types.SimpleNamespace(get_current_license=lambda: None)
     monkeypatch.setattr(lg, "license_cache", fake_cache, raising=False)
 
     with pytest.raises(Exception):
@@ -42,27 +36,12 @@ def test_ensure_license_for_current_tier_raises_on_paid_tier_without_license(mon
 
 
 def test_ensure_license_for_current_tier_passes_with_valid_license(monkeypatch):
-    """
-    For paid tiers with a valid license key, no error should be raised.
-    We only care that it treats the license as valid, not the exact content.
-    """
+    """Paid tiers with a valid license key should not raise."""
     monkeypatch.setattr(lg, "get_current_tier", lambda: "pro", raising=False)
     monkeypatch.setattr(lg, "_get_license_key_from_env", lambda: "FAKE-KEY", raising=False)
-    # Patch offline validator to always succeed
     monkeypatch.setattr(lg, "_validate_license_offline", lambda key, tier: None, raising=False)
     result = lg.ensure_license_for_current_tier()
     assert result is None or result is True
-"""
-License/tier guard matrix tests.
-
-Goal:
-- Explicitly test require_tier() behavior for free/pro/enterprise.
-- Validate error messages and exit codes without calling real license APIs.
-"""
-from unittest import mock
-
-from firsttry import license_guard
-from firsttry import tier as tier_mod
 
 
 def _run_guarded(fn):
@@ -81,19 +60,18 @@ def _run_guarded(fn):
         ("free-lite", "enterprise", False),
         ("pro", "pro", True),
         ("pro", "enterprise", False),
-    ("enterprise", "pro", True),
-    ("enterprise", "enterprise", True),
+        ("enterprise", "pro", True),
+        ("enterprise", "enterprise", True),
     ],
 )
 def test_require_tier_matrix(current_tier, required, allowed, capsys):
-    """
-    Matrix:
+    """Matrix:
     - free cannot access pro/enterprise.
     - pro can access pro, not enterprise.
     - enterprise can access everything.
     """
 
-    with mock.patch.object(license_guard, "get_current_tier", return_value=current_tier):
+    with mock.patch.object(lg, "get_current_tier", return_value=current_tier):
 
         @tier_mod.require_tier(required)
         def guarded():
@@ -110,8 +88,6 @@ def test_require_tier_matrix(current_tier, required, allowed, capsys):
             assert exc.code != 0
             out = (capsys.readouterr().out + capsys.readouterr().err).lower()
             assert required in out
-            # The decorator normalizes the tier (via firsttry.tier.get_current_tier),
-            # so assert the normalized form appears in the message.
             assert tier_mod.get_current_tier().lower() in out
-            # Message must clearly indicate gating, not a random crash.
             assert "requires" in out or "locked" in out
+
