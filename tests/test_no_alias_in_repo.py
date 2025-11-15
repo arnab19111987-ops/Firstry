@@ -19,6 +19,9 @@ def test_no_global_alias_usage() -> None:
         # Skip build artifacts
         if rel.startswith("build/"):
             continue
+        # Skip generated artifacts under .firsttry/ (non-source)
+        if rel.startswith(".firsttry/"):
+            continue
         if rel in ALLOWLIST:
             continue
         txt = p.read_text(encoding="utf-8", errors="ignore")

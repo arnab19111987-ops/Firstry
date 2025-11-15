@@ -89,113 +89,183 @@ def pytest_collection_modifyitems(config: Any, items: list) -> None:
         skip_markers = item.iter_markers("skip")
         for marker in skip_markers:
             if "reason" not in marker.kwargs or not marker.kwargs.get("reason"):
-                import os
-                import pathlib
-                import sys
-                import types
-                from dataclasses import dataclass
+                issues.append(item)
 
-                import pytest
 
-                @dataclass
-                class _Proc:
-                    args: tuple
-                    returncode: int = 0
-                    stdout: str = ""
-                    stderr: str = ""
+@pytest.fixture(autouse=True)
+def ensure_shared_secret_for_tests(monkeypatch):
+    """Ensure a deterministic dev-only FIRSTTRY_SHARED_SECRET is present during tests.
 
-                @pytest.fixture(autouse=True)
-                def sandbox_env(monkeypatch):
-                    # Signal the code it's under tests (in case modules guard on this)
-                    monkeypatch.setenv("FIRSTTRY_TEST_MODE", "1")
-                    monkeypatch.setenv("FT_DISABLE_NETWORK", "1")
-                    monkeypatch.setenv("FT_DISABLE_TELEMETRY", "1")
-                    monkeypatch.setenv("NO_COLOR", "1")
+    Tests that import license-related modules expect the import-time behavior to be
+    stable. Rather than relying on an external env var being exported by humans,
+    ensure a safe dev-only default is present for the test process only. This
+    does not change production behavior.
+    """
+    import os
 
-                    # Ensure project src is importable even if PYTHONPATH not set
-                    root = pathlib.Path(__file__).resolve().parents[1]
-                    src = str(root / "src")
-                    if src not in sys.path:
-                        sys.path.insert(0, src)
+    if not os.environ.get("FIRSTTRY_SHARED_SECRET"):
+        # 32+ chars recommended by runtime; this is a dev/test-only static value
+        monkeypatch.setenv("FIRSTTRY_SHARED_SECRET", "dev-test-secret-0000000000000000")
+    yield
 
-                    yield
 
-                @pytest.fixture(autouse=True)
-                def stub_external_calls(monkeypatch):
-                    # Stub subprocess.run to avoid real tool execution (ruff/mypy/pytest/bandit/npm/etc.)
-                    import subprocess
+@pytest.fixture(autouse=True)
+def stub_external_calls(monkeypatch):
+    """Stub external calls and tools for deterministic test runs."""
 
-                    def _fake_run(*args, **kwargs):
-                        return _Proc(args=args, returncode=0, stdout="", stderr="")
+    import os
+    import sys
+    import types
+    from dataclasses import dataclass
 
-                    monkeypatch.setattr(subprocess, "run", _fake_run, raising=True)
+    @dataclass
+    class _Proc:
+        args: tuple
+        returncode: int = 0
+        stdout: str = ""
+        stderr: str = ""
 
-                    # Stub shutil.which to pretend tools exist, but won’t be called due to the run stub
-                    import shutil
+    # Stub subprocess.run to avoid real tool execution
+    import subprocess
+    # Keep the real run available for CLI invocations that should execute
+    _real_run = subprocess.run
 
-                    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/true", raising=True)
+    def _fake_run(*args, **kwargs):
+        # The test helpers often call subprocess.run([...]) where the first positional
+        # argument is the argv list. Inspect that to decide whether to let the real
+        # CLI run (e.g. python -m firsttry.cli) or to short-circuit external tooling.
+        call_args = args[0] if args else kwargs.get("args")
+        cmd_list = list(call_args) if isinstance(call_args, (list, tuple)) else [call_args]
 
-                    # Stub requests if present to avoid network; if not present, don’t force it
+        # Allow the real run for the project CLI and for simple system commands
+        # while short-circuiting known external tooling that we don't want tests
+        # to actually execute (linters, package managers, heavy tools).
+        try:
+            # Normalize the first token to basename (handles /usr/bin/python etc.)
+            if cmd_list:
+                first = str(cmd_list[0])
+                exe = os.path.basename(first).lower()
+            else:
+                exe = ""
+
+            # Blacklist of external tools we want to stub out
+            _blacklist = {
+                "ruff",
+                "mypy",
+                "bandit",
+                "npm",
+                "yarn",
+                "npx",
+                "node",
+                "pip",
+                "pip3",
+                "coverage",
+                "black",
+                "isort",
+                "docker",
+                "gh",
+            }
+
+            # If the argv contains 'firsttry.cli', let the real run execute the
+            # command so CLI tests behave correctly.
+            if any("firsttry.cli" in str(p) for p in cmd_list):
+                try:
+                    return _real_run(*args, **kwargs)
+                except FileNotFoundError:
+                    return _Proc(args=tuple(cmd_list), returncode=127, stdout="", stderr="not found")
+
+            # If invoking with '-m', allow some modules to run for version checks
+            # (e.g. 'mypy' --version) while still stubbing heavier tools.
+            if "-m" in cmd_list:
+                try:
+                    m_idx = cmd_list.index("-m")
+                    module = str(cmd_list[m_idx + 1]) if len(cmd_list) > m_idx + 1 else ""
+                except Exception:
+                    module = ""
+                allow_m = {"firsttry", "mypy"}
+                if any(mod in module for mod in allow_m):
                     try:
-                        import requests  # type: ignore
+                        return _real_run(*args, **kwargs)
+                    except FileNotFoundError:
+                        return _Proc(args=tuple(cmd_list), returncode=127, stdout="", stderr="not found")
 
-                        class _FakeResp:
-                            status_code = 200
-                            text = "{}"
-                            content = b"{}"
+            # If the executable is blacklisted (linters, npm, etc.), return a fake success.
+            if exe in _blacklist or any(token in _blacklist for token in map(str, cmd_list)):
+                return _Proc(args=tuple(cmd_list), returncode=0, stdout="", stderr="")
 
-                            def json(self):
-                                return {}
+            # Otherwise, let the real subprocess.run handle it (echo, ls, simple cmds).
+            try:
+                return _real_run(*args, **kwargs)
+            except FileNotFoundError:
+                # Normalize the stderr to the brief message tests expect
+                return _Proc(args=tuple(cmd_list), returncode=127, stdout="", stderr="not found")
+        except Exception:
+            # If our detection logic fails for unexpected reasons, raise so tests surface
+            # the underlying problem rather than silently returning success.
+            raise
 
-                        class _FakeSession:
-                            def get(self, *a, **k):
-                                return _FakeResp()
+    monkeypatch.setattr(subprocess, "run", _fake_run, raising=True)
 
-                            def post(self, *a, **k):
-                                return _FakeResp()
+    # Stub shutil.which to pretend tools exist
+    import shutil
 
-                            def head(self, *a, **k):
-                                return _FakeResp()
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/true", raising=True)
 
-                            def __enter__(self):
-                                return self
+    # Stub requests if present to avoid network
+    try:
+        import requests  # type: ignore
 
-                            def __exit__(self, *exc):
-                                return False
+        class _FakeResp:
+            status_code = 200
+            text = "{}"
+            content = b"{}"
 
-                        monkeypatch.setattr(requests, "Session", _FakeSession, raising=False)
-                        monkeypatch.setattr(
-                            requests, "get", lambda *a, **k: _FakeResp(), raising=False
-                        )
-                        monkeypatch.setattr(
-                            requests, "post", lambda *a, **k: _FakeResp(), raising=False
-                        )
-                        monkeypatch.setattr(
-                            requests, "head", lambda *a, **k: _FakeResp(), raising=False
-                        )
-                    except Exception:
-                        pass
+            def json(self):
+                return {}
 
-                    # Provide a dummy boto3 module so S3 code can import without the dependency
-                    if "boto3" not in sys.modules:
-                        fake_boto3 = types.ModuleType("boto3")
+        class _FakeSession:
+            def get(self, *a, **k):
+                return _FakeResp()
 
-                        class _DummyClient:
-                            def __getattr__(self, _):  # any method call is a harmless no-op
-                                def _noop(*a, **k):
-                                    return {}
+            def post(self, *a, **k):
+                return _FakeResp()
 
-                                return _noop
+            def head(self, *a, **k):
+                return _FakeResp()
 
-                        def client(*a, **k):
-                            return _DummyClient()
+            def __enter__(self):
+                return self
 
-                        fake_boto3.client = client
-                        sys.modules["boto3"] = fake_boto3
+            def __exit__(self, *exc):
+                return False
 
-                    # Prevent accidental file deletions or os.exec*; very defensive
-                    monkeypatch.setattr(os, "remove", lambda *a, **k: None, raising=True)
-                    monkeypatch.setattr(os, "unlink", lambda *a, **k: None, raising=True)
-                    monkeypatch.setattr(os, "rmdir", lambda *a, **k: None, raising=True)
+        monkeypatch.setattr(requests, "Session", _FakeSession, raising=False)
+        monkeypatch.setattr(requests, "get", lambda *a, **k: _FakeResp(), raising=False)
+        monkeypatch.setattr(requests, "post", lambda *a, **k: _FakeResp(), raising=False)
+        monkeypatch.setattr(requests, "head", lambda *a, **k: _FakeResp(), raising=False)
+    except Exception:
+        pass
 
-                    yield
+    # Provide a dummy boto3 module so S3 code can import without the dependency
+    if "boto3" not in sys.modules:
+        fake_boto3 = types.ModuleType("boto3")
+
+        class _DummyClient:
+            def __getattr__(self, _):  # any method call is a harmless no-op
+                def _noop(*a, **k):
+                    return {}
+
+                return _noop
+
+        def client(*a, **k):
+            return _DummyClient()
+
+        fake_boto3.client = client
+        sys.modules["boto3"] = fake_boto3
+
+    # Prevent accidental file deletions or os.exec*; very defensive
+    monkeypatch.setattr(os, "remove", lambda *a, **k: None, raising=True)
+    monkeypatch.setattr(os, "unlink", lambda *a, **k: None, raising=True)
+    monkeypatch.setattr(os, "rmdir", lambda *a, **k: None, raising=True)
+
+    yield

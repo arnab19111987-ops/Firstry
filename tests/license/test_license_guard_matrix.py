@@ -6,10 +6,9 @@ Goal:
 """
 
 import types
+from unittest import mock
 
 import pytest
-
-from unittest import mock
 
 import firsttry.license_guard as lg
 from firsttry import tier as tier_mod

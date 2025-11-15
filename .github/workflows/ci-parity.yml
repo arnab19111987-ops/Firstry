@@ -65,6 +65,25 @@ jobs:
           echo "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1" >> $GITHUB_ENV
           echo "FT_SKIP_TOOL_EXEC=1" >> $GITHUB_ENV
 
+      - name: Ruff explicit check
+        run: |
+          echo "🔍 Running explicit Ruff check"
+          ruff check . --config pyproject.toml
+
+      - name: Pytest (quick, block merges)
+        run: |
+          echo "🧪 Running pytest (quick gate)"
+          FIRSTTRY_SHARED_SECRET='dev-fallback-secret-0123456789012345' pytest -q --maxfail=1 --ignore=tools
+
+      - name: Run FirstTry pre-commit parity (hook contract)
+        env:
+          FIRSTTRY_SHARED_SECRET: 'dev-fallback-secret-0123456789012345'
+          GIT_HOOK: 'pre-push'
+          FT_NO_NETWORK: '1'
+        run: |
+          echo "🔁 Running pre-commit parity via CLI (pre-push contract)"
+          python -m firsttry.cli pre-commit
+
       - name: Run FirstTry pre-commit parity (CI = local)
         # This executes ALL hooks including our ft-pre-commit-parity hook
         # which is the single source of truth for "green means green"
