@@ -127,6 +127,7 @@ def stub_external_calls(monkeypatch):
 
     # Stub subprocess.run to avoid real tool execution
     import subprocess
+
     # Keep the real run available for CLI invocations that should execute
     _real_run = subprocess.run
 
@@ -172,7 +173,9 @@ def stub_external_calls(monkeypatch):
                 try:
                     return _real_run(*args, **kwargs)
                 except FileNotFoundError:
-                    return _Proc(args=tuple(cmd_list), returncode=127, stdout="", stderr="not found")
+                    return _Proc(
+                        args=tuple(cmd_list), returncode=127, stdout="", stderr="not found"
+                    )
 
             # If invoking with '-m', allow some modules to run for version checks
             # (e.g. 'mypy' --version) while still stubbing heavier tools.
@@ -187,7 +190,9 @@ def stub_external_calls(monkeypatch):
                     try:
                         return _real_run(*args, **kwargs)
                     except FileNotFoundError:
-                        return _Proc(args=tuple(cmd_list), returncode=127, stdout="", stderr="not found")
+                        return _Proc(
+                            args=tuple(cmd_list), returncode=127, stdout="", stderr="not found"
+                        )
 
             # If the executable is blacklisted (linters, npm, etc.), return a fake success.
             if exe in _blacklist or any(token in _blacklist for token in map(str, cmd_list)):

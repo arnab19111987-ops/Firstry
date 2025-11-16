@@ -22,11 +22,14 @@ class FakeProc:
         self.stderr = stderr
 
 
-@pytest.mark.parametrize("gate_mod,gate_cls", [
-    (python_lint, python_lint.PythonRuffGate),
-    (python_mypy, python_mypy.PythonMypyGate),
-    (python_pytest, python_pytest.PythonPytestGate),
-])
+@pytest.mark.parametrize(
+    "gate_mod,gate_cls",
+    [
+        (python_lint, python_lint.PythonRuffGate),
+        (python_mypy, python_mypy.PythonMypyGate),
+        (python_pytest, python_pytest.PythonPytestGate),
+    ],
+)
 def test_python_gates_success(gate_mod, gate_cls):
     """
     When the underlying subprocess returns returncode 0, the gate should succeed.
@@ -38,11 +41,14 @@ def test_python_gates_success(gate_mod, gate_cls):
     assert getattr(res, "ok", True) is True
 
 
-@pytest.mark.parametrize("gate_mod,gate_cls", [
-    (python_lint, python_lint.PythonRuffGate),
-    (python_mypy, python_mypy.PythonMypyGate),
-    (python_pytest, python_pytest.PythonPytestGate),
-])
+@pytest.mark.parametrize(
+    "gate_mod,gate_cls",
+    [
+        (python_lint, python_lint.PythonRuffGate),
+        (python_mypy, python_mypy.PythonMypyGate),
+        (python_pytest, python_pytest.PythonPytestGate),
+    ],
+)
 def test_python_gates_failure(gate_mod, gate_cls):
     """
     When the underlying subprocess fails, gate should mark result as failed.

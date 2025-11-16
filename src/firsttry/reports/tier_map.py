@@ -1,5 +1,15 @@
 # src/firsttry/reports/tier_map.py
 
+"""
+Tier metadata and feature mapping.
+
+This module defines:
+- Canonical tiers and their titles/subtitles (TIER_META)
+- Checks allowed per tier (TIER_CHECKS)
+- Legacy tier mappings (LEGACY_TIER_CHECKS)
+- Helper functions for resolving checks and metadata
+"""
+
 # Canonical tier → pretty name → subtitle
 TIER_META = {
     "free-lite": {
@@ -20,15 +30,15 @@ TIER_META = {
     },
 }
 
-# what each tier is ALLOWED to see
+# What each canonical tier is allowed to run
 TIER_CHECKS = {
-    # fastest / "just tell me if it's stupid"
+    # Fastest / "just tell me if it's obviously wrong"
     "free-lite": ["ruff"],
-    # your old "developer/free" set
+    # Stricter developer checks
     "free-strict": ["ruff", "mypy", "pytest"],
-    # your old "teams/pro" set
+    # Teams / Pro checks
     "pro": ["ruff", "mypy", "pytest", "bandit", "pip-audit", "ci-parity"],
-    # your old "enterprise"
+    # ProMax / Enterprise checks
     "promax": [
         "ruff",
         "mypy",
@@ -41,7 +51,12 @@ TIER_CHECKS = {
     ],
 }
 
-LOCKED_MESSAGE = "🔒 Locked — available in Pro / ProMax. Run `firsttry upgrade` to unlock."
+# Used by reports/UX when a feature is locked to paid tiers.
+# Keep this consistent with CLI messages in src/firsttry/cli.py.
+LOCKED_MESSAGE = (
+    "🔒 Locked — available in Pro / ProMax. "
+    "Set FIRSTTRY_LICENSE_KEY=... or run `firsttry license activate`."
+)
 
 # Legacy tier mappings for backward compatibility
 LEGACY_TIER_CHECKS = {
@@ -62,6 +77,11 @@ LEGACY_TIER_CHECKS = {
 
 
 def get_checks_for_tier(tier: str) -> list[str]:
+    """Return the list of checks allowed for a given tier.
+
+    Prefers the new canonical tier names, but falls back to legacy
+    tier names if needed. Defaults to the free-lite set.
+    """
     # First try new tier system
     if tier in TIER_CHECKS:
         return TIER_CHECKS[tier]
@@ -73,6 +93,7 @@ def get_checks_for_tier(tier: str) -> list[str]:
 
 
 def get_tier_meta(tier: str) -> dict:
+    """Return title/subtitle metadata for a given tier."""
     if tier in TIER_META:
         return TIER_META[tier]
     # Legacy fallback
@@ -92,12 +113,14 @@ def get_tier_meta(tier: str) -> dict:
 
 
 def is_tier_free(tier: str) -> bool:
+    """Return True if the tier is considered free (no license required)."""
     return tier in ("free-lite", "free-strict", "free", "developer")
 
 
 def is_tier_paid(tier: str) -> bool:
+    """Return True if the tier is considered paid (license required)."""
     return tier in ("pro", "promax", "teams", "enterprise")
 
 
-# Legacy compatibility
+# Legacy compatibility alias
 LOCK_MESSAGE = LOCKED_MESSAGE

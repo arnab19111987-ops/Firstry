@@ -5,7 +5,6 @@ Goal:
 - Ensure helper functions build expected paths / find ci commands.
 """
 
-
 from firsttry.runners import python as python_runner
 
 
@@ -28,6 +27,8 @@ def test_discover_test_paths_tmpdir(tmp_path):
 def test_discover_python_roots_tmpdir(tmp_path):
     repo = tmp_path / "repo2"
     repo.mkdir()
-    (repo / "pyproject.toml").write_text("[tool.poetry]\nname = \"x\"\n")
+    (repo / "pyproject.toml").write_text('[tool.poetry]\nname = "x"\n')
     roots = python_runner._discover_python_roots(str(repo))
-    assert roots and any("pyproject.toml" not in r for r in roots) or roots == ["."] or len(roots) >= 1
+    assert (
+        roots and any("pyproject.toml" not in r for r in roots) or roots == ["."] or len(roots) >= 1
+    )

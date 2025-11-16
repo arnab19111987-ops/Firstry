@@ -56,7 +56,10 @@ class PytestTool:
         cmd_str = " ".join(cmd_parts)
 
         try:
-            exit_code, stdout, stderr = run_cmd(cmd_str)
+            # Tests can take longer than the default short timeout used for
+            # fast checks. Honor a generous timeout here (15 minutes) so the
+            # outer harness controls the overall case timeout instead.
+            exit_code, stdout, stderr = run_cmd(cmd_str, timeout=900)
         except FileNotFoundError:
             return "ok", {
                 "stdout": "pytest not found; skipping (soft-skip)",

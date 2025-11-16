@@ -6,17 +6,24 @@ by failing open (returning None for get, silently continuing for put) rather
 than crashing the application.
 """
 
+from typing import Any
+
 import pytest
 from botocore.exceptions import ClientError
 
 # Import guard for optional moto dependency
+mock_aws: Any = None
+HAS_MOTO = False
 try:
     from moto import mock_aws
 
     HAS_MOTO = True
 except ImportError:
-    mock_aws = None
-    HAS_MOTO = False
+
+    def _noop_decorator(func):
+        return func
+
+    mock_aws = _noop_decorator
 
 pytestmark = pytest.mark.skipif(not HAS_MOTO, reason="moto not installed")
 

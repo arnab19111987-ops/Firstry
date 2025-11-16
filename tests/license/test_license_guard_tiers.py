@@ -64,6 +64,7 @@ def test_require_tier_enterprise_denies_pro_with_clear_message(capsys):
     """
     with mock.patch.object(license_guard, "get_current_tier", return_value="pro"):
         with pytest.raises(SystemExit) as exc:
+
             @tier_mod.require_tier("enterprise")
             def fn2():
                 pass

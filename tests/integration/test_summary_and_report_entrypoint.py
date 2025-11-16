@@ -10,7 +10,11 @@ def test_summary_and_report_entrypoint(tmp_path, capsys):
         {"name": "pytest", "status": "ok", "detail": "All tests passed"},
         {"name": "ruff", "status": "ok", "detail": "Lint clean"},
     ]
-    meta = {"machine": {"cpus": 2}, "repo": {"files": 4, "tests": 2}, "planned_checks": ["pytest", "ruff"]}
+    meta = {
+        "machine": {"cpus": 2},
+        "repo": {"files": 4, "tests": 2},
+        "planned_checks": ["pytest", "ruff"],
+    }
 
     # Call top-level summary printer for free tier
     rc = top_summary.print_run_summary(results, meta, tier="free")
@@ -18,7 +22,9 @@ def test_summary_and_report_entrypoint(tmp_path, capsys):
 
     # Build a minimal ScanResult-like object for report.print_human_report
     section_ok = SimpleNamespace(name="Lint", autofixable_count=0, manual_count=0)
-    section_warn = SimpleNamespace(name="Security", autofixable_count=0, manual_count=1, ci_blocking=False)
+    section_warn = SimpleNamespace(
+        name="Security", autofixable_count=0, manual_count=1, ci_blocking=False
+    )
     scan_result = SimpleNamespace(sections=[section_ok, section_warn], issues=[])
 
     # Should not raise

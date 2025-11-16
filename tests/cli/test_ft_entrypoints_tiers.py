@@ -6,6 +6,9 @@ Goal:
 - Pro/Enterprise-only commands respect gating (doctor, roi, cache-push, audit, policy, license).
 - No real ruff/mypy/pytest/remote calls – everything mocked.
 """
+
+from argparse import Namespace
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -14,6 +17,21 @@ from click.testing import CliRunner
 from firsttry import ft as ft_mod
 from firsttry import license_guard
 from firsttry import tier as tier_mod
+
+
+def _pre_commit_fast_gate(ns: Namespace) -> int:
+    # simple stub: always "succeeds"
+    return 0
+
+
+def _cmd_mirror_ci(ns: Namespace) -> int:
+    # simple stub: always "succeeds"
+    return 0
+
+
+def _cmd_ci(ns: Namespace) -> int:
+    # simple stub: always "succeeds"
+    return 0
 
 
 @pytest.mark.parametrize("cmd", ["local", "ci-parity", "pytest", "mypy"])
@@ -27,10 +45,20 @@ def test_core_commands_parse_and_call_handler(cmd, monkeypatch):
 
     # Stub heavy internals referenced by ft commands
     monkeypatch.setattr(ft_mod, "_cli", mock.MagicMock(), raising=False)
+
     # Provide lightweight implementations used by the shim
-    ft_mod._cli.pre_commit_fast_gate = lambda: 0
-    ft_mod._cli.cmd_mirror_ci = lambda ns: 0
-    ft_mod._cli.cmd_ci = lambda ns: 0
+    def _pre_commit_fast_gate() -> int:
+        return 0
+
+    def _cmd_mirror_ci(ns: Any) -> int:
+        return 0
+
+    def _cmd_ci(ns: Any) -> int:
+        return 0
+
+    ft_mod._cli.pre_commit_fast_gate = _pre_commit_fast_gate
+    ft_mod._cli.cmd_mirror_ci = _cmd_mirror_ci
+    ft_mod._cli.cmd_ci = _cmd_ci
 
     result = runner.invoke(ft_mod.main, [cmd])
     # Click wraps SystemExit — ensure process returned with an int exit code
@@ -56,13 +84,16 @@ def test_pro_and_enterprise_only_commands_are_gated(current_tier, cmd, requires,
     runner = CliRunner()
 
     # Patch license resolver used by firsttry.tier
-    monkeypatch.setattr(license_guard, "get_current_tier", lambda: current_tier, raising=False)
+    def _get_current_tier() -> str:
+        return current_tier
+
+    monkeypatch.setattr(license_guard, "get_current_tier", _get_current_tier, raising=False)
 
     # Stub internals so commands don't run real subsystems if invoked
     monkeypatch.setattr(ft_mod, "_cli", mock.MagicMock(), raising=False)
-    ft_mod._cli.pre_commit_fast_gate = lambda: 0
-    ft_mod._cli.cmd_mirror_ci = lambda ns: 0
-    ft_mod._cli.cmd_ci = lambda ns: 0
+    ft_mod._cli.pre_commit_fast_gate = _pre_commit_fast_gate
+    ft_mod._cli.cmd_mirror_ci = _cmd_mirror_ci
+    ft_mod._cli.cmd_ci = _cmd_ci
 
     result = runner.invoke(ft_mod.main, [cmd])
     # Gated commands should exit non-zero for lower tiers

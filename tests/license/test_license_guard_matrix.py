@@ -47,7 +47,7 @@ def _run_guarded(fn):
     """Helper: call a decorated function and return (ok, SystemExit or None)."""
     try:
         fn()
-    except SystemExit as exc:  # type: ignore[reportGeneralTypeIssues]
+    except SystemExit as exc:
         return False, exc
     return True, None
 
@@ -89,4 +89,3 @@ def test_require_tier_matrix(current_tier, required, allowed, capsys):
             assert required in out
             assert tier_mod.get_current_tier().lower() in out
             assert "requires" in out or "locked" in out
-

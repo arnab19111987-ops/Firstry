@@ -5,7 +5,9 @@ import sys
 
 def _help_output(cmd):
     # Run the command and return stdout + stderr as text
-    res = subprocess.run([sys.executable, "-m", "firsttry.cli", *cmd], capture_output=True, text=True)
+    res = subprocess.run(
+        [sys.executable, "-m", "firsttry.cli", *cmd], capture_output=True, text=True
+    )
     return res.returncode, (res.stdout or "") + (res.stderr or "")
 
 

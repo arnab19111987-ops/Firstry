@@ -1,4 +1,3 @@
-
 import pytest
 
 from firsttry import tier

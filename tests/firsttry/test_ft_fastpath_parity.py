@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("firsttry.ft_fastpath")
 
-import firsttry.ft_fastpath as native  # type: ignore[import]
+import firsttry.ft_fastpath as native
 from firsttry.twin.hashers import hash_file
 
 

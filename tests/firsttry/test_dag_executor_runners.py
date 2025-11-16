@@ -18,7 +18,7 @@ def test_task_is_frozen_and_has_timeout():
 
     # FrozenInstanceError on mutation
     try:
-        task.id = "changed"  # type: ignore[misc]
+        task.id = "changed"
     except FrozenInstanceError:
         pass
     else:

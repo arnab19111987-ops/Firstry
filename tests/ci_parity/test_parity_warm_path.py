@@ -63,7 +63,9 @@ def test_warm_path_no_tests_then_smoke(monkeypatch, tmp_path):
                 if isinstance(part, str) and part.startswith("--json-report-file="):
                     _, val = part.split("=", 1)
                     p = Path(val)
-                    _make_json_report(p, [{"nodeid": "tests/test_smoke.py::test_smoke", "outcome": "passed"}])
+                    _make_json_report(
+                        p, [{"nodeid": "tests/test_smoke.py::test_smoke", "outcome": "passed"}]
+                    )
                     break
             calls["step"] += 1
             return 0, ""
@@ -102,7 +104,9 @@ def test_warm_path_no_tests_with_flaky(monkeypatch, tmp_path):
                 if isinstance(part, str) and part.startswith("--json-report-file="):
                     _, val = part.split("=", 1)
                     p = Path(val)
-                    _make_json_report(p, [{"nodeid": "tests/test_x.py::test_fail", "outcome": "passed"}])
+                    _make_json_report(
+                        p, [{"nodeid": "tests/test_x.py::test_fail", "outcome": "passed"}]
+                    )
                     break
             calls["step"] += 1
             return 0, ""
@@ -126,7 +130,9 @@ def test_warm_path_fails_on_testmon_error(monkeypatch, tmp_path):
             if isinstance(part, str) and part.startswith("--json-report-file="):
                 _, val = part.split("=", 1)
                 p = Path(val)
-                _make_json_report(p, [{"nodeid": "tests/test_a.py::test_fail", "outcome": "failed"}])
+                _make_json_report(
+                    p, [{"nodeid": "tests/test_a.py::test_fail", "outcome": "failed"}]
+                )
                 break
         return 1, ""
 

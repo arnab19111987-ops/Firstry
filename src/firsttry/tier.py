@@ -66,7 +66,9 @@ def require_tier(min_tier: str) -> Callable[[Callable[..., Any]], Callable[..., 
 
             cur = importlib.import_module(__name__).get_current_tier()
             if not tier_allowed(cur, min_tier):
-                print(f"This feature requires a {min_tier.capitalize()} license (current tier: {cur}).")
+                print(
+                    f"This feature requires a {min_tier.capitalize()} license (current tier: {cur})."
+                )
                 raise SystemExit(2)
             return fn(*args, **kwargs)
 

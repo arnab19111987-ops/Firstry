@@ -1,4 +1,3 @@
-
 import firsttry.ci_parity.parity_runner as pr
 
 
@@ -27,7 +26,7 @@ def test_parity_runner_warm_path_smoke_fallback(tmp_path, monkeypatch, capsys):
         # If this is the smoke invocation, simulate success
         if "-m" in cmd_list and "smoke" in cmd_list:
             # write a fake pytest-smoke.json to emulate pytest-json-report
-            (artifacts / "pytest-smoke.json").write_text("{\"tests\": []}")
+            (artifacts / "pytest-smoke.json").write_text('{"tests": []}')
             return 0, "smoke ok"
         # Default: success
         return 0, "ok"

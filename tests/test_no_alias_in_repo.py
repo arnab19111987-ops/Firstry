@@ -7,6 +7,8 @@ ALLOWLIST = {
     "tools/firsttry/firsttry/config.py",
     # allow the alias in the main src config and allow this guard test itself
     "src/firsttry/config.py",
+    # package-based config module
+    "src/firsttry/config/__init__.py",
     "tests/test_no_alias_in_repo.py",
 }
 

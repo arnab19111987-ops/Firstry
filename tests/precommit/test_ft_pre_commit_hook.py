@@ -26,7 +26,12 @@ def test_run_pre_commit_gate_invokes_runners(monkeypatch):
         monkeypatch.setattr(cli.runners, "run_mypy", _mk_runner("mypy"), raising=False)
         monkeypatch.setattr(cli.runners, "run_pytest_kexpr", _mk_runner("pytest"), raising=False)
         monkeypatch.setattr(cli.runners, "run_coverage_xml", _mk_runner("coverage"), raising=False)
-        monkeypatch.setattr(cli.runners, "coverage_gate", lambda *a, **k: types.SimpleNamespace(ok=True, name="coverage_gate", duration_s=0.0), raising=False)
+        monkeypatch.setattr(
+            cli.runners,
+            "coverage_gate",
+            lambda *a, **k: types.SimpleNamespace(ok=True, name="coverage_gate", duration_s=0.0),
+            raising=False,
+        )
 
         # Ensure nested-pytest guard isn't set
         monkeypatch.delenv("FT_DISABLE_NESTED_PYTEST", raising=False)

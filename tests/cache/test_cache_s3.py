@@ -1,5 +1,11 @@
 # tests/cache/test_cache_s3.py
+from typing import Any
+
 import pytest
+
+# Expose `mock_aws` with a relaxed type so tests can both skip and decorate.
+mock_aws: Any = None
+MOTO_AVAILABLE = False
 
 try:
     from moto import mock_aws
@@ -7,10 +13,10 @@ try:
     MOTO_AVAILABLE = True
 except Exception:
     # Provide a no-op decorator when moto is not available
-    def mock_aws(func):
+    def _noop_decorator(func):
         return func
 
-    MOTO_AVAILABLE = False
+    mock_aws = _noop_decorator
 
 pytestmark = pytest.mark.skipif(not MOTO_AVAILABLE, reason="moto not installed")
 
@@ -44,7 +50,7 @@ def test_s3_put_get_roundtrip(monkeypatch, tmp_path):
     assert got.meta == {"status": "ok", "value": 42}
 
 
-@pytest.mark.skipif(mock_aws is None, reason="moto not available")
+@pytest.mark.skipif(not MOTO_AVAILABLE, reason="moto not available")
 @mock_aws
 def test_s3_graceful_fallback_on_error(monkeypatch):
     """

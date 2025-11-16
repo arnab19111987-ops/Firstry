@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import cast
 
 import pytest
 
@@ -88,7 +89,7 @@ def test_slo_target_configuration(slo_targets: Dict[str, Any]):
 def test_p95_latency_calculation(performance_metrics: List[Dict[str, Any]]):
     """Test P95 latency calculation."""
     # Extract durations in seconds
-    durations = sorted([m["duration_ms"] / 1000 for m in performance_metrics])
+    durations = sorted([float(m["duration_ms"]) / 1000 for m in performance_metrics])
 
     # Calculate P95 (95th percentile)
     p95_index = int(len(durations) * 0.95)
@@ -100,7 +101,7 @@ def test_p95_latency_calculation(performance_metrics: List[Dict[str, Any]]):
 
 def test_p99_latency_calculation(performance_metrics: List[Dict[str, Any]]):
     """Test P99 latency calculation."""
-    durations = [m["duration_ms"] / 1000 for m in performance_metrics]
+    durations = [float(m["duration_ms"]) / 1000 for m in performance_metrics]
 
     # P99 is stricter than P95
     p99 = max(durations)  # Worst case
@@ -225,7 +226,7 @@ def test_slo_warning_vs_violation(slo_targets: Dict[str, Any]):
     ]
 
     for metric in metrics:
-        p95_s = metric["p95_ms"] / 1000
+        p95_s = cast(int, metric["p95_ms"]) / 1000
         if p95_s > violation_threshold:
             status = "VIOLATION"
         elif p95_s > warning_threshold:

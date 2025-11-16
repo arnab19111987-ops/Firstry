@@ -53,7 +53,7 @@ class ConventionalCommit:
 class CommitValidator:
     """Validates conventional commits."""
 
-    allowed_types: set[str] = None
+    allowed_types: set[str] | None = None
     scopes: set[str] | None = None
     require_scope: bool = False
     max_subject_length: int = 72
@@ -103,10 +103,9 @@ class CommitValidator:
             return False, errors
 
         # Check type
-        if commit.type not in self.allowed_types:
-            errors.append(
-                f"Invalid type '{commit.type}'. Allowed: {', '.join(sorted(self.allowed_types))}"
-            )
+        allowed = self.allowed_types or set()
+        if commit.type not in allowed:
+            errors.append(f"Invalid type '{commit.type}'. Allowed: {', '.join(sorted(allowed))}")
 
         # Check scope
         if self.require_scope and not commit.scope:

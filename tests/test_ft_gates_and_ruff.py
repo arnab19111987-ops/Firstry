@@ -50,15 +50,57 @@ def test_ft_local_invokes_ruff_full(monkeypatch, tmp_path):
 
     def fake_run_ruff(files, *, cwd=None, timeout=None):
         calls.append((files, cwd, timeout))
-        return types.SimpleNamespace(ok=True, name="ruff", duration_s=0.0, stdout="", stderr="", cmd=("ruff","check"))
+        return types.SimpleNamespace(
+            ok=True, name="ruff", duration_s=0.0, stdout="", stderr="", cmd=("ruff", "check")
+        )
 
     # Patch other runners to be benign
     monkeypatch.setattr(runners, "run_ruff", fake_run_ruff)
-    monkeypatch.setattr(runners, "run_black_check", lambda targets, cwd=None, timeout=None: types.SimpleNamespace(ok=True, name="black", duration_s=0.0, stdout="", stderr="", cmd=("black","--check")))
-    monkeypatch.setattr(runners, "run_mypy", lambda targets, cwd=None, timeout=None: types.SimpleNamespace(ok=True, name="mypy", duration_s=0.0, stdout="", stderr="", cmd=("mypy",)))
-    monkeypatch.setattr(runners, "run_pytest_kexpr", lambda kexpr, base_args=(), cwd=None, timeout=None: types.SimpleNamespace(ok=True, name="pytest", duration_s=0.0, stdout="", stderr="", cmd=("pytest",)))
-    monkeypatch.setattr(runners, "run_coverage_xml", lambda root: types.SimpleNamespace(ok=True, name="coverage", duration_s=0.0, stdout="", stderr="", cmd=("coverage",)))
-    monkeypatch.setattr(runners, "coverage_gate", lambda n: types.SimpleNamespace(ok=True, name="coverage_gate", duration_s=0.0, stdout="", stderr="", cmd=("coverage_gate",)))
+    monkeypatch.setattr(
+        runners,
+        "run_black_check",
+        lambda targets, cwd=None, timeout=None: types.SimpleNamespace(
+            ok=True, name="black", duration_s=0.0, stdout="", stderr="", cmd=("black", "--check")
+        ),
+    )
+    monkeypatch.setattr(
+        runners,
+        "run_mypy",
+        lambda targets, cwd=None, timeout=None: types.SimpleNamespace(
+            ok=True, name="mypy", duration_s=0.0, stdout="", stderr="", cmd=("mypy",)
+        ),
+    )
+
+    def fake_run_pytest_kexpr(kexpr, base_args=(), cwd=None, timeout=None):
+        return types.SimpleNamespace(
+            ok=True,
+            name="pytest",
+            duration_s=0.0,
+            stdout="",
+            stderr="",
+            cmd=("pytest",),
+        )
+
+    monkeypatch.setattr(runners, "run_pytest_kexpr", fake_run_pytest_kexpr)
+    monkeypatch.setattr(
+        runners,
+        "run_coverage_xml",
+        lambda root: types.SimpleNamespace(
+            ok=True, name="coverage", duration_s=0.0, stdout="", stderr="", cmd=("coverage",)
+        ),
+    )
+    monkeypatch.setattr(
+        runners,
+        "coverage_gate",
+        lambda n: types.SimpleNamespace(
+            ok=True,
+            name="coverage_gate",
+            duration_s=0.0,
+            stdout="",
+            stderr="",
+            cmd=("coverage_gate",),
+        ),
+    )
 
     # Ensure tier is at least free (doesn't affect ruff invocation)
     monkeypatch.setattr("firsttry.tier.get_current_tier", lambda: "free")

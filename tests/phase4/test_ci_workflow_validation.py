@@ -31,7 +31,7 @@ class TestCIWorkflowStructure:
     @staticmethod
     def parse_yaml_simple(yaml_content: str) -> dict[str, Any]:
         """Parse basic YAML structure (no dependencies on yaml library)."""
-        result = {}
+        result: dict[str, Any] = {}
         current_section = result
         current_key = None
 
@@ -215,7 +215,7 @@ class TestCIGateExecution:
     def test_ruff_linter_can_run(self):
         """Ruff linter should be executable."""
         try:
-            result = subprocess.run(
+            result: Any = subprocess.run(
                 [sys.executable, "-m", "ruff", "--version"],
                 capture_output=True,
                 text=True,
@@ -228,7 +228,7 @@ class TestCIGateExecution:
     def test_mypy_can_run(self):
         """MyPy should be executable."""
         try:
-            result = subprocess.run(
+            result: Any = subprocess.run(
                 [sys.executable, "-m", "mypy", "--version"],
                 capture_output=True,
                 text=True,
@@ -242,7 +242,7 @@ class TestCIGateExecution:
     def test_pytest_can_run(self):
         """Pytest should be executable."""
         try:
-            result = subprocess.run(
+            result: Any = subprocess.run(
                 [sys.executable, "-m", "pytest", "--version"],
                 capture_output=True,
                 text=True,
@@ -380,7 +380,7 @@ class TestDeploymentReadiness:
         ]
 
         gates = ["ruff", "mypy", "pytest", "bandit"]
-        found_gates = set()
+        found_gates: set[str] = set()
 
         for doc_file in doc_files:
             path = Path(doc_file)

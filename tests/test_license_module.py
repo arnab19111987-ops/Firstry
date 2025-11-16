@@ -1,4 +1,3 @@
-
 import pytest
 
 from firsttry import license as ft_license

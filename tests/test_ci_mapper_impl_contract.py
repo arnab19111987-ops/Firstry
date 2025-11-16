@@ -1,6 +1,6 @@
 import importlib
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 
 def test_rewrite_run_cmd_replacements():

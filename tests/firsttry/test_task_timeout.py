@@ -18,7 +18,7 @@ def test_task_is_frozen():
 
     # Mutations should not be allowed
     try:
-        task.id = "t2"  # type: ignore[misc]
+        task.id = "t2"
     except FrozenInstanceError:
         pass
     else:

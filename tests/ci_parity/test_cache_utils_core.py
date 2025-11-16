@@ -44,6 +44,7 @@ def test_maybe_download_golden_cache_extracts_archive_for_paid_tier(monkeypatch,
     """
     import shutil
     import zipfile
+
     # Create a dummy zip archive
     archive = tmp_path / "warm-cache-test.zip"
     warm_file = "dummy.txt"

@@ -83,7 +83,6 @@ select = ["E", "F"]
 ignore = [
   "I001",
   "I002",
-  "I003",
 ]
 
 [tool.ruff.per-file-ignores]

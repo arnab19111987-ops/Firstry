@@ -8,6 +8,7 @@ decorator.
 This is intentionally a thin shim to avoid touching existing orchestrator
 code.
 """
+
 from __future__ import annotations
 
 import sys
@@ -68,7 +69,9 @@ def cmd_ci_parity() -> None:
 
         warm = Path("artifacts/warm_parity_report.json")
         full = Path("artifacts/parity_report.json")
-        _div.enforce_divergence_exit(warm if warm.exists() else None, full if full.exists() else None)
+        _div.enforce_divergence_exit(
+            warm if warm.exists() else None, full if full.exists() else None
+        )
     except SystemExit:
         raise
     except Exception:

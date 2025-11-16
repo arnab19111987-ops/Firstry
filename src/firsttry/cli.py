@@ -288,6 +288,15 @@ def _add_run_flags(p: argparse.ArgumentParser) -> None:
         default=None,
         help="Write machine-readable report JSON to this path.",
     )
+    # Backwards-compatible short alias used by some scripts/benchmarks
+    p.add_argument(
+        "--json",
+        dest="report_json",
+        nargs="?",
+        const=".firsttry/report.json",
+        type=str,
+        help="Alias for --report-json; write report JSON to this path (default .firsttry/report.json).",
+    )
     p.add_argument(
         "--report-schema",
         action="store_true",
@@ -450,6 +459,15 @@ def build_parser() -> argparse.ArgumentParser:
         dest="report_json",
         metavar="PATH",
         help="Write a JSON report to the given path (e.g., .firsttry/report.json)",
+    )
+    # Backwards-compat alias used by some scripts/benchmarks
+    p_run.add_argument(
+        "--json",
+        dest="report_json",
+        nargs="?",
+        const=".firsttry/report.json",
+        type=str,
+        help="Alias for --report-json; write report JSON to this path (default .firsttry/report.json)",
     )
     p_run.add_argument(
         "--show-report",
@@ -955,7 +973,8 @@ def cmd_run(argv: list[str] | None = None) -> int:
         print(
             f"[{v.status.upper():5}] {k} {getattr(v, 'duration_ms', None)}ms {getattr(v, 'cache_status', None)}",
         )
-        all_ok &= v.status == "ok"
+        # Treat explicit skips (e.g. optional tools not installed) as non-fatal
+        all_ok &= v.status in ("ok", "skip")
     return 0 if all_ok else 1
 
 
@@ -1382,10 +1401,12 @@ def main_impl(argv: list[str] | None = None) -> int:
 
             return run_fast(args)
         elif tier in ("strict", "free-strict", "strict-lite"):
-            # Lazy import only the strict runner
-            from firsttry.runners.strict import run as run_strict
-
-            return run_strict(args)
+            # Use the centralized DAG-run path for strict tiers to keep
+            # behavior consistent with the `cmd_run`/plan-oriented flow.
+            # This avoids duplicating runner orchestration logic and
+            # ensures consistent exit codes when optional tools are
+            # missing or when caching is available.
+            return cmd_run(argv=argv[1:])
 
         # Route to the new DAG-run helper by default. Preserve the
         # license/profile env and then delegate to cmd_run so the

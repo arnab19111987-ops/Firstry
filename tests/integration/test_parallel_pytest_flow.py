@@ -6,7 +6,9 @@ import firsttry.parallel_pytest as pp
 def test_parallel_pytest_happy_path(monkeypatch, tmp_path):
     # Create a modest number of test files to encourage chunking
     for i in range(12):
-        (tmp_path / f"test_{i}.py").write_text(f"def test_{i}():\n    assert True\n", encoding="utf-8")
+        (tmp_path / f"test_{i}.py").write_text(
+            f"def test_{i}():\n    assert True\n", encoding="utf-8"
+        )
 
     # Fake run_pytest_chunk to avoid spawning subprocesses
     async def fake_run_pytest_chunk(repo_root, chunk_files, chunk_id, extra_args=None):
@@ -29,7 +31,9 @@ def test_parallel_pytest_happy_path(monkeypatch, tmp_path):
 
     # Execute parallel runner - pass explicit test_files to force chunking
     test_files = [p.name for p in tmp_path.glob("test_*.py")]
-    result = asyncio.run(pp.run_parallel_pytest(str(tmp_path), test_files=test_files, max_workers=2))
+    result = asyncio.run(
+        pp.run_parallel_pytest(str(tmp_path), test_files=test_files, max_workers=2)
+    )
 
     assert result["status"] == "ok"
     assert result.get("chunking_used") is True

@@ -12,6 +12,7 @@ def test_cli_strict_profile_flow(tmp_path, monkeypatch):
 
     def fake_run_plan(repo_root, plan, use_remote_cache=True, workers=3):
         called["plan_tasks"] = list(plan.tasks.keys())
+
         # Build fake result objects used by cmd_run printing
         class R:
             def __init__(self):
