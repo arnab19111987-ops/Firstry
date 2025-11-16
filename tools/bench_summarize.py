@@ -10,7 +10,9 @@ def main() -> None:
         raise SystemExit("No .firsttry/bench/manual directory found")
 
     # Pick latest benchmark
-    runs = sorted([p for p in manual_dir.iterdir() if p.is_dir()], key=lambda p: p.name, reverse=True)
+    runs = sorted(
+        [p for p in manual_dir.iterdir() if p.is_dir()], key=lambda p: p.name, reverse=True
+    )
     if not runs:
         raise SystemExit("No benchmark runs found in .firsttry/bench/manual")
     latest = runs[0]
@@ -29,7 +31,7 @@ def main() -> None:
         )
 
     print("\nSanity checks:")
-    failures = [r for r in rows if r['exit_code'] != '0']
+    failures = [r for r in rows if r["exit_code"] != "0"]
     if failures:
         print("  ❌ Some cases failed:")
         for r in failures:

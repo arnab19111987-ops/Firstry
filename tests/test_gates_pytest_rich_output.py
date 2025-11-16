@@ -42,9 +42,9 @@ def test_check_tests_has_rich_info(monkeypatch):
     if res.skipped:
         # If pytest not installed, must have clear skip reason
         reason = res.reason or ""
-        assert "not found" in reason or "skip" in reason.lower(), (
-            f"Skipped gate should have clear reason, got: {reason}"
-        )
+        assert (
+            "not found" in reason or "skip" in reason.lower()
+        ), f"Skipped gate should have clear reason, got: {reason}"
     else:
         # When pytest runs, must provide rich info
         # Check that we have meaningful output or reason
@@ -55,9 +55,9 @@ def test_check_tests_has_rich_info(monkeypatch):
         combined_text = (output + reason + details).lower()
 
         # Should mention "test" somewhere (e.g., "23 tests", "pytest tests")
-        assert "test" in combined_text, (
-            f"Gate should include test info. Got output={output!r}, reason={reason!r}, details={details!r}"
-        )
+        assert (
+            "test" in combined_text
+        ), f"Gate should include test info. Got output={output!r}, reason={reason!r}, details={details!r}"
 
 
 def test_check_tests_info_contains_count_when_successful(monkeypatch):

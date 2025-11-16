@@ -998,7 +998,9 @@ def warm_path(explain: bool = False) -> int:
             "auto",
             "--json-report",
             f"--json-report-file={flaky_json}",
-        ] + flaky[:200]  # Limit to prevent command line overflow
+        ] + flaky[
+            :200
+        ]  # Limit to prevent command line overflow
 
         rc2, out2 = run(cmd2, timeout_s=600, explain=False)
         fails2 = _collect_failures_from_json(flaky_json)

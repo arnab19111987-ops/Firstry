@@ -6,7 +6,8 @@ def test_license_mode_default_offline(monkeypatch):
     # same module object used by the validator (avoids multiple class objects
     # for LicenseError when tests reload modules).
     monkeypatch.delenv("FIRSTTRY_LICENSE_CHECK_MODE", raising=False)
-    from firsttry.license_guard import LicenseError, _validate_license_max_security
+    from firsttry.license_guard import LicenseError
+    from firsttry.license_guard import _validate_license_max_security
 
     # This should only call offline path; invalid key should raise LicenseError
     with pytest.raises(LicenseError):
@@ -15,7 +16,8 @@ def test_license_mode_default_offline(monkeypatch):
 
 def test_license_mode_unknown(monkeypatch):
     monkeypatch.setenv("FIRSTTRY_LICENSE_CHECK_MODE", "weird")
-    from firsttry.license_guard import LicenseError, _validate_license_max_security
+    from firsttry.license_guard import LicenseError
+    from firsttry.license_guard import _validate_license_max_security
 
     with pytest.raises(LicenseError):
         _validate_license_max_security("dummy", "pro")

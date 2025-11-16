@@ -2,8 +2,8 @@ import types
 
 from click.testing import CliRunner
 
-from firsttry import license_cache
 import firsttry.cli as cli
+from firsttry import license_cache
 
 
 def test_cli_runs_when_license_ok(monkeypatch):

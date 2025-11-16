@@ -1,3 +1,22 @@
 {
-  "checks": {}
+  "checks": {
+    "ruff:_root": {
+      "name": "ruff:_root",
+      "check_id": "ruff:_root",
+      "status": "ok",
+      "duration_ms": 0,
+      "stdout": "",
+      "stderr": "",
+      "cache_status": "hit-local"
+    },
+    "pytest:_root": {
+      "name": "pytest:_root",
+      "check_id": "pytest:_root",
+      "status": "ok",
+      "duration_ms": 650,
+      "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.11.7, pytest-8.4.2, pluggy-1.6.0\nrootdir: /workspaces/Firstry\nconfigfile: pytest.ini\nplugins: anyio-4.11.0, json-report-1.5.0, rerunfailures-15.0, metadata-3.1.1, xdist-3.8.0, timeout-2.3.1, cov-5.0.0, testmon-2.1.1\ncollected 1 item\n\ntests/test_ok.py .                                                       [100%]\n\n============================== 1 passed in 0.12s ===============================\n",
+      "stderr": "",
+      "cache_status": "hit-local"
+    }
+  }
 }
