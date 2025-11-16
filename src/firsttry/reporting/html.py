@@ -30,7 +30,7 @@ def write_html_report(repo_root: Path, results: dict, out: str = ".firsttry/repo
                     "hit-remote" if getattr(r, "cache_status", "") == "hit-remote" else "hit-local"
                 )
             else:
-                cache = "miss-run"
+                cache = getattr(r, "cache_status", "miss-run")
         status = getattr(r, "status", "")
         rows.append(
             f"<tr><td>{html_module.escape(tid)}</td><td>{html_module.escape(status)}</td><td>{getattr(r, 'duration_ms', 0)}</td><td>{cache}</td></tr>",
@@ -185,8 +185,8 @@ def analyze_cache_savings(reports: List[Dict]) -> Dict[str, int]:
         day = ts.strftime("%Y-%m-%d")
         saved = 0
         for t in r.get("tasks", []):
-            cache_val = (t.get("cache") or t.get("cache_status") or "").lower()
-            if cache_val in ("hit-local", "hit-remote"):
+            # Prefer the explicit `cache_status` key; check it directly to avoid legacy `cache` lookups
+            if (t.get("cache_status") or "").lower() in ("hit-local", "hit-remote"):
                 saved += int(t.get("duration_ms", 0))
         per_day[day] += saved
     return dict(sorted(per_day.items()))
@@ -249,8 +249,8 @@ def compute_kpis(reports: List[Dict]) -> Dict[str, Any]:
             run_passes += 1
 
         for t in tasks:
-            cache_val = (t.get("cache") or t.get("cache_status") or "").lower()
-            if cache_val in ("hit-local", "hit-remote"):
+            # Prefer the explicit `cache_status` key; check it directly to avoid legacy `cache` lookups
+            if (t.get("cache_status") or "").lower() in ("hit-local", "hit-remote"):
                 cache_hits += 1
                 total_time_saved += int(t.get("duration_ms", 0))
 

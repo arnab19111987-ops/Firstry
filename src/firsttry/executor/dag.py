@@ -33,7 +33,7 @@ class TaskResult:
     # outcome: "ok" | "fail" | "skip" | "error"
     status: str
     duration_ms: int
-    # Normalized cache marker: None | "hit-local" | "hit-remote" | "miss-run"
+    # Normalized cache marker (cache_status): None | "hit-local" | "hit-remote" | "miss-run"
     cache_status: str | None = None
     # Can be bytes when coming from subprocess without text=True; accept both.
     stdout: str | bytes = ""
