@@ -1,3 +1,44 @@
+name: Enterprise Audit (hardened)
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*', 'release/*' ]
+  workflow_dispatch: {}
+
+jobs:
+  audit:
+    name: Run enterprise audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Run probes (read-only)
+        run: |
+          bash .firsttry/audit/enterprise_full_20251114-142800/tmp/run_probes.sh
+
+      - name: Assemble reports
+        run: |
+          python3 .firsttry/audit/enterprise_full_20251114-142800/tmp/assemble_final.py
+
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-audit
+          path: .firsttry/audit/enterprise_full_20251114-142800/reports/*
+
+      - name: Strict gating (fail job if critical buckets NOT READY)
+        env:
+          STRICT: '1'
+        run: |
+          # Run assembler in strict-mode; it exits non-zero when critical buckets are NOT READY
+          python3 .firsttry/audit/enterprise_full_20251114-142800/tmp/assemble_final.py --strict
 name: Audit - CI/CD Security & Compliance
 
 on:

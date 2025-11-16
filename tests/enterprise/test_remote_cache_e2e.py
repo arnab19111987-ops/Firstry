@@ -18,12 +18,13 @@ import os
 import subprocess
 from pathlib import Path
 from typing import Dict
+from typing import Generator
 
 import pytest
 
 
 @pytest.fixture(scope="function")
-def localstack_s3() -> Dict[str, str]:
+def localstack_s3() -> Generator[Dict[str, str], None, None]:
     """Fixture for LocalStack S3 service.
 
     Returns:
@@ -56,7 +57,7 @@ def localstack_s3() -> Dict[str, str]:
 
 
 @pytest.fixture(scope="function")
-def s3_bucket(localstack_s3: Dict[str, str]) -> str:
+def s3_bucket(localstack_s3: Dict[str, str]) -> Generator[str, None, None]:
     """Create and cleanup S3 bucket for testing.
 
     Yields:

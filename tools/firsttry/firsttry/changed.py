@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from subprocess import PIPE, run
+from subprocess import PIPE
+from subprocess import run
 
 
 def get_changed_files(base_ref: str = "HEAD") -> list[str]:

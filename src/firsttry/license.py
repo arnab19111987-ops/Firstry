@@ -311,3 +311,23 @@ def get_active_license_key():
     if t:
         return t.get("license_key")
     return None
+
+
+# Backwards-compatible proxy for tier gating decorators used elsewhere in tests
+try:
+    # Import lazily to avoid cycles during module import
+    from .tier import require_tier
+except Exception:
+    # If tier is unavailable for any reason, provide a fallback that raises when used.
+    from typing import Any
+    from typing import Callable
+
+    def require_tier(min_tier: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        def _decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+            def _wrapped(*a: Any, **k: Any) -> Any:
+                print("Tier gating not available")
+                raise SystemExit(2)
+
+            return _wrapped
+
+        return _decorator

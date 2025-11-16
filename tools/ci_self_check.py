@@ -388,8 +388,8 @@ if __name__ == "__main__":
     # (permissions + concurrency blocks present)
     from pathlib import Path
 
-    ROOT = Path(__file__).resolve().parents[1]
-    WF = ROOT / ".github" / "workflows"
+    ROOT: Path = Path(__file__).resolve().parents[1]
+    WF: Path = ROOT / ".github" / "workflows"
 
     def _must_have_blocks(wf_name: str):
         p = WF / wf_name
@@ -400,11 +400,13 @@ if __name__ == "__main__":
         assert "concurrency:" in s, f"{wf_name} missing top-level concurrency"
 
     try:
-        for wf in ("ci.yml", "remote-cache.yml", "audit.yml"):
-            _must_have_blocks(wf)
+        for wf_name in ("ci.yml", "remote-cache.yml", "audit.yml"):
+            _must_have_blocks(wf_name)
         # Guard: prevent deprecated ::set-output usage across workflows
         bad = []
         for wf in WF.glob("*.yml"):
+            # `wf` here is a Path; avoid reusing the name `wf` earlier which
+            # was used for string loop variables. Ensure we call Path.read_text().
             txt = wf.read_text(encoding="utf-8")
             if "::set-output" in txt and "Check for deprecated ::set-output" not in txt:
                 bad.append(wf)

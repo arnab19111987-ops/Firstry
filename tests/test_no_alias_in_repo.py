@@ -7,6 +7,8 @@ ALLOWLIST = {
     "tools/firsttry/firsttry/config.py",
     # allow the alias in the main src config and allow this guard test itself
     "src/firsttry/config.py",
+    # package-based config module
+    "src/firsttry/config/__init__.py",
     "tests/test_no_alias_in_repo.py",
 }
 
@@ -18,6 +20,9 @@ def test_no_global_alias_usage() -> None:
         rel = p.relative_to(root).as_posix()
         # Skip build artifacts
         if rel.startswith("build/"):
+            continue
+        # Skip generated artifacts under .firsttry/ (non-source)
+        if rel.startswith(".firsttry/"):
             continue
         if rel in ALLOWLIST:
             continue

@@ -39,21 +39,21 @@ def test_cache_hits_and_changed_only(tmp_path: Path, monkeypatch):
         check_id="ruff",
         targets=["src/ft_demo/math.py"],
         flags=[],
-        deps=set(),
+        deps=frozenset[str](),
     )
     plan.tasks["mypy:demo"] = Task(
         id="mypy:demo",
         check_id="mypy",
         targets=["src/ft_demo/math.py"],
         flags=[],
-        deps=set(),
+        deps=frozenset[str](),
     )
     plan.tasks["pytest:smoke"] = Task(
         id="pytest:smoke",
         check_id="pytest",
         targets=["tests/test_ok.py"],
         flags=["-q"],
-        deps=set(),
+        deps=frozenset[str](),
     )
 
     # COLD: all should run and succeed

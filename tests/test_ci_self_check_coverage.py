@@ -7,7 +7,7 @@ from tools.ci_self_check import CISelfCheck
 
 
 def make_cov_json(path: Path, files):
-    payload = {"files": {f: {} for f in files}}
+    payload: dict[str, dict] = {"files": {f: {} for f in files}}
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 

@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 
 # Module-level placeholder for vulnerability lists used in tests/helpers.
 import pytest
@@ -41,7 +42,7 @@ class SBOMComponent:
         self.purl = purl
         self.scope = scope
         self.licenses = licenses or []
-        self.vulnerabilities = []
+        self.vulnerabilities: List[Dict[str, Any]] = []
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to CycloneDX JSON representation."""
@@ -64,7 +65,7 @@ class SBOM:
         self.name = name
         self.components: List[SBOMComponent] = []
         self.created = datetime.now().isoformat()
-        self.signature = None
+        self.signature: Optional[str] = None
 
     def add_component(self, component: SBOMComponent):
         """Add component to SBOM."""
@@ -161,7 +162,7 @@ class VersionManager:
         parts = version_str.split(".")
         if len(parts) != 3:
             raise ValueError(f"Invalid version: {version_str}")
-        return tuple(int(p) for p in parts)
+        return (int(parts[0]), int(parts[1]), int(parts[2]))
 
     @staticmethod
     def is_valid_version(version_str: str) -> bool:
@@ -193,8 +194,8 @@ class ReleasePackage:
     def __init__(self, version: str, sbom: SBOM):
         self.version = version
         self.sbom = sbom
-        self.signature = None
-        self.release_notes = None
+        self.signature: Optional[str] = None
+        self.release_notes: Optional[str] = None
         self.created = datetime.now().isoformat()
 
     def sign(self, signer: SupplyChainSigner):
@@ -250,7 +251,7 @@ class LicenseCompliance:
     @staticmethod
     def check_sbom(sbom: SBOM) -> Dict[str, Any]:
         """Check all licenses in SBOM."""
-        results = {
+        results: Dict[str, Any] = {
             "total_components": len(sbom.components),
             "licenses_by_status": {"approved": [], "restricted": [], "unknown": []},
             "compliant": True,

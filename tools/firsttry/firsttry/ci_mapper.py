@@ -7,7 +7,8 @@ from __future__ import annotations
 import os
 import sys
 from importlib.machinery import SourceFileLoader
-from importlib.util import module_from_spec, spec_from_loader
+from importlib.util import module_from_spec
+from importlib.util import spec_from_loader
 
 
 def _locate_and_load():

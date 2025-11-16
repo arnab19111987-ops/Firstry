@@ -1,5 +1,28 @@
 # Contributing to FirstTry
 
+Thank you for your interest in contributing!
+
+## Contribution License Agreement
+By contributing to FirstTry, you agree that your contribution:
+- Is your original work.
+- May be used, modified, sublicensed, and commercialized by FirstTry Technologies.
+- Will be distributed under the FirstTry Source-Available License (FSAL 1.0).
+
+## Contribution Rules
+- No large refactors without discussion.
+- Follow existing code style.
+- Ensure tests pass.
+- No code that introduces third-party license conflicts.
+
+## How to Contribute
+1. Fork the repo (private fork recommended).
+2. Create a feature branch.
+3. Submit a PR.
+4. Sign the Contributor License Acknowledgement (CLA) if prompted.
+
+Thank you for making FirstTry better!
+# Contributing to FirstTry
+
 Thank you for your interest in contributing to FirstTry! We appreciate your help in making this project better.
 
 ## Code of Conduct

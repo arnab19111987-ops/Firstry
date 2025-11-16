@@ -124,9 +124,9 @@ class Executor:
             self.use_rust = use_rust and _RUST_OK
 
         self.use_external_logs = use_external_logs
-        self.task_logs: Dict[
-            str, Dict[str, str]
-        ] = {}  # task_id -> {"stdout": path, "stderr": path}
+        self.task_logs: Dict[str, Dict[str, str]] = (
+            {}
+        )  # task_id -> {"stdout": path, "stderr": path}
 
     def execute(self) -> Dict[str, int]:
         """Execute all tasks in topological order.

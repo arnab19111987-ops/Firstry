@@ -68,6 +68,17 @@ def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
     If changed, attempts to update cache from CI artifacts.
     """
     ensure_dirs()
+    # Gate remote operations by tier: only allow remote refresh for Pro+ users.
+    try:
+        # Import lazily to avoid circular imports during module import time
+        from firsttry import tier
+
+        if not tier.tier_allowed(None, "pro"):
+            return
+    except Exception:
+        # If tier detection fails, be conservative and skip remote refresh
+        return
+
     # Fetch latest (shallow, quiet)
     _run(["git", "fetch", fetch_ref.split("/")[0], "--quiet", "--depth=1"], timeout=1.0)
 
@@ -97,6 +108,13 @@ def update_cache(remote_fingerprint: Optional[str] = None) -> None:
         remote_fingerprint: Explicit fingerprint to use. If None, auto-detect.
     """
     ensure_dirs()
+    try:
+        from firsttry import tier
+
+        if not tier.tier_allowed(None, "pro"):
+            return
+    except Exception:
+        return
     fp = remote_fingerprint or compute_local_fingerprint() or read_remote_fingerprint("origin/main")
     if not fp:
         return
