@@ -25,8 +25,10 @@ def write_html_report(repo_root: Path, results: dict, out: str = ".firsttry/repo
         if cache is None:
             # If object exposes is_cache_hit, use that to indicate a local hit.
             if getattr(r, "is_cache_hit", False):
-                # try to preserve remote hint if present on status
-                cache = "hit-remote" if getattr(r, "status", "") == "hit-remote" else "hit-local"
+                # try to preserve remote hint if present on cache_status
+                cache = (
+                    "hit-remote" if getattr(r, "cache_status", "") == "hit-remote" else "hit-local"
+                )
             else:
                 cache = "miss-run"
         status = getattr(r, "status", "")
@@ -175,7 +177,7 @@ def load_all_reports(report_dir: Path) -> List[Dict]:
 def analyze_cache_savings(reports: List[Dict]) -> Dict[str, int]:
     """
     Date -> total milliseconds 'saved' by cache hits that day.
-    Uses task.cache == 'hit-local' (or 'hit-remote' if you have it).
+    Uses task.cache_status == 'hit-local' (or 'hit-remote' if you have it).
     """
     per_day: Dict[str, int] = defaultdict(int)
     for r in reports:
