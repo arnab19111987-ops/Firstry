@@ -1,6 +1,21 @@
 # Security Policy
 
 ## Supported Versions
+Security patches apply to the latest public release of FirstTry.
+
+## Reporting a Vulnerability
+Send security reports to:
+security@firsttry.dev
+
+We will acknowledge receipt within 24 hours and provide updates within 72 hours.
+
+## Disclosure
+We follow responsible disclosure. Please do not publicly disclose issues before coordinating with us.
+
+Thank you for helping keep FirstTry secure.
+# Security Policy
+
+## Supported Versions
 
 Only the latest released version of FirstTry receives security updates.
 

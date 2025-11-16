@@ -1,3 +1,74 @@
+FIRSTTRY SOURCE-AVAILABLE LICENSE (FSAL 1.0)
+
+Copyright © 2025 FirstTry Technologies. All rights reserved.
+License Version: FSAL 1.0
+Effective Date: 2025-01-01
+
+1. License Grant
+Subject to the terms of this License, you are granted a non-exclusive, worldwide, non-transferable, non-sublicensable license to:
+- Read the source code.
+- Clone the repository.
+- Modify the source code for personal or internal use.
+- Build and run the Software for non-commercial purposes.
+- Submit pull requests and patches.
+- Use FirstTry Free Tier as specified in public documentation.
+Commercial rights are NOT granted.
+
+2. Prohibited Actions (You May NOT)
+You may NOT, without express written permission from FirstTry Technologies:
+2.1. Commercial Use:
+- Sell, resell, rent, lease, license, or distribute the Software.
+- Use the Software in any commercial product or service.
+- Use the Software in organizational CI systems without a paid Team, Pro, or Enterprise license.
+
+2.2. Competing Offerings:
+- Host, provide, or offer the Software (or derivative works) as a remote or managed service.
+- Use the Software to provide CI/CD, local CI, caching, test analysis, or developer workflow services to third parties.
+- Create a product that is a substitute, replacement, or competitor to FirstTry.
+
+2.3. Rebranding & Redistribution:
+- Rebrand the Software.
+- Claim authorship.
+- Distribute modified or unmodified versions publicly.
+- Mirror the repository or publish your own builds.
+- Upload builds to app stores or package registries.
+
+2.4. Derivative Works:
+- Publish or distribute derivative works.
+- Relicense modified or unmodified versions.
+
+2.5. Enterprise or Team Use:
+Commercial, enterprise, or production organizational usage requires a paid license.
+
+3. Permitted Personal/Internal Use
+You MAY:
+- Use the Software in personal projects.
+- Use it internally for evaluation.
+- Modify it privately.
+- Use it within internal open-source projects as long as usage is not commercial.
+
+4. No Hosted Service Rights
+Hosting or offering the Software as SaaS, PaaS, CI service, remote caching, or similar is strictly prohibited.
+
+5. No Trademark or Brand Rights
+This License does not grant any right to use the FirstTry name, logo, or branding.
+
+6. Contributions
+By submitting contributions, you grant FirstTry Technologies a perpetual, worldwide, irrevocable right to use, modify, sublicense, and commercialize your contributions.
+
+7. Termination
+Rights terminate automatically if you violate this License. Upon termination, you must cease use, delete all copies, and destroy derivative works.
+
+8. Warranty Disclaimer
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND.
+
+9. Governing Law
+This License is governed by the laws of India.
+
+10. Commercial Licensing
+Enterprise and team licenses available at:
+https://firsttry.dev
+enterprise@firsttry.dev
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
