@@ -97,9 +97,7 @@ def print_verbose(message: Any):
                     status = (
                         "PASS"
                         if result.ok
-                        else "FAIL"
-                        if not getattr(result, "skipped", False)
-                        else "SKIPPED"
+                        else "FAIL" if not getattr(result, "skipped", False) else "SKIPPED"
                     )
                 else:
                     status = "UNKNOWN"
@@ -112,9 +110,7 @@ def print_verbose(message: Any):
                     status = (
                         "PASS"
                         if result.ok
-                        else "FAIL"
-                        if not getattr(result, "skipped", False)
-                        else "SKIPPED"
+                        else "FAIL" if not getattr(result, "skipped", False) else "SKIPPED"
                     )
                 else:
                     status = "UNKNOWN"

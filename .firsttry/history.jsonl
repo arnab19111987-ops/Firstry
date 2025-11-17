@@ -964,7 +964,6 @@
 {"ts": "2025-11-10T04:34:02Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 16}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 537}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 586}}}
 {"ts": "2025-11-10T04:34:03Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 22}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 553}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 624}}}
 {"ts": "2025-11-10T04:34:04Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 16}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 480}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 599}}}
-<<<<<<< HEAD
 {"ts": "2025-11-10T05:00:15Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 17}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 550}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 598}}}
 {"ts": "2025-11-10T05:00:15Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 21}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 552}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 607}}}
 {"ts": "2025-11-10T05:00:16Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 17}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 545}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 628}}}
@@ -2439,5 +2438,3 @@
 {"ts": "2025-11-17T07:06:39Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 1}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 8}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 351}}}
 {"ts": "2025-11-17T07:06:41Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 0}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 303}}}
 {"ts": "2025-11-17T07:06:41Z", "tier": null, "checks": {"ruff:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 1}, "mypy:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 12}, "pytest:_root": {"status": "ok", "cache_status": "hit-local", "duration_ms": 319}}}
-=======
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)

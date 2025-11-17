@@ -10,10 +10,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-from typing import Iterable
-from typing import Optional
-from typing import Set
+from typing import Any, Iterable, Optional, Set
 
 # ---------------------------------------------------------------------------
 # Canonical tier names (new)
@@ -254,7 +251,9 @@ def maybe_download_golden_cache() -> None:
         print("Pro license active: attempting Golden Cache download...")
         try:
             # Import inside function to avoid circular import at module load
-            from . import golden_cache  # type: ignore[attr-defined]  # optional runtime import
+            from . import (
+                golden_cache,  # type: ignore[attr-defined]  # optional runtime import
+            )
 
             if hasattr(golden_cache, "maybe_download"):
                 golden_cache.maybe_download()
@@ -279,7 +278,9 @@ def maybe_include_flaky_tests(tests_to_run: Iterable[str]) -> Set[str]:
     if is_paid_tier(tier):
         print("Pro license active: attempting to include flaky tests...")
         try:
-            from . import flaky_tests  # type: ignore[attr-defined]  # optional runtime import
+            from . import (
+                flaky_tests,  # type: ignore[attr-defined]  # optional runtime import
+            )
 
             if hasattr(flaky_tests, "load_flaky_tests"):
                 extras = flaky_tests.load_flaky_tests()

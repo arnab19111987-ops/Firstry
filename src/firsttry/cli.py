@@ -16,8 +16,7 @@ from typing import Any
 import click
 
 from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
-from firsttry.planner.dag import Plan
-from firsttry.planner.dag import Task
+from firsttry.planner.dag import Plan, Task
 from firsttry.run_swarm import run_plan
 
 from . import __version__
@@ -27,9 +26,11 @@ from .agent_manager import SmartAgentManager
 from .ci_parity import parity_runner as ci_runner
 
 try:
-    from .ci_parity.cache_utils import auto_refresh_golden_cache
-    from .ci_parity.cache_utils import clear_cache
-    from .ci_parity.cache_utils import update_cache
+    from .ci_parity.cache_utils import (
+        auto_refresh_golden_cache,
+        clear_cache,
+        update_cache,
+    )
 except ImportError:
     # Fallback if cache_utils not available
     def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
@@ -43,10 +44,8 @@ except ImportError:
 
 
 from .config_cache import plan_from_config_with_timeout
-from .config_loader import apply_overrides_to_plan
-from .config_loader import load_config
-from .context_builders import build_context
-from .context_builders import build_repo_profile
+from .config_loader import apply_overrides_to_plan, load_config
+from .context_builders import build_context, build_repo_profile
 from .license_guard import get_tier
 from .repo_rules import plan_checks_for_repo
 
@@ -1119,8 +1118,7 @@ def handle_status(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Handle the doctor command."""
     try:
-        from .doctor import render_human
-        from .doctor import run_doctor_report
+        from .doctor import render_human, run_doctor_report
 
         report = run_doctor_report()
         human_output = render_human(report)
@@ -1994,13 +1992,10 @@ async def run_fast_pipeline(*, args=None) -> int:
     # DRY-RUN MODE: Build plan preview with tier lockout without executing
     dry_run = getattr(args, "dry_run", False) if args else False
     if dry_run:
-        from datetime import datetime
-        from datetime import timezone
+        from datetime import datetime, timezone
         from pathlib import Path
 
-        from .checks_orchestrator import FAST_FAMILIES
-        from .checks_orchestrator import MUTATING_FAMILIES
-        from .checks_orchestrator import SLOW_FAMILIES
+        from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
         from .reports.tier_map import get_checks_for_tier
 
         allowed = set(get_checks_for_tier(tier)) if tier else set()
@@ -2100,13 +2095,14 @@ async def run_fast_pipeline(*, args=None) -> int:
     report_json_path = getattr(args, "report_json", None) if args else None
     if report_json_path:
         try:
-            from datetime import datetime
-            from datetime import timezone
+            from datetime import datetime, timezone
             from pathlib import Path
 
-            from .checks_orchestrator import FAST_FAMILIES
-            from .checks_orchestrator import MUTATING_FAMILIES
-            from .checks_orchestrator import SLOW_FAMILIES
+            from .checks_orchestrator import (
+                FAST_FAMILIES,
+                MUTATING_FAMILIES,
+                SLOW_FAMILIES,
+            )
             from .reporting import write_report_async
             from .reports.tier_map import get_checks_for_tier
 

@@ -12,10 +12,7 @@ import json
 import statistics
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import cast
+from typing import Any, Dict, List, cast
 
 import pytest
 
@@ -259,7 +256,9 @@ def test_percentile_calculation_accuracy():
         1000,
         1500,
         2000,  # Very slow (3)
-    ] + [200] * 5  # Additional normal cases
+    ] + [
+        200
+    ] * 5  # Additional normal cases
 
     # Sort for percentile calculation
     sorted_latencies = sorted(latencies)

@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .bandit import BanditRunner
-from .base import CheckRunner
-from .base import RunResult
+from .base import CheckRunner, RunResult
 from .mypy import MypyRunner
 from .npm_lint import NpmLintRunner
 from .npm_test import NpmTestRunner

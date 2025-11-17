@@ -1,5 +1,4 @@
-from firsttry.ci_parity.util import normalize_cmd
-from firsttry.ci_parity.util import tokenize_shell_line
+from firsttry.ci_parity.util import normalize_cmd, tokenize_shell_line
 
 
 def test_tokenize_quotes_and_no_backslash():

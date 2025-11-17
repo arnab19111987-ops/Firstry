@@ -10,8 +10,7 @@ import hashlib
 import json
 import os
 import sys
-from dataclasses import asdict
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any

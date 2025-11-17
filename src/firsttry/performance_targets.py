@@ -4,8 +4,7 @@ Replaces the unrealistic "2x speedup" target with physics-friendly goals.
 """
 
 from dataclasses import dataclass
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass

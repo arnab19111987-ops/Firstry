@@ -15,7 +15,9 @@ from pathlib import Path  # noqa: E402
 from ._core import Config  # noqa: F401,E402
 from ._core import get_config  # noqa: F401,E402
 from ._core import get_s3_settings  # noqa: F401,E402
-from ._core import get_workflow_requires as _core_get_workflow_requires  # noqa: F401,E402
+from ._core import (  # noqa: F401,E402
+    get_workflow_requires as _core_get_workflow_requires,
+)
 
 __all__ = [
     "Config",

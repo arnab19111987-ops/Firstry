@@ -15,13 +15,9 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
+from typing import Any, Callable, Dict, List
 
-from .model import DAG
-from .model import Task
+from .model import DAG, Task
 
 # NOTE: _hash_bytes now uses hashlib.blake2b for 128-bit digests to preserve
 # historical cache/test expectations (16-byte hex / 32 chars).

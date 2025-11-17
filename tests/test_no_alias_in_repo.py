@@ -12,10 +12,7 @@ ALLOWLIST = {
     "tests/test_no_alias_in_repo.py",
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 def test_no_global_alias_usage() -> None:
     root = Path(__file__).resolve().parents[1]
     offenders = []

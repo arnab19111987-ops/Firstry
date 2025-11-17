@@ -1,48 +1,9 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Dict, Tuple
-
-
-def load_parity_lock(path: str = "ci/parity.lock.json") -> Dict:
-    p = Path(path)
-    if not p.exists():
-        return {}
-    try:
-        return json.loads(p.read_text())
-    except Exception:
-        return {}
-
-
-def check_python_version_parity(lock: Dict) -> Tuple[bool, str]:
-    expected = lock.get("python", {}).get("version")
-    if not expected:
-        return True, "no python version pinned"
-    import sys
-
-    actual = f"{sys.version_info.major}.{sys.version_info.minor}"
-    ok = actual == expected
-    msg = f"python: expected={expected} actual={actual}"
-    return ok, msg
-
-
-def check_tool_version_parity(lock: Dict) -> Tuple[bool, str]:
-    # Very small heuristic: compare presence of top-level keys
-    tools = lock.get("tools", {})
-    if not tools:
-        return True, "no tools pinned"
-    # For demo: just report whether at least one tool is listed
-    return True, f"tools pinned: {', '.join(tools.keys())}"
-
-
-__all__ = ["load_parity_lock", "check_python_version_parity", "check_tool_version_parity"]
-from __future__ import annotations
-
-import json
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict
 
 from ..ci_discovery.reader import discover_ci_jobs
 
@@ -75,7 +36,7 @@ def get_expected_tool_versions(lock_path: Path | None = None) -> Dict[str, str]:
 
 
 def get_local_tool_versions() -> Dict[str, str]:
-    # Use importlib.metadata as parity runner uses
+
     import importlib.metadata
 
     tools = ["ruff", "mypy"]
@@ -101,8 +62,8 @@ def check_tool_version_parity(lock_path: Path | None = None) -> None:
 
     if mismatches:
         lines = ["Environment parity check failed:"]
-        for t, e, l in mismatches:
-            lines.append(f"  - {t}: expected {e}, got {l}")
+        for t, e, got in mismatches:
+            lines.append(f"  - {t}: expected {e}, got {got}")
         raise ToolVersionMismatchError("\n".join(lines))
 
 

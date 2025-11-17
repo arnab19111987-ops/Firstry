@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any
 
 try:  # stdlib HTTP client
-    from urllib import error
-    from urllib import request
+    from urllib import error, request
 except Exception:  # pragma: no cover
     request = None  # type: ignore
     error = None  # type: ignore

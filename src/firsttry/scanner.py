@@ -6,7 +6,6 @@ import importlib
 import json
 import os
 import subprocess
-import importlib
 from pathlib import Path
 
 # Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse
@@ -17,9 +16,7 @@ try:
     YAML_AVAILABLE = True
 except Exception:
     YAML_AVAILABLE = False
-from .models import Issue
-from .models import ScanResult
-from .models import SectionSummary
+from .models import Issue, ScanResult, SectionSummary
 
 COVERAGE_REQUIRED_DEFAULT = 80.0
 

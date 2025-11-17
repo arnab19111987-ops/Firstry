@@ -2,8 +2,7 @@
 import shlex
 import shutil
 import subprocess
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 
 def run_command(cmd: str, cwd: str, timeout: Optional[int] = None) -> dict:

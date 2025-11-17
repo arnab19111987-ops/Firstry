@@ -1,11 +1,12 @@
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
-from firsttry.license_cache import CachedLicense
-from firsttry.license_cache import assert_license
-from firsttry.license_cache import is_fresh
-from firsttry.license_cache import load_cache
-from firsttry.license_cache import save_cache
+from firsttry.license_cache import (
+    CachedLicense,
+    assert_license,
+    is_fresh,
+    load_cache,
+    save_cache,
+)
 
 
 def test_cache_roundtrip(tmp_path, monkeypatch):

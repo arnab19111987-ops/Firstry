@@ -10,9 +10,7 @@ from unittest import mock
 
 import pytest
 
-from firsttry.gates import python_lint
-from firsttry.gates import python_mypy
-from firsttry.gates import python_pytest
+from firsttry.gates import python_lint, python_mypy, python_pytest
 
 
 class FakeProc:

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
-from typing import Mapping
-from typing import Sequence
+from typing import Literal, Mapping, Sequence
 
 Language = Literal["python", "javascript", "go", "rust", "mixed", "unknown"]
 

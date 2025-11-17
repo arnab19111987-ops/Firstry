@@ -3,15 +3,9 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from ..twin.hashers import env_fingerprint
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import tool_version_hash
+from ..twin.hashers import env_fingerprint, hash_bytes, tool_version_hash
 from ..utils.proc import to_str
-from .base import CheckRunner
-from .base import RunResult
-from .base import ensure_bin
-from .base import hash_config
-from .base import hash_targets
+from .base import CheckRunner, RunResult, ensure_bin, hash_config, hash_targets
 
 
 class RuffRunner(CheckRunner):

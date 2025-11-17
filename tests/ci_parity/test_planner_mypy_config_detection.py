@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-=======
-from pathlib import Path
-import os
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 from firsttry.ci_parity import planner
 
 

@@ -30,15 +30,20 @@ from pathlib import Path
 from typing import Any
 
 from firsttry.ci_discovery.reader import discover_ci_jobs
-from firsttry.ci_parity.checker import load_mirror_config, find_unmapped_ci_jobs
+from firsttry.ci_parity.checker import find_unmapped_ci_jobs, load_mirror_config
+from firsttry.ci_parity.env_check import (
+    PythonVersionMismatchError,
+    check_python_version_parity,
+)
 from firsttry.ci_parity.report import format_unmapped_ci_jobs
-from firsttry.ci_parity.env_check import check_python_version_parity, PythonVersionMismatchError
 
 try:
-    from .cache_utils import ARTIFACTS
-    from .cache_utils import auto_refresh_golden_cache
-    from .cache_utils import ensure_dirs
-    from .cache_utils import read_flaky_tests
+    from .cache_utils import (
+        ARTIFACTS,
+        auto_refresh_golden_cache,
+        ensure_dirs,
+        read_flaky_tests,
+    )
 except ImportError:
     # Fallback if cache_utils not available yet
     ARTIFACTS = Path("artifacts")
@@ -540,6 +545,8 @@ def self_check(explain: bool = False, quiet: bool = False) -> int:
     # Ensure artifacts directory exists
     ARTIFACTS = Path("artifacts")
     ARTIFACTS.mkdir(exist_ok=True)
+
+    errors: list[ParityError] = []
 
     try:
         lock = load_lock()

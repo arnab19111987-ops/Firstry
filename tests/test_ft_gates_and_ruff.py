@@ -5,9 +5,7 @@ import types
 import pytest
 from click.testing import CliRunner
 
-from firsttry import divergence
-from firsttry import ft
-from firsttry import runners
+from firsttry import divergence, ft, runners
 
 
 def test_pro_and_enterprise_gates(monkeypatch):

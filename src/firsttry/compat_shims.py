@@ -3,9 +3,7 @@
 # We delegate to the modern planner API when available.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from typing import Iterable
-from typing import Mapping
+from typing import TYPE_CHECKING, Iterable, Mapping
 
 # Lightweight shim so older import paths continue to work:
 try:
@@ -15,8 +13,7 @@ except Exception:  # pragma: no cover
     # static checkers. We import types only for annotations to avoid runtime
     # cyclic imports.
     if TYPE_CHECKING:
-        from .planner.dag import CodebaseTwin
-        from .planner.dag import Plan
+        from .planner.dag import CodebaseTwin, Plan
 
     def build_plan(
         twin: "CodebaseTwin",

@@ -10,8 +10,7 @@ Verifies that:
 
 import pytest
 
-from firsttry.runner.model import DAG
-from firsttry.runner.model import Task
+from firsttry.runner.model import DAG, Task
 
 
 def test_toposort_simple():

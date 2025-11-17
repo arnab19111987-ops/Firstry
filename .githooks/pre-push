@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
-<<<<<<< HEAD
-set -eo pipefail
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
-[ -f "$REPO_ROOT/ci/parity.lock.json" ] || exit 0
-=======
 set -euo pipefail
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+
 if [[ "${SKIP_FT:-}" == "1" ]]; then
   echo "[ft] WARNING: skipping pre-push (SKIP_FT=1)"; exit 0
 fi
-# Keep the heavy run reproducible: run parity inside the container
-export FT_CI_PARITY_DRYRUN="${FT_CI_PARITY_DRYRUN:-0}"  # set to 1 to preview
-exec bash -lc './scripts/ft-ci-local'
-#!/usr/bin/env bash
-set -euo pipefail
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 
-# Tag this as a pre-push hook (enables full parity mode)
+# If the repo doesn't opt into parity, skip
+[ -f "$REPO_ROOT/ci/parity.lock.json" ] || exit 0
+
 export GIT_HOOK=pre-push
 export FT_NO_NETWORK=1
+export FT_CI_PARITY_DRYRUN="${FT_CI_PARITY_DRYRUN:-0}"
 
-# Use unified ft pre-commit command
+# Prefer to run the local reproducible parity script
+if [ -x "./scripts/ft-ci-local" ]; then
+  exec bash -lc './scripts/ft-ci-local'
+fi
+
+# Fallback: run the ft pre-commit gate
 if [ -x "$REPO_ROOT/.venv-parity/bin/ft" ]; then
-  "$REPO_ROOT/.venv-parity/bin/ft" pre-commit
+  exec "$REPO_ROOT/.venv-parity/bin/ft" pre-commit
 elif command -v ft >/dev/null 2>&1; then
-  ft pre-commit
+  exec ft pre-commit
 else
-  # Fallback: activate venv and call CLI module
-  [ -x "$REPO_ROOT/.venv-parity/bin/python" ] && . "$REPO_ROOT/.venv-parity/bin/activate"
-  python -m firsttry.cli pre-commit
+  if [ -x "$REPO_ROOT/.venv-parity/bin/python" ]; then
+    . "$REPO_ROOT/.venv-parity/bin/activate"
+  fi
+  exec python -m firsttry.cli pre-commit
 fi

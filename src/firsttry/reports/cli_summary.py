@@ -6,8 +6,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..license_guard import get_tier
-from .tier_map import LOCKED_MESSAGE
-from .tier_map import get_checks_for_tier
+from .tier_map import LOCKED_MESSAGE, get_checks_for_tier
 from .ui import c
 
 

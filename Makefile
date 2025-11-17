@@ -172,12 +172,9 @@ precommit:  ## Alias for ft-pre-commit
 ft-pre-push:  ## Run FirstTry pre-push (full parity)
 	ft pre-commit
 
-<<<<<<< HEAD
 ft-ci:  ## Run FirstTry CI parity (full parity)
 	ft pre-commit
 
-=======
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 .PHONY: hooks-ensure hooks-status ft-ci-local ft-ci-dry ft-ci-matrix
 hooks-ensure:
 	@./scripts/enable-hooks
@@ -193,7 +190,6 @@ ft-ci-dry:
 
 ft-ci-matrix:
 	@PYVERS=$${PYVERS:-"3.10,3.11"} ./scripts/ft-ci-local
-<<<<<<< HEAD
 
 
 # ============================================================================
@@ -372,6 +368,4 @@ parity-matrix:  ## Run parity across Python version matrix
 		echo "❌ tox not found. Install with: pip install tox"; \
 		exit 1; \
 	fi
-=======
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
 

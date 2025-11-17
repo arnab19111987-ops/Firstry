@@ -8,12 +8,9 @@ from typing import cast
 from firsttry.license_guard import maybe_download_golden_cache
 
 from .cache.base import BaseCache
-from .config import get_config
-from .config import get_s3_settings
-from .executor.dag import DagExecutor
-from .executor.dag import default_caches
-from .planner.dag import Plan
-from .planner.dag import build_plan_from_twin
+from .config import get_config, get_s3_settings
+from .executor.dag import DagExecutor, default_caches
+from .planner.dag import Plan, build_plan_from_twin
 
 # --- FirstTry: Pro-aware cache selection export (idempotent) ---
 

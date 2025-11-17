@@ -5,8 +5,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .base import BaseCache
-from .base import CacheHit
+from .base import BaseCache, CacheHit
 
 
 class LocalCache(BaseCache):

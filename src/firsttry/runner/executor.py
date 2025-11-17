@@ -12,14 +12,11 @@ import os
 import subprocess
 import sys
 import uuid
-from typing import Any
-from typing import Dict
-from typing import List
+from typing import Any, Dict, List
 
 from firsttry.runner import taskcache
 
-from .model import DAG
-from .model import Task
+from .model import DAG, Task
 
 LOG_DIR = ".firsttry/logs"
 
@@ -124,9 +121,9 @@ class Executor:
             self.use_rust = use_rust and _RUST_OK
 
         self.use_external_logs = use_external_logs
-        self.task_logs: Dict[
-            str, Dict[str, str]
-        ] = {}  # task_id -> {"stdout": path, "stderr": path}
+        self.task_logs: Dict[str, Dict[str, str]] = (
+            {}
+        )  # task_id -> {"stdout": path, "stderr": path}
 
     def execute(self) -> Dict[str, int]:
         """Execute all tasks in topological order.

@@ -4,9 +4,7 @@ import os
 import random
 import time
 from pathlib import Path
-from typing import Any
-from typing import Callable
-from typing import Optional
+from typing import Any, Callable, Optional
 
 
 class S3PolicyError(RuntimeError): ...
