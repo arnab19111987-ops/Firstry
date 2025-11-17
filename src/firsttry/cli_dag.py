@@ -115,3 +115,16 @@ def main(argv=None):
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# Backwards compatibility shim: older tests and tooling expect `cmd_run`
+# to exist on the `firsttry.cli_dag` module. Provide a thin wrapper that
+# delegates to the new `main` entrypoint so both source and installed
+# package usages behave the same.
+def cmd_run(argv=None):
+    """Backward-compatible wrapper for legacy tests/tools.
+
+    Returns the integer exit code from `main` so callers that expect a
+    function named `cmd_run` continue to work.
+    """
+    return main(argv)

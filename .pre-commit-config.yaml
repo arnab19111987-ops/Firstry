@@ -90,10 +90,13 @@ repos:
         name: pytest (unit tests - fast smoke)
         # Run a tiny, fast smoke subset to keep pre-commit quick and avoid
         # collection-time failures from repository-wide test collection.
-        entry: pytest -q tests/test_config_compat.py tests/test_no_alias_in_repo.py
+        # Use bash wrapper + tee so output is captured in a deterministic log
+        # file even when pre-commit hides verbose output.
+        entry: bash -lc 'pytest -vv -x tests -k "not slow" | tee .pre-commit.pytest-fast-smoke.log 2>&1'
         language: system
         types: [python]
         pass_filenames: false
+        log_file: .pre-commit.pytest-fast-smoke.log
 
       - id: ft-pre-commit
         name: FirstTry pre-commit (dry-run parity)
@@ -104,10 +107,12 @@ repos:
       # === NEW: CI Parity Hook (SSOT) ===
       - id: ft-pre-commit-parity
         name: FirstTry pre-commit (repo-adaptive, CI-parity, timed)
-        entry: bash -lc 'scripts/ft_precommit_parity.sh'
+        # Wrap parity script in tee to capture stdout/stderr to a known log file
+        entry: bash -lc 'scripts/ft_precommit_parity.sh 2>&1 | tee .pre-commit.ft-pre-commit-parity.log'
         language: system
         pass_filenames: false
         stages: [pre-commit, pre-push]
+        log_file: .pre-commit.ft-pre-commit-parity.log
 
       - id: pip-audit-snapshot
         name: pip-audit (snapshot only)
