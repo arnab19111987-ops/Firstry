@@ -169,7 +169,7 @@ def safe_zip_extract_all(z, dest: Path) -> None:
         # Ensure parent exists
         target_path.parent.mkdir(parents=True, exist_ok=True)
         # Extract file content
-        with z.open(info, 'r') as srcf, open(target_path, 'wb') as dstf:
+        with z.open(info, "r") as srcf, open(target_path, "wb") as dstf:
             dstf.write(srcf.read())
 
 
