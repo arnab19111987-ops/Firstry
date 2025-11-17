@@ -2,10 +2,18 @@
 # Keep this file small — it's installed into the parity/container environment.
 
 # TOML parser used by ci_parity.checker
-toml>=0.10
 # Add any test-only deps your repo needs; examples below
+toml>=0.10
 boto3>=1.34.0
 jsonschema>=4.0
 blake3>=0.4
 moto>=5.0.0
 types-PyYAML>=6.0.12
+
+# Test plugins commonly required by CI parity runs
+pytest-cov==6.0.0
+pytest-timeout==2.3.1
+pytest-rerunfailures==15.0
+pytest-xdist==3.6.1
+pytest-testmon==2.1.1
+pytest-json-report==1.5.0
