@@ -17,70 +17,60 @@ You may read, clone, study, and modify the code for personal or internal use.
 
 Commercial use, redistribution, hosting, or competing offerings are prohibited without a paid license.
 
-See the full terms in `LICENSE`.
+# FirstTry
 
-## FAQ — Why Source Available?
+FirstTry is a local CI mirror and progressive CI runner that helps developers run CI-style checks (ruff, mypy, pytest, etc.) locally with caching and tiered profiles so you can verify code will pass CI before pushing.
 
-Is FirstTry open-source?
+## Install
 
-No. FirstTry is source-available. You can read and modify the code, but commercial use is restricted.
+Install from PyPI (package name: `firsttry-run`):
 
-Can I use it at work?
+```bash
+pip install firsttry-run
+```
 
-Yes — for evaluation or personal use. Production/team/company use requires a paid license.
+For development:
 
-Can I fork it?
+```bash
+python -m pip install -e ".[dev]"
+```
 
-Yes, privately. No, you cannot fork and publish or redistribute.
+## Quick start
 
-Can I build my own version?
+From your project root:
 
-Yes, but you cannot release, sell, or host it.
+```bash
+ft run fast     # quick checks on changed files
+ft run strict   # full strict tier checks
+```
 
-Why not MIT/Apache?
+`ft` and `firsttry` both map to the same CLI entrypoint (`firsttry.cli:main`).
 
-Because:
+## Tiers
 
-- Competitors can steal the code
+- `fast`: lightweight checks (linters on changed files, smoke pytest).
+- `strict`: full linters, type checks, and a broader pytest selection.
+- `pro` / `enterprise`: (if enabled) add remote cache integrations, S3, and enterprise-only checks.
 
-- Enterprises lose trust if the project dies
+See `docs/` for details on tier configuration and how to add custom profiles.
 
-- Sustaining a dev tool requires revenue
+## Demo / Benchmarks
 
-This model is used by Elastic, Redis, Hashicorp, Sentry, MongoDB, Vercel Turbo, and others.
-
-## Fast operational proof
-
-This repository includes a small demo tier (`free-fast`) that runs a known-clean
-Python file and a tiny test so you can exercise cold→warm caching quickly.
-
-Run the built Make helper to execute a cold then warm run and print the
-report + history summary:
+This repo includes a small demo tier (`free-fast`) to exercise cold→warm caching quickly:
 
 ```bash
 make ft-proof
 ```
 
-Behavior:
-- `free-fast` runs `ruff` on `src/ft_demo/math.py` (if present) and `pytest` on
-	`tests/test_ok.py` (if present).
-- The second run should show `cache_status: hit-local` for checks and exit `0`.
+The demo runs a tiny sample and prints a proof report. See `.github/workflows/firsttry-proof.yml` for an example CI hook.
 
-If you want this demo enabled in CI, see `.github/workflows/firsttry-proof.yml`.
+## Telemetry
 
-## Telemetry (opt-out)
+FirstTry includes a small telemetry sender.
+See `TELEMETRY.md` for details and how to opt in/out. The CLI also writes local telemetry status to `.firsttry/telemetry_status.json`.
 
-FirstTry sends **minimal, anonymized** usage metrics (e.g., command, tier, durations, success/fail) to help improve the tool.
-- Endpoint: configurable via `FIRSTTRY_TELEMETRY_URL` (default internal endpoint)
-- Stored locally: `.firsttry/telemetry_status.json`
+## License
+
+This project is distributed under the FirstTry Source-Available License (FSAL 1.0). See `LICENSE` for full terms.
 - **Opt-out**: set `FT_SEND_TELEMETRY=0`
-
-Examples:
-```bash
-# Disable telemetry for current shell
-export FT_SEND_TELEMETRY=0
-
-# One-off run without telemetry
-FT_SEND_TELEMETRY=0 python -m firsttry run
-```
 
