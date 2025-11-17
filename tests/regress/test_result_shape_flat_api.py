@@ -1,5 +1,7 @@
 """Regression tests to prevent result shape issues."""
 
+import pytest
+
 
 def test_normalize_results_flat():
     """Test the _normalize_results_flat function directly."""
@@ -34,6 +36,7 @@ def test_normalize_results_flat():
     assert result[0]["exit_code"] == 0
 
 
+@pytest.mark.slow
 def test_orchestrator_results_are_flat_and_have_status():
     """Ensure run_profile_for_repo returns a flat list of dicts with 'status'."""
     from pathlib import Path

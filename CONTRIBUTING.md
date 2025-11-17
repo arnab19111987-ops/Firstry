@@ -153,7 +153,7 @@ For significant changes:
 
 ## License
 
-By contributing to FirstTry, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE).
+By contributing to FirstTry, you agree that your contributions become part of the project distributed under the FirstTry Source-Available License (FSAL 1.0). See `LICENSE` for full terms.
 
 ---
 
