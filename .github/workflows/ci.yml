@@ -64,11 +64,15 @@ jobs:
         run: |
           pip install pyyaml
           python - <<'PY'
+          import textwrap
+          code = """
           import yaml, glob
           for f in glob.glob('.github/workflows/*.yml'):
-              with open(f, encoding='utf-8') as fh:
-                  yaml.safe_load(fh)
-              print("✅", f)
+            with open(f, encoding='utf-8') as fh:
+              yaml.safe_load(fh)
+            print("✅", f)
+          """
+          exec(textwrap.dedent(code))
           PY
 
   # === Code Quality Gates ===
