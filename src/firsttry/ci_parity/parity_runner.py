@@ -951,18 +951,23 @@ def warm_path(explain: bool = False) -> int:
         print("\n▶ Step 1: pytest --testmon (affected tests)")
 
     warm_json = ARTIFACTS / "pytest-warm.json"
+    # Run testmon in single-process mode to avoid xdist worker DB locking
+    # issues in developer environments (some filesystems don't support
+    # SQLite WAL from concurrent workers). Using single-process here is
+    # more reliable while still providing a fast warm-path. We keep
+    # `--testmon` to exercise the testmon cache behaviour but avoid
+    # xdist (`-n auto`) which can spawn workers that attempt concurrent
+    # writes to the testmon sqlite DB.
     cmd1 = [
         "pytest",
         "--testmon",
         "--maxfail=1",
         "--timeout=60",
         "-q",
-        "-n",
-        "auto",
         "--json-report",
         f"--json-report-file={warm_json}",
     ]
-    rc1, out1 = run(cmd1, timeout_s=600, explain=False)
+    rc1, _ = run(cmd1, timeout_s=600, explain=False)
     fails1 = _collect_failures_from_json(warm_json)
     report["steps"].append({"step": "testmon", "rc": rc1, "failures": len(fails1)})
     report["failures"].extend(fails1)
@@ -989,20 +994,18 @@ def warm_path(explain: bool = False) -> int:
             print(f"\n▶ Step 2: Running {len(flaky)} known flaky tests")
 
         flaky_json = ARTIFACTS / "pytest-flaky.json"
+        # Run flaky tests in single-process mode to avoid xdist-related
+        # sqlite locking issues observed in some environments.
         cmd2 = [
             "pytest",
             "-q",
             "--maxfail=1",
             "--timeout=60",
-            "-n",
-            "auto",
             "--json-report",
             f"--json-report-file={flaky_json}",
-        ] + flaky[
-            :200
-        ]  # Limit to prevent command line overflow
+        ] + flaky[:200]
 
-        rc2, out2 = run(cmd2, timeout_s=600, explain=False)
+        rc2, _ = run(cmd2, timeout_s=600, explain=False)
         fails2 = _collect_failures_from_json(flaky_json)
         report["steps"].append(
             {
@@ -1039,12 +1042,10 @@ def warm_path(explain: bool = False) -> int:
             "smoke",
             "--maxfail=1",
             "--timeout=60",
-            "-n",
-            "auto",
             "--json-report",
             f"--json-report-file={smoke_json}",
         ]
-        rc3, out3 = run(cmd3, timeout_s=600, explain=False)
+        rc3, _ = run(cmd3, timeout_s=600, explain=False)
         fails3 = _collect_failures_from_json(smoke_json)
         report["steps"].append({"step": "smoke", "rc": rc3, "failures": len(fails3)})
         report["failures"].extend(fails3)
@@ -1069,7 +1070,7 @@ def warm_path(explain: bool = False) -> int:
         if explain:
             print("\n▶ Step 4: diff-cover (90% on changed lines)")
 
-        rc4, out4 = run(
+        rc4, _ = run(
             ["diff-cover", str(cov_xml), "--compare-branch=origin/main", "--fail-under=90"],
             timeout_s=120,
             explain=False,

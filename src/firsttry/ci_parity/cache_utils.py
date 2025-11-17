@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tarfile
 import time
 from pathlib import Path
 from typing import Optional
@@ -140,7 +141,73 @@ def _extract_zip(zip_path: Path, dest: Path) -> None:
     import zipfile
 
     with zipfile.ZipFile(zip_path, "r") as z:
-        z.extractall(dest)
+        safe_zip_extract_all(z, dest)
+
+
+def safe_zip_extract_all(z, dest: Path) -> None:
+    """
+    Safely extract a zipfile to `dest`, preventing path traversal and
+    ensuring extracted files remain inside `dest`.
+    """
+    dest = Path(dest).resolve()
+    for info in z.infolist():
+        name = info.filename
+        # Skip directory entries explicitly
+        if name.endswith("/") or name.endswith("\\"):
+            target = dest / name
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+
+        # Reject absolute paths
+        if name.startswith("/") or name.startswith("\\"):
+            raise ValueError(f"Refusing to extract absolute path from zip: {name}")
+
+        target_path = (dest / name).resolve()
+        if not str(target_path).startswith(str(dest) + os.sep) and target_path != dest:
+            raise ValueError(f"Refusing to extract path outside base dir: {name}")
+
+        # Ensure parent exists
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        # Extract file content
+        with z.open(info, 'r') as srcf, open(target_path, 'wb') as dstf:
+            dstf.write(srcf.read())
+
+
+def _iter_safe_tar_members(tar: tarfile.TarFile, base_dir: Path):
+    """
+    Yield only safe tar members whose resolved path stays within base_dir
+    and which are not device files.
+
+    Prevents path traversal attacks (e.g. '../../etc/passwd') and
+    extraction of special device nodes.
+    """
+    base_dir = base_dir.resolve()
+
+    for member in tar.getmembers():
+        # Reject device files outright
+        if member.isdev():
+            raise ValueError(f"Refusing to extract device file from tar: {member.name}")
+
+        # Reject absolute paths
+        if member.name.startswith("/") or member.name.startswith("\\"):
+            raise ValueError(f"Refusing to extract absolute path from tar: {member.name}")
+
+        # Compute the target path and ensure it stays under base_dir
+        target_path = (base_dir / member.name).resolve()
+        if not str(target_path).startswith(str(base_dir) + os.sep) and target_path != base_dir:
+            raise ValueError(f"Refusing to extract path outside base dir: {member.name}")
+
+        yield member
+
+
+def safe_tar_extract_all(tar: tarfile.TarFile, path: Path) -> None:
+    """
+    Safely extract all members of a tarfile into 'path', after validating
+    that no member escapes the target directory.
+    """
+    path = Path(path).resolve()
+    members = list(_iter_safe_tar_members(tar, path))
+    tar.extractall(path=str(path), members=members)
 
 
 def read_flaky_tests() -> list[str]:
@@ -206,7 +273,7 @@ def maybe_download_golden_cache(remote_fingerprint: str | None = None) -> None:
                     import zipfile
 
                     with zipfile.ZipFile(ga, "r") as z:
-                        z.extractall(WARM_DIR)
+                        safe_zip_extract_all(z, WARM_DIR)
                 else:
                     import tarfile
 
@@ -246,12 +313,12 @@ def maybe_download_golden_cache(remote_fingerprint: str | None = None) -> None:
                             import zipfile
 
                             with zipfile.ZipFile(candidate, "r") as z:
-                                z.extractall(WARM_DIR)
+                                safe_zip_extract_all(z, WARM_DIR)
                         else:
                             import tarfile
 
                             with tarfile.open(candidate, "r:*") as t:
-                                t.extractall(WARM_DIR)
+                                safe_tar_extract_all(t, WARM_DIR)
                         return
                     except Exception:
                         continue
