@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from .base import Gate
-from .base import GateResult
+from .base import Gate, GateResult
 
 
 class DepsLockGate(Gate):
@@ -13,8 +12,8 @@ class DepsLockGate(Gate):
 
     def run(self, project_root: Any | None = None) -> GateResult:
         """Check for dependency lock files."""
-        # This is a placeholder implementation
-        # In a real scenario, this would check for lock files like poetry.lock, package-lock.json, etc.
+        # This is a placeholder implementation. In a real scenario this would
+        # check for lock files like poetry.lock or package-lock.json, etc.
         return GateResult(
             gate_id=self.gate_id,
             ok=True,

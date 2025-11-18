@@ -140,3 +140,4 @@ htmlcov/
 dist/
 build/
 artifacts/parity_report.json
+!.firsttry/ci-extra-requirements.txt

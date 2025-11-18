@@ -5,9 +5,7 @@ Avoids expensive file hashing when possible by checking file metadata first.
 
 import os
 
-from .cache_models import CacheStats
-from .cache_models import InputFileMeta
-from .cache_models import ToolCacheEntry
+from .cache_models import CacheStats, InputFileMeta, ToolCacheEntry
 
 
 def collect_input_stats(paths: list[str]) -> list[InputFileMeta] | None:

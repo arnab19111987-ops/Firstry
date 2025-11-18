@@ -5,8 +5,7 @@ import subprocess
 import sys
 from typing import Any
 
-from .base import Gate
-from .base import GateResult
+from .base import Gate, GateResult
 
 
 class PythonPytestGate(Gate):

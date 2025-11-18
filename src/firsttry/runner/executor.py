@@ -12,14 +12,11 @@ import os
 import subprocess
 import sys
 import uuid
-from typing import Any
-from typing import Dict
-from typing import List
+from typing import Any, Dict, List
 
 from firsttry.runner import taskcache
 
-from .model import DAG
-from .model import Task
+from .model import DAG, Task
 
 LOG_DIR = ".firsttry/logs"
 

@@ -16,8 +16,7 @@ from typing import Any
 import click
 
 from firsttry.check_registry import CHECK_REGISTRY as CHECKS_BY_ID
-from firsttry.planner.dag import Plan
-from firsttry.planner.dag import Task
+from firsttry.planner.dag import Plan, Task
 from firsttry.run_swarm import run_plan
 
 from . import __version__
@@ -27,9 +26,11 @@ from .agent_manager import SmartAgentManager
 from .ci_parity import parity_runner as ci_runner
 
 try:
-    from .ci_parity.cache_utils import auto_refresh_golden_cache
-    from .ci_parity.cache_utils import clear_cache
-    from .ci_parity.cache_utils import update_cache
+    from .ci_parity.cache_utils import (
+        auto_refresh_golden_cache,
+        clear_cache,
+        update_cache,
+    )
 except ImportError:
     # Fallback if cache_utils not available
     def auto_refresh_golden_cache(fetch_ref: str = "origin/main") -> None:
@@ -43,10 +44,8 @@ except ImportError:
 
 
 from .config_cache import plan_from_config_with_timeout
-from .config_loader import apply_overrides_to_plan
-from .config_loader import load_config
-from .context_builders import build_context
-from .context_builders import build_repo_profile
+from .config_loader import apply_overrides_to_plan, load_config
+from .context_builders import build_context, build_repo_profile
 from .license_guard import get_tier
 from .repo_rules import plan_checks_for_repo
 
@@ -588,6 +587,68 @@ def build_parser() -> argparse.ArgumentParser:
         )
         p_mirror.add_argument("--root", help="Repository root path", default=".")
 
+    # ci-discover: generate .firsttry/ci_mirror.toml from GitHub Actions
+    p_ci_discover = sub.add_parser(
+        "ci-discover", help="Discover CI jobs and write .firsttry/ci_mirror.toml"
+    )
+    p_ci_discover.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing .firsttry/ci_mirror.toml"
+    )
+    p_ci_discover.set_defaults(func=cmd_ci_discover)
+
+    p_ci_intent_autofill = sub.add_parser(
+        "ci-intent-autofill", help="Autofill intent keys into .firsttry/ci_mirror.toml"
+    )
+    p_ci_intent_autofill.add_argument(
+        "--mirror-path", default=".firsttry/ci_mirror.toml", help="Path to ci_mirror.toml"
+    )
+    p_ci_intent_autofill.set_defaults(func=cmd_ci_intent_autofill)
+
+    p_ci_intent_lint = sub.add_parser(
+        "ci-intent-lint", help="Lint .firsttry/ci_mirror.toml for missing intents"
+    )
+    p_ci_intent_lint.add_argument(
+        "--mirror-path", default=".firsttry/ci_mirror.toml", help="Path to ci_mirror.toml"
+    )
+    p_ci_intent_lint.set_defaults(func=cmd_ci_intent_lint)
+
+    # ------------------------------------------------------------
+    # Gate command group (dev/merge/release)
+    p_gate = sub.add_parser(
+        "gate",
+        help="Run FirstTry gates (dev / merge / release) mapped from your CI",
+        description=(
+            "Run FirstTry gates (dev / merge / release) using .firsttry/policy.toml "
+            "and .firsttry/ci_mirror.toml"
+        ),
+    )
+    gate_sub = p_gate.add_subparsers(dest="gate_cmd", required=True)
+
+    gate_sub.add_parser(
+        "dev",
+        help="Run the Dev gate (fast local CI mirror)",
+    )
+
+    gate_sub.add_parser(
+        "merge",
+        help="Run the Merge gate (broader CI mirror)",
+    )
+
+    gate_sub.add_parser(
+        "release",
+        help="Run the Release gate (includes cloud-only CI checks)",
+    )
+
+    # ci-mirror: run a gate (dev/merge/release) as a CI mirror
+    p_ci_mirror = sub.add_parser("ci-mirror", help="Run a FirstTry gate as CI mirror")
+    p_ci_mirror.add_argument(
+        "--gate",
+        choices=["dev", "merge", "release"],
+        default="merge",
+        help="Which gate to run as your CI mirror.",
+    )
+    p_ci_mirror.set_defaults(func=cmd_ci_mirror)
+
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
 
@@ -638,7 +699,22 @@ def cmd_pre_commit(args=None) -> int:
     # Build arguments
     argv = ["--self-check", "--quiet"] if mode == "self-check" else ["--parity", "--quiet"]
 
-    return ci_runner.main(argv)
+    rc = ci_runner.main(argv)
+
+    # Run the local dev gate as an additional safety check
+    try:
+        from firsttry.gates.runner import print_gate_summary, run_gate
+
+        gr = run_gate("dev")
+        print_gate_summary(gr)
+        if not gr.ok:
+            return 1
+    except Exception:
+        # Don't break the parity flow if the local gate has an unexpected error;
+        # fail-safe is to prefer parity result. Print a message to stderr.
+        print("[firsttry] Warning: local dev gate failed to run", file=sys.stderr)
+
+    return rc
 
 
 def _run_pre_commit_gate() -> int:
@@ -685,6 +761,24 @@ def _run_pre_commit_gate() -> int:
             changed_files = get_changed_files()
         except Exception:
             changed_files = []
+
+        # Run a quick secret scan on changed files and abort early with a distinct code
+        try:
+            from firsttry.security.secret_scan import scan_changed_files
+
+            # Exclude CI parity lock and other CI metadata from secret scanning
+            # as they can contain high-entropy hashes that trigger false positives.
+            files_for_scan = [f for f in changed_files if not (f and f.startswith("ci/"))]
+            secrets = scan_changed_files(files_for_scan)
+            if secrets:
+                click.echo("\nSecret scan: potential secrets found in changed files:", err=True)
+                for s in secrets:
+                    click.echo(f" - {s}", err=True)
+                # Distinct exit code used by CI/demo to indicate secret detection
+                return 97
+        except Exception:
+            # Non-fatal: if scanner fails, continue with other checks
+            pass
 
         # Call each runner once. Tests monkeypatch these on firsttry.cli.runners
         steps = []
@@ -1104,8 +1198,7 @@ def handle_status(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Handle the doctor command."""
     try:
-        from .doctor import render_human
-        from .doctor import run_doctor_report
+        from .doctor import render_human, run_doctor_report
 
         report = run_doctor_report()
         human_output = render_human(report)
@@ -1224,6 +1317,67 @@ def cmd_mirror_ci(args: argparse.Namespace) -> int:
     except ImportError:
         print("mirror-ci functionality not available")
         return 1
+
+
+def cmd_ci_discover(args: argparse.Namespace) -> int:
+    """Discover CI jobs from GitHub Actions and write .firsttry/ci_mirror.toml."""
+    import pathlib
+    import sys
+
+    from firsttry.gates.ci_discovery import discover_and_write_ci_mirror
+
+    root = pathlib.Path.cwd()
+    try:
+        path = discover_and_write_ci_mirror(
+            root=root, overwrite=bool(getattr(args, "overwrite", False))
+        )
+    except FileExistsError:
+        print(
+            "Refusing to overwrite existing .firsttry/ci_mirror.toml. Run with --overwrite to replace it.",
+            file=sys.stderr,
+        )
+        return 1
+    except RuntimeError as e:
+        print(f"CI discovery failed: {e}", file=sys.stderr)
+        return 1
+
+    print(f"Wrote CI mirror config to {path}")
+    return 0
+
+
+def cmd_ci_intent_autofill(args: argparse.Namespace) -> int:
+    """Autofill inferred intents into a ci_mirror.toml file."""
+    try:
+        from firsttry.ci_parity.intent_tools import cli_autofill_intents
+
+        path = getattr(args, "mirror_path", ".firsttry/ci_mirror.toml")
+        return cli_autofill_intents(path)
+    except Exception as e:
+        print(f"ci-intent-autofill failed: {e}")
+        return 1
+
+
+def cmd_ci_intent_lint(args: argparse.Namespace) -> int:
+    """Lint ci_mirror.toml for missing/expected intents."""
+    try:
+        from firsttry.ci_parity.intent_tools import cli_lint_intents
+
+        path = getattr(args, "mirror_path", ".firsttry/ci_mirror.toml")
+        return cli_lint_intents(path)
+    except Exception as e:
+        print(f"ci-intent-lint failed: {e}")
+        return 1
+
+
+def cmd_ci_mirror(args: argparse.Namespace) -> int:
+    """Run a FirstTry gate as a CI mirror (dev/merge/release)."""
+
+    from firsttry.gates.runner import print_gate_summary, run_gate
+
+    gate = getattr(args, "gate", "merge")
+    gr = run_gate(gate)  # type: ignore[arg-type]
+    print_gate_summary(gr)
+    return 0 if gr.ok else 1
 
 
 def main_impl(argv: list[str] | None = None) -> int:
@@ -1416,6 +1570,56 @@ def main_impl(argv: list[str] | None = None) -> int:
         except Exception:
             # Fallback to the async pipeline if cmd_run fails for any reason
             return _run_async_cli(run_fast_pipeline(args=args))
+
+    # ------------------------------------------------------------
+    # Gate group commands
+    if args.cmd == "gate":
+        from firsttry.gates.runner import print_gate_summary, run_gate
+
+        gr = run_gate(args.gate_cmd)
+        print_gate_summary(gr)
+        return 0 if gr.ok else 1
+
+    # ------------------------------------------------------------
+    # CI discover command
+    if args.cmd == "ci-discover":
+        import pathlib
+
+        from firsttry.gates.ci_discovery import discover_and_write_ci_mirror
+
+        root = pathlib.Path.cwd()
+        try:
+            discover_and_write_ci_mirror(
+                root=root,
+                overwrite=getattr(args, "overwrite", False),
+            )
+        except FileExistsError:
+            print(
+                "Refusing to overwrite existing .firsttry/ci_mirror.toml. "
+                "Use --overwrite to replace it.",
+                file=sys.stderr,
+            )
+            return 1
+
+        print("Wrote .firsttry/ci_mirror.toml")
+        return 0
+
+    # ------------------------------------------------------------
+    # CI intent autofill / lint commands
+    if args.cmd == "ci-intent-autofill":
+        return cmd_ci_intent_autofill(args)
+
+    if args.cmd == "ci-intent-lint":
+        return cmd_ci_intent_lint(args)
+
+    # ------------------------------------------------------------
+    # CI mirror command
+    if args.cmd == "ci-mirror":
+        from firsttry.gates.runner import print_gate_summary, run_gate
+
+        gr = run_gate(getattr(args, "gate", "merge"))
+        print_gate_summary(gr)
+        return 0 if gr.ok else 1
 
     elif args.cmd == "lint":
         return cmd_lint(args=args)
@@ -1979,13 +2183,10 @@ async def run_fast_pipeline(*, args=None) -> int:
     # DRY-RUN MODE: Build plan preview with tier lockout without executing
     dry_run = getattr(args, "dry_run", False) if args else False
     if dry_run:
-        from datetime import datetime
-        from datetime import timezone
+        from datetime import datetime, timezone
         from pathlib import Path
 
-        from .checks_orchestrator import FAST_FAMILIES
-        from .checks_orchestrator import MUTATING_FAMILIES
-        from .checks_orchestrator import SLOW_FAMILIES
+        from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
         from .reports.tier_map import get_checks_for_tier
 
         allowed = set(get_checks_for_tier(tier)) if tier else set()
@@ -2085,13 +2286,14 @@ async def run_fast_pipeline(*, args=None) -> int:
     report_json_path = getattr(args, "report_json", None) if args else None
     if report_json_path:
         try:
-            from datetime import datetime
-            from datetime import timezone
+            from datetime import datetime, timezone
             from pathlib import Path
 
-            from .checks_orchestrator import FAST_FAMILIES
-            from .checks_orchestrator import MUTATING_FAMILIES
-            from .checks_orchestrator import SLOW_FAMILIES
+            from .checks_orchestrator import (
+                FAST_FAMILIES,
+                MUTATING_FAMILIES,
+                SLOW_FAMILIES,
+            )
             from .reporting import write_report_async
             from .reports.tier_map import get_checks_for_tier
 
@@ -2548,3 +2750,19 @@ if __name__ == "__main__":
     # When executed as a script, run the public `main` wrapper which
     # provides the programmatic API expected by tests.
     raise SystemExit(main())
+
+
+# Optional: register Typer-based helper wrappers if Typer is available.
+# This is non-invasive and will not change the existing argparse-based
+# CLI behavior; it simply exposes the wrapper commands when a Typer
+# application imports this module and calls into `register_cli_wrappers`.
+try:  # pragma: no cover - optional runtime glue
+    import typer
+
+    from .cli_wrappers import register_cli_wrappers
+
+    _firsttry_wrappers_app = typer.Typer(help="FirstTry helper wrappers")
+    register_cli_wrappers(_firsttry_wrappers_app)
+except Exception:
+    # Typer not available or registration failed; keep main CLI untouched.
+    pass

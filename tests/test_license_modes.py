@@ -1,5 +1,4 @@
-from firsttry.config.schema import AppCfg
-from firsttry.config.schema import LicenseCfg
+from firsttry.config.schema import AppCfg, LicenseCfg
 from firsttry.license_guard import resolve_license
 
 

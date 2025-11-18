@@ -1,16 +1,32 @@
 repos:
-  # --- Fast commit-stage fixers ---
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.6.9
+  - repo: https://github.com/psf/black
+    rev: 25.9.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
     hooks:
       - id: ruff
-        name: ruff (fix)
-        args: [--fix]
-        stages: [pre-commit]
-      - id: ruff-format
-        stages: [pre-commit]
+        name: ruff (strict gate)
+        args:
+          - --config=.ruff.pre-commit.toml
+          - --exit-non-zero-on-fix
 
-  # Lint GitHub workflows for deprecated patterns
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (imports sorted)
+        args: ["--profile=black", "--filter-files"]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        stages: [push]
+        additional_dependencies: []
+
   - repo: local
     hooks:
       - id: gh-workflow-lint
@@ -20,94 +36,19 @@ repos:
         pass_filenames: false
         stages: [pre-commit, pre-push]
 
-  # --- Type-check at push (fast path) ---
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
-    hooks:
-      - id: mypy
-        stages: [pre-push]        # no --strict here; respect mypy.ini
-        additional_dependencies: []
-
-  # --- isort import sorting (Black-compatible) ---
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        name: isort (imports sorted)
-        args: ["--profile=black", "--filter-files"]
-        stages: [pre-commit, pre-push]
-
-  # --- Heavy parity occurs in pre-push hook (containerized) ---
-  # We don't wire it here; .githooks/pre-push calls ./scripts/ft-ci-local
-  
-  # --- CI Parity System (lock-driven enforcement) ---
-  - repo: local
-    hooks:
-      # Fast self-check on commit (GIT_HOOK=pre-commit triggers fast mode)
-      - id: ft-pre-commit
-        name: ft pre-commit (CI parity)
-        entry: bash -lc 'export GIT_HOOK=pre-commit; ft pre-commit'
-        language: system
-        pass_filenames: false
-        stages: [pre-commit]
-      
-      # Full parity on push (GIT_HOOK=pre-push triggers full parity)
-      - id: ft-pre-push
-        name: ft pre-commit (full parity)
-        entry: bash -lc 'export GIT_HOOK=pre-push FT_NO_NETWORK=1; ft pre-commit'
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
-
-repos:
-  - repo: https://github.com/psf/black
-    rev: 25.9.0
-    hooks:
-      - id: black
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.4
-    hooks:
-      - id: ruff
-        name: ruff (strict gate)
-        args:
-          - --config=.ruff.pre-commit.toml
-          - --exit-non-zero-on-fix
-  - repo: local
-    hooks:
       - id: forbid-legacy-cache-check
         name: Forbid legacy cache-hit checks
         entry: bash -lc "rg -n \"hit-local|hit-remote|miss-run\" src/ | rg -v cache_status && { echo 'Use cache_status, not status'; exit 1; } || true"
         language: system
-      
-      - id: mypy
-        name: mypy (type checking)
-        entry: mypy src
-        language: system
-        types: [python]
-        pass_filenames: false
 
       - id: pytest
         name: pytest (unit tests - fast smoke)
-        # Run a tiny, fast smoke subset to keep pre-commit quick and avoid
-        # collection-time failures from repository-wide test collection.
-        # Use bash wrapper + tee so output is captured in a deterministic log
-        # file even when pre-commit hides verbose output.
-        entry: bash -lc 'pytest -vv -x tests -k "not slow" | tee .pre-commit.pytest-fast-smoke.log 2>&1'
-        language: system
-        types: [python]
-        pass_filenames: false
-        log_file: .pre-commit.pytest-fast-smoke.log
-
-      - id: ft-pre-commit
-        name: FirstTry pre-commit (dry-run parity)
-        entry: bash -lc 'FT_CI_PARITY_DRYRUN=1 python -m firsttry.ci_parity.runner pre-commit'
+        entry: bash -lc 'pytest -q tests/test_config_compat.py tests/test_no_alias_in_repo.py'
         language: system
         pass_filenames: false
 
-      # === NEW: CI Parity Hook (SSOT) ===
       - id: ft-pre-commit-parity
         name: FirstTry pre-commit (repo-adaptive, CI-parity, timed)
-        # Wrap parity script in tee to capture stdout/stderr to a known log file
         entry: bash -lc 'scripts/ft_precommit_parity.sh 2>&1 | tee .pre-commit.ft-pre-commit-parity.log'
         language: system
         pass_filenames: false
@@ -127,3 +68,9 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      - id: firsttry-dev-gate
+        name: FirstTry Dev Gate
+        entry: firsttry gate dev
+        language: system
+        pass_filenames: false

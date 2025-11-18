@@ -37,8 +37,7 @@ def main():
     )
 
     # Build comprehensive report payload from orchestrator report with locked schema
-    from datetime import datetime
-    from datetime import timezone
+    from datetime import datetime, timezone
 
     payload = {
         "schema_version": 1,

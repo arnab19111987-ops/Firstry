@@ -1,5 +1,4 @@
-from firsttry.gates import run_pre_commit_gate
-from firsttry.gates import run_pre_push_gate
+from firsttry.gates import run_pre_commit_gate, run_pre_push_gate
 
 
 def test_run_pre_commit_gate_contains_core_checks():

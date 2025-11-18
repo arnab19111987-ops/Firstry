@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import types
 from pathlib import Path
-from typing import Any
-from typing import Callable
+from typing import Any, Callable
 
 import firsttry._config_module as legacy_mod
 import firsttry._original_config as original_mod

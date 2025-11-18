@@ -63,14 +63,18 @@ jobs:
       - name: Assert at least one cache hit
         run: |
           python - <<'PY'
+          import textwrap
+          code = """
           import json, pathlib, sys
           p = pathlib.Path('.firsttry/report.json')
           if not p.exists():
-              print("report.json not found"); sys.exit(1)
+            print("report.json not found"); sys.exit(1)
           d = json.loads(p.read_text())
           hits = sum(1 for r in d.get("checks", {}).values() if r.get("cache_status") in ("hit-local","hit-remote"))
           print("Cache hits:", hits)
           sys.exit(0 if hits >= 1 else 1)
+          """
+          exec(textwrap.dedent(code))
           PY
 
       - name: Upload artifacts (always)

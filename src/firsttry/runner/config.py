@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
+from typing import Any, Dict, List
 
-from firsttry.tests.prune import get_changed_files
-from firsttry.tests.prune import select_impacted_tests
+from firsttry.tests.prune import get_changed_files, select_impacted_tests
 
 from .planner import Planner
 

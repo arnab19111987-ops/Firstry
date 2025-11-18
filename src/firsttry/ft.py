@@ -15,8 +15,7 @@ import sys
 
 import click
 
-from . import cli as _cli
-from . import tier as _tier
+from . import cli as _cli, tier as _tier
 
 
 @click.group()

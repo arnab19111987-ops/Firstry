@@ -1,7 +1,6 @@
 """Test cache system fast-path functions."""
 
-from firsttry.cache import load_cache
-from firsttry.cache import save_cache
+from firsttry.cache import load_cache, save_cache
 
 
 def test_load_cache_returns_dict():

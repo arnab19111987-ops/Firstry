@@ -3,8 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .detection_cache import load_detect_cache
-from .detection_cache import save_detect_cache
+from .detection_cache import load_detect_cache, save_detect_cache
 
 
 def detect_languages(root: Path) -> set[str]:

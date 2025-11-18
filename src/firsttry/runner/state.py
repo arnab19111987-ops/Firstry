@@ -11,9 +11,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import Iterable
+from typing import Any, Dict, Iterable
 
 CACHE_DIR = Path(".firsttry/cache")
 STATE_FILE = CACHE_DIR / "last_green_run.json"

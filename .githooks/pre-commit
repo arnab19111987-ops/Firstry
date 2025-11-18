@@ -1,18 +1,32 @@
 #!/usr/bin/env bash
-set -eo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+
+if [[ "${SKIP_FT:-}" == "1" ]]; then
+  echo "[ft] WARNING: skipping pre-commit (SKIP_FT=1)"; exit 0
+fi
+
+# If the repo doesn't opt into parity, skip
 [ -f "$REPO_ROOT/ci/parity.lock.json" ] || exit 0
 
-# Tag this as a pre-commit hook (enables fast self-check mode)
 export GIT_HOOK=pre-commit
 
-# Use unified ft pre-commit command
-if [ -x "$REPO_ROOT/.venv-parity/bin/ft" ]; then
-  "$REPO_ROOT/.venv-parity/bin/ft" pre-commit
-elif command -v ft >/dev/null 2>&1; then
-  ft pre-commit
-else
-  # Fallback: activate venv and call CLI module
-  [ -x "$REPO_ROOT/.venv-parity/bin/python" ] && . "$REPO_ROOT/.venv-parity/bin/activate"
-  python -m firsttry.cli pre-commit
+# Prefer to run the repository's pre-commit if available (fast local fixes)
+if command -v pre-commit >/dev/null 2>&1; then
+  exec pre-commit run --hook-stage commit --color always
 fi
+
+# Use unified ft pre-commit command as the main parity gate
+if [ -x "$REPO_ROOT/.venv-parity/bin/ft" ]; then
+  exec "$REPO_ROOT/.venv-parity/bin/ft" pre-commit
+elif command -v ft >/dev/null 2>&1; then
+  exec ft pre-commit
+else
+  # Fallback: activate parity venv python and run the CLI module
+  if [ -x "$REPO_ROOT/.venv-parity/bin/python" ]; then
+    . "$REPO_ROOT/.venv-parity/bin/activate"
+  fi
+  exec python -m firsttry.cli pre-commit
+fi
+  python -m firsttry.cli pre-commit

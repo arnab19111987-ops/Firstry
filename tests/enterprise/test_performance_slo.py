@@ -12,10 +12,7 @@ import json
 import statistics
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import cast
+from typing import Any, Dict, List, cast
 
 import pytest
 

@@ -53,8 +53,9 @@ def test_json_summary_shape_and_env_path(tmp_path):
     # files: list of dicts {path, percent_covered}
     paths = {f["path"] for f in j["files"]}
     assert "src/firsttry/state.py" in paths
-    # Missing should include the critical that wasn’t present in coverage.json if your gate declares it critical
-    # If your gate only treats present criticals, this may be empty—adjust if needed
+    # Missing should include the critical that wasn’t present in coverage.json
+    # if your gate declares it critical. If your gate only treats present
+    # criticals, this may be empty — adjust if needed.
     assert isinstance(j["missing"], list)
 
 

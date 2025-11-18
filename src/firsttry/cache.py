@@ -8,8 +8,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from .cache_models import InputFileMeta
-from .cache_models import ToolCacheEntry
+from .cache_models import InputFileMeta, ToolCacheEntry
 from .cache_utils import get_cache_state
 
 # Global cache file (can be monkeypatched in tests)

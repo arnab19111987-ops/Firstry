@@ -9,12 +9,9 @@ import os
 import pathlib
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timedelta
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class HTTPResponseLike(Protocol):
@@ -319,8 +316,7 @@ try:
     from .tier import require_tier
 except Exception:
     # If tier is unavailable for any reason, provide a fallback that raises when used.
-    from typing import Any
-    from typing import Callable
+    from typing import Any, Callable
 
     def require_tier(min_tier: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         def _decorator(fn: Callable[..., Any]) -> Callable[..., Any]:

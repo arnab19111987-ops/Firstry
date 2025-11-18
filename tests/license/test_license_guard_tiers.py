@@ -11,8 +11,7 @@ from unittest import mock
 
 import pytest
 
-from firsttry import license_guard
-from firsttry import tier as tier_mod
+from firsttry import license_guard, tier as tier_mod
 
 
 def test_require_tier_pro_denies_free_with_clear_message(capsys):

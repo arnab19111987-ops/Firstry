@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import os
+import re
 import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 def current_repo_root() -> Path:
@@ -124,5 +122,16 @@ def normalize_cmd(cmd: List[str]) -> List[str]:
         # Drop standalone backslash tokens (defensive)
         if c == "\\":
             continue
-        out.append(c.strip('"').strip("'"))
+        token = c.strip('"').strip("'")
+        # Ignore common shell redirection tokens that may be present when
+        # parsing YAML run: blocks (e.g. `2>/dev/null`, `>/dev/null`, `2>&1`).
+        # These should not be forwarded to subprocess as program args.
+        if "/dev/null" in token:
+            continue
+        if token in {">", "2>", "2>&1", "&>", "1>", "1>&2"}:
+            continue
+        # ignore numeric fd redirections like '2>/dev/null' or '3>&1'
+        if re.match(r"^\d+>&?\d*$", token) or re.match(r"^\d+>.*", token):
+            continue
+        out.append(token)
     return out

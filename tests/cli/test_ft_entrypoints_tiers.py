@@ -14,9 +14,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from firsttry import ft as ft_mod
-from firsttry import license_guard
-from firsttry import tier as tier_mod
+from firsttry import ft as ft_mod, license_guard, tier as tier_mod
 
 
 def _pre_commit_fast_gate(ns: Namespace) -> int:

@@ -31,3 +31,6 @@ types-PyYAML==6.0.12.20240808
 # Runtime dependencies for dev environment
 sqlalchemy>=1.4.0
 anyio>=3.0
+
+blake3>=0.4
+pyyaml>=6.0

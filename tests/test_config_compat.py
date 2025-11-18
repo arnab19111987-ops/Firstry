@@ -1,7 +1,6 @@
 import pytest
 
-from firsttry.config import Config
-from firsttry.config import FirstTryConfig
+from firsttry.config import Config, FirstTryConfig
 
 pytestmark = pytest.mark.filterwarnings("ignore:.*FirstTryConfig.*:DeprecationWarning")
 

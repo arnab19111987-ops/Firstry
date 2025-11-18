@@ -4,12 +4,9 @@ import asyncio
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-from typing import Optional
-from typing import Protocol
+from typing import Any, Optional, Protocol
 
-from ..twin.hashers import hash_bytes
-from ..twin.hashers import hash_file
+from ..twin.hashers import hash_bytes, hash_file
 from ..utils.proc import run_cmd as _sync_run_cmd
 
 

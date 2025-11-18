@@ -14,8 +14,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from firsttry.twin.fastpath_scan import get_backend
-from firsttry.twin.fastpath_scan import scan_paths
+from firsttry.twin.fastpath_scan import get_backend, scan_paths
 
 
 def check_parity(root: Path) -> bool:

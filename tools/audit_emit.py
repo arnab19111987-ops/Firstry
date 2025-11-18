@@ -1,8 +1,7 @@
 """Audit schema emission and validation for FirstTry enterprise compliance."""
 
 import json
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
