@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "ts": 1763363362.7716563,
-=======
-  "ts": 1762749138.9102423,
->>>>>>> a10e9b71 (feat: complete CI parity setup with containerized hooks and config-aware mypy)
+  "ts": 1763471410.2476683,
   "payload": {
     "python": true,
     "node": true,

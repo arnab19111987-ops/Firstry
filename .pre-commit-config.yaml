@@ -68,3 +68,9 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+
+      - id: firsttry-dev-gate
+        name: FirstTry Dev Gate
+        entry: firsttry gate dev
+        language: system
+        pass_filenames: false

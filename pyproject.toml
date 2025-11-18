@@ -45,6 +45,7 @@ dev = [
   "bandit==1.7.9",
   "toml>=0.10",
   "blake3>=0.4",
+  "pyyaml>=6.0",
 ]
 
 [project.scripts]
