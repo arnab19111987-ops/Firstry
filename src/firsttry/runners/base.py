@@ -64,3 +64,10 @@ def ensure_bin(name: str, alt: str | None = None) -> Optional[str]:
     if alt and shutil.which(alt):
         return None
     return f"{name} executable not found. Install it and re-run."
+
+
+# Backwards-compatibility aliases for older runner implementations/tests
+# Some modules expect the older names `BaseRunner` and `RunnerResult`;
+# provide aliases so those imports keep working.
+BaseRunner = CheckRunner
+RunnerResult = RunResult
