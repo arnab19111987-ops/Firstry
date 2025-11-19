@@ -1,12 +1,6 @@
 name: Audit & Compliance - Policy Enforcement
 
 on:
-  workflow_run:
-    workflows: ["CI - FirstTry Enterprise Pipeline"]
-    types: [completed]
-  schedule:
-    # Weekly audit on Monday at 8 AM UTC
-    - cron: "0 8 * * 1"
   workflow_dispatch:
 
 permissions:
