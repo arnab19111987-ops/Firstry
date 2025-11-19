@@ -1,18 +1,7 @@
 name: firsttry-quality
 
 on:
-  push:
-    paths:
-      - "**/*.py"
-      - ".github/workflows/firsttry-quality.yml"
-      - "pyproject.toml"
-      - "Makefile"
-  pull_request:
-    paths:
-      - "**/*.py"
-      - ".github/workflows/firsttry-quality.yml"
-      - "pyproject.toml"
-      - "Makefile"
+  workflow_dispatch:
 
 jobs:
   quality:
