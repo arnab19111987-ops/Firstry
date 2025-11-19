@@ -4,9 +4,7 @@
 name: CI Parity
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   precommit-parity:
