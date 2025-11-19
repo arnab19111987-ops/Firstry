@@ -1,19 +1,7 @@
 name: Security - CodeQL Analysis
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - "src/**"
-      - "tests/**"
-      - ".github/workflows/codeql.yml"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "src/**"
-      - "tests/**"
-  schedule:
-    - cron: "0 2 * * 1"  # Monday 2 AM UTC
+  workflow_dispatch:
 
 permissions:
   contents: read
