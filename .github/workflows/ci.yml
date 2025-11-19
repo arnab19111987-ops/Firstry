@@ -1,13 +1,7 @@
 name: CI - FirstTry Enterprise Pipeline
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-  schedule:
-    # Run nightly builds at 2 AM UTC
-    - cron: "0 2 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
