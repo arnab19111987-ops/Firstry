@@ -24,6 +24,9 @@ dependencies = [
 
 [project.optional-dependencies]
 enterprise = ["boto3>=1.34"]
+dev = [
+  "pytest-timeout>=2.0.0",
+]
 
 [project.scripts]
 firsttry = "firsttry.cli:main"
