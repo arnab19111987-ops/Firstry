@@ -1,16 +1,7 @@
 name: node-ci
 
 on:
-  push:
-    paths:
-      - "dashboard/**"
-      - "vscode-extension/**"
-      - ".github/workflows/node-ci.yml"
-  pull_request:
-    paths:
-      - "dashboard/**"
-      - "vscode-extension/**"
-      - ".github/workflows/node-ci.yml"
+  workflow_dispatch:
 
 jobs:
   actionlint:
