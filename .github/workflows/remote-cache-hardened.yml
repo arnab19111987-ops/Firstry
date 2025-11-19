@@ -1,10 +1,7 @@
 name: Remote Cache - OIDC AWS Integration (Hardened)
 
 on:
-  workflow_run:
-    workflows: [CI - FirstTry Enterprise Pipeline]
-    types: [completed]
-    branches: [main, develop]
+  workflow_dispatch:
 
 # 1. LOCK DOWN PERMISSIONS - OIDC for AWS
 permissions:
