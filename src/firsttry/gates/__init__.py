@@ -6,6 +6,23 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from .base import GateResult
 from .utils import _safe_gate
+from dataclasses import dataclass, field
+
+
+@dataclass
+class GateSummaryItem:
+    name: str
+    kind: str  # "checked" | "skipped" | "unknown"
+    reason: str | None = None
+
+
+@dataclass
+class GateSummary:
+    gate_name: str
+    checked: list[GateSummaryItem] = field(default_factory=list)
+    skipped: list[GateSummaryItem] = field(default_factory=list)
+    unknown: list[GateSummaryItem] = field(default_factory=list)
+    result: str = "FAIL"
 
 # Default timeout for the tests gate (seconds)
 DEFAULT_CHECK_TESTS_TIMEOUT = float(os.getenv("FIRSTTRY_CHECK_TESTS_TIMEOUT", "60"))
@@ -202,7 +219,14 @@ def check_tests(
             output="pytest not found",
         )
     except subprocess.TimeoutExpired as exc:
-        stdout = (exc.stdout or "") + (
+        if exc.stdout is not None:
+            if isinstance(exc.stdout, bytes):
+                stdout_str = exc.stdout.decode(errors="replace")
+            else:
+                stdout_str = exc.stdout
+        else:
+            stdout_str = ""
+        stdout = stdout_str + (
             f"\n[firsttry gates.check_tests] pytest timed out after {timeout:.0f}s: {exc.cmd!r}\n"
         )
         return GateResult(
@@ -270,3 +294,76 @@ def gate_result_to_dict(gate_result: Any) -> Dict[str, Any]:
         "stdout": getattr(gate_result, "output", gate_result.reason),
         "returncode": 0 if gate_result.ok else 1,
     }
+
+
+def build_gate_summary(gate_name: str, results: List[Any]) -> GateSummary:
+    """Build a GateSummary from the serializable results list.
+
+    Accepts items that are either dicts (serialized GateResult) or
+    GateResult-like objects. This keeps compatibility with the
+    legacy run_gate() which returns dicts for CLI compatibility.
+    """
+    summary = GateSummary(gate_name=gate_name)
+    for r in results:
+        # Normalize to dict-like access
+        if isinstance(r, dict):
+            name = r.get("gate") or r.get("name") or r.get("gate_id") or "unknown"
+            ok = bool(r.get("ok", False))
+            skipped = bool(r.get("skipped", False))
+            reason = r.get("info") or r.get("details") or r.get("stdout") or r.get("reason")
+        else:
+            name = getattr(r, "gate_id", getattr(r, "name", "unknown"))
+            ok = bool(getattr(r, "ok", False))
+            skipped = bool(getattr(r, "skipped", False))
+            reason = getattr(r, "reason", None)
+
+        if skipped:
+            summary.skipped.append(GateSummaryItem(name=name, kind="skipped", reason=reason))
+        elif ok:
+            summary.checked.append(GateSummaryItem(name=name, kind="checked", reason=reason))
+        else:
+            summary.unknown.append(GateSummaryItem(name=name, kind="unknown", reason=reason))
+
+    # Determine final result: PASS if all non-skipped checks are ok
+    non_skipped = [r for r in results if not (isinstance(r, dict) and r.get("skipped")) and not (not isinstance(r, dict) and getattr(r, "skipped", False))]
+    all_ok = True
+    for r in non_skipped:
+        if isinstance(r, dict):
+            if not bool(r.get("ok", False)):
+                all_ok = False
+                break
+        else:
+            if not bool(getattr(r, "ok", False)):
+                all_ok = False
+                break
+
+    summary.result = "PASS" if all_ok else "FAIL"
+    return summary
+
+
+def print_gate_human_summary(summary: GateSummary) -> None:
+    print(f"Gate: {summary.gate_name}\n")
+    print("Checked:")
+    if summary.checked:
+        for item in summary.checked:
+            print(f"  • {item.name}")
+    else:
+        print("  • none")
+
+    print("\nSkipped:")
+    if summary.skipped:
+        for item in summary.skipped:
+            reason = f" ({item.reason})" if item.reason else ""
+            print(f"  • {item.name}{reason}")
+    else:
+        print("  • none")
+
+    print("\nUnknown:")
+    if summary.unknown:
+        for item in summary.unknown:
+            reason = f" ({item.reason})" if item.reason else ""
+            print(f"  • {item.name}{reason}")
+    else:
+        print("  • none")
+
+    print(f"\nResult: {summary.result}\n")

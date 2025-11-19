@@ -63,3 +63,4 @@ yarn.lock
 # Local virtualenvs created during testing
 .venv*
 .venv-firsttry*
+*.egg-info/
