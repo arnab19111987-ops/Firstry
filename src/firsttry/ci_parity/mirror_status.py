@@ -7,6 +7,7 @@ hashes, so the status is considered STALE when the set of workflow filenames
 doesn't match the mirror's recorded workflows or when the mirror file is
 missing.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -14,7 +15,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Set
 
-from .intents import DEFAULT_MIRROR_PATH, DEFAULT_WORKFLOWS_ROOT, _iter_workflow_files, _load_mirror_jobs
+from .intents import (
+    DEFAULT_MIRROR_PATH,
+    DEFAULT_WORKFLOWS_ROOT,
+    _iter_workflow_files,
+    _load_mirror_jobs,
+)
 
 
 @dataclass(frozen=True)
@@ -33,9 +39,14 @@ def _fingerprint(path: Path) -> str:
     return h.hexdigest()
 
 
-def get_mirror_status(mirror_path: Optional[str | Path] = None, workflows_root: Optional[str | Path] = None) -> MirrorStatus:
+def get_mirror_status(
+    mirror_path: Optional[str | Path] = None,
+    workflows_root: Optional[str | Path] = None,
+) -> MirrorStatus:
     mpath = Path(mirror_path) if mirror_path is not None else DEFAULT_MIRROR_PATH
-    wroot = Path(workflows_root) if workflows_root is not None else DEFAULT_WORKFLOWS_ROOT
+    wroot = (
+        Path(workflows_root) if workflows_root is not None else DEFAULT_WORKFLOWS_ROOT
+    )
 
     # Discover workflows on disk
     workflow_files = [p.name for p in _iter_workflow_files(wroot)]
@@ -46,7 +57,12 @@ def get_mirror_status(mirror_path: Optional[str | Path] = None, workflows_root: 
         mirror_jobs = _load_mirror_jobs(mpath)
     except Exception:
         # Mirror missing or unreadable -> stale
-        return MirrorStatus(is_fresh=False, missing_workflows=sorted(list(workflow_set)), extra_workflows=[], fingerprints=None)
+        return MirrorStatus(
+            is_fresh=False,
+            missing_workflows=sorted(list(workflow_set)),
+            extra_workflows=[],
+            fingerprints=None,
+        )
 
     mirror_workflows = {mj.workflow for mj in mirror_jobs}
 
@@ -58,10 +74,15 @@ def get_mirror_status(mirror_path: Optional[str | Path] = None, workflows_root: 
     # Optionally compute fingerprints for present workflows (lightweight)
     fingerprints = {}
     for wf in workflow_files:
-        p = (wroot / wf)
+        p = wroot / wf
         try:
             fingerprints[wf] = _fingerprint(p)
         except Exception:
             fingerprints[wf] = ""
 
-    return MirrorStatus(is_fresh=is_fresh, missing_workflows=missing, extra_workflows=extra, fingerprints=fingerprints)
+    return MirrorStatus(
+        is_fresh=is_fresh,
+        missing_workflows=missing,
+        extra_workflows=extra,
+        fingerprints=fingerprints,
+    )

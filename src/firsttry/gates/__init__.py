@@ -2,12 +2,13 @@
 
 import os
 import subprocess
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
+
+from firsttry.ci_parity.unmapped import get_unmapped_steps_for_gate
 
 from .base import GateResult
 from .utils import _safe_gate
-from dataclasses import dataclass, field
-from firsttry.ci_parity.unmapped import get_unmapped_steps_for_gate
 
 
 @dataclass
@@ -27,6 +28,7 @@ class GateSummary:
     # Mirror status fields (populated lazily by build_gate_summary)
     mirror_fresh: bool = True
     mirror_stale_workflows: list[str] = field(default_factory=list)
+
 
 # Default timeout for the tests gate (seconds)
 DEFAULT_CHECK_TESTS_TIMEOUT = float(os.getenv("FIRSTTRY_CHECK_TESTS_TIMEOUT", "60"))
@@ -314,7 +316,9 @@ def build_gate_summary(gate_name: str, results: List[Any]) -> GateSummary:
             name = r.get("gate") or r.get("name") or r.get("gate_id") or "unknown"
             ok = bool(r.get("ok", False))
             skipped = bool(r.get("skipped", False))
-            reason = r.get("info") or r.get("details") or r.get("stdout") or r.get("reason")
+            reason = (
+                r.get("info") or r.get("details") or r.get("stdout") or r.get("reason")
+            )
         else:
             name = getattr(r, "gate_id", getattr(r, "name", "unknown"))
             ok = bool(getattr(r, "ok", False))
@@ -322,14 +326,25 @@ def build_gate_summary(gate_name: str, results: List[Any]) -> GateSummary:
             reason = getattr(r, "reason", None)
 
         if skipped:
-            summary.skipped.append(GateSummaryItem(name=name, kind="skipped", reason=reason))
+            summary.skipped.append(
+                GateSummaryItem(name=name, kind="skipped", reason=reason)
+            )
         elif ok:
-            summary.checked.append(GateSummaryItem(name=name, kind="checked", reason=reason))
+            summary.checked.append(
+                GateSummaryItem(name=name, kind="checked", reason=reason)
+            )
         else:
-            summary.unknown.append(GateSummaryItem(name=name, kind="unknown", reason=reason))
+            summary.unknown.append(
+                GateSummaryItem(name=name, kind="unknown", reason=reason)
+            )
 
     # Determine final result: PASS if all non-skipped checks are ok
-    non_skipped = [r for r in results if not (isinstance(r, dict) and r.get("skipped")) and not (not isinstance(r, dict) and getattr(r, "skipped", False))]
+    non_skipped = [
+        r
+        for r in results
+        if not (isinstance(r, dict) and r.get("skipped"))
+        and not (not isinstance(r, dict) and getattr(r, "skipped", False))
+    ]
     all_ok = True
     for r in non_skipped:
         if isinstance(r, dict):
@@ -348,7 +363,9 @@ def build_gate_summary(gate_name: str, results: List[Any]) -> GateSummary:
         for u in unmapped:
             # Name encodes workflow/job/step for clarity in human summaries
             name = f"{u.workflow}/{u.job}/{u.step}"
-            summary.unknown.append(GateSummaryItem(name=name, kind="unknown", reason=u.reason))
+            summary.unknown.append(
+                GateSummaryItem(name=name, kind="unknown", reason=u.reason)
+            )
     except Exception:
         # Be defensive: failure to compute unmapped steps should not break gate
         pass
@@ -358,7 +375,9 @@ def build_gate_summary(gate_name: str, results: List[Any]) -> GateSummary:
 
         ms = get_mirror_status()
         summary.mirror_fresh = ms.is_fresh
-        summary.mirror_stale_workflows = list(ms.missing_workflows or []) + list(ms.extra_workflows or [])
+        summary.mirror_stale_workflows = list(ms.missing_workflows or []) + list(
+            ms.extra_workflows or []
+        )
     except Exception:
         # Do not break gate on mirror status failure
         summary.mirror_fresh = True

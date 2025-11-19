@@ -1,5 +1,4 @@
-import pytest
-from firsttry.gates import run_gate, build_gate_summary, print_gate_human_summary
+from firsttry.gates import build_gate_summary, print_gate_human_summary, run_gate
 
 
 def test_gate_dev_prints_summary(capsys):

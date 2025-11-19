@@ -649,7 +649,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # ci-mirror: run a gate (dev/merge/release) as a CI mirror or show status
-    p_ci_mirror = sub.add_parser("ci-mirror", help="Run a FirstTry gate as CI mirror or show mirror status")
+    p_ci_mirror = sub.add_parser(
+        "ci-mirror", help="Run a FirstTry gate as CI mirror or show mirror status"
+    )
     p_ci_mirror_sub = p_ci_mirror.add_subparsers(dest="ci_mirror_cmd", required=True)
 
     p_ci_run = p_ci_mirror_sub.add_parser("run", help="Run a gate as your CI mirror.")
@@ -660,7 +662,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Which gate to run as your CI mirror.",
     )
 
-    p_ci_status = p_ci_mirror_sub.add_parser("status", help="Show CI mirror status")
+    _ = p_ci_mirror_sub.add_parser("status", help="Show CI mirror status")
 
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
@@ -1614,7 +1616,11 @@ def main_impl(argv: list[str] | None = None) -> int:
     # ------------------------------------------------------------
     # Gate group commands
     if args.cmd == "gate":
-        from firsttry.gates import run_gate, build_gate_summary, print_gate_human_summary
+        from firsttry.gates import (
+            build_gate_summary,
+            print_gate_human_summary,
+            run_gate,
+        )
 
         gate_map = {
             "dev": "pre-commit",
@@ -1665,8 +1671,8 @@ def main_impl(argv: list[str] | None = None) -> int:
     if args.cmd == "ci-mirror":
         # Two modes: `firsttry ci-mirror run --gate <...>` and `firsttry ci-mirror status`
         if getattr(args, "ci_mirror_cmd", None) == "status":
-            from firsttry.ci_parity.unmapped import find_unmapped_steps
             from firsttry.ci_parity.mirror_status import get_mirror_status
+            from firsttry.ci_parity.unmapped import find_unmapped_steps
 
             ms = get_mirror_status()
             unmapped = find_unmapped_steps()
@@ -1677,6 +1683,7 @@ def main_impl(argv: list[str] | None = None) -> int:
 
             # Workflows: mapped/unmapped counts
             from firsttry.ci_parity.intents import _iter_workflow_files
+
             wroot = None
             try:
                 # derive default root

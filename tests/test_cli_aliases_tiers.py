@@ -1,6 +1,6 @@
-import pytest
-from src.firsttry.cli_aliases import FT_ALIAS_MAP
 from src.firsttry import pipelines
+from src.firsttry.cli_aliases import FT_ALIAS_MAP
+
 
 def test_ft_pytest_uses_valid_tier():
     spec = FT_ALIAS_MAP["pytest"]
@@ -17,4 +17,6 @@ def test_ft_pytest_uses_valid_tier():
             valid_tiers.add(str(t))
     # Accept some known aliases for test
     valid_tiers.update(["strict", "free-strict", "fast", "free-lite"])
-    assert tier_name in valid_tiers, f"ft pytest uses invalid tier {tier_name!r}, valid tiers: {sorted(valid_tiers)}"
+    assert (
+        tier_name in valid_tiers
+    ), f"ft pytest uses invalid tier {tier_name!r}, valid tiers: {sorted(valid_tiers)}"
