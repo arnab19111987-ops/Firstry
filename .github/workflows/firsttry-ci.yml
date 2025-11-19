@@ -17,6 +17,8 @@ jobs:
   python-cli:
     name: firsttry gate (ruff/black/mypy/pytest/coverage + license)
     runs-on: ubuntu-latest
+    env:
+      FIRSTTRY_SHARED_SECRET: test-shared-secret-32chars-minimum-aaaaaaaaaaaaaaaa
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +55,7 @@ jobs:
         env:
           FIRSTTRY_LICENSE_KEY: "ABC123"
           FIRSTTRY_LICENSE_URL: "http://127.0.0.1:8081"
+          FIRSTTRY_SHARED_SECRET: test-shared-secret-32chars-minimum-aaaaaaaaaaaaaaaa
         run: |
           python -m firsttry run --gate pre-commit --require-license
 

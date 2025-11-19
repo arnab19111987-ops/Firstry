@@ -29,6 +29,8 @@ jobs:
   ci-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      FIRSTTRY_SHARED_SECRET: test-shared-secret-32chars-minimum-aaaaaaaaaaaaaaaa
 
     steps:
       - name: Checkout
@@ -59,25 +61,12 @@ jobs:
             python -m pip install -e tools/firsttry
           fi
 
-      - name: Run tests with coverage
+      - name: Run FirstTry dev gate (minimal CI)
         run: |
-          coverage run --rcfile=.coveragerc -m pytest -q
-          coverage xml --rcfile=.coveragerc
-          coverage report -m --rcfile=.coveragerc
-
-      - name: Enforce temporary relaxed coverage gate (55%)
-        run: |
-            python - << 'PY'
-            import sys, xml.etree.ElementTree as ET
-            tree = ET.parse("coverage.xml")
-            total = tree.getroot().attrib.get("line-rate")
-            if total is None:
-                print("ERROR: no line-rate in coverage.xml")
-                sys.exit(1)
-            pct = float(total) * 100.0
-            print(f"Total coverage: {pct:.2f}%")
-            THRESH = 80.0
-            if pct < THRESH:
-                print(f"::error ::Coverage {pct:.2f}% is below {THRESH}% threshold")
-                sys.exit(1)
-            PY
+          # Use editable install and run the gates which encapsulate lint/types/tests
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" || python -m pip install "[dev]"
+          if [ -d "tools/firsttry" ]; then
+            python -m pip install -e tools/firsttry
+          fi
+          firsttry gate dev

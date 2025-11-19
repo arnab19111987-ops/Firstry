@@ -59,3 +59,7 @@ yarn.lock
 # Misc
 .env
 .env.*
+
+# Local virtualenvs created during testing
+.venv*
+.venv-firsttry*
