@@ -1,9 +1,7 @@
 name: FirstTry Proof
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
