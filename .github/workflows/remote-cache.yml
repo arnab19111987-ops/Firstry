@@ -1,15 +1,7 @@
 name: Remote Cache - S3 Integration
 
 on:
-  workflow_run:
-    workflows: ["CI - FirstTry Enterprise Pipeline"]
-    types: [completed]
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/remote-cache.yml'
-      - 'src/firsttry/executor/remote_cache.py'
 
 permissions:
   contents: read
