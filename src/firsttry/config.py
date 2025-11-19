@@ -1,3 +1,21 @@
+from functools import lru_cache
+import os
+
+
+@lru_cache
+def get_tier() -> str:
+    """
+    Return the current FirstTry tier.
+
+    Supported values:
+    - "dev": default for local development and OSS CI
+    - "team": same behavior as "dev" for now
+    - "enterprise": enables stricter checks (AWS, audit, etc.)
+    """
+    value = os.getenv("FIRSTTRY_TIER", "dev").strip().lower()
+    if value in {"dev", "team", "enterprise"}:
+        return value
+    return "dev"
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path

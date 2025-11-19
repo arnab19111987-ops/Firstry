@@ -11,6 +11,7 @@ import base64
 import hashlib
 import hmac
 from pathlib import Path
+from firsttry.config import get_tier
 
 
 class HTTPResponseLike(Protocol):
@@ -202,9 +203,38 @@ def ensure_trial_license_if_missing(days: int = 3, plan: str = "trial") -> Licen
 # HMAC signing + Pro gating
 # -----------------------------
 
-# For dev/tests only. In production load from env/secret store.
-# Prefer reading from environment so secrets aren't hardcoded in source.
-DEFAULT_SHARED_SECRET = os.getenv("FIRSTTRY_SHARED_SECRET", "dev-secret-change-me")
+def get_shared_secret() -> str:
+    """
+    Return the shared secret used for license HMACs.
+
+    - In dev/team tiers, a built-in default is allowed so that local runs and
+      OSS CI do not require configuring a secret.
+    - In enterprise tier, the secret must be provided explicitly via
+      FIRSTTRY_SHARED_SECRET and must be at least 32 characters.
+    """
+    secret = os.getenv("FIRSTTRY_SHARED_SECRET")
+    if secret:
+        secret = secret.strip()
+        if len(secret) < 32:
+            raise RuntimeError(
+                "FIRSTTRY_SHARED_SECRET environment variable is required in production. "
+                "Set it to a secure random string (minimum 32 characters)."
+            )
+        return secret
+
+    tier = get_tier()
+    if tier in {"dev", "team"}:
+        # Safe default for local / OSS usage; not intended for production.
+        return "firsttry-dev-default-secret-32-chars-minimum!!"
+
+    raise RuntimeError(
+        "FIRSTTRY_SHARED_SECRET environment variable is required in production. "
+        "Set it to a secure random string (minimum 32 characters)."
+    )
+
+# Default for older APIs in this module — evaluated at import time to preserve
+# previous semantics where a module-level DEFAULT_SHARED_SECRET was available.
+DEFAULT_SHARED_SECRET = get_shared_secret()
 
 
 def _license_cache_path() -> Path:
