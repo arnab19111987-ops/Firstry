@@ -1,11 +1,7 @@
 name: JSON lint
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-      - develop
+  workflow_dispatch:
 
 jobs:
   json-lint:
