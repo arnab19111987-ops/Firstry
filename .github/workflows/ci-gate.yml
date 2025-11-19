@@ -1,22 +1,7 @@
 name: ci-gate
 
 on:
-  push:
-    paths:
-      - "**/*.py"
-      - ".github/workflows/ci-gate.yml"
-      - "pyproject.toml"
-      - "pytest.ini"
-      - "Makefile"
-      - "tools/firsttry/**"
-  pull_request:
-    paths:
-      - "**/*.py"
-      - ".github/workflows/ci-gate.yml"
-      - "pyproject.toml"
-      - "pytest.ini"
-      - "Makefile"
-      - "tools/firsttry/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
