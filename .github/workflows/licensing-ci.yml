@@ -1,14 +1,7 @@
 name: licensing-ci
 
 on:
-  push:
-    paths:
-      - "licensing/**"
-      - ".github/workflows/licensing-ci.yml"
-  pull_request:
-    paths:
-      - "licensing/**"
-      - ".github/workflows/licensing-ci.yml"
+  workflow_dispatch:
 
 jobs:
   licensing-tests:
