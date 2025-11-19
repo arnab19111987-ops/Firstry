@@ -10,8 +10,8 @@ we populate `RUNNERS` from `registry.default_registry()` and ensure a
 import os
 from typing import Any, Dict
 
-from .registry import default_registry
 from .custom import CustomRunner
+from .registry import default_registry
 
 __all__ = [
     "RUNNERS",

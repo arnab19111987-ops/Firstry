@@ -1,17 +1,19 @@
 from firsttry.runners import RUNNERS
 
 
-def test_runners_has_custom_runner():
+def test_runners_has_custom_runner() -> None:
+    """Ensure RUNNERS always exposes a 'custom' runner and it's runnable."""
     assert "custom" in RUNNERS, "RUNNERS must include 'custom'"
-    # Ensure the custom entry is a runner-like object (has .run or is callable)
-    custom = RUNNERS["custom"]
-    assert custom is not None, "custom runner must not be None"
-    assert hasattr(custom, "run") or callable(custom), "custom runner should have .run or be callable"
+    cr = RUNNERS.get("custom")
+    assert cr is not None
+    assert hasattr(cr, "run") or callable(cr), "custom runner must be runnable"
 
 
-def test_runners_has_core_tool_runners():
-    for key in ("ruff", "mypy", "pytest"):
-        assert key in RUNNERS, f"RUNNERS must include '{key}'"
-        runner = RUNNERS[key]
-        assert runner is not None, f"runner '{key}' must not be None"
-        assert hasattr(runner, "run") or callable(runner), f"runner '{key}' should have .run or be callable"
+def test_runners_have_core_tools() -> None:
+    """Ensure core tool runners are present and have a run/prereq interface."""
+    core = ["ruff", "mypy", "pytest"]
+    for c in core:
+        assert c in RUNNERS, f"{c} should be registered in RUNNERS"
+        obj = RUNNERS[c]
+        assert obj is not None
+        assert hasattr(obj, "run") or callable(obj), f"{c} runner must be callable or have a run method"
