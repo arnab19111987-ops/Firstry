@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .base import GateResult
 from .utils import _safe_gate
 from dataclasses import dataclass, field
+from firsttry.ci_parity.unmapped import get_unmapped_steps_for_gate
 
 
 @dataclass
@@ -23,6 +24,9 @@ class GateSummary:
     skipped: list[GateSummaryItem] = field(default_factory=list)
     unknown: list[GateSummaryItem] = field(default_factory=list)
     result: str = "FAIL"
+    # Mirror status fields (populated lazily by build_gate_summary)
+    mirror_fresh: bool = True
+    mirror_stale_workflows: list[str] = field(default_factory=list)
 
 # Default timeout for the tests gate (seconds)
 DEFAULT_CHECK_TESTS_TIMEOUT = float(os.getenv("FIRSTTRY_CHECK_TESTS_TIMEOUT", "60"))
@@ -338,6 +342,27 @@ def build_gate_summary(gate_name: str, results: List[Any]) -> GateSummary:
                 break
 
     summary.result = "PASS" if all_ok else "FAIL"
+    # Augment summary with unmapped CI steps (if any)
+    try:
+        unmapped = get_unmapped_steps_for_gate(gate_name)
+        for u in unmapped:
+            # Name encodes workflow/job/step for clarity in human summaries
+            name = f"{u.workflow}/{u.job}/{u.step}"
+            summary.unknown.append(GateSummaryItem(name=name, kind="unknown", reason=u.reason))
+    except Exception:
+        # Be defensive: failure to compute unmapped steps should not break gate
+        pass
+    # Augment summary with mirror status (best-effort)
+    try:
+        from firsttry.ci_parity.mirror_status import get_mirror_status
+
+        ms = get_mirror_status()
+        summary.mirror_fresh = ms.is_fresh
+        summary.mirror_stale_workflows = list(ms.missing_workflows or []) + list(ms.extra_workflows or [])
+    except Exception:
+        # Do not break gate on mirror status failure
+        summary.mirror_fresh = True
+        summary.mirror_stale_workflows = []
     return summary
 
 
@@ -366,4 +391,11 @@ def print_gate_human_summary(summary: GateSummary) -> None:
     else:
         print("  • none")
 
-    print(f"\nResult: {summary.result}\n")
+    # Mirror status
+    mirror_line = "Mirror: FRESH"
+    if not getattr(summary, "mirror_fresh", True):
+        stale = ", ".join(summary.mirror_stale_workflows or [])
+        mirror_line = f"Mirror: STALE ({stale})" if stale else "Mirror: STALE"
+    print(f"\n{mirror_line}\n")
+
+    print(f"Result: {summary.result}\n")

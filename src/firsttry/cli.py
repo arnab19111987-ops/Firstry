@@ -648,15 +648,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run the Release gate (includes cloud-only CI checks)",
     )
 
-    # ci-mirror: run a gate (dev/merge/release) as a CI mirror
-    p_ci_mirror = sub.add_parser("ci-mirror", help="Run a FirstTry gate as CI mirror")
-    p_ci_mirror.add_argument(
+    # ci-mirror: run a gate (dev/merge/release) as a CI mirror or show status
+    p_ci_mirror = sub.add_parser("ci-mirror", help="Run a FirstTry gate as CI mirror or show mirror status")
+    p_ci_mirror_sub = p_ci_mirror.add_subparsers(dest="ci_mirror_cmd", required=True)
+
+    p_ci_run = p_ci_mirror_sub.add_parser("run", help="Run a gate as your CI mirror.")
+    p_ci_run.add_argument(
         "--gate",
         choices=["dev", "merge", "release"],
         default="merge",
         help="Which gate to run as your CI mirror.",
     )
-    p_ci_mirror.set_defaults(func=cmd_ci_mirror)
+
+    p_ci_status = p_ci_mirror_sub.add_parser("status", help="Show CI mirror status")
 
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
@@ -1659,12 +1663,54 @@ def main_impl(argv: list[str] | None = None) -> int:
     # ------------------------------------------------------------
     # CI mirror command
     if args.cmd == "ci-mirror":
+        # Two modes: `firsttry ci-mirror run --gate <...>` and `firsttry ci-mirror status`
+        if getattr(args, "ci_mirror_cmd", None) == "status":
+            from firsttry.ci_parity.unmapped import find_unmapped_steps
+            from firsttry.ci_parity.mirror_status import get_mirror_status
+
+            ms = get_mirror_status()
+            unmapped = find_unmapped_steps()
+
+            print("CI Mirror Status\n")
+            mirror_line = "Mirror: FRESH" if ms.is_fresh else "Mirror: STALE"
+            print(mirror_line)
+
+            # Workflows: mapped/unmapped counts
+            from firsttry.ci_parity.intents import _iter_workflow_files
+            wroot = None
+            try:
+                # derive default root
+                from firsttry.ci_parity.intents import DEFAULT_WORKFLOWS_ROOT
+
+                wroot = DEFAULT_WORKFLOWS_ROOT
+            except Exception:
+                wroot = None
+
+            wf_names = [p.name for p in _iter_workflow_files(wroot) if p is not None]
+            print("\nWorkflows:")
+            for wf in sorted(wf_names):
+                mapped = 0
+                unm = sum(1 for u in unmapped if u.workflow == wf)
+                # mapped is approximate: workflow present and not entirely missing
+                mapped = 1 if unm == 0 else 0
+                print(f"  • {wf}  mapped: {mapped}, unmapped: {unm}")
+
+            if unmapped:
+                print("\nUnmapped examples:")
+                for u in unmapped[:20]:
+                    print(f"  • {u.workflow}/{u.job}/{u.step} – {u.reason}")
+
+            # Exit non-zero if stale or any unmapped steps
+            return 0 if (ms.is_fresh and not unmapped) else 1
+
+        # Default: run the gate as before
         from firsttry.gates import format_summary, run_gate
 
         gate_name = getattr(args, "gate", "merge")
         gr, ok = run_gate(gate_name)
         print(format_summary(gate_name, gr, ok))
-        return 0 if gr.ok else 1
+        # `gr` is a list; determine overall ok from `ok` returned by run_gate
+        return 0 if ok else 1
 
     elif args.cmd == "lint":
         return cmd_lint(args=args)
