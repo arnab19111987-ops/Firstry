@@ -340,6 +340,24 @@ def build_parser() -> argparse.ArgumentParser:
         )
         p_mirror.add_argument("--root", help="Repository root path", default=".")
 
+    # --- gate -------------------------------------------------------------
+    p_gate = sub.add_parser("gate", help="Run gates (dev/merge/release)")
+    p_gate.add_argument(
+        "which",
+        nargs="?",
+        choices=["dev", "merge", "release"],
+        default="dev",
+        help="Which gate to run",
+    )
+
+    # --- ci-intent --------------------------------------------------------
+    p_ci_lint = sub.add_parser("ci-intent-lint", help="Lint CI-intents (mirror) ")
+    p_ci_lint.add_argument("--mirror-path", help="Path to mirror file", default=".firsttry/ci_mirror.toml")
+
+    p_ci_autofill = sub.add_parser("ci-intent-autofill", help="Autofill CI intents (dry-run supported)")
+    p_ci_autofill.add_argument("--mirror-path", help="Path to mirror file", default=".firsttry/ci_mirror.toml")
+    p_ci_autofill.add_argument("--dry-run", dest="dry_run", action="store_true", help="Don't apply changes; only show proposed edits")
+
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
 
@@ -427,6 +445,35 @@ def main(argv: list[str] | None = None) -> int:
             print("mirror-ci not available in this build")
             return 1
         return cmd_mirror_ci(args)
+
+    elif args.cmd == "gate":
+        # Run gates via ci_parity runner helper
+        try:
+            from .ci_parity.runner import run_gate
+        except Exception as e:
+            print(f"gate not available: {e}")
+            return 1
+        which = getattr(args, 'which', None)
+        return run_gate(which)
+
+    elif args.cmd == "ci-intent-lint":
+        try:
+            from .ci_parity.intents import lint_intents
+        except Exception as e:
+            print(f"ci-intent-lint not available: {e}")
+            return 1
+        mirror = getattr(args, 'mirror_path', None)
+        return lint_intents(mirror)
+
+    elif args.cmd == "ci-intent-autofill":
+        try:
+            from .ci_parity.intents import autofill_intents
+        except Exception as e:
+            print(f"ci-intent-autofill not available: {e}")
+            return 1
+        mirror = getattr(args, 'mirror_path', None)
+        dry = getattr(args, 'dry_run', True)
+        return autofill_intents(mirror, dry_run=dry)
     
     elif args.cmd == "version":
         print(f"FirstTry {__version__}")

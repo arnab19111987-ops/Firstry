@@ -8,9 +8,14 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Any
-from typing import List, Optional, Protocol, Tuple
+from typing import List, Optional, Protocol, Tuple, Sequence
 
 from .quickfix import generate_quickfix_suggestions
+
+# Default timeout for individual doctor checks (seconds)
+DEFAULT_CHECK_TIMEOUT = float(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT", "30"))
+# Exit code to use when a subprocess times out (conventional)
+TIMEOUT_EXIT_CODE = int(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT_EXITCODE", "124"))
 
 
 @dataclass
@@ -35,21 +40,36 @@ class DoctorReport:
 
 class Runner(Protocol):
     """Abstraction to allow mocking in tests."""
-
-    def run(self, cmd: List[str]) -> Tuple[int, str]: ...
+    def run(self, cmd: Sequence[str] | str) -> Tuple[int, str]: ...
 
 
 class ShellRunner:
     """Default runner that actually runs shell commands."""
 
-    def run(self, cmd: List[str]) -> Tuple[int, str]:
-        proc = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        return proc.returncode, proc.stdout
+    def __init__(self, timeout: float | None = None) -> None:
+        # Default timeout for doctor checks (seconds) — can be overridden by env
+        self.timeout = timeout
+
+    def run(self, cmd: Sequence[str] | str) -> Tuple[int, str]:
+        # Allow string commands (shell) or sequence commands (no shell)
+        use_shell = isinstance(cmd, str)
+        try:
+            proc = subprocess.run(
+                cmd,
+                shell=use_shell,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+                timeout=(self.timeout if self.timeout is not None else float(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT", "30"))),
+            )
+            return proc.returncode, proc.stdout or ""
+        except subprocess.TimeoutExpired as exc:
+            out = (exc.stdout or "") + (
+                f"\n[firsttry doctor] Command timed out after {self.timeout or float(os.getenv('FIRSTTRY_DOCTOR_TIMEOUT', '30')):.0f}s: {cmd!r}\n"
+            )
+            # 124 is a common timeout exit code (like GNU timeout)
+            return int(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT_EXITCODE", "124")), out
 
 
 def _optional_check(
@@ -70,6 +90,13 @@ def _optional_check(
             passed=True,
             output=f"skipped (tool not installed: {e})",
         )
+
+    # If the runner indicates a timeout using the configured exit code,
+    # record a friendly timeout message but do not raise an exception.
+    if code == TIMEOUT_EXIT_CODE:
+        timeout_note = f"[firsttry doctor] check timed out after {int(DEFAULT_CHECK_TIMEOUT)}s"
+        combined = (out or "").strip() + "\n" + timeout_note
+        return CheckResult(name=name, passed=False, output=combined.strip(), fix_hint=fix_hint)
 
     return CheckResult(
         name=name,

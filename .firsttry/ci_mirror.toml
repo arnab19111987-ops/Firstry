@@ -1,0 +1,55 @@
+[[jobs]]
+workflow = "ci-gate.yml"
+job_id = "ci-gate"
+plan = "gha_ci_gate__ci-gate"
+
+[[jobs]]
+workflow = "firsttry-ci.yml"
+job_id = "python-cli"
+plan = "gha_firsttry_ci__python-cli"
+
+[[jobs]]
+workflow = "firsttry-quality.yml"
+job_id = "quality"
+plan = "gha_firsttry_quality__quality"
+
+[[jobs]]
+workflow = "gates-safety-suite.yml"
+job_id = "coverage-check"
+plan = "gha_gates_safety_suite__coverage-check"
+
+[[jobs]]
+workflow = "gates-safety-suite.yml"
+job_id = "gates-and-cli-tests"
+plan = "gha_gates_safety_suite__gates-and-cli-tests"
+
+[[jobs]]
+workflow = "licensing-ci.yml"
+job_id = "licensing-tests"
+plan = "gha_licensing_ci__licensing-tests"
+
+[[jobs]]
+workflow = "node-ci.yml"
+job_id = "actionlint"
+plan = "gha_node_ci__actionlint"
+
+[[jobs]]
+workflow = "node-ci.yml"
+job_id = "dashboard-tests"
+plan = "gha_node_ci__dashboard-tests"
+
+[[jobs]]
+workflow = "node-ci.yml"
+job_id = "vscode-tests"
+plan = "gha_node_ci__vscode-tests"
+
+[[jobs]]
+workflow = "quality.yml"
+job_id = "quality"
+plan = "gha_quality__quality"
+
+[[jobs]]
+workflow = "release-vsix.yml"
+job_id = "build-and-publish-vsix"
+plan = "gha_release_vsix__build-and-publish-vsix"
+

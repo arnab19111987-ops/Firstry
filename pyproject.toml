@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "firsttry-run"
-version = "0.1.9"
+version = "1.0.1"
 description = "Ship code that passes CI on the first try."
 authors = [{ name = "FirstTry", email = "founder@example.com" }]
 readme = "README.md"
@@ -34,7 +34,7 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["firsttry*"]
+include = ["firsttry", "firsttry.*"]
 
 
 [tool.ruff]

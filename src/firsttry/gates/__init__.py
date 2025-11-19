@@ -1,10 +1,17 @@
+
 """FirstTry gate implementations."""
 
-from typing import List, Any, Dict
-from .base import GateResult
-from .utils import _safe_gate
+from typing import List, Any, Dict, Sequence, Optional
+import os
 import subprocess
 
+from .base import GateResult
+from .utils import _safe_gate
+
+# Default timeout for the tests gate (seconds)
+DEFAULT_CHECK_TESTS_TIMEOUT = float(os.getenv("FIRSTTRY_CHECK_TESTS_TIMEOUT", "60"))
+# Exit code to use when pytest times out
+CHECK_TESTS_TIMEOUT_EXIT_CODE = int(os.getenv("FIRSTTRY_CHECK_TESTS_TIMEOUT_EXITCODE", "124"))
 
 # Compatibility functions for old test suite
 def run_pre_commit_gate():
@@ -125,31 +132,57 @@ def check_types():
 # This gate intentionally does NOT use _safe_gate(), because tests expect
 # us to parse pytest output and return test counts in res.info/details.
 # Do NOT "simplify" this to _safe_gate() unless you also port the parser.
-def check_tests():
-    """Compatibility function for check_tests."""
+def check_tests(pytest_args: Sequence[str] | None = None, timeout: Optional[float] = None):
+    """Compatibility function for check_tests.
+
+    In normal usage this runs `pytest -q`. Tests can override `pytest_args`
+    to point at a tiny target and avoid recursively running the whole suite.
+    """
+    if pytest_args is None:
+        pytest_args = ["pytest", "-q"]
+
+    timeout = timeout or DEFAULT_CHECK_TESTS_TIMEOUT
+
     try:
         try:
-            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True, check=False)
+            result = subprocess.run(
+                list(pytest_args),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
         except TypeError:
-            # Monkeypatch doesn't accept check parameter
-            result = subprocess.run(["pytest", "-q"], capture_output=True, text=True)
-        
+            # Monkeypatch replacement for subprocess.run may not accept all kwargs
+            result = subprocess.run(list(pytest_args), capture_output=True, text=True)
+
         # Parse test count from output like "23 passed in 1.5s"
         info = "pytest tests"
         if result.returncode == 0 and result.stdout:
             import re
+
             m = re.search(r"(\d+)\s+passed", result.stdout)
             if m:
                 info = f"{m.group(1)} tests"
-        
+
         return GateResult(
             gate_id="tests",
             ok=result.returncode == 0,
             output=result.stdout,
-            reason=info if result.returncode == 0 else f"pytest failures: {result.stdout}"
+            reason=info if result.returncode == 0 else f"pytest failures: {result.stdout}",
         )
     except FileNotFoundError:
         return GateResult(gate_id="tests", ok=True, skipped=True, reason="pytest not found", output="pytest not found")
+    except subprocess.TimeoutExpired as exc:
+        stdout = (exc.stdout or "") + (
+            f"\n[firsttry gates.check_tests] pytest timed out after {timeout:.0f}s: {exc.cmd!r}\n"
+        )
+        return GateResult(
+            gate_id="tests",
+            ok=False,
+            output=stdout,
+            reason=f"pytest timed out after {timeout:.0f}s",
+        )
     except Exception as e:
         return GateResult(gate_id="tests", ok=False, output=str(e), reason=f"Error running tests: {e}")
 

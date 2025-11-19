@@ -16,7 +16,15 @@ def test_check_tests_has_rich_info():
     a clear reason. If pytest runs, it should parse the output and
     include test information in the result.
     """
-    res = check_tests()
+    # Run only a single, tiny test to avoid recursive full-suite runs inside pytest
+    res = check_tests(
+        pytest_args=[
+            "pytest",
+            "-q",
+            "tests/test_argparse_entrypoint.py::test_argparse_main_version",
+        ],
+        timeout=30,
+    )
     
     # Must have a GateResult-like structure
     assert hasattr(res, 'ok')

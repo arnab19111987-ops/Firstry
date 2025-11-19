@@ -9,4 +9,4 @@ it prevents that dynamic loading from working.
 So we do NOT import cli, gates, etc. here.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.1"
