@@ -1,12 +1,7 @@
 name: CI - FirstTry Enterprise Pipeline (Hardened)
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-  schedule:
-    - cron: "0 2 * * *"
+  workflow_dispatch:
 
 # 1. LOCK DOWN PERMISSIONS - Most restrictive defaults, override per job
 permissions:
