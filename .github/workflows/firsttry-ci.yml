@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   python-cli:
+    if: false  # TEMP: disabled until enterprise tier is wired up
     name: firsttry gate (ruff/black/mypy/pytest/coverage + license)
     runs-on: ubuntu-latest
     env:

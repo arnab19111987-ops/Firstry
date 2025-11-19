@@ -1,5 +1,15 @@
+from __future__ import annotations
+
 from functools import lru_cache
 import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict
+
+try:
+    import tomllib  # 3.11+
+except Exception:  # py<3.11
+    import tomli as tomllib  # type: ignore
 
 
 @lru_cache
@@ -16,16 +26,6 @@ def get_tier() -> str:
     if value in {"dev", "team", "enterprise"}:
         return value
     return "dev"
-from __future__ import annotations
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Dict
-
-try:
-    import tomllib  # 3.11+
-except Exception:  # py<3.11
-    import tomli as tomllib  # type: ignore
-
 
 @dataclass
 class Timeouts:
