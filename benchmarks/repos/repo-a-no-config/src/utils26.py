@@ -1,1 +1,2 @@
-class Utils26: pass
+class Utils26:
+    pass

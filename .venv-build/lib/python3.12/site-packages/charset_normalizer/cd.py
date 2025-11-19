@@ -6,22 +6,12 @@ from collections import Counter
 from functools import lru_cache
 from typing import Counter as TypeCounter
 
-from .constant import (
-    FREQUENCIES,
-    KO_NAMES,
-    LANGUAGE_SUPPORTED_COUNT,
-    TOO_SMALL_SEQUENCE,
-    ZH_NAMES,
-)
+from .constant import (FREQUENCIES, KO_NAMES, LANGUAGE_SUPPORTED_COUNT,
+                       TOO_SMALL_SEQUENCE, ZH_NAMES)
 from .md import is_suspiciously_successive_range
 from .models import CoherenceMatches
-from .utils import (
-    is_accentuated,
-    is_latin,
-    is_multi_byte_encoding,
-    is_unicode_range_secondary,
-    unicode_range,
-)
+from .utils import (is_accentuated, is_latin, is_multi_byte_encoding,
+                    is_unicode_range_secondary, unicode_range)
 
 
 def encoding_unicode_range(iana_name: str) -> list[str]:

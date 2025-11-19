@@ -10,25 +10,12 @@ Some backward-compatible usability improvements have been made.
 
 import math
 import operator
-
 from collections import deque
 from collections.abc import Sized
 from functools import partial, reduce
-from itertools import (
-    chain,
-    combinations,
-    compress,
-    count,
-    cycle,
-    groupby,
-    islice,
-    product,
-    repeat,
-    starmap,
-    tee,
-    zip_longest,
-)
-from random import randrange, sample, choice
+from itertools import (chain, combinations, compress, count, cycle, groupby,
+                       islice, product, repeat, starmap, tee, zip_longest)
+from random import choice, randrange, sample
 from sys import hexversion
 
 __all__ = [

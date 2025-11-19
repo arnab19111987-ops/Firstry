@@ -4,7 +4,10 @@ PYTHON_PIPELINE = [
     # TIER 1: fast, high-signal
     {
         "id": "py-lint",
-        "run": ["ruff check .", "black --check --exclude='(.venv/|.venv-build/|venv/|env/|build/|dist/|node_modules/)' ."],
+        "run": [
+            "ruff check .",
+            "black --check --exclude='(.venv/|.venv-build/|venv/|env/|build/|dist/|node_modules/)' .",
+        ],
         "autofix": [
             "ruff check --fix .",
             "black --exclude='(.venv/|.venv-build/|venv/|env/|build/|dist/|node_modules/)' .",

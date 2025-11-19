@@ -1,1 +1,2 @@
-class Utils37: pass
+class Utils37:
+    pass

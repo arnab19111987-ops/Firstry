@@ -1,1 +1,2 @@
-class Utils23: pass
+class Utils23:
+    pass

@@ -1,20 +1,21 @@
 from __future__ import annotations
+
 import argparse
 import json
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from .runner_light import (
-    get_profile,
-    load_cache,
-    get_changed_files,
-    should_skip_gate,
-    update_gate_cache,
-    GATE_REGISTRY,
-)
 from .cache import save_cache
 from .gates.base import GateResult
+from .runner_light import (
+    GATE_REGISTRY,
+    get_changed_files,
+    get_profile,
+    load_cache,
+    should_skip_gate,
+    update_gate_cache,
+)
 
 AUTOFIX_HINTS = {
     "python:ruff": "ruff fix .",

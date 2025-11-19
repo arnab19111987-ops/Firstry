@@ -37,7 +37,8 @@ else:
         return []
 
 
-from .exceptions import BufferFull, ExtraData, FormatError, OutOfData, StackError
+from .exceptions import (BufferFull, ExtraData, FormatError, OutOfData,
+                         StackError)
 from .ext import ExtType, Timestamp
 
 EX_SKIP = 0

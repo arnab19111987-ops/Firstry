@@ -1,7 +1,7 @@
-from pathlib import Path
 import json
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 DEVICE_DIR = Path.home() / ".firsttry"
 DEVICE_FILE = DEVICE_DIR / "device.json"

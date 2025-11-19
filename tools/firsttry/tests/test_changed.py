@@ -1,5 +1,6 @@
-from firsttry.changed import get_changed_files, filter_python
 import types
+
+from firsttry.changed import filter_python, get_changed_files
 
 
 def test_filter_python():

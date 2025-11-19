@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 
 class RuffTool:
@@ -22,7 +22,9 @@ class RuffTool:
         # If we're running under pytest (tests set PYTEST_CURRENT_TEST) or
         # if tests opted into stub runners, avoid invoking the external
         # 'ruff' binary which may not be installed in the test environment.
-        if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("FIRSTTRY_USE_STUB_RUNNERS") in (
+        if os.getenv("PYTEST_CURRENT_TEST") or os.getenv(
+            "FIRSTTRY_USE_STUB_RUNNERS"
+        ) in (
             "1",
             "true",
             "True",

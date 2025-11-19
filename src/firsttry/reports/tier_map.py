@@ -24,13 +24,10 @@ TIER_META = {
 TIER_CHECKS = {
     # fastest / "just tell me if it's stupid"
     "free-lite": ["ruff"],
-
     # your old "developer/free" set
     "free-strict": ["ruff", "mypy", "pytest"],
-
     # your old "teams/pro" set
     "pro": ["ruff", "mypy", "pytest", "bandit", "pip-audit", "ci-parity"],
-
     # your old "enterprise"
     "promax": [
         "ruff",
@@ -83,9 +80,15 @@ def get_tier_meta(tier: str) -> dict:
     # Legacy fallback
     legacy_meta = {
         "free": {"title": "FirstTry — Free", "subtitle": "Legacy free tier"},
-        "developer": {"title": "FirstTry — Developer", "subtitle": "Legacy developer tier"},
+        "developer": {
+            "title": "FirstTry — Developer",
+            "subtitle": "Legacy developer tier",
+        },
         "teams": {"title": "FirstTry — Teams", "subtitle": "Legacy teams tier"},
-        "enterprise": {"title": "FirstTry — Enterprise", "subtitle": "Legacy enterprise tier"},
+        "enterprise": {
+            "title": "FirstTry — Enterprise",
+            "subtitle": "Legacy enterprise tier",
+        },
     }
     return legacy_meta.get(tier, TIER_META["free-lite"])
 
@@ -96,6 +99,7 @@ def is_tier_free(tier: str) -> bool:
 
 def is_tier_paid(tier: str) -> bool:
     return tier in ("pro", "promax", "teams", "enterprise")
+
 
 # Legacy compatibility
 LOCK_MESSAGE = LOCKED_MESSAGE

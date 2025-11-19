@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import stat
 import textwrap
+from distutils.util import rfc822_escape
 from email import message_from_file
 from email.message import Message
 from tempfile import NamedTemporaryFile
@@ -21,8 +22,6 @@ from packaging.version import Version
 from . import _normalization, _reqs
 from ._static import is_static
 from .warnings import SetuptoolsDeprecationWarning
-
-from distutils.util import rfc822_escape
 
 
 def get_metadata_version(self):

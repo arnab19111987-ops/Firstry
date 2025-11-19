@@ -1,7 +1,7 @@
 """Test pure functions in repo_rules and change_detector."""
 
-from firsttry.repo_rules import plan_checks_for_repo
 from firsttry.change_detector import categorize_changed_files
+from firsttry.repo_rules import plan_checks_for_repo
 
 
 def test_plan_checks_for_repo_returns_list():
@@ -9,7 +9,7 @@ def test_plan_checks_for_repo_returns_list():
     # Call with minimal repo_profile
     repo_profile = {"has_python": True}
     checks = plan_checks_for_repo(repo_profile)
-    
+
     assert isinstance(checks, list)
     # Should return at least some checks
     assert len(checks) >= 0
@@ -18,7 +18,7 @@ def test_plan_checks_for_repo_returns_list():
 def test_categorize_changed_files_with_empty_list():
     """Test categorizing empty file list."""
     categories = categorize_changed_files([])
-    
+
     assert isinstance(categories, dict)
     # Should return empty or valid structure
     assert len(categories) >= 0
@@ -28,7 +28,7 @@ def test_categorize_changed_files_with_python_files():
     """Test categorizing Python files."""
     files = ["src/main.py", "tests/test_foo.py", "setup.py"]
     categories = categorize_changed_files(files)
-    
+
     assert isinstance(categories, dict)
     # Should categorize Python files
     has_python = "python" in categories or "py" in str(categories).lower()
@@ -40,7 +40,7 @@ def test_categorize_changed_files_with_config_files():
     """Test categorizing config files."""
     files = ["pyproject.toml", "package.json", ".gitignore", "Makefile"]
     categories = categorize_changed_files(files)
-    
+
     assert isinstance(categories, dict)
     # Should handle config files
     assert len(categories) >= 0
@@ -48,15 +48,9 @@ def test_categorize_changed_files_with_config_files():
 
 def test_categorize_changed_files_with_mixed_types():
     """Test categorizing mixed file types."""
-    files = [
-        "src/main.py",
-        "README.md",
-        "package.json",
-        "test.js",
-        "Dockerfile"
-    ]
+    files = ["src/main.py", "README.md", "package.json", "test.js", "Dockerfile"]
     categories = categorize_changed_files(files)
-    
+
     assert isinstance(categories, dict)
     # Should categorize various types
     assert len(categories) >= 0
@@ -67,7 +61,7 @@ def test_plan_checks_for_repo_is_deterministic():
     repo_profile = {"has_python": True}
     checks1 = plan_checks_for_repo(repo_profile)
     checks2 = plan_checks_for_repo(repo_profile)
-    
+
     # Should return same type
     assert type(checks1) == type(checks2)
     assert isinstance(checks1, list)

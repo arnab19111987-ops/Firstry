@@ -8,7 +8,6 @@ import sys
 from functools import partial
 
 import pytest
-
 from setuptools.archive_util import unpack_archive
 
 from .textwrap import DALS

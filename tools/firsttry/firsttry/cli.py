@@ -8,7 +8,7 @@ import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Optional, List, Tuple, Any
+from typing import Any, List, Optional, Tuple
 
 import click
 

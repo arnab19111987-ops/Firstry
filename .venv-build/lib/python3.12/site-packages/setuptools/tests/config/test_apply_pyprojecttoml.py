@@ -14,14 +14,14 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+import setuptools  # noqa: F401 # ensure monkey patch to metadata
 from ini2toml.api import LiteTranslator
 from packaging.metadata import Metadata
-
-import setuptools  # noqa: F401 # ensure monkey patch to metadata
 from setuptools._static import is_static
 from setuptools.command.egg_info import write_requirements
 from setuptools.config import expand, pyprojecttoml, setupcfg
-from setuptools.config._apply_pyprojecttoml import _MissingDynamic, _some_attrgetter
+from setuptools.config._apply_pyprojecttoml import (_MissingDynamic,
+                                                    _some_attrgetter)
 from setuptools.dist import Distribution
 from setuptools.errors import InvalidConfigError, RemovedConfigError
 from setuptools.warnings import InformationOnly, SetuptoolsDeprecationWarning

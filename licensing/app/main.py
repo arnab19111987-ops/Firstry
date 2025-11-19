@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Header, Request, HTTPException
-from .schemas import VerifyRequest, VerifyResponse
-from .licensing import verify
-from .webhooks import verify_stripe_signature, verify_lemon_signature
 import os
+
+from fastapi import FastAPI, Header, HTTPException, Request
+
+from .licensing import verify
+from .schemas import VerifyRequest, VerifyResponse
+from .webhooks import verify_lemon_signature, verify_stripe_signature
 
 app = FastAPI(title="FirstTry Licensing", version="0.1.0")
 

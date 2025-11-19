@@ -4,13 +4,12 @@ Monkey patching of distutils.
 
 from __future__ import annotations
 
+import distutils.filelist
 import inspect
 import platform
 import sys
 import types
 from typing import TypeVar, cast, overload
-
-import distutils.filelist
 
 _T = TypeVar("_T")
 _UnpatchT = TypeVar("_UnpatchT", type, types.FunctionType)

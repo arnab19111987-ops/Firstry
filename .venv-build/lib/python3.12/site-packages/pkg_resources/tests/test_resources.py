@@ -4,21 +4,12 @@ import platform
 import string
 import sys
 
+import pkg_resources
 import pytest
 from packaging.specifiers import SpecifierSet
-
-import pkg_resources
-from pkg_resources import (
-    Distribution,
-    EntryPoint,
-    Requirement,
-    VersionConflict,
-    WorkingSet,
-    parse_requirements,
-    parse_version,
-    safe_name,
-    safe_version,
-)
+from pkg_resources import (Distribution, EntryPoint, Requirement,
+                           VersionConflict, WorkingSet, parse_requirements,
+                           parse_version, safe_name, safe_version)
 
 
 # from Python 3.6 docs. Available from itertools on Python 3.10

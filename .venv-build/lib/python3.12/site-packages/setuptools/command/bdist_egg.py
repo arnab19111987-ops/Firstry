@@ -9,6 +9,8 @@ import os
 import re
 import sys
 import textwrap
+from distutils import log
+from distutils.dir_util import mkpath, remove_tree
 from sysconfig import get_path, get_platform, get_python_version
 from types import CodeType
 from typing import TYPE_CHECKING, Literal
@@ -17,9 +19,6 @@ from setuptools import Command
 from setuptools.extension import Library
 
 from .._path import StrPathT, ensure_directory
-
-from distutils import log
-from distutils.dir_util import mkpath, remove_tree
 
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias

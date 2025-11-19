@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import types
 import subprocess
+import types
+
 import pytest
 
 import firsttry.gates as gates

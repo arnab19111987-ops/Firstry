@@ -1,5 +1,6 @@
 from __future__ import annotations
-from subprocess import run, PIPE
+
+from subprocess import PIPE, run
 from typing import Iterable, List
 
 

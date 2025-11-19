@@ -12,11 +12,11 @@ This is the core of FirstTry Pro:
 - Forensic `failed_at` block with a fix hint
 """
 
-import subprocess
 import shlex
+import subprocess
 import time
-from typing import Any, Dict, List, Optional
 from types import ModuleType
+from typing import Any, Dict, List, Optional
 
 # optional quickfix integration (best-effort; keep pro_features import-safe)
 # Import into a typed variable so mypy is happy when quickfix is absent.

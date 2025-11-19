@@ -3,31 +3,13 @@ from __future__ import annotations
 from functools import lru_cache
 from logging import getLogger
 
-from .constant import (
-    COMMON_SAFE_ASCII_CHARACTERS,
-    TRACE,
-    UNICODE_SECONDARY_RANGE_KEYWORD,
-)
-from .utils import (
-    is_accentuated,
-    is_arabic,
-    is_arabic_isolated_form,
-    is_case_variable,
-    is_cjk,
-    is_emoticon,
-    is_hangul,
-    is_hiragana,
-    is_katakana,
-    is_latin,
-    is_punctuation,
-    is_separator,
-    is_symbol,
-    is_thai,
-    is_unprintable,
-    remove_accent,
-    unicode_range,
-    is_cjk_uncommon,
-)
+from .constant import (COMMON_SAFE_ASCII_CHARACTERS, TRACE,
+                       UNICODE_SECONDARY_RANGE_KEYWORD)
+from .utils import (is_accentuated, is_arabic, is_arabic_isolated_form,
+                    is_case_variable, is_cjk, is_cjk_uncommon, is_emoticon,
+                    is_hangul, is_hiragana, is_katakana, is_latin,
+                    is_punctuation, is_separator, is_symbol, is_thai,
+                    is_unprintable, remove_accent, unicode_range)
 
 
 class MessDetectorPlugin:

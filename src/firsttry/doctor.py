@@ -1,14 +1,13 @@
 # firsttry/doctor.py
 from __future__ import annotations
 
-import subprocess
-import sys
-from dataclasses import dataclass, field, asdict
 import json
 import os
+import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, Any
-from typing import List, Optional, Protocol, Tuple, Sequence
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, Optional, Protocol, Sequence, Tuple
 
 from .quickfix import generate_quickfix_suggestions
 
@@ -40,6 +39,7 @@ class DoctorReport:
 
 class Runner(Protocol):
     """Abstraction to allow mocking in tests."""
+
     def run(self, cmd: Sequence[str] | str) -> Tuple[int, str]: ...
 
 
@@ -61,7 +61,11 @@ class ShellRunner:
                 stderr=subprocess.STDOUT,
                 text=True,
                 check=False,
-                timeout=(self.timeout if self.timeout is not None else float(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT", "30"))),
+                timeout=(
+                    self.timeout
+                    if self.timeout is not None
+                    else float(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT", "30"))
+                ),
             )
             return proc.returncode, proc.stdout or ""
         except subprocess.TimeoutExpired as exc:
@@ -94,9 +98,13 @@ def _optional_check(
     # If the runner indicates a timeout using the configured exit code,
     # record a friendly timeout message but do not raise an exception.
     if code == TIMEOUT_EXIT_CODE:
-        timeout_note = f"[firsttry doctor] check timed out after {int(DEFAULT_CHECK_TIMEOUT)}s"
+        timeout_note = (
+            f"[firsttry doctor] check timed out after {int(DEFAULT_CHECK_TIMEOUT)}s"
+        )
         combined = (out or "").strip() + "\n" + timeout_note
-        return CheckResult(name=name, passed=False, output=combined.strip(), fix_hint=fix_hint)
+        return CheckResult(
+            name=name, passed=False, output=combined.strip(), fix_hint=fix_hint
+        )
 
     return CheckResult(
         name=name,

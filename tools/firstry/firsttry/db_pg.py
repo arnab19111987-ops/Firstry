@@ -12,13 +12,12 @@ Public API:
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Optional, Dict, Any, List
 import tempfile
 import time
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from .db_sqlite import _write_temp_alembic_env  # reuse env writer from Day 4
-
 
 DESTRUCTIVE_PATTERNS = (
     "op.drop_table",
@@ -69,8 +68,8 @@ def _alembic_autogen_pg(import_target: str, db_url: str) -> dict:
     enrich output for PG.
     """
     try:
-        from alembic.config import Config
         from alembic import command
+        from alembic.config import Config
     except ImportError as e:
         return {
             "skipped": True,

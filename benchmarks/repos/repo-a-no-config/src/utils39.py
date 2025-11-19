@@ -1,1 +1,2 @@
-class Utils39: pass
+class Utils39:
+    pass

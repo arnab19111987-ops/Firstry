@@ -7,7 +7,8 @@ from collections.abc import Sequence
 from functools import partial
 from inspect import isclass, isfunction
 from types import CodeType, FrameType, FunctionType
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, TypeVar, cast, overload
+from typing import (TYPE_CHECKING, Any, Callable, ForwardRef, TypeVar, cast,
+                    overload)
 from warnings import warn
 
 from ._config import CollectionCheckStrategy, ForwardRefPolicy, global_config

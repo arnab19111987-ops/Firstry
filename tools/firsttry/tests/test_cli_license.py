@@ -1,6 +1,8 @@
-from click.testing import CliRunner
-from firsttry.cli import main
 import types
+
+from click.testing import CliRunner
+
+from firsttry.cli import main
 
 
 def test_cli_aborts_without_license(monkeypatch):

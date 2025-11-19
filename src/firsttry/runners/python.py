@@ -30,7 +30,7 @@ def _discover_test_paths(root: str) -> List[str]:
         if any(f.startswith("test_") and f.endswith(".py") for f in filenames):
             found.append(dirpath)
     return found or ["."]
-    
+
 
 def _discover_python_roots(root: str) -> List[str]:
     candidates: List[str] = []
@@ -38,10 +38,14 @@ def _discover_python_roots(root: str) -> List[str]:
         if ".git" in dirpath or ".venv" in dirpath or "venv" in dirpath:
             continue
         p = Path(dirpath)
-        if (p / "pyproject.toml").exists() or (p / ".ruff.toml").exists() or (p / "ruff.toml").exists():
+        if (
+            (p / "pyproject.toml").exists()
+            or (p / ".ruff.toml").exists()
+            or (p / "ruff.toml").exists()
+        ):
             candidates.append(dirpath)
     return candidates or ["."]
-    
+
 
 def _find_ci_cmd(ci_plan: List[Dict[str, str]], tool: str) -> str | None:
     for item in ci_plan:
@@ -53,7 +57,9 @@ def _find_ci_cmd(ci_plan: List[Dict[str, str]], tool: str) -> str | None:
 class RuffRunner(BaseRunner):
     tool = "ruff"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         name = f"lint[{idx}]"
         repo_root = ctx.get("repo_root", ".")
         ci_plan = ctx.get("ci_plan") or []
@@ -85,7 +91,9 @@ class RuffRunner(BaseRunner):
 class MypyRunner(BaseRunner):
     tool = "mypy"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         name = f"type[{idx}]"
         cmd = item.get("cmd") or "mypy ."
         res = await self.run_cmd(name, "mypy", cmd)
@@ -99,7 +107,9 @@ class MypyRunner(BaseRunner):
 class PytestRunner(BaseRunner):
     tool = "pytest"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         name = f"tests[{idx}]"
         repo_root = ctx.get("repo_root", ".")
         ci_plan = ctx.get("ci_plan") or []
@@ -116,7 +126,9 @@ class PytestRunner(BaseRunner):
 class BanditRunner(BaseRunner):
     tool = "bandit"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         name = f"security[{idx}]"
         cmd = item.get("cmd") or "bandit -q -r ."
         return await self.run_cmd(name, "bandit", cmd)

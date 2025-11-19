@@ -6,9 +6,8 @@ import os
 import re
 import shutil
 import subprocess
-from typing import List, Tuple
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, List, Tuple
 
 
 class GateResult:

@@ -1,24 +1,19 @@
+import distutils.core
 import re
 from configparser import ConfigParser
 from inspect import cleandoc
 
 import jaraco.path
 import pytest
+import setuptools  # noqa: F401 # force distutils.core to be patched
 import tomli_w
 from path import Path
-
-import setuptools  # noqa: F401 # force distutils.core to be patched
-from setuptools.config.pyprojecttoml import (
-    _ToolsTypoInMetadata,
-    apply_configuration,
-    expand_configuration,
-    read_configuration,
-    validate,
-)
+from setuptools.config.pyprojecttoml import (_ToolsTypoInMetadata,
+                                             apply_configuration,
+                                             expand_configuration,
+                                             read_configuration, validate)
 from setuptools.dist import Distribution
 from setuptools.errors import OptionError
-
-import distutils.core
 
 EXAMPLE = """
 [project]

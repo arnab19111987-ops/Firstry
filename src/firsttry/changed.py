@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterable, List
-import sys
 import subprocess as _subprocess
-
+import sys
+from typing import Iterable, List
 
 # IMPORTANT:
 # We keep a module-level alias called `run` so tests can monkeypatch

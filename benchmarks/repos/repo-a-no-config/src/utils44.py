@@ -1,1 +1,2 @@
-class Utils44: pass
+class Utils44:
+    pass

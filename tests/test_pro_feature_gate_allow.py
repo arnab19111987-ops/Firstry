@@ -1,5 +1,5 @@
 from firsttry import license as lic_mod
-from firsttry.license import require_license, DEFAULT_SHARED_SECRET
+from firsttry.license import DEFAULT_SHARED_SECRET, require_license
 
 
 def test_require_license_allows_when_valid(monkeypatch):

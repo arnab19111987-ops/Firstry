@@ -14,12 +14,14 @@ import sys
 import sysconfig
 import warnings
 from collections.abc import Iterable, Sequence
+from distutils import log
 from email.generator import BytesGenerator
 from glob import iglob
 from typing import Literal, cast
 from zipfile import ZIP_DEFLATED, ZIP_STORED
 
-from packaging import tags, version as _packaging_version
+from packaging import tags
+from packaging import version as _packaging_version
 from wheel.wheelfile import WheelFile
 
 from .. import Command, __version__, _shutil
@@ -27,8 +29,6 @@ from .._core_metadata import _safe_license_file
 from .._normalization import safer_name
 from ..warnings import SetuptoolsDeprecationWarning
 from .egg_info import egg_info as egg_info_cls
-
-from distutils import log
 
 
 def safe_version(version: str) -> str:

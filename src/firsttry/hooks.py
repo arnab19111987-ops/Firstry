@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import stat
-from typing import Tuple
 from pathlib import Path
-from .license import ensure_trial_license_if_missing, license_summary_for_humans
+from typing import Tuple
 
+from .license import ensure_trial_license_if_missing, license_summary_for_humans
 
 PRE_COMMIT_SCRIPT = """#!/bin/sh
 # FirstTry pre-commit hook

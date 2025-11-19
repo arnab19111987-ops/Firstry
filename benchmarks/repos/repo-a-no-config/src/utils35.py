@@ -1,1 +1,2 @@
-class Utils35: pass
+class Utils35:
+    pass

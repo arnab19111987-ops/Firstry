@@ -1,11 +1,18 @@
 from __future__ import annotations
-from pathlib import Path
+
 import json
+from pathlib import Path
 from typing import Dict
+
 from ..executor.dag import TaskResult
 
 
-def render_tty(results: Dict[str, TaskResult], *, show_fail_output: bool = True, max_lines: int = 80) -> None:
+def render_tty(
+    results: Dict[str, TaskResult],
+    *,
+    show_fail_output: bool = True,
+    max_lines: int = 80,
+) -> None:
     fails: list[TaskResult] = []
     hits = runs = 0
 
@@ -44,11 +51,14 @@ def render_tty(results: Dict[str, TaskResult], *, show_fail_output: bool = True,
                 print(_clip(r.stderr))
 
 
-def write_json(repo_root: Path, results: Dict[str, TaskResult], out: str = ".firsttry/report.json") -> None:
+def write_json(
+    repo_root: Path, results: Dict[str, TaskResult], out: str = ".firsttry/report.json"
+) -> None:
     payload = {"checks": {tid: r.to_report_json() for tid, r in results.items()}}
     p = repo_root / out
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
 
 # Hooks to add later:
 # def write_junit_xml(...): ...

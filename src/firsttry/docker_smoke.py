@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import time
-import urllib.request
 import urllib.error
+import urllib.request
 from typing import Tuple
 
 

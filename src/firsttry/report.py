@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from typing import Iterable
-from .models import ScanResult, SectionSummary as SectionResult
+
+from .models import ScanResult
+from .models import SectionSummary as SectionResult
 
 
 def _plural(n: int, word: str) -> str:

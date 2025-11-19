@@ -5,10 +5,8 @@ import re
 import sys
 
 from pip._internal.locations import site_packages, user_site
-from pip._internal.utils.virtualenv import (
-    running_under_virtualenv,
-    virtualenv_no_global,
-)
+from pip._internal.utils.virtualenv import (running_under_virtualenv,
+                                            virtualenv_no_global)
 
 __all__ = [
     "egg_link_path_from_sys_path",

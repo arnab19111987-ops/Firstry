@@ -1,5 +1,6 @@
 import json
-from firsttry.vscode_skel import PACKAGE_JSON, EXTENSION_JS
+
+from firsttry.vscode_skel import EXTENSION_JS, PACKAGE_JSON
 
 
 def test_package_json_is_valid_and_command_defined():

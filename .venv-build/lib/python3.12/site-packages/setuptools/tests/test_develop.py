@@ -6,7 +6,6 @@ import subprocess
 import sys
 
 import pytest
-
 from setuptools._path import paths_on_pythonpath
 
 from . import contexts, namespaces

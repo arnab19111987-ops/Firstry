@@ -3,7 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 # These are the tools FirstTry depends on to judge repo health.
 # Pin versions you trust in CI so that local == CI.
 REQUIRED_PACKAGES = [

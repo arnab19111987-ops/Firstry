@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 # Import detection and setup modules
 try:
-    from .detect import detect_language, deps_for_stacks
+    from .detect import deps_for_stacks, detect_language
     from .setup import run_setup_interactive
     from .summary import print_run_summary as new_print_run_summary
 except ImportError:
@@ -35,7 +35,7 @@ SHORT_GATE_ALIASES = {
 
 # import gate runner (single-gate helpers)
 try:
-    from firsttry.gates import run_gate, format_summary, print_verbose
+    from firsttry.gates import format_summary, print_verbose, run_gate
 except Exception:
     # fall back to loading the `gates.py` module file directly. The repo contains
     # both a `gates/` package and a `gates.py` module which can shadow each
@@ -554,19 +554,20 @@ def handle_status(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Handle the doctor command."""
     try:
-        from .doctor import run_doctor_report, render_human
+        from .doctor import render_human, run_doctor_report
 
         report = run_doctor_report()
         human_output = render_human(report)
         print(human_output)
-        
+
         # Handle additional --check flags if present
         checks = getattr(args, "checks", None) or []
         check_failures = []
-        
+
         for check_type in checks:
             if check_type == "report-json":
                 from pathlib import Path
+
                 report_path = Path(".firsttry/report.json")
                 if not report_path.exists():
                     print("\n❌ Check failed: report-json")
@@ -575,6 +576,7 @@ def handle_doctor(args: argparse.Namespace) -> int:
                     check_failures.append("report-json")
                 else:
                     import json
+
                     try:
                         data = json.loads(report_path.read_text())
                         schema_ver = data.get("schema_version", 0)
@@ -586,9 +588,10 @@ def handle_doctor(args: argparse.Namespace) -> int:
                         print("\n❌ Check failed: report-json")
                         print(f"   Invalid JSON: {e}")
                         check_failures.append("report-json")
-            
+
             elif check_type == "telemetry":
                 from pathlib import Path
+
                 status_path = Path(".firsttry/telemetry_status.json")
                 if not status_path.exists():
                     print("\n⚠️  Check notice: telemetry")
@@ -596,6 +599,7 @@ def handle_doctor(args: argparse.Namespace) -> int:
                     print("   Hint: Run with --send-telemetry to opt in")
                 else:
                     import json
+
                     try:
                         data = json.loads(status_path.read_text())
                         ok = data.get("ok", False)
@@ -610,7 +614,7 @@ def handle_doctor(args: argparse.Namespace) -> int:
                         print("\n❌ Check failed: telemetry")
                         print(f"   Invalid status file: {e}")
                         check_failures.append("telemetry")
-        
+
         # Return appropriate exit code based on score and check failures
         passed = all(r.status == "ok" for r in report.results)
         if check_failures:
@@ -633,15 +637,16 @@ def handle_doctor(args: argparse.Namespace) -> int:
 def cmd_mirror_ci(args: argparse.Namespace) -> int:
     """Handle the mirror-ci command."""
     try:
-        from .ci_mapper import build_ci_plan
         import json
-        
+
+        from .ci_mapper import build_ci_plan
+
         # Get root path from args
-        root_path = getattr(args, 'root', '.')
-        
+        root_path = getattr(args, "root", ".")
+
         # Build CI plan
         plan = build_ci_plan(root_path)
-        
+
         # Print as JSON for tests
         print(json.dumps(plan, indent=2))
         return 0

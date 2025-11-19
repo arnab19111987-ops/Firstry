@@ -1,7 +1,10 @@
 from __future__ import annotations
-from pathlib import Path
+
 import json
+from pathlib import Path
+
 from .graph import CodebaseTwin, ProjectNode
+
 
 def attach_node_projects(repo_root: Path, twin: CodebaseTwin) -> None:
     pkg = repo_root / "package.json"

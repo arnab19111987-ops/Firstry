@@ -1,1 +1,2 @@
-class Utils30: pass
+class Utils30:
+    pass

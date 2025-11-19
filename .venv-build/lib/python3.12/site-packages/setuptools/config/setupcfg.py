@@ -17,7 +17,8 @@ import os
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from functools import partial, wraps
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, cast
+from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar,
+                    cast)
 
 from packaging.markers import default_environment as marker_env
 from packaging.requirements import InvalidRequirement, Requirement
@@ -30,11 +31,10 @@ from ..warnings import SetuptoolsDeprecationWarning
 from . import expand
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from distutils.dist import DistributionMetadata
 
     from setuptools.dist import Distribution
-
-    from distutils.dist import DistributionMetadata
+    from typing_extensions import TypeAlias
 
 SingleCommandOptions: TypeAlias = dict[str, tuple[str, Any]]
 """Dict that associate the name of the options of a particular command to a

@@ -5,23 +5,15 @@ import sys
 from collections.abc import Generator, Iterable, Iterator
 from typing import Callable, Literal, TypeVar
 
-from pip._vendor.rich.progress import (
-    BarColumn,
-    DownloadColumn,
-    FileSizeColumn,
-    MofNCompleteColumn,
-    Progress,
-    ProgressColumn,
-    SpinnerColumn,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
-
 from pip._internal.cli.spinners import RateLimiter
 from pip._internal.req.req_install import InstallRequirement
 from pip._internal.utils.logging import get_console, get_indentation
+from pip._vendor.rich.progress import (BarColumn, DownloadColumn,
+                                       FileSizeColumn, MofNCompleteColumn,
+                                       Progress, ProgressColumn, SpinnerColumn,
+                                       TextColumn, TimeElapsedColumn,
+                                       TimeRemainingColumn,
+                                       TransferSpeedColumn)
 
 T = TypeVar("T")
 ProgressRenderer = Callable[[Iterable[T]], Iterator[T]]

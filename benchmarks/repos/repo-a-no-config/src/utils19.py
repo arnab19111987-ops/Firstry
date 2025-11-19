@@ -1,1 +1,2 @@
-class Utils19: pass
+class Utils19:
+    pass

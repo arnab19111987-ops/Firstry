@@ -1,14 +1,12 @@
 import os
 import sys
+from distutils.errors import DistutilsOptionError
 from pathlib import Path
 
 import pytest
-
 from setuptools._static import is_static
 from setuptools.config import expand
 from setuptools.discovery import find_package_path
-
-from distutils.errors import DistutilsOptionError
 
 
 def write_files(files, root_dir):

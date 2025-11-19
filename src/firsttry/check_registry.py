@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Dict, Any, List
+
+from typing import Any, Dict, List
 
 # Single source of truth for check definitions
 CHECK_REGISTRY: Dict[str, Dict[str, Any]] = {
@@ -10,18 +11,16 @@ CHECK_REGISTRY: Dict[str, Dict[str, Any]] = {
         "inputs": ["**/*.py", "pyproject.toml", "ruff.toml", ".ruff.toml"],
     },
     "repo_sanity": {
-        "bucket": "fast", 
+        "bucket": "fast",
         "mutates": False,
         "inputs": ["pyproject.toml", "setup.py", "requirements*.txt", "README*"],
     },
-
     # MUTATING checks - modify files, must run serially
     "black": {
         "bucket": "mutating",
         "mutates": True,
         "inputs": ["**/*.py", "pyproject.toml", "black.toml", ".black.toml"],
     },
-
     # SLOW checks - comprehensive analysis
     "mypy": {
         "bucket": "slow",
@@ -31,24 +30,55 @@ CHECK_REGISTRY: Dict[str, Dict[str, Any]] = {
     "pytest": {
         "bucket": "slow",
         "mutates": False,
-        "inputs": ["tests/**/*.py", "src/**/*.py", "test/**/*.py", "**/*test*.py", "pyproject.toml", "pytest.ini"],
+        "inputs": [
+            "tests/**/*.py",
+            "src/**/*.py",
+            "test/**/*.py",
+            "**/*test*.py",
+            "pyproject.toml",
+            "pytest.ini",
+        ],
     },
     "npm test": {
         "bucket": "slow",
         "mutates": False,
         "inputs": [
-            "package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lockb",
-            "tsconfig.json", "jsconfig.json", "webpack.config.*", "vite.config.*", 
-            "rollup.config.*", "babel.config.*", ".babelrc*", "jest.config.*",
-            "vitest.config.*", "playwright.config.*", "cypress.config.*",
-            "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.mjs", "**/*.cjs",
-            "**/*.vue", "**/*.svelte", "**/*.astro"
+            "package.json",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            "bun.lockb",
+            "tsconfig.json",
+            "jsconfig.json",
+            "webpack.config.*",
+            "vite.config.*",
+            "rollup.config.*",
+            "babel.config.*",
+            ".babelrc*",
+            "jest.config.*",
+            "vitest.config.*",
+            "playwright.config.*",
+            "cypress.config.*",
+            "**/*.js",
+            "**/*.jsx",
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.mjs",
+            "**/*.cjs",
+            "**/*.vue",
+            "**/*.svelte",
+            "**/*.astro",
         ],
     },
     "ci-parity": {
         "bucket": "slow",
         "mutates": False,
-        "inputs": [".github/workflows/**/*.yml", ".github/workflows/**/*.yaml", "firsttry.toml", ".firsttry.toml"],
+        "inputs": [
+            ".github/workflows/**/*.yml",
+            ".github/workflows/**/*.yaml",
+            "firsttry.toml",
+            ".firsttry.toml",
+        ],
     },
 }
 

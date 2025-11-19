@@ -1,10 +1,11 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from time import perf_counter
+
 import subprocess
-from typing import Iterable, Sequence
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from pathlib import Path
+from time import perf_counter
+from typing import Iterable, Sequence
 
 # Optional compatibility alias; keep after other imports so linters don't
 # complain about non-top-level imports. Tests should patch `subprocess.run`
@@ -104,5 +105,3 @@ def coverage_gate(threshold: int) -> StepResult:
     return StepResult(
         "coverage_gate", ok, 0.0, stdout, "", ("coverage_gate", str(threshold))
     )
-
-

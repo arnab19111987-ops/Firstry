@@ -27,6 +27,7 @@ import pathlib
 import sys
 from collections.abc import Iterable, Iterator, Mapping
 from configparser import ConfigParser
+from distutils.errors import DistutilsOptionError
 from glob import iglob
 from importlib.machinery import ModuleSpec, all_suffixes
 from itertools import chain
@@ -35,16 +36,14 @@ from types import ModuleType, TracebackType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from .. import _static
-from .._path import StrPath, same_path as _same_path
+from .._path import StrPath
+from .._path import same_path as _same_path
 from ..discovery import find_package_path
 from ..warnings import SetuptoolsWarning
 
-from distutils.errors import DistutilsOptionError
-
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from setuptools.dist import Distribution
+    from typing_extensions import Self
 
 _K = TypeVar("_K")
 _V_co = TypeVar("_V_co", covariant=True)
@@ -287,7 +286,6 @@ def find_packages(
     :rtype: list
     """
     from more_itertools import always_iterable, unique_everseen
-
     from setuptools.discovery import construct_package_dir
 
     # check "not namespaces" first due to python/mypy#6232

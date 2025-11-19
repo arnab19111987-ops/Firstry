@@ -1,5 +1,6 @@
-import io
 import builtins
+import io
+
 import pytest
 
 import firsttry.docker_smoke as ds

@@ -1,1 +1,2 @@
-class Utils24: pass
+class Utils24:
+    pass

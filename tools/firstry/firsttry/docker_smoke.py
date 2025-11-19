@@ -15,8 +15,8 @@ Public API:
 
 from __future__ import annotations
 
-import subprocess
 import shlex
+import subprocess
 import time
 import urllib.request
 from typing import Tuple

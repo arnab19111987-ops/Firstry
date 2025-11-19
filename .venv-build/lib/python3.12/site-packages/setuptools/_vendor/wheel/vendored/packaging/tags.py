@@ -10,18 +10,8 @@ import subprocess
 import sys
 import sysconfig
 from importlib.machinery import EXTENSION_SUFFIXES
-from typing import (
-    Dict,
-    FrozenSet,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import (Dict, FrozenSet, Iterable, Iterator, List, Optional,
+                    Sequence, Tuple, Union, cast)
 
 from . import _manylinux, _musllinux
 

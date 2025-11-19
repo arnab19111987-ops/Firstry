@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from ..agents.ci.validation_parity import ValidationParityAgent
-from ..agents.ci.env_parity import EnvParityAgent
 from ..agents.ci.deps_parity import DependencyParityAgent
+from ..agents.ci.env_parity import EnvParityAgent
+from ..agents.ci.validation_parity import ValidationParityAgent
 from ..ci_parser import resolve_ci_plan
 from .base import BaseRunner, RunnerResult
 
@@ -13,7 +13,9 @@ from .base import BaseRunner, RunnerResult
 class CiParityRunner(BaseRunner):
     tool = "ci-parity"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         # make sure ctx has ci_plan
         if "ci_plan" not in ctx:
             ctx["ci_plan"] = resolve_ci_plan(ctx.get("repo_root", ".")) or []

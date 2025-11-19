@@ -9,7 +9,9 @@ from .base import BaseRunner, RunnerResult
 class CustomRunner(BaseRunner):
     tool = "custom"
 
-    async def run(self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]) -> RunnerResult:
+    async def run(
+        self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
+    ) -> RunnerResult:
         display_name = item.get("tool") or item.get("name") or "custom"
         name = f"{display_name}[{idx}]"
         cmd = item.get("cmd")

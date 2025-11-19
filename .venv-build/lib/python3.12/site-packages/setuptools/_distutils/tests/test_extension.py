@@ -4,9 +4,9 @@ import os
 import pathlib
 import warnings
 from distutils.extension import Extension, read_setup_file
+from test.support.warnings_helper import check_warnings
 
 import pytest
-from test.support.warnings_helper import check_warnings
 
 
 class TestExtension:

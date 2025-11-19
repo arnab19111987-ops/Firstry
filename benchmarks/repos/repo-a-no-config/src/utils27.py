@@ -1,1 +1,2 @@
-class Utils27: pass
+class Utils27:
+    pass

@@ -2,32 +2,33 @@
 
 from __future__ import annotations
 
-from .tier_map import (
-    get_checks_for_tier,
-    get_tier_meta,
-    LOCKED_MESSAGE,
-    TIER_CHECKS,
-)
 from ..license_guard import get_tier
+from .tier_map import LOCKED_MESSAGE, TIER_CHECKS, get_checks_for_tier, get_tier_meta
+
 
 # simple color helper for legacy paths (no-op if Rich not used)
 def c(text: str, *_args) -> str:
     return str(text)
 
+
 # legacy interactive helpers (no-ops to avoid import dependency)
 def interactive_menu(*_args, **_kwargs) -> None:
     return None
 
+
 def render_detailed_report(*_args, **_kwargs) -> None:
     return None
 
+
 def render_locked_report(*_args, **_kwargs) -> None:
     return None
+
 
 # you probably already have a Rich detection; keep it
 try:
     from rich.console import Console
     from rich.table import Table
+
     console = Console()
     _HAS_RICH = True
 except Exception:
@@ -103,7 +104,7 @@ def render_summary(report: dict) -> None:
                 print(f"  🔒 {chk}: {LOCKED_MESSAGE}")
 
 
-# Legacy function for backward compatibility  
+# Legacy function for backward compatibility
 def render_summary_legacy(results, context):
     tier = (get_tier() or "free").lower()
     allowed_checks = TIER_CHECKS.get(tier, TIER_CHECKS["free"])
@@ -113,7 +114,9 @@ def render_summary_legacy(results, context):
     print()
     print(c("--- Context ---", "cyan"))
     print(f"  Machine: {context.get('machine', 'unknown')} CPUs")
-    print(f"  Repo:    {context.get('files', '?')} files, {context.get('tests', '?')} tests")
+    print(
+        f"  Repo:    {context.get('files', '?')} files, {context.get('tests', '?')} tests"
+    )
     print("  Checks:  " + ", ".join(allowed_checks))
     print()
 

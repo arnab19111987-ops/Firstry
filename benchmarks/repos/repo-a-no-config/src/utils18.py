@@ -1,1 +1,2 @@
-class Utils18: pass
+class Utils18:
+    pass

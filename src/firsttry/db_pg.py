@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Dict, List, Any
-
+from typing import Any, Dict, List
 
 # Regexes for destructive ops
 _DROP_TABLE_FUNC = re.compile(r"op\.drop_table\(\s*['\"]([^'\"]+)['\"]", re.IGNORECASE)

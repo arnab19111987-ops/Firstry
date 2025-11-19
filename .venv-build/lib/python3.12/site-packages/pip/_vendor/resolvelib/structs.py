@@ -2,18 +2,8 @@ from __future__ import annotations
 
 import itertools
 from collections import namedtuple
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Generic,
-    Iterable,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import (TYPE_CHECKING, Callable, Generic, Iterable, Iterator,
+                    Mapping, NamedTuple, Sequence, TypeVar, Union)
 
 KT = TypeVar("KT")  # Identifier.
 RT = TypeVar("RT")  # Requirement.

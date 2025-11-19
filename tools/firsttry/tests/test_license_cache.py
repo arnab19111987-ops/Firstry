@@ -2,10 +2,10 @@ from datetime import datetime, timezone
 
 from firsttry.license_cache import (
     CachedLicense,
-    save_cache,
-    load_cache,
-    is_fresh,
     assert_license,
+    is_fresh,
+    load_cache,
+    save_cache,
 )
 
 

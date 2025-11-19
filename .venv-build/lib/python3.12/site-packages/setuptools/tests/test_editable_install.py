@@ -6,6 +6,7 @@ import stat
 import subprocess
 import sys
 from copy import deepcopy
+from distutils.core import run_setup
 from importlib import import_module
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
@@ -18,25 +19,17 @@ import jaraco.envs
 import jaraco.path
 import pytest
 from path import Path as _Path
-
 from setuptools._importlib import resources as importlib_resources
-from setuptools.command.editable_wheel import (
-    _encode_pth,
-    _find_namespaces,
-    _find_package_roots,
-    _find_virtual_namespaces,
-    _finder_template,
-    _LinkTree,
-    _TopLevelFinder,
-    editable_wheel,
-)
+from setuptools.command.editable_wheel import (_encode_pth, _find_namespaces,
+                                               _find_package_roots,
+                                               _find_virtual_namespaces,
+                                               _finder_template, _LinkTree,
+                                               _TopLevelFinder, editable_wheel)
 from setuptools.dist import Distribution
 from setuptools.extension import Extension
 from setuptools.warnings import SetuptoolsDeprecationWarning
 
 from . import contexts, namespaces
-
-from distutils.core import run_setup
 
 
 @pytest.fixture(params=["strict", "lenient"])

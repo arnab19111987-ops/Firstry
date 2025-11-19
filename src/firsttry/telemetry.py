@@ -35,18 +35,25 @@ def write_report_async(
 
 # --- Telemetry (opt-in) --------------------------------------------------
 
-TELEMETRY_URL = os.environ.get("FIRSTTRY_TELEMETRY_URL", "https://telemetry.firsttry.run/collect")
+TELEMETRY_URL = os.environ.get(
+    "FIRSTTRY_TELEMETRY_URL", "https://telemetry.firsttry.run/collect"
+)
 STATUS_FILE = Path(".firsttry/telemetry_status.json")
 
 
 def _write_status(ok: bool, message: str = "") -> None:
     try:
         STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        STATUS_FILE.write_text(json.dumps({
-            "ok": ok,
-            "message": message,
-            "ts": int(time.time()),
-        }, indent=2))
+        STATUS_FILE.write_text(
+            json.dumps(
+                {
+                    "ok": ok,
+                    "message": message,
+                    "ts": int(time.time()),
+                },
+                indent=2,
+            )
+        )
     except Exception:
         pass
 
@@ -57,19 +64,30 @@ def send_report(report: Dict[str, Any]) -> None:
         if request is None:
             _write_status(False, "urllib not available")
             return
-        data = json.dumps({
-            "schema_version": report.get("schema_version"),
-            "tier": report.get("tier"),
-            "profile": report.get("profile"),
-            "timing": report.get("timing", {}),
-            "checks": [
-                {"id": c.get("id"), "status": c.get("status"), "locked": c.get("locked", False)}
-                for c in report.get("checks", [])
-            ],
-        }).encode("utf-8")
-        req = request.Request(TELEMETRY_URL, data=data, headers={"Content-Type": "application/json"}, method="POST")
+        data = json.dumps(
+            {
+                "schema_version": report.get("schema_version"),
+                "tier": report.get("tier"),
+                "profile": report.get("profile"),
+                "timing": report.get("timing", {}),
+                "checks": [
+                    {
+                        "id": c.get("id"),
+                        "status": c.get("status"),
+                        "locked": c.get("locked", False),
+                    }
+                    for c in report.get("checks", [])
+                ],
+            }
+        ).encode("utf-8")
+        req = request.Request(
+            TELEMETRY_URL,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
         with request.urlopen(req, timeout=3) as resp:  # nosec - fixed URL
-            ok = 200 <= getattr(resp, 'status', 200) < 300
+            ok = 200 <= getattr(resp, "status", 200) < 300
             _write_status(ok, f"status={getattr(resp, 'status', 200)}")
     except Exception as e:  # pragma: no cover (network)
         _write_status(False, str(e))

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import sys
+import asyncio
 import json
 import os
+import sys
 from pathlib import Path
-import asyncio
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 # Import the GateResult from gates.base
 from .gates.base import GateResult
@@ -73,7 +73,7 @@ def print_summary(results: List[GateResult]) -> None:
 def normalize_cache_state(tool_result: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalize cache state for honest reporting.
-    
+
     tool_result {
       "name": ...,
       "status": "ok" | "fail" | "skipped",
@@ -82,7 +82,7 @@ def normalize_cache_state(tool_result: Dict[str, Any]) -> Dict[str, Any]:
     }
     """
     cache_state = tool_result.get("cache_state")
-    
+
     if cache_state == "re-run-failed":
         # count as structural hit - cache worked, we just re-ran due to policy
         tool_result["cache_bucket"] = "hit-policy"
@@ -90,33 +90,38 @@ def normalize_cache_state(tool_result: Dict[str, Any]) -> Dict[str, Any]:
         tool_result["cache_bucket"] = "hit"
     else:
         tool_result["cache_bucket"] = "miss"
-    
+
     return tool_result
 
 
 def format_cache_summary(results: List[Dict[str, Any]]) -> str:
     """Format cache statistics with honest hit rate reporting."""
     normalized = [normalize_cache_state(r) for r in results]
-    
+
     hits = len([r for r in normalized if r.get("cache_bucket") == "hit"])
-    policy_reruns = len([r for r in normalized if r.get("cache_bucket") == "hit-policy"])
+    policy_reruns = len(
+        [r for r in normalized if r.get("cache_bucket") == "hit-policy"]
+    )
     misses = len([r for r in normalized if r.get("cache_bucket") == "miss"])
-    
+
     total = hits + policy_reruns + misses
     if total == 0:
         return "Cache: No cached operations"
-    
+
     structural_hits = hits + policy_reruns
-    
+
     summary_parts: List[str] = []
     if structural_hits > 0:
         summary_parts.append(f"Cache (structural): {structural_hits}/{total}")
     if policy_reruns > 0:
-        summary_parts.append(f"Cache (policy-respected): {policy_reruns} re-run (failed tools)")
+        summary_parts.append(
+            f"Cache (policy-respected): {policy_reruns} re-run (failed tools)"
+        )
     if misses > 0:
         summary_parts.append(f"Cache misses: {misses}")
-    
+
     return "  ".join(summary_parts)
+
 
 # Durable reporting for timing data and run results
 
@@ -151,7 +156,9 @@ def write_report_sync_to_path(path: Path, payload: Dict[str, Any]) -> None:
     tmp_path.replace(path)
 
 
-async def write_report_async(path: Path, payload: Dict[str, Any], enabled: bool = True) -> None:
+async def write_report_async(
+    path: Path, payload: Dict[str, Any], enabled: bool = True
+) -> None:
     """
     Fire-and-forget style, but still durable.
     If anything goes wrong in async context, fall back to sync.
@@ -160,7 +167,7 @@ async def write_report_async(path: Path, payload: Dict[str, Any], enabled: bool 
     if not enabled:
         write_report_sync_to_path(path, payload)
         return
-        
+
     try:
         loop = asyncio.get_running_loop()
         # run blocking write in thread so we don't block main
@@ -179,17 +186,40 @@ def render_tty(results: Dict[str, Any]) -> None:
     Accepts a mapping of id -> object with fields `.status` and `.duration_ms`.
     """
     for tid, r in results.items():
-        status = getattr(r, "status", r.get("status") if isinstance(r, dict) else "unknown")
-        dur = getattr(r, "duration_ms", r.get("duration_ms") if isinstance(r, dict) else 0)
+        status = getattr(
+            r, "status", r.get("status") if isinstance(r, dict) else "unknown"
+        )
+        dur = getattr(
+            r, "duration_ms", r.get("duration_ms") if isinstance(r, dict) else 0
+        )
         prefix = "[CACHE]" if str(status).startswith("hit-") else "[ RUN ]"
         print(f"{prefix} {str(status).upper():10s} {tid} ({dur}ms)")
-    hits = sum(1 for r in results.values() if str(getattr(r, "status", r.get("status") if isinstance(r, dict) else "")).startswith("hit-"))
-    runs = sum(1 for r in results.values() if not str(getattr(r, "status", r.get("status") if isinstance(r, dict) else "")).startswith("hit-"))
+    hits = sum(
+        1
+        for r in results.values()
+        if str(
+            getattr(r, "status", r.get("status") if isinstance(r, dict) else "")
+        ).startswith("hit-")
+    )
+    runs = sum(
+        1
+        for r in results.values()
+        if not str(
+            getattr(r, "status", r.get("status") if isinstance(r, dict) else "")
+        ).startswith("hit-")
+    )
     print(f"\n{hits} checks verified from cache, {runs} run locally.\n")
 
 
-def write_json(repo_root: Path, results: Dict[str, Any], out: str = ".firsttry/report.json") -> None:
-    payload = {"checks": {tid: (r.to_report_json() if hasattr(r, "to_report_json") else r) for tid, r in results.items()}}
+def write_json(
+    repo_root: Path, results: Dict[str, Any], out: str = ".firsttry/report.json"
+) -> None:
+    payload = {
+        "checks": {
+            tid: (r.to_report_json() if hasattr(r, "to_report_json") else r)
+            for tid, r in results.items()
+        }
+    }
     p = repo_root / out
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))

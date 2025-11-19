@@ -36,16 +36,16 @@ def _real_detect_stack(repo_root: Path) -> Dict[str, Any]:
     # Fast sentinel file checks first
     if (repo_root / "pyproject.toml").exists() or (repo_root / "setup.cfg").exists():
         payload["python"] = True
-    
+
     if (repo_root / "package.json").exists():
         payload["node"] = True
-        
+
     if (repo_root / "go.mod").exists():
         payload["go"] = True
-        
+
     if (repo_root / "Cargo.toml").exists():
         payload["rust"] = True
-        
+
     if (repo_root / "Dockerfile").exists():
         payload["infra"] = True
 
@@ -53,7 +53,7 @@ def _real_detect_stack(repo_root: Path) -> Dict[str, Any]:
     if not payload["python"]:
         if list(repo_root.rglob("*.py")):
             payload["python"] = True
-            
+
     if not payload["node"]:
         if list(repo_root.rglob("*.js")) or list(repo_root.rglob("*.ts")):
             payload["node"] = True

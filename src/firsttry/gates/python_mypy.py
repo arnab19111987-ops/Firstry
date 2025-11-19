@@ -1,15 +1,16 @@
 """Python mypy gate implementation."""
 
 import subprocess
-from typing import Optional, Any
+from typing import Any, Optional
+
 from .base import Gate, GateResult
 
 
 class PythonMypyGate(Gate):
     """Gate that runs mypy type checking on Python code."""
-    
+
     gate_id = "python_mypy"
-    
+
     def run(self, project_root: Optional[Any] = None) -> GateResult:
         """Run mypy type checking."""
         try:
@@ -18,42 +19,39 @@ class PythonMypyGate(Gate):
                 cwd=project_root,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
             )
-            
+
             if result.returncode == 0:
                 return GateResult(
                     gate_id=self.gate_id,
                     ok=True,
                     skipped=False,
-                    reason="mypy type checking passed"
+                    reason="mypy type checking passed",
                 )
             else:
                 return GateResult(
                     gate_id=self.gate_id,
                     ok=False,
                     skipped=False,
-                    reason=f"mypy found type errors:\n{result.stdout}\n{result.stderr}"
+                    reason=f"mypy found type errors:\n{result.stdout}\n{result.stderr}",
                 )
-                
+
         except FileNotFoundError:
             return GateResult(
                 gate_id=self.gate_id,
                 ok=True,
                 skipped=True,
-                reason="mypy not installed, skipping type checking"
+                reason="mypy not installed, skipping type checking",
             )
         except subprocess.TimeoutExpired:
             return GateResult(
                 gate_id=self.gate_id,
                 ok=False,
                 skipped=False,
-                reason="mypy type checking timed out"
+                reason="mypy type checking timed out",
             )
         except Exception as e:
             return GateResult(
-                gate_id=self.gate_id,
-                ok=False,
-                skipped=False,
-                reason=f"mypy error: {e}"
+                gate_id=self.gate_id, ok=False, skipped=False, reason=f"mypy error: {e}"
             )

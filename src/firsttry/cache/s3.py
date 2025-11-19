@@ -1,22 +1,27 @@
 from __future__ import annotations
-from typing import Optional, Dict, Any
-from dataclasses import dataclass
+
 import json
 import os
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 from .base import BaseCache, CacheHit
+
 
 def _has_boto3() -> bool:
     try:
         import boto3  # noqa: F401
+
         return True
     except Exception:
         return False
+
 
 @dataclass
 class _S3Conf:
     bucket: str
     prefix: str  # key prefix without trailing slash
+
 
 class S3Cache(BaseCache):
     def __init__(self, conf: _S3Conf):
@@ -24,6 +29,7 @@ class S3Cache(BaseCache):
         self.enabled = _has_boto3()
         if self.enabled:
             import boto3  # type: ignore
+
             self.s3 = boto3.client("s3")
         else:
             self.s3 = None
@@ -45,7 +51,11 @@ class S3Cache(BaseCache):
         try:
             obj = self.s3.get_object(Bucket=self.conf.bucket, Key=self._key(key))
             data = json.loads(obj["Body"].read().decode("utf-8"))
-            return CacheHit(stdout=data.get("stdout",""), stderr=data.get("stderr",""), meta=data.get("meta"))
+            return CacheHit(
+                stdout=data.get("stdout", ""),
+                stderr=data.get("stderr", ""),
+                meta=data.get("meta"),
+            )
         except Exception:
             return None
 
@@ -53,7 +63,11 @@ class S3Cache(BaseCache):
         if not self.enabled or not self.s3:
             return
         try:
-            payload: Dict[str, Any] = {"stdout": result.stdout, "stderr": result.stderr, "meta": result.meta or {}}
+            payload: Dict[str, Any] = {
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "meta": result.meta or {},
+            }
             self.s3.put_object(
                 Bucket=self.conf.bucket,
                 Key=self._key(key),

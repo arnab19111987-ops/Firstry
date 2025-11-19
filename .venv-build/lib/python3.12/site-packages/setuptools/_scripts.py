@@ -16,10 +16,10 @@ from ._importlib import metadata, resources
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-from .warnings import SetuptoolsWarning
-
 from distutils.command.build_scripts import first_line_re
 from distutils.util import get_platform
+
+from .warnings import SetuptoolsWarning
 
 
 class _SplitArgs(TypedDict, total=False):

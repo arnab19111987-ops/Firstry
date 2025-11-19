@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Set
-from ..twin.hashers import hash_bytes, hash_file, tool_version_hash, env_fingerprint
+
+from ..twin.hashers import env_fingerprint, hash_bytes, hash_file, tool_version_hash
+
 
 def build_cache_key(repo_root: Path, cmd: list[str], inputs: Set[str]) -> str:
     """
@@ -28,5 +31,7 @@ def build_cache_key(repo_root: Path, cmd: list[str], inputs: Set[str]) -> str:
 
     env = env_fingerprint()
     cmd_sig = " ".join(cmd).encode()
-    key_data = "::".join(sorted(file_hashes) + sorted(tokens) + [env, "CMD:"+hash_bytes(cmd_sig)])
+    key_data = "::".join(
+        sorted(file_hashes) + sorted(tokens) + [env, "CMD:" + hash_bytes(cmd_sig)]
+    )
     return "ft-v1-" + hash_bytes(key_data.encode())

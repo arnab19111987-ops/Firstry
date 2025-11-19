@@ -1,6 +1,8 @@
-from click.testing import CliRunner
-from firsttry.cli import main
 import types
+
+from click.testing import CliRunner
+
+from firsttry.cli import main
 
 
 def test_cli_runs_and_summarizes(monkeypatch, tmp_path):

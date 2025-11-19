@@ -1,1 +1,2 @@
-class Utils13: pass
+class Utils13:
+    pass

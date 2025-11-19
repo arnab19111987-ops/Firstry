@@ -1,1 +1,2 @@
-class Utils8: pass
+class Utils8:
+    pass

@@ -42,6 +42,8 @@ from __future__ import annotations
 import itertools
 import os
 from collections.abc import Iterable, Iterator, Mapping
+from distutils import log
+from distutils.util import convert_path
 from fnmatch import fnmatchcase
 from glob import glob
 from pathlib import Path
@@ -50,9 +52,6 @@ from typing import TYPE_CHECKING, ClassVar
 import _distutils_hack.override  # noqa: F401
 
 from ._path import StrPath
-
-from distutils import log
-from distutils.util import convert_path
 
 if TYPE_CHECKING:
     from setuptools import Distribution

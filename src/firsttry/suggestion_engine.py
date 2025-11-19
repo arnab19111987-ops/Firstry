@@ -56,7 +56,9 @@ def suggest(tool: str, code: Optional[str], message: str) -> Optional[str]:
     return None
 
 
-def decorate_result(result: Dict[str, Any], tool: str, code: Optional[str], message: str) -> Dict[str, Any]:
+def decorate_result(
+    result: Dict[str, Any], tool: str, code: Optional[str], message: str
+) -> Dict[str, Any]:
     hint = suggest(tool, code, message)
     if hint:
         result["hint"] = hint

@@ -9,7 +9,16 @@ def test_get_tier_returns_valid_tier():
     assert tier is not None
     assert isinstance(tier, str)
     # Should be one of the known tiers
-    known_tiers = ["free-lite", "free-strict", "pro", "promax", "developer", "basic", "teams", "enterprise"]
+    known_tiers = [
+        "free-lite",
+        "free-strict",
+        "pro",
+        "promax",
+        "developer",
+        "basic",
+        "teams",
+        "enterprise",
+    ]
     assert tier.lower() in [t.lower() for t in known_tiers]
 
 

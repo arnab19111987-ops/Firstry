@@ -1,10 +1,10 @@
 # tests/test_reports_tier_display.py
 """Tests for tier display formatting in reports."""
 from firsttry.reports.tier_map import (
+    TIER_META,
     get_tier_meta,
     is_tier_free,
     is_tier_paid,
-    TIER_META,
 )
 
 

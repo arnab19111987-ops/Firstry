@@ -14,7 +14,6 @@ except ImportError:
 
 from .ci_parser import resolve_ci_plan
 
-
 CONFIG_PATH = Path("firsttry.toml")
 
 

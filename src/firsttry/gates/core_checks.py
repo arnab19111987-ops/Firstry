@@ -11,6 +11,7 @@ import importlib.util
 import subprocess
 from pathlib import Path
 
+
 # ────────────────────────────────
 # helper
 # ────────────────────────────────
@@ -49,7 +50,9 @@ def run_lint_basic():
         return True, 0
 
     # quick+dirty count: lines that look like diagnostics
-    issues = sum(1 for line in result.stdout.splitlines() if ":" in line and line.strip())
+    issues = sum(
+        1 for line in result.stdout.splitlines() if ":" in line and line.strip()
+    )
     print(result.stdout)
     return False, issues
 
@@ -75,6 +78,7 @@ IGNORE_DIRS = {
     "htmlcov",
     "coverage",
 }
+
 
 def run_repo_sanity():
     missing = []
@@ -142,7 +146,11 @@ def run_env_deps_check():
         return True, 0
 
     with reqs_file.open() as f:
-        required = [line.strip().split("==")[0].lower() for line in f if line.strip() and not line.startswith("#")]
+        required = [
+            line.strip().split("==")[0].lower()
+            for line in f
+            if line.strip() and not line.startswith("#")
+        ]
 
     missing = []
     for pkg in required:
@@ -175,8 +183,10 @@ def run_security_light():
 
 
 def run_coverage_warn():
-    return _run(["pytest", "--cov=.", "--cov-report=term-missing", "--cov-fail-under=70"],
-                "measuring coverage")
+    return _run(
+        ["pytest", "--cov=.", "--cov-report=term-missing", "--cov-fail-under=70"],
+        "measuring coverage",
+    )
 
 
 def run_conventions():

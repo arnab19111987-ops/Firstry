@@ -27,12 +27,11 @@ from ..extension import Extension
 from ..warnings import SetuptoolsDeprecationWarning, SetuptoolsWarning
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias
+    from distutils.dist import _OptionsList  # Comes from typeshed
 
     from setuptools._importlib import metadata
     from setuptools.dist import Distribution
-
-    from distutils.dist import _OptionsList  # Comes from typeshed
+    from typing_extensions import TypeAlias
 
 
 EMPTY: Mapping = MappingProxyType({})  # Immutable dict-like

@@ -3,6 +3,7 @@
 Provides a `run_gate` helper and a CLI `main` function so the module
 can be invoked via `python -m firsttry.ci_parity.runner`.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -66,12 +67,18 @@ def run_gate(
     lint_rc = lint_intents(mirror_path=mpath, workflows_root=wroot)
     if lint_rc not in (0, 2):
         # 1 = internal error
-        print(f"[ci-parity] ERROR: lint_intents failed with exit code {lint_rc}", file=sys.stderr)
+        print(
+            f"[ci-parity] ERROR: lint_intents failed with exit code {lint_rc}",
+            file=sys.stderr,
+        )
         return 1
 
     if lint_rc == 2:
         # parity mismatch is a gate failure
-        print(f"[ci-parity] Gate {stage}: FAILED (unmapped or stale intents)", file=sys.stderr)
+        print(
+            f"[ci-parity] Gate {stage}: FAILED (unmapped or stale intents)",
+            file=sys.stderr,
+        )
         return 2
 
     # For dev gate, we stop after lint.
@@ -82,7 +89,9 @@ def run_gate(
     # For merge/release, run CI parity check as well.
     ci_rc = run_ci(mirror_path=mpath, workflows_root=wroot)
     if ci_rc not in (0, 2):
-        print(f"[ci-parity] ERROR: run_ci failed with exit code {ci_rc}", file=sys.stderr)
+        print(
+            f"[ci-parity] ERROR: run_ci failed with exit code {ci_rc}", file=sys.stderr
+        )
         return 1
 
     if ci_rc == 2:

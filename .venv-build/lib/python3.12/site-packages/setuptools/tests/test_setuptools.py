@@ -1,22 +1,20 @@
 """Tests for the 'setuptools' package"""
 
+import distutils.cmd
+import distutils.core
 import os
 import re
 import sys
+from distutils.core import Extension
+from distutils.errors import DistutilsSetupError
 from zipfile import ZipFile
 
 import pytest
-from packaging.version import Version
-
 import setuptools
 import setuptools.depends as dep
 import setuptools.dist
+from packaging.version import Version
 from setuptools.depends import Require
-
-import distutils.cmd
-import distutils.core
-from distutils.core import Extension
-from distutils.errors import DistutilsSetupError
 
 
 @pytest.fixture(autouse=True)

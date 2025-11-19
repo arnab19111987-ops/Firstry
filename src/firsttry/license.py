@@ -1,16 +1,17 @@
 # firsttry/license.py
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import json
 import os
 import pathlib
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, Any, Dict, Tuple
-from datetime import datetime, timezone, timedelta
-import base64
-import hashlib
-import hmac
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Protocol, Tuple
+
 from firsttry.config import get_tier
 
 
@@ -203,6 +204,7 @@ def ensure_trial_license_if_missing(days: int = 3, plan: str = "trial") -> Licen
 # HMAC signing + Pro gating
 # -----------------------------
 
+
 def get_shared_secret() -> str:
     """
     Return the shared secret used for license HMACs.
@@ -231,6 +233,7 @@ def get_shared_secret() -> str:
         "FIRSTTRY_SHARED_SECRET environment variable is required in production. "
         "Set it to a secure random string (minimum 32 characters)."
     )
+
 
 # Default for older APIs in this module — evaluated at import time to preserve
 # previous semantics where a module-level DEFAULT_SHARED_SECRET was available.
@@ -315,6 +318,7 @@ def get_active_license_key():
         return k
     # trial (from file)
     from .license_trial import load_trial
+
     t = load_trial()
     if t:
         return t.get("license_key")

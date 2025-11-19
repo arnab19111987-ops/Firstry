@@ -1,14 +1,15 @@
 """Dependencies lock gate implementation."""
-from typing import Optional, Any
+
+from typing import Any, Optional
 
 from .base import Gate, GateResult
 
 
 class DepsLockGate(Gate):
     """Gate that checks for dependency lock files."""
-    
+
     gate_id = "deps_lock"
-    
+
     def run(self, project_root: Optional[Any] = None) -> GateResult:
         """Check for dependency lock files."""
         # This is a placeholder implementation
@@ -17,5 +18,5 @@ class DepsLockGate(Gate):
             gate_id=self.gate_id,
             ok=True,
             skipped=True,
-            reason="dependency lock check not implemented, skipping"
+            reason="dependency lock check not implemented, skipping",
         )

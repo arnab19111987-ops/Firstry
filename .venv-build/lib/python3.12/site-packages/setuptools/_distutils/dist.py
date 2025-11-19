@@ -15,27 +15,15 @@ import sys
 import warnings
 from collections.abc import Iterable, MutableMapping
 from email import message_from_file
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Literal,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import (IO, TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, Union,
+                    overload)
 
 from packaging.utils import canonicalize_name, canonicalize_version
 
 from ._log import log
 from .debug import DEBUG
-from .errors import (
-    DistutilsArgError,
-    DistutilsClassError,
-    DistutilsModuleError,
-    DistutilsOptionError,
-)
+from .errors import (DistutilsArgError, DistutilsClassError,
+                     DistutilsModuleError, DistutilsOptionError)
 from .fancy_getopt import FancyGetopt, translate_longopt
 from .util import check_environ, rfc822_escape, strtobool
 

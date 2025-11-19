@@ -11,12 +11,6 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from pip._vendor.packaging.version import Version
-from pip._vendor.packaging.version import parse as parse_version
-from pip._vendor.rich.console import Group
-from pip._vendor.rich.markup import escape
-from pip._vendor.rich.text import Text
-
 from pip._internal.index.collector import LinkCollector
 from pip._internal.index.package_finder import PackageFinder
 from pip._internal.metadata import get_default_environment
@@ -24,20 +18,18 @@ from pip._internal.models.selection_prefs import SelectionPreferences
 from pip._internal.network.session import PipSession
 from pip._internal.utils.compat import WINDOWS
 from pip._internal.utils.entrypoints import (
-    get_best_invocation_for_this_pip,
-    get_best_invocation_for_this_python,
-)
-from pip._internal.utils.filesystem import (
-    adjacent_tmp_file,
-    check_path_owner,
-    copy_directory_permissions,
-    replace,
-)
-from pip._internal.utils.misc import (
-    ExternallyManagedEnvironment,
-    check_externally_managed,
-    ensure_dir,
-)
+    get_best_invocation_for_this_pip, get_best_invocation_for_this_python)
+from pip._internal.utils.filesystem import (adjacent_tmp_file,
+                                            check_path_owner,
+                                            copy_directory_permissions,
+                                            replace)
+from pip._internal.utils.misc import (ExternallyManagedEnvironment,
+                                      check_externally_managed, ensure_dir)
+from pip._vendor.packaging.version import Version
+from pip._vendor.packaging.version import parse as parse_version
+from pip._vendor.rich.console import Group
+from pip._vendor.rich.markup import escape
+from pip._vendor.rich.text import Text
 
 _WEEK = datetime.timedelta(days=7)
 

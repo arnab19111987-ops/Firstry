@@ -4,40 +4,45 @@ Advanced cache models using stat-first validation for maximum performance.
 Avoids expensive file hashing when file metadata (size, mtime) hasn't changed.
 """
 
-from dataclasses import dataclass, asdict
-from typing import List, Dict, Any
 import json
 import time
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List
 
 
 @dataclass
 class InputFileMeta:
     """Metadata for a single input file used in cache validation."""
+
     path: str
     size: int
     mtime: float  # last modified timestamp
 
 
-@dataclass  
+@dataclass
 class ToolCacheEntry:
     """Complete cache entry for a tool execution with stat-first validation."""
+
     tool_name: str
     input_files: List[InputFileMeta]
-    input_hash: str      # sha256 of concatenated file hashes (fallback only)
-    status: str          # "ok" | "fail" 
+    input_hash: str  # sha256 of concatenated file hashes (fallback only)
+    status: str  # "ok" | "fail"
     created_at: float
     extra: Dict[str, Any]  # timing, output, etc.
 
     def to_json(self) -> str:
         """Serialize cache entry to JSON string."""
-        return json.dumps({
-            "tool_name": self.tool_name,
-            "input_files": [asdict(f) for f in self.input_files],
-            "input_hash": self.input_hash,
-            "status": self.status,
-            "created_at": self.created_at,
-            "extra": self.extra,
-        }, indent=2)
+        return json.dumps(
+            {
+                "tool_name": self.tool_name,
+                "input_files": [asdict(f) for f in self.input_files],
+                "input_hash": self.input_hash,
+                "status": self.status,
+                "created_at": self.created_at,
+                "extra": self.extra,
+            },
+            indent=2,
+        )
 
     @staticmethod
     def from_json(raw: str) -> "ToolCacheEntry":
@@ -65,12 +70,13 @@ class ToolCacheEntry:
 @dataclass
 class CacheStats:
     """Statistics for cache performance reporting."""
+
     total_tools: int = 0
-    cache_hits: int = 0          # Files unchanged, used cached result
-    policy_reruns: int = 0       # Re-ran failed tools by policy  
-    cache_misses: int = 0        # Actually new/changed inputs
-    stat_checks: int = 0         # Fast stat-based validations
-    hash_computations: int = 0   # Expensive hash computations
+    cache_hits: int = 0  # Files unchanged, used cached result
+    policy_reruns: int = 0  # Re-ran failed tools by policy
+    cache_misses: int = 0  # Actually new/changed inputs
+    stat_checks: int = 0  # Fast stat-based validations
+    hash_computations: int = 0  # Expensive hash computations
 
     @property
     def cache_efficiency(self) -> float:
@@ -80,7 +86,7 @@ class CacheStats:
         return (self.cache_hits / self.total_tools) * 100
 
     @property
-    def stat_efficiency(self) -> float:  
+    def stat_efficiency(self) -> float:
         """Percentage avoided expensive hashing via stat checks."""
         total_checks = self.stat_checks + self.hash_computations
         if total_checks == 0:

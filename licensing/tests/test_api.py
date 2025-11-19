@@ -1,8 +1,9 @@
-from fastapi.testclient import TestClient
-from app.main import app
-import hmac
 import hashlib
+import hmac
 import time
+
+from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -32,6 +33,7 @@ def test_verify_valid_key(monkeypatch):
     monkeypatch.setenv("FIRSTTRY_KEYS", "ABC123,PRO456:featA|featB")
     # re-import to refresh store
     from importlib import reload
+
     import app.licensing as lic
 
     reload(lic)

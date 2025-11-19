@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import contextlib
+import distutils.command.sdist as orig
 import os
 import re
+from distutils import log
 from itertools import chain
 from typing import ClassVar
 
 from .._importlib import metadata
 from ..dist import Distribution
 from .build import _ORIGINAL_SUBCOMMANDS
-
-import distutils.command.sdist as orig
-from distutils import log
 
 _default_revctrl = list
 

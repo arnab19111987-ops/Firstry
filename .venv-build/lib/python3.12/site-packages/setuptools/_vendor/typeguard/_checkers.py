@@ -10,27 +10,9 @@ from enum import Enum
 from inspect import Parameter, isclass, isfunction
 from io import BufferedIOBase, IOBase, RawIOBase, TextIOBase
 from textwrap import indent
-from typing import (
-    IO,
-    AbstractSet,
-    Any,
-    BinaryIO,
-    Callable,
-    Dict,
-    ForwardRef,
-    List,
-    Mapping,
-    MutableMapping,
-    NewType,
-    Optional,
-    Sequence,
-    Set,
-    TextIO,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import (IO, AbstractSet, Any, BinaryIO, Callable, Dict, ForwardRef,
+                    List, Mapping, MutableMapping, NewType, Optional, Sequence,
+                    Set, TextIO, Tuple, Type, TypeVar, Union)
 from unittest.mock import Mock
 from weakref import WeakKeyDictionary
 
@@ -48,27 +30,17 @@ from typing_extensions import is_typeddict
 from ._config import ForwardRefPolicy
 from ._exceptions import TypeCheckError, TypeHintWarning
 from ._memo import TypeCheckMemo
-from ._utils import evaluate_forwardref, get_stacklevel, get_type_name, qualified_name
+from ._utils import (evaluate_forwardref, get_stacklevel, get_type_name,
+                     qualified_name)
 
 if sys.version_info >= (3, 11):
-    from typing import (
-        Annotated,
-        NotRequired,
-        TypeAlias,
-        get_args,
-        get_origin,
-    )
+    from typing import Annotated, NotRequired, TypeAlias, get_args, get_origin
 
     SubclassableAny = Any
 else:
-    from typing_extensions import (
-        Annotated,
-        NotRequired,
-        TypeAlias,
-        get_args,
-        get_origin,
-    )
+    from typing_extensions import Annotated
     from typing_extensions import Any as SubclassableAny
+    from typing_extensions import NotRequired, TypeAlias, get_args, get_origin
 
 if sys.version_info >= (3, 10):
     from importlib.metadata import entry_points

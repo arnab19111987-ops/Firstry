@@ -1,4 +1,5 @@
 """Centralized constants for badge labels and tier rules."""
+
 from __future__ import annotations
 
 LEVELS = {

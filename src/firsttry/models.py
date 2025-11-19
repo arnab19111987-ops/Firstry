@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Literal, Optional, Dict
-
+from typing import Dict, List, Literal, Optional
 
 IssueType = Literal[
     "lint-fixable",

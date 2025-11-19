@@ -1,12 +1,12 @@
 # firsttry/scanner.py
 from __future__ import annotations
 
-import json
-import subprocess
-from typing import List, Tuple
-import os
 import fnmatch
+import json
+import os
+import subprocess
 from pathlib import Path
+from typing import List, Tuple
 
 # Attempt to load YAML for baseline; if PyYAML isn't available, we'll parse
 # a simple fallback format (lines starting with '-' under a 'files:' key).
@@ -16,7 +16,7 @@ try:
     YAML_AVAILABLE = True
 except Exception:
     YAML_AVAILABLE = False
-from .models import Issue, SectionSummary, ScanResult
+from .models import Issue, ScanResult, SectionSummary
 
 COVERAGE_REQUIRED_DEFAULT = 80.0
 

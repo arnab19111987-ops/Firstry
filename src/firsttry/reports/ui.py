@@ -1,14 +1,22 @@
 # src/firsttry/reports/ui.py
 from __future__ import annotations
+
 import os
 import sys
 import time
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 # try to use rich if present
 try:
     from rich.console import Console
-    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+    from rich.progress import (
+        BarColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
+
     _HAS_RICH = True
     _console = Console()
 except Exception:  # pragma: no cover

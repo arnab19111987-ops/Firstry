@@ -1,1 +1,2 @@
-class Utils32: pass
+class Utils32:
+    pass

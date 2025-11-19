@@ -1,8 +1,10 @@
 from __future__ import annotations
+
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Any, Protocol, Optional
-import shutil
+from typing import Any, Dict, List, Optional, Protocol
+
 from ..twin.hashers import hash_bytes, hash_file
 
 
@@ -22,16 +24,20 @@ class CheckRunner(Protocol):
 
     def prereq_check(self) -> Optional[str]: ...
 
-    def build_cache_key(self, repo_root: Path, targets: List[str], flags: List[str]) -> str: ...
+    def build_cache_key(
+        self, repo_root: Path, targets: List[str], flags: List[str]
+    ) -> str: ...
 
-    def run(self, repo_root: Path, targets: List[str], flags: List[str], *, timeout_s: int) -> RunResult: ...
+    def run(
+        self, repo_root: Path, targets: List[str], flags: List[str], *, timeout_s: int
+    ) -> RunResult: ...
 
 
 def _hash_targets(repo_root: Path, targets: List[str]) -> str:
     # Hash the CONTENTS of files under all target paths (intent, not cmd)
     parts: List[str] = []
     for t in sorted(set(targets or [])):
-        p = (repo_root / t)
+        p = repo_root / t
         if p.is_dir():
             for f in sorted(p.rglob("*.py")):
                 parts.append(f"{f.as_posix()}::{hash_file(f)}")

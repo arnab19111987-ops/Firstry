@@ -11,10 +11,14 @@ from firsttry.cli import build_parser
 
 def test_cli_gates_json_smoke(monkeypatch, tmp_path):
     import pytest
+
     pytest.skip("Legacy test disabled - functionality removed")
     return
 
-@pytest.mark.skip(reason="cmd_gates functionality has been removed in favor of new CLI structure")
+
+@pytest.mark.skip(
+    reason="cmd_gates functionality has been removed in favor of new CLI structure"
+)
 def test_cmd_gates_json_output(monkeypatch, tmp_path):
     """
     CLI contract:

@@ -7,14 +7,12 @@ up so the tools copy or the top-level shim will be used).
 
 from __future__ import annotations
 
-import importlib.util
-import sys
-import os
-from typing import List, Tuple
-
 import importlib.machinery
 import importlib.util
+import os
+import sys
 import traceback
+from typing import List, Tuple
 
 
 def _locate_and_load_impl() -> object:

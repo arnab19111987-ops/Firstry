@@ -92,7 +92,9 @@ def plan_from_config(config: Dict[str, Any]) -> List[Dict[str, Any]] | None:
     return plan
 
 
-def apply_overrides_to_plan(plan: List[Dict[str, Any]], config: Dict[str, Any]) -> List[Dict[str, Any]]:
+def apply_overrides_to_plan(
+    plan: List[Dict[str, Any]], config: Dict[str, Any]
+) -> List[Dict[str, Any]]:
     """
     After we have a base plan (from config OR from detection),
     we apply per-tool overrides.
@@ -120,7 +122,9 @@ def apply_overrides_to_plan(plan: List[Dict[str, Any]], config: Dict[str, Any]) 
     return new_plan
 
 
-def apply_config_to_plan(plan: List[Dict[str, Any]], config: Dict[str, Any]) -> List[Dict[str, Any]]:
+def apply_config_to_plan(
+    plan: List[Dict[str, Any]], config: Dict[str, Any]
+) -> List[Dict[str, Any]]:
     """
     Enrich auto-plan with user/team config.
     - Filter tools (if run.tools provided)
@@ -143,7 +147,11 @@ def apply_config_to_plan(plan: List[Dict[str, Any]], config: Dict[str, Any]) -> 
     # 1) filter
     if wanted_tools:
         wanted_set = set(wanted_tools)
-        plan = [p for p in plan if p.get("tool") in wanted_set or p.get("family") in wanted_set]
+        plan = [
+            p
+            for p in plan
+            if p.get("tool") in wanted_set or p.get("family") in wanted_set
+        ]
 
     # 2) per-tool overrides
     new_plan: List[Dict[str, Any]] = []

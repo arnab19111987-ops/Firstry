@@ -36,14 +36,20 @@ class SmartAgentManager:
         self.repo = repo
 
     @classmethod
-    def from_context(cls, context: Dict[str, Any], repo_profile: Dict[str, Any]) -> "SmartAgentManager":
+    def from_context(
+        cls, context: Dict[str, Any], repo_profile: Dict[str, Any]
+    ) -> "SmartAgentManager":
         cpus = int(context.get("machine", {}).get("cpus", 4))
         file_count = int(repo_profile.get("file_count", 80))
         test_count = int(repo_profile.get("test_count", 0))
-        languages = repo_profile.get("languages") or context.get("languages") or ["python"]
+        languages = (
+            repo_profile.get("languages") or context.get("languages") or ["python"]
+        )
         return cls(
             machine=MachineFacts(cpus=cpus),
-            repo=RepoFacts(file_count=file_count, test_count=test_count, languages=languages),
+            repo=RepoFacts(
+                file_count=file_count, test_count=test_count, languages=languages
+            ),
         )
 
     def _compute_budget(self) -> int:

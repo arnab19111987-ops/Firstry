@@ -1,11 +1,12 @@
 from __future__ import annotations
+
+import json
+import os
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Tuple
-import json
-import os
-import urllib.request
 
 # Root-level forwarder/implementation to ensure a single, canonical
 # firsttry.license_cache module is imported by tests and runtime.

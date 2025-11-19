@@ -193,8 +193,8 @@ def _run_alembic_autogen(import_target: str, db_url: str) -> dict:
     If we can't complete (no metadata, no alembic installed, etc.) we mark skipped.
     """
     try:
-        from alembic.config import Config
         from alembic import command
+        from alembic.config import Config
     except ImportError as e:  # Alembic not installed
         return {
             "skipped": True,

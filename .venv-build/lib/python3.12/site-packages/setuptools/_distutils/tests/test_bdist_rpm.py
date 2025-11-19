@@ -6,9 +6,9 @@ import sys
 from distutils.command.bdist_rpm import bdist_rpm
 from distutils.core import Distribution
 from distutils.tests import support
+from test.support import requires_zlib
 
 import pytest
-from test.support import requires_zlib
 
 SETUP_PY = """\
 from distutils.core import setup

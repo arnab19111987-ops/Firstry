@@ -3,6 +3,7 @@
 This adds an explicit collection-time ignore for the `benchmarks/` tree to
 ensure malformed demo/benchmark files are never collected during test runs.
 """
+
 from pathlib import Path
 
 

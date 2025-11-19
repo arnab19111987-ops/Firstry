@@ -1,6 +1,7 @@
 import os
 import sys
-from .device import touch_device, mark_consumed, freemium_expired, set_license
+
+from .device import freemium_expired, mark_consumed, set_license, touch_device
 from .repo_state import create_or_touch_repo_state, mark_repo_consumed
 
 TRIAL_URL = "https://www.firsttry.run/trial"

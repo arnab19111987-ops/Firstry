@@ -1,13 +1,14 @@
-# src/firsttry/checks_orchestrator.py  
+# src/firsttry/checks_orchestrator.py
 from __future__ import annotations
+
 import asyncio
 import os
 import time
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
-from .check_registry import CHECK_REGISTRY
 from . import cache as ft_cache
+from .check_registry import CHECK_REGISTRY
 
 MAX_WORKERS = min(4, os.cpu_count() or 2)
 
@@ -107,14 +108,20 @@ async def run_checks_for_profile(
         rc, out = await coro
         elapsed = time.monotonic() - start
         if rc == 0:
-            ft_cache.write_tool_cache(repo_root, chk, inp_hash, "ok", {"elapsed": elapsed})
+            ft_cache.write_tool_cache(
+                repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+            )
             print(f"  ✅ {chk} ({elapsed:.2f}s)")
         else:
             ft_cache.write_tool_cache(
                 repo_root, chk, inp_hash, "fail", {"elapsed": elapsed, "output": out}
             )
             print(f"  ❌ {chk} ({elapsed:.2f}s)")
-        results[chk] = {"status": "ok" if rc == 0 else "fail", "output": out, "elapsed": elapsed}
+        results[chk] = {
+            "status": "ok" if rc == 0 else "fail",
+            "output": out,
+            "elapsed": elapsed,
+        }
 
     # ─────────────────────────────
     # 2) MUTATING (serial)
@@ -132,14 +139,20 @@ async def run_checks_for_profile(
         elapsed = time.monotonic() - start
         if rc == 0:
             mutating_ran = True
-            ft_cache.write_tool_cache(repo_root, chk, inp_hash, "ok", {"elapsed": elapsed})
+            ft_cache.write_tool_cache(
+                repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+            )
             print(f"  ✅ {chk} ({elapsed:.2f}s)")
         else:
             ft_cache.write_tool_cache(
                 repo_root, chk, inp_hash, "fail", {"elapsed": elapsed, "output": out}
             )
             print(f"  ❌ {chk} ({elapsed:.2f}s)")
-        results[chk] = {"status": "ok" if rc == 0 else "fail", "output": out, "elapsed": elapsed}
+        results[chk] = {
+            "status": "ok" if rc == 0 else "fail",
+            "output": out,
+            "elapsed": elapsed,
+        }
 
     # ─────────────────────────────
     # 3) SLOW (parallel)
@@ -155,7 +168,9 @@ async def run_checks_for_profile(
     slow_tasks = []
     for chk in slow_checks:
         inp_hash = _tool_input_hash(root, chk)
-        if use_cache_for_slow and ft_cache.is_tool_cache_valid(repo_root, chk, inp_hash):
+        if use_cache_for_slow and ft_cache.is_tool_cache_valid(
+            repo_root, chk, inp_hash
+        ):
             print(f"  ✅ {chk} (cached)")
             results[chk] = {"status": "ok", "cached": True, "elapsed": 0.0}
             continue
@@ -167,19 +182,27 @@ async def run_checks_for_profile(
         rc, out = await coro
         elapsed = time.monotonic() - start
         if rc == 0:
-            ft_cache.write_tool_cache(repo_root, chk, inp_hash, "ok", {"elapsed": elapsed})
+            ft_cache.write_tool_cache(
+                repo_root, chk, inp_hash, "ok", {"elapsed": elapsed}
+            )
             print(f"  ✅ {chk} ({elapsed:.2f}s)")
         else:
             ft_cache.write_tool_cache(
                 repo_root, chk, inp_hash, "fail", {"elapsed": elapsed, "output": out}
             )
             print(f"  ❌ {chk} ({elapsed:.2f}s)")
-        results[chk] = {"status": "ok" if rc == 0 else "fail", "output": out, "elapsed": elapsed}
+        results[chk] = {
+            "status": "ok" if rc == 0 else "fail",
+            "output": out,
+            "elapsed": elapsed,
+        }
 
     # ─────────────────────────────
     # Summary timing
     # ─────────────────────────────
     total_elapsed = sum(r.get("elapsed", 0.0) for r in results.values())
-    print(f"\n⏱  Total active check time (not counting cache hits): {total_elapsed:.2f}s")
+    print(
+        f"\n⏱  Total active check time (not counting cache hits): {total_elapsed:.2f}s"
+    )
 
     return results

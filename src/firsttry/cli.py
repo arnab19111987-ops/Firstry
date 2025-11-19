@@ -7,22 +7,22 @@ import sys
 from typing import Callable, Optional
 
 from . import __version__
-from .license_guard import get_tier
-from .context_builders import build_context, build_repo_profile
-from .config_loader import load_config, apply_overrides_to_plan
-from .config_cache import plan_from_config_with_timeout
 from .agent_manager import SmartAgentManager
+from .config_cache import plan_from_config_with_timeout
+from .config_loader import apply_overrides_to_plan, load_config
+from .context_builders import build_context, build_repo_profile
+from .license_guard import get_tier
 from .repo_rules import plan_checks_for_repo
+
 # sync_with_ci is imported lazily in cmd_sync to avoid optional deps at module import
 
 # add these imports for old enhanced handlers
 try:
-    from .cli_enhanced_old import (
-        handle_status,
-        handle_setup,
+    from .cli_enhanced_old import cmd_mirror_ci  # <-- ADD THIS (note: cmd_ not handle_)
+    from .cli_enhanced_old import (  # handle_report,  # <- leave commented: audit says not implemented
         handle_doctor,
-        cmd_mirror_ci,   # <-- ADD THIS (note: cmd_ not handle_)
-        # handle_report,  # <- leave commented: audit says not implemented
+        handle_setup,
+        handle_status,
     )
 except ImportError:
     # in case someone vendors this without the old file
@@ -57,64 +57,61 @@ def _normalize_profile(raw: str | None) -> str:
 def _resolve_mode_to_flags(args):
     """
     Map simplified modes to new 4-tier system.
-    
+
     This allows clean CLI like:
         firsttry run            → free-lite (fastest, just ruff)
         firsttry run fast       → free-lite (fastest, just ruff)
         firsttry run ci         → free-strict (ruff + mypy + pytest)
-        firsttry run strict     → free-strict (ruff + mypy + pytest) 
+        firsttry run strict     → free-strict (ruff + mypy + pytest)
         firsttry run pro        → pro (paid, full team features)
         firsttry run full       → pro (paid, full team features)
         firsttry run teams      → pro (paid, full team features)
         firsttry run promax     → promax (paid, enterprise features)
         firsttry run enterprise → promax (paid, enterprise features)
-    
+
     While preserving backward compatibility with explicit flags.
     """
     # Handle shell aliases
     ALIASES = {
-        "q": "fast",          # firsttry run q
-        "c": "ci",            # firsttry run c  
-        "t": "teams",         # firsttry run t
-        "p": "pro",           # firsttry run p
-        "e": "enterprise",    # firsttry run e
+        "q": "fast",  # firsttry run q
+        "c": "ci",  # firsttry run c
+        "t": "teams",  # firsttry run t
+        "p": "pro",  # firsttry run p
+        "e": "enterprise",  # firsttry run e
     }
-    
+
     # New 4-tier mode mapping
     MODE_TO_TIER = {
         # ------------------------------------------------------------------
         # FREE FOREVER
         # ------------------------------------------------------------------
-        None: "free-lite",           # plain `firsttry run`
+        None: "free-lite",  # plain `firsttry run`
         "run": "free-lite",
         "fast": "free-lite",
         "auto": "free-lite",
-
         # stricter free
         "ci": "free-strict",
         "strict": "free-strict",
         "config": "free-strict",
-
         # ------------------------------------------------------------------
         # PAID / LOCKED
         # ------------------------------------------------------------------
         "pro": "pro",
         "teams": "pro",
         "full": "pro",
-
         "promax": "promax",
         "enterprise": "promax",
     }
-    
+
     mode = getattr(args, "mode", "auto")
     mode = ALIASES.get(mode, mode)
-    
+
     # Explicit flags always win (for backward compatibility)
-    if not hasattr(args, 'tier') or args.tier is None:
+    if not hasattr(args, "tier") or args.tier is None:
         # Map mode directly to new tier system
         args.tier = MODE_TO_TIER.get(mode, "free-lite")
-    
-    if not hasattr(args, 'source') or args.source is None:
+
+    if not hasattr(args, "source") or args.source is None:
         # Infer source from mode
         if mode in ("auto", "fast", "full", "teams", "pro", "promax", "enterprise"):
             args.source = "detect"
@@ -124,16 +121,25 @@ def _resolve_mode_to_flags(args):
             args.source = "config"
         else:
             args.source = "detect"  # fallback
-    
-    if not hasattr(args, 'profile') or args.profile is None:
+
+    if not hasattr(args, "profile") or args.profile is None:
         # Infer profile from mode
         if mode in ("auto", "fast"):
             args.profile = "fast"
-        elif mode in ("full", "ci", "config", "teams", "pro", "promax", "enterprise", "strict"):
+        elif mode in (
+            "full",
+            "ci",
+            "config",
+            "teams",
+            "pro",
+            "promax",
+            "enterprise",
+            "strict",
+        ):
             args.profile = "strict"
         else:
             args.profile = "fast"  # fallback
-    
+
     return args
 
 
@@ -151,7 +157,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument(
         "mode",
         nargs="?",
-        choices=["auto", "fast", "strict", "ci", "config", "pro", "teams", "full", "promax", "enterprise", "q", "c", "t", "p", "e"],
+        choices=[
+            "auto",
+            "fast",
+            "strict",
+            "ci",
+            "config",
+            "pro",
+            "teams",
+            "full",
+            "promax",
+            "enterprise",
+            "q",
+            "c",
+            "t",
+            "p",
+            "e",
+        ],
         default="auto",
         help=(
             "Run mode: "
@@ -173,8 +195,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument(
         "--level",
         type=str,
-        dest="profile",              # this is the trick: store in the SAME attr
-        help=argparse.SUPPRESS,      # don't show in --help
+        dest="profile",  # this is the trick: store in the SAME attr
+        help=argparse.SUPPRESS,  # don't show in --help
     )
     p_run.add_argument(
         "--profile",
@@ -186,9 +208,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--tier",
         choices=[
             # New 4-tier system
-            "free-lite", "free-strict", "pro", "promax",
+            "free-lite",
+            "free-strict",
+            "pro",
+            "promax",
             # Legacy synonyms
-            "free", "developer", "teams", "enterprise",
+            "free",
+            "developer",
+            "teams",
+            "enterprise",
         ],
         help="License tier (e.g., free-lite, free-strict, pro, promax).",
     )
@@ -259,7 +287,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # --- lint (ultra-light ruff alias) ------------------------------------
-    p_lint = sub.add_parser("lint", help="Ultra-fast linting with ruff (minimal overhead)")
+    p_lint = sub.add_parser(
+        "lint", help="Ultra-fast linting with ruff (minimal overhead)"
+    )
     p_lint.add_argument(
         "--fix",
         action="store_true",
@@ -267,7 +297,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # --- inspect -----------------------------------------------------------
-    p_insp = sub.add_parser("inspect", help="Show detected context/profile/plan or view reports")
+    p_insp = sub.add_parser(
+        "inspect", help="Show detected context/profile/plan or view reports"
+    )
     p_insp.add_argument(
         "topic",
         nargs="?",
@@ -298,7 +330,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # --- sync --------------------------------------------------------------
-    sub.add_parser("sync", help="Sync local firsttry.toml with CI files (export CI → config)")
+    sub.add_parser(
+        "sync", help="Sync local firsttry.toml with CI files (export CI → config)"
+    )
 
     # --- init --------------------------------------------------------------
     sub.add_parser("init", help="Create a firsttry.toml with sensible defaults")
@@ -308,7 +342,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- status ------------------------------------------------------------
     if handle_status is not None:
-        p_status = sub.add_parser("status", help="Show hooks + last run status or telemetry")
+        p_status = sub.add_parser(
+            "status", help="Show hooks + last run status or telemetry"
+        )
         p_status.add_argument(
             "topic",
             nargs="?",
@@ -352,11 +388,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- ci-intent --------------------------------------------------------
     p_ci_lint = sub.add_parser("ci-intent-lint", help="Lint CI-intents (mirror) ")
-    p_ci_lint.add_argument("--mirror-path", help="Path to mirror file", default=".firsttry/ci_mirror.toml")
+    p_ci_lint.add_argument(
+        "--mirror-path", help="Path to mirror file", default=".firsttry/ci_mirror.toml"
+    )
 
-    p_ci_autofill = sub.add_parser("ci-intent-autofill", help="Autofill CI intents (dry-run supported)")
-    p_ci_autofill.add_argument("--mirror-path", help="Path to mirror file", default=".firsttry/ci_mirror.toml")
-    p_ci_autofill.add_argument("--dry-run", dest="dry_run", action="store_true", help="Don't apply changes; only show proposed edits")
+    p_ci_autofill = sub.add_parser(
+        "ci-intent-autofill", help="Autofill CI intents (dry-run supported)"
+    )
+    p_ci_autofill.add_argument(
+        "--mirror-path", help="Path to mirror file", default=".firsttry/ci_mirror.toml"
+    )
+    p_ci_autofill.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Don't apply changes; only show proposed edits",
+    )
 
     # --- version -----------------------------------------------------------
     sub.add_parser("version", help="Show version")
@@ -373,21 +420,23 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "run":
         # NEW: Handle simplified mode system
         args = _resolve_mode_to_flags(args)
-        
+
         # Set tier in environment for license enforcement (if not already set)
         import os
-        if hasattr(args, 'tier') and args.tier and "FIRSTTRY_TIER" not in os.environ:
+
+        if hasattr(args, "tier") and args.tier and "FIRSTTRY_TIER" not in os.environ:
             os.environ["FIRSTTRY_TIER"] = args.tier
-        
+
         # HARD LOCK for paid tiers - enforce license before proceeding
         from . import license_guard
+
         try:
             license_guard.ensure_license_for_current_tier()
         except license_guard.LicenseError as e:
             print(f"❌ {e}")
             print("💡 Get a license at https://firsttry.com/pricing")
             return 1
-        
+
         # normalize old --level and new --profile into one value
         profile = _normalize_profile(getattr(args, "profile", None))
         # Update args.profile with normalized value for downstream functions
@@ -399,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
 
     elif args.cmd == "inspect":
         return cmd_inspect(args=args)
-        
+
     elif args.cmd == "sync":
         return cmd_sync()
 
@@ -408,7 +457,7 @@ def main(argv: list[str] | None = None) -> int:
             print("status not available in this build")
             return 1
         # Check if telemetry status was requested
-        if hasattr(args, 'topic') and args.topic == "telemetry":
+        if hasattr(args, "topic") and args.topic == "telemetry":
             return cmd_status_telemetry()
         return handle_status(args)
 
@@ -423,6 +472,7 @@ def main(argv: list[str] | None = None) -> int:
         # firsttry.doctor module so tests can monkeypatch gather/render.
         try:
             from . import doctor as _doctor
+
             report = _doctor.gather_checks()
             md = _doctor.render_report_md(report)
             # Ensure header presence to satisfy tests that look for Doctor/Health
@@ -433,8 +483,9 @@ def main(argv: list[str] | None = None) -> int:
         except Exception:
             # Fall back to builtin quick doctor output
             from pathlib import Path
+
             try:
-                return cmd_doctor(Path('.').resolve())
+                return cmd_doctor(Path(".").resolve())
             except Exception:
                 # If everything fails, emit a minimal failing report
                 sys.stdout.write("# FirstTry Doctor Report\nHealth: FAILED\n")
@@ -453,7 +504,7 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:
             print(f"gate not available: {e}")
             return 1
-        which = getattr(args, 'which', None)
+        which = getattr(args, "which", None)
         return run_gate(which)
 
     elif args.cmd == "ci-intent-lint":
@@ -462,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:
             print(f"ci-intent-lint not available: {e}")
             return 1
-        mirror = getattr(args, 'mirror_path', None)
+        mirror = getattr(args, "mirror_path", None)
         return lint_intents(mirror)
 
     elif args.cmd == "ci-intent-autofill":
@@ -471,10 +522,10 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:
             print(f"ci-intent-autofill not available: {e}")
             return 1
-        mirror = getattr(args, 'mirror_path', None)
-        dry = getattr(args, 'dry_run', True)
+        mirror = getattr(args, "mirror_path", None)
+        dry = getattr(args, "dry_run", True)
         return autofill_intents(mirror, dry_run=dry)
-    
+
     elif args.cmd == "version":
         print(f"FirstTry {__version__}")
         return 0
@@ -501,19 +552,20 @@ def _run_async_cli(coro) -> int:
 
 def cmd_lint(*, args=None) -> int:
     """Ultra-light lint command - calls ruff directly with minimal overhead"""
-    from .tools.ruff_tool import RuffTool
     from pathlib import Path
-    
+
+    from .tools.ruff_tool import RuffTool
+
     # Get current directory
     repo_root = Path.cwd()
-    
+
     # Create ruff tool with --fix if requested
     extra_args = ["--fix"] if args and getattr(args, "fix", False) else []
     tool = RuffTool(repo_root, extra_args=extra_args)
-    
+
     # Run ruff directly
     status, details = tool.run()
-    
+
     if status == "ok":
         print("✅ No linting issues found")
         return 0
@@ -553,6 +605,7 @@ mypy = 120
 
 def cmd_init(repo_root_path: str | None = None) -> int:
     from pathlib import Path
+
     repo_root = Path(repo_root_path or ".").resolve()
     cfg = repo_root / "firsttry.toml"
     if cfg.exists():
@@ -566,6 +619,7 @@ def cmd_init(repo_root_path: str | None = None) -> int:
 def cmd_list_checks() -> int:
     # Lazy import registry to avoid heavy startup cost
     from .runners.registry import default_registry
+
     reg = default_registry()
     print("Available checks:")
     for k in sorted(reg.keys()):
@@ -576,6 +630,7 @@ def cmd_list_checks() -> int:
 def cmd_sync() -> int:
     # import lazily to avoid pulling in CI parser (PyYAML) at CLI import time
     from .sync import sync_with_ci
+
     ok, msg = sync_with_ci(".")
     if ok:
         print(f"✅ {msg}")
@@ -588,27 +643,28 @@ def cmd_sync() -> int:
 
 def cmd_status_telemetry() -> int:
     """Display telemetry status from .firsttry/telemetry_status.json"""
-    from pathlib import Path
     import json
     from datetime import datetime
-    
+    from pathlib import Path
+
     status_file = Path(".firsttry/telemetry_status.json")
-    
+
     if not status_file.exists():
         print("Telemetry status")
         print("  note: no telemetry submissions yet")
         print("  hint: run with --send-telemetry to opt in")
         return 0
-    
+
     try:
         data = json.loads(status_file.read_text())
-        
+
         print("Telemetry status")
-        
+
         # Show endpoint
         from .telemetry import TELEMETRY_URL
+
         print(f"  last_endpoint: {TELEMETRY_URL}")
-        
+
         # Status
         ok = data.get("ok", False)
         message = data.get("message", "")
@@ -616,15 +672,15 @@ def cmd_status_telemetry() -> int:
             print(f"  last_status: ✅ success ({message})")
         else:
             print(f"  last_status: ❌ failed ({message})")
-        
+
         # Timestamp
         ts = data.get("ts")
         if ts:
             dt = datetime.fromtimestamp(ts)
             print(f"  last_sent_at: {dt.isoformat()}")
-        
+
         print("  note: opt-in only (run with --send-telemetry)")
-        
+
         return 0
     except Exception as e:
         print(f"Error reading telemetry status: {e}")
@@ -632,10 +688,11 @@ def cmd_status_telemetry() -> int:
 
 
 def cmd_doctor(repo_root: str | None = None) -> int:
-    from pathlib import Path
-    import shutil
-    import platform
     import os
+    import platform
+    import shutil
+    from pathlib import Path
+
     repo_root = Path(repo_root or ".").resolve()
 
     print("FirstTry Doctor\n")
@@ -650,10 +707,14 @@ def cmd_doctor(repo_root: str | None = None) -> int:
         return shutil.which(name) or ""
 
     print("Python Environment:")
-    print(f" - Python: {platform.python_version()} ({platform.python_implementation()})")
-    for tool in ["ruff","mypy","pytest","bandit"]:
+    print(
+        f" - Python: {platform.python_version()} ({platform.python_implementation()})"
+    )
+    for tool in ["ruff", "mypy", "pytest", "bandit"]:
         p = which(tool)
-        print(f" - {tool}: {'OK -> ' + p if p else 'MISSING (pip install ' + tool + ')'}")
+        print(
+            f" - {tool}: {'OK -> ' + p if p else 'MISSING (pip install ' + tool + ')'}"
+        )
     print()
 
     # Node tools
@@ -666,20 +727,33 @@ def cmd_doctor(repo_root: str | None = None) -> int:
     print(f" - npx:  {'OK -> ' + npx if npx else 'MISSING'}")
     # eslint check
     eslint_ok = which("eslint") or npx
-    print(f" - eslint: {'OK (via eslint or npx)' if eslint_ok else 'MISSING (install eslint or ensure npx)'}")
+    print(
+        f" - eslint: {'OK (via eslint or npx)' if eslint_ok else 'MISSING (install eslint or ensure npx)'}"
+    )
     print()
 
     # Remote cache (S3)
     print("Remote Cache (S3):")
     try:
         import boto3  # type: ignore
+
         print(" - boto3 lib: OK")
         bucket = os.getenv("FT_S3_BUCKET")
         prefix = os.getenv("FT_S3_PREFIX")
         print(f" - FT_S3_BUCKET: {'Set ('+bucket+')' if bucket else 'Not set'}")
         print(f" - FT_S3_PREFIX: {'Set ('+prefix+')' if prefix else 'Not set'}")
-        creds_env = any(os.getenv(k) for k in ["AWS_ACCESS_KEY_ID","AWS_SECRET_ACCESS_KEY","AWS_SESSION_TOKEN","AWS_PROFILE"])
-        print(f" - AWS Credentials: {'Found (env/profile/role)' if creds_env else 'Not detected in env (might still be available via role)'}")
+        creds_env = any(
+            os.getenv(k)
+            for k in [
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "AWS_SESSION_TOKEN",
+                "AWS_PROFILE",
+            ]
+        )
+        print(
+            f" - AWS Credentials: {'Found (env/profile/role)' if creds_env else 'Not detected in env (might still be available via role)'}"
+        )
         if bucket and prefix:
             try:
                 s3 = boto3.client("s3")
@@ -696,6 +770,7 @@ def cmd_doctor(repo_root: str | None = None) -> int:
 
     # Registry (what ft can run)
     from .runners.registry import default_registry
+
     reg = default_registry()
     print("Registered checks:")
     for k in sorted(reg.keys()):
@@ -708,34 +783,41 @@ def cmd_doctor(repo_root: str | None = None) -> int:
 def cmd_inspect(*, args=None) -> int:
     # Report inspection mode
     if args and getattr(args, "topic", None) == "report":
-        from pathlib import Path
         import json
-        path = Path(getattr(args, "json_path", ".firsttry/report.json") or ".firsttry/report.json")
+        from pathlib import Path
+
+        path = Path(
+            getattr(args, "json_path", ".firsttry/report.json")
+            or ".firsttry/report.json"
+        )
         if not path.exists():
             print(f"firsttry: report not found at {path}")
             return 2
         data = json.loads(path.read_text())
-        
+
         # Handle export if requested
         export_path = getattr(args, "export_path", None)
         if export_path:
             from pathlib import Path as ExportPath
+
             dest = ExportPath(export_path)
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(json.dumps(data, indent=2))
             print(f"Exported report to {dest}")
             return 0
-        
+
         flt = getattr(args, "filter_expr", None)
         if flt:
             key, _, val = flt.partition("=")
             key = key.strip()
             val = val.strip().lower()
+
             def match(entry):
                 v = entry.get(key)
                 if isinstance(v, bool):
-                    return (val in ("1","true","yes")) == v
+                    return (val in ("1", "true", "yes")) == v
                 return str(v).lower() == val
+
             checks = [c for c in data.get("checks", []) if match(c)]
             print(json.dumps(checks, indent=2))
         else:
@@ -743,9 +825,13 @@ def cmd_inspect(*, args=None) -> int:
         return 0
 
     if args and getattr(args, "topic", None) == "dashboard":
-        from pathlib import Path
         import json
-        src = Path(getattr(args, "json_path", ".firsttry/report.json") or ".firsttry/report.json")
+        from pathlib import Path
+
+        src = Path(
+            getattr(args, "json_path", ".firsttry/report.json")
+            or ".firsttry/report.json"
+        )
         if not src.exists():
             print(f"firsttry: dashboard source not found at {src}")
             return 2
@@ -755,7 +841,14 @@ def cmd_inspect(*, args=None) -> int:
         print("Tier:", data.get("tier"))
         print("Profile:", data.get("profile"))
         t = data.get("timing", {})
-        print("Timing (ms): fast={fast_ms} mutating={mutating_ms} slow={slow_ms} total={total_ms}".format(**{k: t.get(k, 0) for k in ("fast_ms","mutating_ms","slow_ms","total_ms")}))
+        print(
+            "Timing (ms): fast={fast_ms} mutating={mutating_ms} slow={slow_ms} total={total_ms}".format(
+                **{
+                    k: t.get(k, 0)
+                    for k in ("fast_ms", "mutating_ms", "slow_ms", "total_ms")
+                }
+            )
+        )
         print("Checks:")
         for c in data.get("checks", []):
             lock = " 🔒" if c.get("locked") else ""
@@ -773,6 +866,7 @@ def cmd_inspect(*, args=None) -> int:
     try:
         from .ci_parser import resolve_ci_plan
     except Exception:
+
         def resolve_ci_plan(root):
             return None
 
@@ -816,7 +910,7 @@ def cmd_inspect(*, args=None) -> int:
 async def run_fast_pipeline(*, args=None) -> int:
     # Get tier info at start - always use environment (set from args in main)
     tier = get_tier()
-    
+
     ctx = build_context()
     repo_profile = build_repo_profile()
     cfg = load_config()
@@ -825,6 +919,7 @@ async def run_fast_pipeline(*, args=None) -> int:
     try:
         from .ci_parser import resolve_ci_plan
     except Exception:
+
         def resolve_ci_plan(root):
             return None
 
@@ -839,12 +934,16 @@ async def run_fast_pipeline(*, args=None) -> int:
     if source == "config":
         plan = plan_from_config_with_timeout(cfg, timeout_seconds=2.5)
         if plan is None:
-            print("firsttry: --source=config but no firsttry.toml / [tool.firsttry] found.")
+            print(
+                "firsttry: --source=config but no firsttry.toml / [tool.firsttry] found."
+            )
             return 2
     elif source == "ci":
         # CI-based plan parsing is disabled in the new DAG engine.
         # ci_plan = resolve_ci_plan(ctx["repo_root"])  # disabled
-        print("firsttry: --source=ci is not supported in this build (CI parsing disabled).")
+        print(
+            "firsttry: --source=ci is not supported in this build (CI parsing disabled)."
+        )
         return 2
     elif source == "detect":
         plan = plan_checks_for_repo(repo_profile)
@@ -858,11 +957,12 @@ async def run_fast_pipeline(*, args=None) -> int:
 
     # 3) apply overrides (works for all sources)
     plan = apply_overrides_to_plan(plan, cfg)
-    
+
     # 4) apply change-based filtering if requested
     changed_only = getattr(args, "changed_only", False) if args else False
     if changed_only:
         from .change_detector import filter_plan_by_changes
+
         plan = filter_plan_by_changes(plan, ctx["repo_root"], changed_only=True)
 
     # ensure we have ci_plan in ctx even if source=detect
@@ -874,9 +974,10 @@ async def run_fast_pipeline(*, args=None) -> int:
 
     # OPTIMIZATION: Skip orchestration for single-tool scenarios (e.g., free-lite with just ruff)
     from .reports.tier_map import get_checks_for_tier
+
     allowed_checks = get_checks_for_tier(tier)
     active_tools = [p["tool"] for p in plan if p["tool"] in allowed_checks]
-    
+
     # If only one tool is active, run it directly to avoid orchestration overhead
     # UNLESS: dry-run mode is active (need to preview without execution)
     dry_run = getattr(args, "dry_run", False) if args else False
@@ -889,10 +990,11 @@ async def run_fast_pipeline(*, args=None) -> int:
     ):
         single_tool = active_tools[0]
         print(f"🚀 Running {single_tool} directly (single-tool optimization)")
-        
+
         # Import and run the tool directly
         if single_tool == "ruff":
             from .tools.ruff_tool import RuffTool
+
             tool = RuffTool(ctx["repo_root"])
             status = None
             details = None
@@ -915,7 +1017,7 @@ async def run_fast_pipeline(*, args=None) -> int:
                 # else: status None -> fallback to orchestrated execution
         # Add other single tools as needed
         # For now, fall back to orchestration for other tools
-    
+
     # local tools & cmds (for parity)
     ctx["local_tools"] = [p["tool"] for p in plan]
     ctx["local_cmds"] = {p["tool"]: p.get("cmd") for p in plan if p.get("cmd")}
@@ -925,12 +1027,13 @@ async def run_fast_pipeline(*, args=None) -> int:
     if dry_run:
         from datetime import datetime, timezone
         from pathlib import Path
+
         from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
         from .reports.tier_map import get_checks_for_tier
-        
+
         allowed = set(get_checks_for_tier(tier)) if tier else set()
         schema_ver = int(getattr(args, "report_schema", "2"))
-        
+
         if schema_ver == 1:
             payload = {
                 "schema_version": 1,
@@ -958,12 +1061,12 @@ async def run_fast_pipeline(*, args=None) -> int:
                 "checks": [],
                 "dry_run": True,
             }
-        
+
         # Add all planned checks with lockout status
         for p in plan:
             name = p.get("tool", "unknown")
             locked = (name not in allowed) if allowed else False
-            
+
             if schema_ver == 1:
                 entry = {
                     "id": name,
@@ -976,25 +1079,27 @@ async def run_fast_pipeline(*, args=None) -> int:
                 if locked:
                     entry["locked"] = True
                     entry["reason"] = "Available in Pro tier"
-            
+
             payload["checks"].append(entry)
-        
+
         # Print preview
         import json
+
         print("🔍 DRY-RUN MODE: Plan preview (no tools executed)")
         print(json.dumps(payload, indent=2))
-        
+
         # Write to report-json if requested
         report_json_path = getattr(args, "report_json", None)
         if report_json_path:
             from .reporting import write_report_async
+
             path = Path(report_json_path)
             try:
                 loop = asyncio.get_running_loop()
                 loop.create_task(write_report_async(path, payload))
             except RuntimeError:
                 await write_report_async(path, payload)
-        
+
         return 0
 
     mgr = SmartAgentManager.from_context(ctx, repo_profile)
@@ -1002,7 +1107,7 @@ async def run_fast_pipeline(*, args=None) -> int:
 
     # Check if debug phases flag is set
     show_phases = getattr(args, "debug_phases", False) if args else False
-    
+
     # lazy import the orchestrator (may be heavy / optional)
     try:
         from .checks_orchestrator import run_checks_with_allocation_and_plan
@@ -1025,12 +1130,17 @@ async def run_fast_pipeline(*, args=None) -> int:
         try:
             from datetime import datetime, timezone
             from pathlib import Path
+
+            from .checks_orchestrator import (
+                FAST_FAMILIES,
+                MUTATING_FAMILIES,
+                SLOW_FAMILIES,
+            )
             from .reporting import write_report_async
-            from .checks_orchestrator import FAST_FAMILIES, MUTATING_FAMILIES, SLOW_FAMILIES
             from .reports.tier_map import get_checks_for_tier
 
             allowed = set(get_checks_for_tier(tier)) if tier else set()
-            
+
             # Get schema version (default 2 for tier-aware with timing buckets)
             schema_ver = int(getattr(args, "report_schema", "2"))
 
@@ -1066,7 +1176,9 @@ async def run_fast_pipeline(*, args=None) -> int:
 
             total_s = 0.0
             for chk in result.get("checks", []):
-                family = chk.get("family") or chk.get("tool") or chk.get("name", "unknown")
+                family = (
+                    chk.get("family") or chk.get("tool") or chk.get("name", "unknown")
+                )
                 name = chk.get("tool") or family
                 ok = chk.get("ok", False)
                 duration_s = chk.get("duration") or 0.0
@@ -1120,6 +1232,7 @@ async def run_fast_pipeline(*, args=None) -> int:
             if getattr(args, "send_telemetry", False):
                 try:
                     from .telemetry import send_report
+
                     send_report(payload)
                 except Exception as te:
                     print(f"[firsttry] telemetry send failed: {te}")
@@ -1129,60 +1242,76 @@ async def run_fast_pipeline(*, args=None) -> int:
     # Lazy import reporting only when needed
     interactive = getattr(args, "interactive", False) if args else False
     show_report = getattr(args, "report", False) if args else False
-    
+
     # Skip expensive imports if no reporting needed
     if not interactive and not show_report:
         # For non-interactive, non-report runs, just print basic status
         from .reports.tier_map import get_checks_for_tier
+
         allowed_checks = get_checks_for_tier(tier)
-        
-        total_checks = len([c for c in result.get("checks", []) if c.get("tool") in allowed_checks])
-        passed_checks = len([c for c in result.get("checks", []) if c.get("ok", False) and c.get("tool") in allowed_checks])
-        
+
+        total_checks = len(
+            [c for c in result.get("checks", []) if c.get("tool") in allowed_checks]
+        )
+        passed_checks = len(
+            [
+                c
+                for c in result.get("checks", [])
+                if c.get("ok", False) and c.get("tool") in allowed_checks
+            ]
+        )
+
         if passed_checks == total_checks:
             print(f"✅ All {total_checks} checks passed")
         else:
             print(f"❌ {passed_checks}/{total_checks} checks passed")
         return 0 if passed_checks == total_checks else 1
-    
+
     # Only import heavy reporting modules when actually needed
     from .reports.cli_summary import render_cli_summary
-    
+
     # Transform check results to tier-aware format
     tier_results = {}
     for chk in result.get("checks", []):
         # The actual tool name is in the 'tool' field
         name = chk.get("tool", "unknown")
         passed = chk.get("ok", False)
-        
+
         # Get message from the nested result object
         result_obj = chk.get("result")
         if result_obj and hasattr(result_obj, "message") and result_obj.message:
             # Use the actual result message, but clean up generic error messages
-            if result_obj.message.startswith("/bin/sh: 1:") and "not found" in result_obj.message:
+            if (
+                result_obj.message.startswith("/bin/sh: 1:")
+                and "not found" in result_obj.message
+            ):
                 message = "Tool not available" if not passed else "No issues found"
             else:
                 message = result_obj.message.splitlines()[0]
         else:
             message = "No issues found" if passed else "Failed"
-        
+
         tier_results[name] = {
             "passed": passed,
             "summary": message,
-            "details": result_obj.message if result_obj and hasattr(result_obj, "message") else message
+            "details": (
+                result_obj.message
+                if result_obj and hasattr(result_obj, "message")
+                else message
+            ),
         }
 
     # Build context for tier-aware reporting using correct key names
     machine_info = ctx.get("machine", {})
-    cpus = machine_info.get("cpus", "unknown") if isinstance(machine_info, dict) else "unknown"
+    cpus = (
+        machine_info.get("cpus", "unknown")
+        if isinstance(machine_info, dict)
+        else "unknown"
+    )
     files = repo_profile.get("file_count", "?")
     tests = repo_profile.get("test_count", "?")
-    
-    context = {
-        "machine": cpus,
-        "files": files,
-        "tests": tests
-    }
+
+    context = {"machine": cpus, "files": files, "tests": tests}
 
     # Use new tier-aware reporting system
     interactive = getattr(args, "interactive", False) if args else False
@@ -1193,19 +1322,25 @@ async def run_fast_pipeline(*, args=None) -> int:
 # Import runners.py module directly (not the runners/ package)
 try:
     import importlib
+
     # Force import of runners.py module
-    runners = importlib.import_module('.runners', package='firsttry')
+    runners = importlib.import_module(".runners", package="firsttry")
 except ImportError:
     # Create a stub runners module if import fails
     import types
-    runners = types.ModuleType('runners')
+
+    runners = types.ModuleType("runners")
+
     # Add stub functions that tests expect
     def stub_runner(*args, **kwargs):
         from .runners import StepResult
-        return StepResult(name="stub", ok=True, duration_s=0, stdout="", stderr="", cmd=())
-    
+
+        return StepResult(
+            name="stub", ok=True, duration_s=0, stdout="", stderr="", cmd=()
+        )
+
     runners.run_ruff = stub_runner  # type: ignore
-    runners.run_black_check = stub_runner   # type: ignore
+    runners.run_black_check = stub_runner  # type: ignore
     runners.run_mypy = stub_runner  # type: ignore
     runners.run_pytest_kexpr = stub_runner  # type: ignore
     runners.run_coverage_xml = stub_runner  # type: ignore
@@ -1213,27 +1348,33 @@ except ImportError:
     runners._exec = stub_runner  # type: ignore
     runners.parse_cobertura_line_rate = lambda x: 0.0  # type: ignore
 
+
 # Compatibility functions for CLI tests
 def _load_real_runners_or_stub():  # type: ignore
     """Legacy function expected by tests."""
     return runners
 
+
 def install_git_hooks():  # type: ignore
     """Stub function for git hooks installation."""
     try:
         from .hooks import install_git_hooks_impl  # type: ignore
+
         return install_git_hooks_impl()  # type: ignore
     except ImportError:
         print("Git hooks installation not available")
         return False
 
+
 def cmd_gates(args=None):  # type: ignore
     """Stub function for gates command."""
     try:
+        from pathlib import Path
+
         from .gates import run_all_gates  # type: ignore
-        from pathlib import Path  
+
         results = run_all_gates(Path("."))  # type: ignore
-        
+
         # Handle both dict format (from mocked tests) and GateResult objects
         if isinstance(results, dict) and "results" in results:
             # Test mock format: {"results": [...]}
@@ -1241,10 +1382,10 @@ def cmd_gates(args=None):  # type: ignore
                 gate_name = result.get("gate", "unknown")
                 status = result.get("status", "UNKNOWN")
                 print(f"{gate_name}: {status}")
-        elif hasattr(results, '__iter__'):
+        elif hasattr(results, "__iter__"):
             # GateResult objects format
             for result in results:
-                if hasattr(result, 'gate_id') and hasattr(result, 'status'):
+                if hasattr(result, "gate_id") and hasattr(result, "status"):
                     print(f"{result.gate_id}: {result.status}")
                 else:
                     print(f"unknown gate: {result}")
@@ -1253,14 +1394,17 @@ def cmd_gates(args=None):  # type: ignore
     except ImportError:
         print("Gates command not available")
 
+
 def assert_license():  # type: ignore
     """Stub function for license assertion."""
     try:
         from .license_guard import get_tier  # type: ignore
+
         tier = get_tier()  # type: ignore
         return tier not in ("NONE", "INVALID")
     except ImportError:
         return True
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

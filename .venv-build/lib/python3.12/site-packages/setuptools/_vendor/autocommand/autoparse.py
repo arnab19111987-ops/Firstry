@@ -16,14 +16,14 @@
 # along with autocommand.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from re import compile as compile_regex
-from inspect import signature, getdoc, Parameter
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from functools import wraps
+from inspect import Parameter, getdoc, signature
 from io import IOBase
-from autocommand.errors import AutocommandError
+from re import compile as compile_regex
 
+from autocommand.errors import AutocommandError
 
 _empty = Parameter.empty
 

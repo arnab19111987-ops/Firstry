@@ -1,10 +1,10 @@
 # firsttry/cli_pipelines.py
-import sys
 import argparse
+import sys
 
+from .executor import execute_plan
 from .licensing import ensure_license_interactive
 from .planner import build_plan
-from .executor import execute_plan
 from .reporting import print_report
 from .setup_wizard import run_setup
 

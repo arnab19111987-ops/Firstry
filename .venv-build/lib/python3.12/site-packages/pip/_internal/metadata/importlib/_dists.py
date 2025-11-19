@@ -6,33 +6,22 @@ import pathlib
 import zipfile
 from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 from os import PathLike
-from typing import (
-    cast,
-)
+from typing import cast
 
+from pip._internal.exceptions import InvalidWheel, UnsupportedWheel
+from pip._internal.metadata.base import (BaseDistribution, BaseEntryPoint,
+                                         InfoPath, Wheel)
+from pip._internal.utils.misc import normalize_path
+from pip._internal.utils.packaging import get_requirement
+from pip._internal.utils.temp_dir import TempDirectory
+from pip._internal.utils.wheel import parse_wheel, read_wheel_metadata_file
 from pip._vendor.packaging.requirements import Requirement
 from pip._vendor.packaging.utils import NormalizedName, canonicalize_name
 from pip._vendor.packaging.version import Version
 from pip._vendor.packaging.version import parse as parse_version
 
-from pip._internal.exceptions import InvalidWheel, UnsupportedWheel
-from pip._internal.metadata.base import (
-    BaseDistribution,
-    BaseEntryPoint,
-    InfoPath,
-    Wheel,
-)
-from pip._internal.utils.misc import normalize_path
-from pip._internal.utils.packaging import get_requirement
-from pip._internal.utils.temp_dir import TempDirectory
-from pip._internal.utils.wheel import parse_wheel, read_wheel_metadata_file
-
-from ._compat import (
-    BadMetadata,
-    BasePath,
-    get_dist_canonical_name,
-    parse_name_and_version_from_info_directory,
-)
+from ._compat import (BadMetadata, BasePath, get_dist_canonical_name,
+                      parse_name_and_version_from_info_directory)
 
 
 class WheelDistribution(importlib.metadata.Distribution):

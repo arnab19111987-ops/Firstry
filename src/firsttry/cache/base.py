@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 
 @dataclass
 class CacheHit:
@@ -10,8 +12,10 @@ class CacheHit:
     stderr: str | bytes = ""
     meta: Dict[str, Any] | None = None  # freeform (e.g., tool versions, timings)
 
+
 class BaseCache:
     """Abstract cache interface."""
+
     def get(self, key: str) -> Optional[CacheHit]:
         raise NotImplementedError
 

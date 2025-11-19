@@ -23,12 +23,12 @@ from .._path import StrPath
 from ..errors import FileError, InvalidConfigError
 from ..warnings import SetuptoolsWarning
 from . import expand as _expand
-from ._apply_pyprojecttoml import _PREVIOUSLY_DEFINED, _MissingDynamic, apply as _apply
+from ._apply_pyprojecttoml import _PREVIOUSLY_DEFINED, _MissingDynamic
+from ._apply_pyprojecttoml import apply as _apply
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
-
     from setuptools.dist import Distribution
+    from typing_extensions import Self
 
 _logger = logging.getLogger(__name__)
 

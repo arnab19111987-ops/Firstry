@@ -1,9 +1,4 @@
-from firsttry.cache import (
-    load_cache,
-    save_cache,
-    should_skip_gate,
-    update_gate_cache,
-)
+from firsttry.cache import load_cache, save_cache, should_skip_gate, update_gate_cache
 
 
 def test_load_cache_when_missing(tmp_path, monkeypatch):
@@ -18,7 +13,7 @@ def test_save_and_load_cache(tmp_path, monkeypatch):
     # Test save and load cycle
     cache_file = tmp_path / "test_cache.json"
     monkeypatch.setattr("firsttry.cache.CACHE_FILE", cache_file)
-    
+
     data = {"hello": "world", "repos": {}}
     save_cache(data)
     loaded = load_cache()

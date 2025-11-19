@@ -1,13 +1,16 @@
 """CI project main module."""
 
+
 def process_data(data: list[str]) -> list[str]:
     """Process a list of strings."""
     return [item.strip().upper() for item in data if item.strip()]
+
 
 def validate_config(config: dict[str, str]) -> bool:
     """Validate configuration dictionary."""
     required_keys = {"name", "version", "author"}
     return all(key in config for key in required_keys)
+
 
 class DataProcessor:
     """Process and validate data."""
@@ -27,6 +30,7 @@ class DataProcessor:
     def get_stats(self) -> dict[str, int]:
         """Get processing statistics."""
         return {"processed_count": self.processed_count}
+
 
 if __name__ == "__main__":
     config = {"name": "test", "version": "1.0", "author": "tester"}

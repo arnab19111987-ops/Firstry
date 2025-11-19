@@ -3,6 +3,7 @@
 This module implements the behavior used by the `ci-intent-lint` and
 `ci-intent-autofill` CLI commands and by the CI parity runner.
 """
+
 from __future__ import annotations
 
 import dataclasses
@@ -58,7 +59,10 @@ def _load_ci_jobs(workflows_root: Path = DEFAULT_WORKFLOWS_ROOT) -> List[CiJob]:
         try:
             data = yaml.safe_load(wf_path.read_text()) or {}
         except Exception as exc:  # pragma: no cover - defensive
-            print(f"[ci-parity] ERROR: Failed to parse workflow {wf_path}: {exc}", file=sys.stderr)
+            print(
+                f"[ci-parity] ERROR: Failed to parse workflow {wf_path}: {exc}",
+                file=sys.stderr,
+            )
             raise
 
         wf_name = wf_path.name
@@ -88,12 +92,18 @@ def _load_mirror_jobs(mirror_path: Path) -> List[MirrorJob]:
     jobs: List[MirrorJob] = []
     for idx, item in enumerate(raw_jobs):
         if not isinstance(item, dict):
-            print(f"[ci-parity] WARNING: jobs[{idx}] is not a table; skipping", file=sys.stderr)
+            print(
+                f"[ci-parity] WARNING: jobs[{idx}] is not a table; skipping",
+                file=sys.stderr,
+            )
             continue
         wf = item.get("workflow")
         jid = item.get("job_id")
         if not isinstance(wf, str) or not isinstance(jid, str):
-            print(f"[ci-parity] WARNING: jobs[{idx}] missing workflow/job_id; skipping", file=sys.stderr)
+            print(
+                f"[ci-parity] WARNING: jobs[{idx}] missing workflow/job_id; skipping",
+                file=sys.stderr,
+            )
             continue
         plan = item.get("plan") if isinstance(item.get("plan"), str) else None
         stage = item.get("stage") if isinstance(item.get("stage"), str) else None
@@ -129,7 +139,9 @@ def lint_intents(
       1 on fatal error.
     """
     mpath = Path(mirror_path) if mirror_path is not None else DEFAULT_MIRROR_PATH
-    wroot = Path(workflows_root) if workflows_root is not None else DEFAULT_WORKFLOWS_ROOT
+    wroot = (
+        Path(workflows_root) if workflows_root is not None else DEFAULT_WORKFLOWS_ROOT
+    )
 
     try:
         ci_jobs = _load_ci_jobs(wroot)
@@ -137,7 +149,10 @@ def lint_intents(
         return 1
 
     if not ci_jobs:
-        print("[ci-parity] WARNING: No CI jobs discovered under .github/workflows", file=sys.stderr)
+        print(
+            "[ci-parity] WARNING: No CI jobs discovered under .github/workflows",
+            file=sys.stderr,
+        )
 
     try:
         mirror_jobs = _load_mirror_jobs(mpath)
@@ -145,7 +160,10 @@ def lint_intents(
         print(f"[ci-parity] ERROR: Mirror file not found: {mpath}", file=sys.stderr)
         return 1
     except Exception as exc:
-        print(f"[ci-parity] ERROR: Failed to load mirror file {mpath}: {exc}", file=sys.stderr)
+        print(
+            f"[ci-parity] ERROR: Failed to load mirror file {mpath}: {exc}",
+            file=sys.stderr,
+        )
         return 1
 
     unmapped_ci, stale_mirror = _compute_unmapped(ci_jobs, mirror_jobs)
@@ -155,13 +173,17 @@ def lint_intents(
         return 0
 
     if unmapped_ci:
-        print("[ci-parity] Unmapped CI jobs (present in workflows but missing in mirror):")
+        print(
+            "[ci-parity] Unmapped CI jobs (present in workflows but missing in mirror):"
+        )
         for j in sorted(unmapped_ci, key=lambda x: (x.workflow, x.job_id)):
             suffix = f" ({j.job_name})" if j.job_name else ""
             print(f"  - {j.workflow}:{j.job_id}{suffix}")
 
     if stale_mirror:
-        print("[ci-parity] Stale mirror entries (present in mirror but missing in workflows):")
+        print(
+            "[ci-parity] Stale mirror entries (present in mirror but missing in workflows):"
+        )
         for j in sorted(stale_mirror, key=lambda x: (x.workflow, x.job_id)):
             print(f"  - {j.workflow}:{j.job_id} (plan={j.plan!r}, stage={j.stage!r})")
 
@@ -181,7 +203,9 @@ def autofill_intents(
     When dry_run=False, appends those entries to the mirror (creating it if needed).
     """
     mpath = Path(mirror_path) if mirror_path is not None else DEFAULT_MIRROR_PATH
-    wroot = Path(workflows_root) if workflows_root is not None else DEFAULT_WORKFLOWS_ROOT
+    wroot = (
+        Path(workflows_root) if workflows_root is not None else DEFAULT_WORKFLOWS_ROOT
+    )
 
     try:
         ci_jobs = _load_ci_jobs(wroot)
@@ -193,11 +217,17 @@ def autofill_intents(
         try:
             existing_mirror_jobs = _load_mirror_jobs(mpath)
         except Exception as exc:
-            print(f"[ci-parity] ERROR: Failed to load mirror file {mpath}: {exc}", file=sys.stderr)
+            print(
+                f"[ci-parity] ERROR: Failed to load mirror file {mpath}: {exc}",
+                file=sys.stderr,
+            )
             return 1
     else:
         existing_mirror_jobs = []
-        print(f"[ci-parity] NOTE: Mirror file {mpath} does not exist; starting from empty", file=sys.stderr)
+        print(
+            f"[ci-parity] NOTE: Mirror file {mpath} does not exist; starting from empty",
+            file=sys.stderr,
+        )
 
     unmapped_ci, _ = _compute_unmapped(ci_jobs, existing_mirror_jobs)
     if not unmapped_ci:
@@ -220,7 +250,9 @@ def autofill_intents(
 
     if dry_run:
         print("\n[ci-parity] Dry-run mode; mirror will NOT be modified.")
-        print(f"[ci-parity] To apply these suggestions, re-run without --dry-run and add them to {mpath}.")
+        print(
+            f"[ci-parity] To apply these suggestions, re-run without --dry-run and add them to {mpath}."
+        )
         return 0
 
     if not mpath.parent.exists():
