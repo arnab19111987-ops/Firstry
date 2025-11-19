@@ -53,3 +53,10 @@ workflow = "release-vsix.yml"
 job_id = "build-and-publish-vsix"
 plan = "gha_release_vsix__build-and-publish-vsix"
 
+
+[[jobs]]
+workflow = "ci-dev.yml"
+job_id = "dev"
+plan = "gha_ci_dev__dev"
+stage = "dev"
+
