@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from importlib import util as _importlib_util
 from pathlib import Path as _Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 # Attempt to load the legacy module file ``src/firsttry/cache.py`` directly
 # (as a separate module) and re-export its public helpers. We can't import
@@ -68,7 +68,7 @@ if _legacy_cache is not None:
     if hasattr(_legacy_cache, "load_cache"):
         _orig_load = _legacy_cache.load_cache
 
-        def load_cache(*a, **k):
+        def load_cache(*a: Any, **k: Any) -> dict[str, Any]:
             _sync_cache_file()
             return _orig_load(*a, **k)
 
@@ -78,7 +78,7 @@ if _legacy_cache is not None:
     if hasattr(_legacy_cache, "save_cache"):
         _orig_save = _legacy_cache.save_cache
 
-        def save_cache(*a, **k):
+        def save_cache(*a: Any, **k: Any) -> None:
             _sync_cache_file()
             return _orig_save(*a, **k)
 
