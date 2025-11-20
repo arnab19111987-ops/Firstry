@@ -1,17 +1,71 @@
-from pathlib import Path
 """FirstTry gate implementations."""
 
 import os
 import subprocess
 import sys
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
+from pathlib import Path
+from typing import Any, List, Sequence
 
 from firsttry.ci_parity.unmapped import get_unmapped_steps_for_gate
 
 from .base import GateResult
 from .utils import _safe_gate
+
+
+# Compatibility serializer for GateResult objects used by the legacy
+# `run_gate` runner. Keep this defined near the top of the module so other
+# compatibility plumbing can safely reference it during module import.
+def _compat_gate_result_to_dict(res):
+    if hasattr(res, "passed"):
+        return {
+            "gate": getattr(res, "name", ""),
+            "ok": getattr(res, "passed", False),
+            "status": getattr(res, "status", ""),
+            "info": getattr(res, "info", ""),
+            "details": getattr(res, "details", ""),
+            "returncode": getattr(res, "returncode", 1),
+            "stdout": getattr(res, "stdout", "") or "",
+            "stderr": getattr(res, "stderr", "") or "",
+            "errors": getattr(res, "errors", 0),
+            "warnings": getattr(res, "warnings", 0),
+            "fixable": getattr(res, "fixable", 0),
+            "mode": getattr(res, "mode", "auto"),
+            "extra": getattr(res, "extra", {}),
+        }
+
+    if hasattr(res, "to_dict"):
+        d = res.to_dict()
+    else:
+        d = {
+            "gate_id": getattr(res, "name", ""),
+            "ok": getattr(res, "ok", True),
+            "output": getattr(res, "output", ""),
+            "reason": getattr(res, "reason", ""),
+            "returncode": getattr(
+                res, "returncode", 0 if getattr(res, "ok", True) else 1
+            ),
+        }
+
+    return {
+        "gate": d.get("gate_id") or d.get("name") or "",
+        "ok": d.get("ok", True),
+        "status": d.get("status", getattr(res, "status", "PASS")),
+        "info": d.get("reason", d.get("info", "")),
+        "details": d.get("details", d.get("output", "")),
+        "returncode": d.get("returncode", 0 if d.get("ok") else 1),
+        "stdout": d.get("stdout", ""),
+        "stderr": d.get("stderr", ""),
+        "errors": d.get("errors", 0),
+        "warnings": d.get("warnings", 0),
+        "fixable": d.get("fixable", 0),
+        "mode": d.get("mode", "auto"),
+        "extra": d.get("extra", {}),
+    }
+
+
+# Public alias expected by tests
+gate_result_to_dict = _compat_gate_result_to_dict
 
 # Back-compat: re-export legacy gate helpers from the compatibility module.
 try:
@@ -20,6 +74,7 @@ try:
 except Exception:
     # If import fails, leave compatibility names absent — tests will fail clearly.
     pass
+
 
 # Some helper functions historically live in the sibling module `src/firsttry/gates.py`.
 # Because this package also exposes a `gates` subpackage, importing that module by
@@ -73,18 +128,64 @@ def run_gate(which: str):
             ("Lint..........", check_lint),
             ("Types.........", check_types),
             ("Tests.........", check_tests),
-            ("SQLite Drift..", globals().get("check_sqlite_drift", lambda: GateResult(name="SQLite Drift", status="SKIPPED", skipped=True))),
-            ("CI Mirror.....", globals().get("check_ci_mirror", lambda: GateResult(name="CI Mirror", status="SKIPPED", skipped=True))),
+            (
+                "SQLite Drift..",
+                globals().get(
+                    "check_sqlite_drift",
+                    lambda: GateResult(
+                        name="SQLite Drift", status="SKIPPED", skipped=True
+                    ),
+                ),
+            ),
+            (
+                "CI Mirror.....",
+                globals().get(
+                    "check_ci_mirror",
+                    lambda: GateResult(
+                        name="CI Mirror", status="SKIPPED", skipped=True
+                    ),
+                ),
+            ),
         ]
         if which == "pre-commit"
         else [
             ("Lint..........", check_lint),
             ("Types.........", check_types),
             ("Tests.........", check_tests),
-            ("SQLite Drift..", globals().get("check_sqlite_drift", lambda: GateResult(name="SQLite Drift", status="SKIPPED", skipped=True))),
-            ("PG Drift......", globals().get("check_pg_drift", lambda: GateResult(name="PG Drift", status="SKIPPED", skipped=True))),
-            ("Docker Smoke..", globals().get("check_docker_smoke", lambda: GateResult(name="Docker Smoke", status="SKIPPED", skipped=True))),
-            ("CI Mirror.....", globals().get("check_ci_mirror", lambda: GateResult(name="CI Mirror", status="SKIPPED", skipped=True))),
+            (
+                "SQLite Drift..",
+                globals().get(
+                    "check_sqlite_drift",
+                    lambda: GateResult(
+                        name="SQLite Drift", status="SKIPPED", skipped=True
+                    ),
+                ),
+            ),
+            (
+                "PG Drift......",
+                globals().get(
+                    "check_pg_drift",
+                    lambda: GateResult(name="PG Drift", status="SKIPPED", skipped=True),
+                ),
+            ),
+            (
+                "Docker Smoke..",
+                globals().get(
+                    "check_docker_smoke",
+                    lambda: GateResult(
+                        name="Docker Smoke", status="SKIPPED", skipped=True
+                    ),
+                ),
+            ),
+            (
+                "CI Mirror.....",
+                globals().get(
+                    "check_ci_mirror",
+                    lambda: GateResult(
+                        name="CI Mirror", status="SKIPPED", skipped=True
+                    ),
+                ),
+            ),
         ]
     )
 
@@ -110,13 +211,17 @@ def run_gate(which: str):
     dict_results = [gate_result_to_dict(r) for r in results]
     return dict_results, (not any_fail)
 
+
 # path and re-export the few compatibility helpers tests expect.
 try:
     import importlib.util
+
     _gates_module_path = Path(__file__).resolve().parent / "../gates.py"
     _gates_module_path = _gates_module_path.resolve()
     if _gates_module_path.exists():
-        spec = importlib.util.spec_from_file_location("firsttry._gates_impl", str(_gates_module_path))
+        spec = importlib.util.spec_from_file_location(
+            "firsttry._gates_impl", str(_gates_module_path)
+        )
         if spec and spec.loader:
             _gates_impl = importlib.util.module_from_spec(spec)
             # Inject the package GateResult into the legacy module's globals
@@ -163,8 +268,13 @@ try:
                 if "run_gate" in globals():
                     try:
                         rg = globals()["run_gate"]
-                        if isinstance(rg, type(lambda: 0)) and "gate_result_to_dict" in rg.__globals__:
-                            rg.__globals__["gate_result_to_dict"] = _compat_gate_result_to_dict
+                        if (
+                            isinstance(rg, type(lambda: 0))
+                            and "gate_result_to_dict" in rg.__globals__
+                        ):
+                            rg.__globals__["gate_result_to_dict"] = (
+                                _compat_gate_result_to_dict
+                            )
                     except Exception:
                         pass
 except Exception:
@@ -196,6 +306,7 @@ def run_pre_push_gate() -> list:
     except Exception:
         cmds = []
     return _ensure_bandit_and_radon(list(cmds))
+
 
 # Capture the original subprocess.run implementation so tests that monkeypatch
 # `subprocess.run` can be detected at runtime. If `subprocess.run` has been
@@ -276,7 +387,6 @@ def check_tests(
     pytest_args should be *arguments only* (e.g. ["-q", "-m", "not slow", "--maxfail=1"]).
     We always run them as:  sys.executable -m pytest <args...>
     """
-    import sys
     args = list(pytest_args or [])
 
     # If someone passed "pytest" as the first token, strip it so we don't end up with
@@ -292,7 +402,10 @@ def check_tests(
     # or recurse. Historically this guard was opt-in via
     # `FT_DISABLE_NESTED_PYTEST`, but it's safer to always avoid nested
     # pytest when `PYTEST_CURRENT_TEST` is present in the environment.
-    if os.environ.get("PYTEST_CURRENT_TEST") and subprocess.run is _ORIGINAL_SUBPROCESS_RUN:
+    if (
+        os.environ.get("PYTEST_CURRENT_TEST")
+        and subprocess.run is _ORIGINAL_SUBPROCESS_RUN
+    ):
         cmd = [sys.executable, "-m", "pytest"] + args
         return GateResult(
             name="tests",
@@ -403,6 +516,7 @@ def check_pg_drift() -> GateResult:
         )
 
     import io
+
     probe_stdout = io.StringIO()
     try:
         import contextlib
@@ -418,14 +532,14 @@ def check_pg_drift() -> GateResult:
             skipped=False,
             info="schema drift?",
             details=(
-                "PG Drift probe reported an issue.\n"
-                f"{out}\n"
-                f"Exception: {exc!r}\n"
+                "PG Drift probe reported an issue.\n" f"{out}\n" f"Exception: {exc!r}\n"
             ),
         )
 
     out = probe_stdout.getvalue()
-    return GateResult(name="PG Drift", status="PASS", info="no drift", details=out.strip())
+    return GateResult(
+        name="PG Drift", status="PASS", info="no drift", details=out.strip()
+    )
 
 
 def check_docker_smoke() -> GateResult:
@@ -473,6 +587,7 @@ def check_docker_smoke() -> GateResult:
         )
 
     import io
+
     probe_stdout = io.StringIO()
     try:
         import contextlib
@@ -495,7 +610,9 @@ def check_docker_smoke() -> GateResult:
         )
 
     out = probe_stdout.getvalue()
-    return GateResult(name="Docker Smoke", status="PASS", info="ok", details=out.strip())
+    return GateResult(
+        name="Docker Smoke", status="PASS", info="ok", details=out.strip()
+    )
 
 
 def check_ci_mirror() -> GateResult:
@@ -522,6 +639,7 @@ def check_ci_mirror() -> GateResult:
         )
 
     import io
+
     mapper_stdout = io.StringIO()
     try:
         import contextlib
@@ -539,9 +657,7 @@ def check_ci_mirror() -> GateResult:
             skipped=False,
             info="see details",
             details=(
-                "CI Mirror reported mismatch.\n"
-                f"{out}\n"
-                f"Exception: {exc!r}\n"
+                "CI Mirror reported mismatch.\n" f"{out}\n" f"Exception: {exc!r}\n"
             ),
         )
 
@@ -658,7 +774,10 @@ def print_gate_human_summary(summary: GateSummary) -> None:
     # human summaries for release gates make it obvious which checks are
     # cloud-only. This mirrors the legacy behaviour tests expect.
     all_items = summary.checked + summary.skipped + summary.unknown
-    if any("docker" in (item.name or "").lower() and "smoke" in (item.name or "").lower() for item in all_items):
+    if any(
+        "docker" in (item.name or "").lower() and "smoke" in (item.name or "").lower()
+        for item in all_items
+    ):
         print("  • docker_smoke")
 
     print("\nUnknown:")
@@ -699,63 +818,5 @@ if "_gates_impl" in globals():
             except Exception:
                 pass
 
-# Compatibility serializer for GateResult objects used by the legacy
-# `run_gate` runner. This lives at module level so we can inject it into
-# the legacy function's globals reliably.
-def _compat_gate_result_to_dict(res):
-    if hasattr(res, "passed"):
-        return {
-            "gate": getattr(res, "name", ""),
-            "ok": getattr(res, "passed", False),
-            "status": getattr(res, "status", ""),
-            "info": getattr(res, "info", ""),
-            "details": getattr(res, "details", ""),
-            "returncode": getattr(res, "returncode", 1),
-            "stdout": getattr(res, "stdout", "") or "",
-            "stderr": getattr(res, "stderr", "") or "",
-            "errors": getattr(res, "errors", 0),
-            "warnings": getattr(res, "warnings", 0),
-            "fixable": getattr(res, "fixable", 0),
-            "mode": getattr(res, "mode", "auto"),
-            "extra": getattr(res, "extra", {}),
-        }
-
-    if hasattr(res, "to_dict"):
-        d = res.to_dict()
-    else:
-        d = {
-            "gate_id": getattr(res, "name", ""),
-            "ok": getattr(res, "ok", True),
-            "output": getattr(res, "output", ""),
-            "reason": getattr(res, "reason", ""),
-            "returncode": getattr(res, "returncode", 0 if getattr(res, "ok", True) else 1),
-        }
-
-    return {
-        "gate": d.get("gate_id") or d.get("name") or "",
-        "ok": d.get("ok", True),
-        "status": d.get("status", getattr(res, "status", "PASS")),
-        "info": d.get("reason", d.get("info", "")),
-        "details": d.get("details", d.get("output", "")),
-        "returncode": d.get("returncode", 0 if d.get("ok") else 1),
-        "stdout": d.get("stdout", ""),
-        "stderr": d.get("stderr", ""),
-        "errors": d.get("errors", 0),
-        "warnings": d.get("warnings", 0),
-        "fixable": d.get("fixable", 0),
-        "mode": d.get("mode", "auto"),
-        "extra": d.get("extra", {}),
-    }
-
-# Patch the legacy run_gate function's globals to use the compatibility
-# serializer if run_gate was re-exported into this package.
-if "run_gate" in globals():
-    try:
-        rg = globals()["run_gate"]
-        if isinstance(rg, type(lambda: 0)) and "gate_result_to_dict" in rg.__globals__:
-            rg.__globals__["gate_result_to_dict"] = _compat_gate_result_to_dict
-    except Exception:
-        pass
-
-# Public alias expected by tests
-gate_result_to_dict = _compat_gate_result_to_dict
+# Note: compatibility serializer and `gate_result_to_dict` are defined
+# at the top of the module to avoid use-before-definition issues.
