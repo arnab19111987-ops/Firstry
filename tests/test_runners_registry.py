@@ -16,4 +16,6 @@ def test_runners_have_core_tools() -> None:
         assert c in RUNNERS, f"{c} should be registered in RUNNERS"
         obj = RUNNERS[c]
         assert obj is not None
-        assert hasattr(obj, "run") or callable(obj), f"{c} runner must be callable or have a run method"
+        assert hasattr(obj, "run") or callable(
+            obj
+        ), f"{c} runner must be callable or have a run method"

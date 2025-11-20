@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from importlib import util as _importlib_util
 from pathlib import Path as _Path
-from typing import Any
 
 # Attempt to load the legacy module file ``src/firsttry/cache.py`` directly
 # (as a separate module) and re-export its public helpers. We can't import

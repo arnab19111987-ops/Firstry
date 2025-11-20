@@ -80,9 +80,13 @@ def build_plan_from_twin(
 
             if py_changed:
                 ruff_id = f"ruff:{proj_name}"
-                mypy_id = f"mypy:{proj_name}"
                 add(Task(id=ruff_id, check_id="ruff", targets=[root], flags=[]))
-                add(Task(id=mypy_id, check_id="mypy", targets=[root], flags=[]))
+
+                # Typing checks can be slow and noisy for repos with typing debt.
+                # Only include `mypy` in stricter tiers (e.g. `strict`, `pro`).
+                if tier in {"pro", "promax", "strict", "enterprise"}:
+                    mypy_id = f"mypy:{proj_name}"
+                    add(Task(id=mypy_id, check_id="mypy", targets=[root], flags=[]))
 
                 # pytest depends on ruff/mypy if configured
                 deps = {

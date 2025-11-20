@@ -7,8 +7,9 @@ def test_tools_firsttry_public_surface_matches_firsttry():
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
 
-    import firsttry as mainpkg
     import tools.firsttry as toolpkg
+
+    import firsttry as mainpkg
 
     main_public = {n for n in dir(mainpkg) if not n.startswith("_")}
     tool_public = {n for n in dir(toolpkg) if not n.startswith("_")}

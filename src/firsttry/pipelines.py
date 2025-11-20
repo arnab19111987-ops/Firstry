@@ -5,26 +5,30 @@ PYTHON_PIPELINE = [
     {
         "id": "py-lint",
         "run": [
-            "ruff check .",
-            "black --check --exclude='(.venv/|.venv-build/|venv/|env/|build/|dist/|node_modules/)' .",
+            "ruff check src tests",
+            "black --check src tests",
         ],
         "autofix": [
-            "ruff check --fix .",
-            "black --exclude='(.venv/|.venv-build/|venv/|env/|build/|dist/|node_modules/)' .",
+            "ruff check --fix src tests",
+            "black src tests",
         ],
         "tier": 1,
     },
+    # Move heavy type checking out of the default fast tier. Mypy can be run
+    # in a stricter or optional tier so developers aren't blocked by typing
+    # debt during quick local runs.
     {
         "id": "py-type",
-        "run": ["mypy ."],
-        "tier": 1,
+        "run": ["mypy src tests"],
+        "tier": 2,
+        "optional": True,
     },
     # TIER 2: slower
     {
         "id": "py-test",
-        "run": ["pytest -q"],
-        "tier": 2,
-        "optional": True,
+        "run": ["PYTHONPATH=src python -m pytest -q tests"],
+        "tier": 1,
+        "optional": False,
     },
     {
         "id": "py-coverage",
