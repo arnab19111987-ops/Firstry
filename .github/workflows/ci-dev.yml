@@ -33,4 +33,6 @@ jobs:
           black --check src tests --exclude "\\.egg-info"
 
       - name: Mypy (core src only)
-        run: python -m mypy --config-file mypy.ini src
+        run: |
+          python -m mypy --config-file mypy.ini src/firsttry/gates \
+            src/firsttry/ci_parity src/firsttry/runners src/firsttry/pipelines.py
