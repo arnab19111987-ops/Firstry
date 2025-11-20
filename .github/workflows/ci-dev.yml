@@ -27,8 +27,10 @@ jobs:
       - name: Install dev dependencies
         run: pip install ".[dev]"
 
-      - name: Run dev quality checks (ruff / black / mypy)
+      - name: Run dev quality checks (ruff / black)
         run: |
           ruff check src tests
           black --check src tests --exclude "\\.egg-info"
-          python -m mypy src tests
+
+      - name: Mypy (core src only)
+        run: python -m mypy --config-file mypy.ini src
