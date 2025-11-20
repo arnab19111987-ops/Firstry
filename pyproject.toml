@@ -26,6 +26,7 @@ dependencies = [
 enterprise = ["boto3>=1.34"]
 dev = [
   "pytest-timeout>=2.0.0",
+  "types-PyYAML",
 ]
 
 [project.scripts]
@@ -40,17 +41,20 @@ where = ["src"]
 include = ["firsttry", "firsttry.*"]
 
 
+
 [tool.ruff]
-# Only lint our Python source and tests; skip vendored, coverage, docs, and benchmarks
-extend-exclude = [
+src = ["src", "tests"]
+exclude = [
+  ".git",
   ".venv",
-  ".venv-build",
-  "htmlcov",
+  ".venv-*",
+  "benchmarks",
+  "benchmarks/repos",
   "docs",
   "dashboard",
-  "benchmarks",
   "firsttry.egg-info",
   "**/*.egg-info",
+  "htmlcov",
   # Exclude demo/performance scripts from strict linting
   "step12_*.py",
   "validation_*.py",
@@ -61,6 +65,17 @@ extend-exclude = [
 ]
 target-version = "py310"
 line-length = 200
+
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
+skip = [".venv", ".venv-*", "benchmarks", "benchmarks/repos", "__pycache__", "*.pyc", "*.egg-info"]
+[tool.black]
+target-version = ["py311"]
+line-length = 88
+include = "src/|tests/"
+exclude = "(\\\\.venv|\\\\.venv-.*|benchmarks|benchmarks/repos|__pycache__|\\\\.pyc|\\\\.egg-info)"
 
 [tool.ruff.lint]
 select = ["E", "F"]

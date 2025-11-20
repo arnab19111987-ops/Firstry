@@ -1,6 +1,12 @@
 # tests/test_cli_doctor_and_license.py
 import types
 
+import pytest
+
+# These tests exercise CLI flows that can be slow (run plans, invoke executors).
+# Mark them as slow so fast developer gates skip them by default.
+pytestmark = pytest.mark.slow
+
 
 def test_cli_doctor_uses_report(monkeypatch):
     """Test that CLI doctor command executes and produces output."""

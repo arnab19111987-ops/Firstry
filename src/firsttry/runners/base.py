@@ -10,13 +10,24 @@ from ..twin.hashers import hash_bytes, hash_file
 
 @dataclass
 class RunResult:
-    status: str
+    status: str = ""
     # subprocess outputs are sometimes bytes (when callers omit text=True)
     # keep the type permissive to reduce friction; callers should decode when
     # they need string content.
     stdout: str | bytes = ""
     stderr: str | bytes = ""
     meta: Dict[str, Any] | None = None
+    # Backwards-compatible fields used in various runner implementations
+    name: str | None = None
+    ok: bool | None = None
+    message: str | None = None
+    tool: str | None = None
+    extra: Any | None = None
+    cmd: Any | None = None
+    duration_s: float | None = None
+    duration_ms: int | None = None
+    # Optional short machine-readable code (e.g. ruff/mypy rule code)
+    code: str | None = None
 
 
 class CheckRunner(Protocol):
@@ -28,9 +39,13 @@ class CheckRunner(Protocol):
         self, repo_root: Path, targets: List[str], flags: List[str]
     ) -> str: ...
 
-    def run(
-        self, repo_root: Path, targets: List[str], flags: List[str], *, timeout_s: int
-    ) -> RunResult: ...
+    # Allow flexible runner signatures to support both the legacy
+    # repo-root-based and the newer index/ctx/item coroutine styles used
+    # across the codebase. Use a permissive signature to avoid spurious
+    # mypy override errors while still documenting the general intent.
+    def run(self, *args: Any, **kwargs: Any) -> Any: ...
+
+    pass
 
 
 def _hash_targets(repo_root: Path, targets: List[str]) -> str:

@@ -10,10 +10,6 @@
         "tool": "ci-parity"
       },
       {
-        "family": "mypy",
-        "tool": "mypy"
-      },
-      {
         "family": "npm test",
         "tool": "npm test"
       },
@@ -26,7 +22,7 @@
         "tool": "ruff"
       }
     ],
-    "timestamp": 1763534384.721899,
+    "timestamp": 1763619025.0043,
     "version": "1.0"
   }
 }

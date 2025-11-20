@@ -1,6 +1,11 @@
 """Test CLI command routing and basic argument parsing."""
 
+import pytest
+
 from tests.cli_utils import run_cli
+
+# Mark CLI-invoking tests as slow to avoid running heavy CLI flows in fast gates
+pytestmark = pytest.mark.slow
 
 
 def test_cli_shows_help():

@@ -2,19 +2,22 @@
 fail_on_drift = true
 
 [tool.firsttry.run]
-tools = ["black", "ci-parity", "mypy", "npm test", "pytest", "ruff"]
+# Keep default fast run focused on lint + tests; heavy type checks (mypy)
+# are intentionally left out of the default tools list to avoid blocking
+# fast developer feedback loops. Mypy remains runnable via `ft mypy`.
+tools = ["black", "ci-parity", "npm test", "pytest", "ruff"]
 
 [tool.firsttry.tool.ruff]
-cmd = "ruff check ."
+cmd = "ruff check src tests"
 
 [tool.firsttry.tool.black]
-cmd = "black --check ."
+cmd = "black --check src tests"
 
 [tool.firsttry.tool.mypy]
-cmd = "mypy ."
+cmd = "mypy src"
 
 [tool.firsttry.tool.pytest]
-cmd = "pytest -q"
+cmd = "PYTHONPATH=src pytest -q tests"
 
 [tool.firsttry.tool."npm test"]
 cmd = "npm test"

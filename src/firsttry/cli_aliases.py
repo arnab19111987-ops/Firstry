@@ -42,6 +42,47 @@ FT_ALIAS_MAP: Dict[str, AliasSpec] = {
             "2",
         ],
     ),
+    "lite": AliasSpec(
+        name="lite",
+        args=[
+            "run",
+            "fast",
+            "--tier",
+            "free-lite",
+            "--profile",
+            "fast",
+            "--report-json",
+            ".firsttry/report.json",
+            "--report-schema",
+            "2",
+        ],
+    ),
+    "doctor-checks": AliasSpec(
+        name="doctor-checks",
+        args=[
+            "doctor",
+            "--check",
+            "report-json",
+            "--check",
+            "telemetry",
+        ],
+    ),
+    "dash": AliasSpec(
+        name="dash",
+        args=["inspect", "dashboard", "--json", ".firsttry/report.json"],
+    ),
+    "lock": AliasSpec(
+        name="lock",
+        args=["inspect", "report", "--json", ".firsttry/report.json", "--filter", "locked=true"],
+    ),
+    "setup": AliasSpec(
+        name="setup",
+        args=["setup", "--install-hooks"],
+    ),
+    "pro": AliasSpec(
+        name="pro",
+        args=["run", "fast", "--tier", "pro", "--report-json", ".firsttry/report.json"],
+    ),
     # Add more aliases as needed
 }
 

@@ -1,0 +1,9 @@
+^\.venv/
+^\.venv-.*/
+^benchmarks/
+^benchmarks/repos/
+^.*\.egg-info/
+^dist/
+^build/
+^__pycache__/
+^.*\.pyc$

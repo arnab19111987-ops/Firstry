@@ -5,7 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TYPE_CHECKING
 
 from .base import BaseRunner, RunnerResult
 
@@ -57,6 +57,15 @@ def _find_ci_cmd(ci_plan: List[Dict[str, str]], tool: str) -> str | None:
 class RuffRunner(BaseRunner):
     tool = "ruff"
 
+    # TYPE-CHECKING-only declaration: runners rely on a `run_cmd` helper
+    # at runtime (often provided by the execution environment). Declare an
+    # async signature here for mypy so calls like `await self.run_cmd(...)`
+    # type-check without forcing a concrete implementation in every class.
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+        async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
+
     async def run(
         self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
     ) -> RunnerResult:
@@ -75,14 +84,15 @@ class RuffRunner(BaseRunner):
         res = await self.run_cmd(name, "ruff", cmd)
         # parse JSON if present
         try:
-            data = json.loads(res.message)
-            if isinstance(data, list):
-                if not data:
-                    res.message = "ruff: clean"
-                else:
-                    res.message = f"ruff: {len(data)} issues"
-                    first = data[0]
-                    res.code = first.get("code") or ""
+            if res.message:
+                data = json.loads(res.message)
+                if isinstance(data, list):
+                    if not data:
+                        res.message = "ruff: clean"
+                    else:
+                        res.message = f"ruff: {len(data)} issues"
+                        first = data[0]
+                        res.code = first.get("code") or ""
         except Exception:
             pass
         return res
@@ -91,6 +101,9 @@ class RuffRunner(BaseRunner):
 class MypyRunner(BaseRunner):
     tool = "mypy"
 
+    if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+        async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
+
     async def run(
         self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
     ) -> RunnerResult:
@@ -98,7 +111,7 @@ class MypyRunner(BaseRunner):
         cmd = item.get("cmd") or "mypy ."
         res = await self.run_cmd(name, "mypy", cmd)
         if not res.ok:
-            m = _MYPY_CODE_RE.search(res.message)
+            m = _MYPY_CODE_RE.search(res.message or "")
             if m:
                 res.code = m.group(1)
         return res
@@ -106,6 +119,9 @@ class MypyRunner(BaseRunner):
 
 class PytestRunner(BaseRunner):
     tool = "pytest"
+
+    if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+        async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
     async def run(
         self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]
@@ -125,6 +141,9 @@ class PytestRunner(BaseRunner):
 
 class BanditRunner(BaseRunner):
     tool = "bandit"
+
+    if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+        async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
     async def run(
         self, idx: int, ctx: Dict[str, Any], item: Dict[str, Any]

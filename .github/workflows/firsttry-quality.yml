@@ -45,7 +45,7 @@ jobs:
 
       - name: Run quality gate (ruff / black / mypy / pytest smoke)
         run: |
-          ruff check .
-          black --check .
-          mypy .
+          ruff check src tests
+          black --check src tests
+          mypy src tests
           pytest -q

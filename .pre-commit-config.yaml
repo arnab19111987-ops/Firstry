@@ -1,0 +1,27 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: ruff check src tests
+        language: system
+        pass_filenames: false
+        files: ^(src/|tests/)
+      - id: black
+        name: black
+        entry: black
+        language: system
+        types: [python]
+        files: ^(src/|tests/)
+      - id: isort
+        name: isort
+        entry: isort
+        language: system
+        types: [python]
+        files: ^(src/|tests/)
+      - id: pytest-fast
+        name: pytest (fast subset)
+        entry: python -m pytest -q tests/test_cli_precommit_smoke.py tests/test_pytest_timeout_plugin.py -q
+        language: system
+        pass_filenames: false
+        files: ^(src/|tests/)

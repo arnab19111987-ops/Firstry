@@ -914,6 +914,7 @@ def _build_plan_for_tier(repo_root: Path, tier: str) -> Plan:
         # guaranteed-clean fast demo tier
         "free-fast": ["ruff", "pytest"],
         "free-lite": ["ruff", "pytest"],
+        "fast": ["ruff"],
         "lite": ["ruff", "mypy", "pytest"],
         "pro": ["ruff", "mypy", "pytest", "bandit"],
         "strict": ["ruff", "mypy", "pytest", "bandit"],
@@ -1628,6 +1629,16 @@ def main_impl(argv: list[str] | None = None) -> int:
             "release": "pre-push",
         }
         gate_name = gate_map.get(args.gate_cmd, args.gate_cmd)
+        # When mapping the user-friendly `dev` stage to the legacy
+        # `pre-commit` gate, set an env marker so gate internals can
+        # narrow the types step to a fast, core mypy surface. This keeps
+        # full `mypy src` available for CI while making local `dev` runs
+        # fast and actionable.
+        import os as _os
+
+        if str(getattr(args, "gate_cmd", "")).lower() == "dev":
+            _os.environ.setdefault("FIRSTTRY_DEV_GATE", "1")
+
         gr, ok = run_gate(gate_name)
         # gr is the serializable results list; build a human summary and print it
         summary = build_gate_summary(gate_name, gr)

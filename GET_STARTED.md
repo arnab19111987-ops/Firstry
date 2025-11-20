@@ -52,3 +52,18 @@ What 'red' means
 Selling line
 
 This is the same bar applied in CI. If you’re green here, you’ll be green on GitHub.
+
+Pre-commit (recommended)
+
+We recommend installing `pre-commit` to run `black`, `isort` and `ruff` automatically before commits.
+
+Install and enable:
+
+```bash
+python -m pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+The repository includes a minimal `.pre-commit-config.yaml` that uses system-installed
+tools. Ensure you have `black`, `isort` and `ruff` available in your environment.

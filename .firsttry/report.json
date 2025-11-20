@@ -1,40 +1,31 @@
 {
-  "schema_version": 2,
-  "repo": "/workspaces/Firstry",
-  "tier": "free-strict",
-  "profile": "fast",
-  "run_at": "2025-11-19T12:07:24.221357+00:00",
-  "timing": {
-    "fast_ms": 0,
-    "mutating_ms": 0,
-    "slow_ms": 0,
-    "total_ms": 0
-  },
-  "checks": [
-    {
-      "id": "ruff",
-      "status": "fail",
-      "duration_s": 0.0
+  "checks": {
+    "ruff:_root": {
+      "name": "ruff:_root",
+      "check_id": "ruff:_root",
+      "status": "ok",
+      "duration_ms": 60,
+      "stdout": "All checks passed!\n",
+      "stderr": "",
+      "cache_status": "hit-local"
     },
-    {
-      "id": "ruff",
-      "status": "fail",
-      "duration_s": 0.0
+    "pytest:_root": {
+      "name": "pytest:_root",
+      "check_id": "pytest:_root",
+      "status": "ok",
+      "duration_ms": 485,
+      "stdout": "................................................ssss.......ss.sssss.s..........ss. [ 31%]\nsss..s.........................................s.................................. [ 63%]\n.....................s............................................................ [ 94%]\n.............                                                                      [100%]\n239 passed, 20 skipped in 172.83s (0:02:52)\n",
+      "stderr": "",
+      "cache_status": "hit-local"
     },
-    {
-      "id": "mypy",
+    "mypy:_root": {
+      "name": "mypy:_root",
+      "check_id": "mypy:_root",
       "status": "fail",
-      "duration_s": 0.0
-    },
-    {
-      "id": "pytest",
-      "status": "fail",
-      "duration_s": 0.0
-    },
-    {
-      "id": "pytest",
-      "status": "fail",
-      "duration_s": 0.0
+      "duration_ms": 5748,
+      "stdout": "src/firsttry/profiler.py:29: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/profiler.py:30: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]\nsrc/firsttry/planner/__init__.py:9: error: Cannot resolve attribute \"build_plan\" (possible cyclic definition)  [misc]\nsrc/firsttry/planner/__init__.py:9: note: Error code \"misc\" not covered by \"type: ignore\" comment\nsrc/firsttry/executor/__init__.py:10: error: Cannot resolve attribute \"execute_plan\" (possible cyclic definition)  [misc]\nsrc/firsttry/executor/__init__.py:10: note: Error code \"misc\" not covered by \"type: ignore\" comment\nsrc/firsttry/executor/__init__.py:11: error: Cannot resolve attribute \"run_command\" (possible cyclic definition)  [misc]\nsrc/firsttry/executor/__init__.py:11: note: Error code \"misc\" not covered by \"type: ignore\" comment\nsrc/firsttry/cache/__init__.py:100: error: All conditional function variants must have identical signatures  [misc]\nsrc/firsttry/cache/__init__.py:100: note: Original:\nsrc/firsttry/cache/__init__.py:100: note:     def load_cache(*a: Any, **k: Any) -> Any\nsrc/firsttry/cache/__init__.py:100: note: Redefinition:\nsrc/firsttry/cache/__init__.py:100: note:     def load_cache(*a: Any, **k: Any) -> dict[str, Any]\nsrc/firsttry/cache/__init__.py:102: error: All conditional function variants must have identical signatures  [misc]\nsrc/firsttry/cache/__init__.py:102: note: Original:\nsrc/firsttry/cache/__init__.py:102: note:     def save_cache(*a: Any, **k: Any) -> Any\nsrc/firsttry/cache/__init__.py:102: note: Redefinition:\nsrc/firsttry/cache/__init__.py:102: note:     def save_cache(*a: Any, **k: Any) -> None\nsrc/firsttry/runner_light.py:67: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/runner_light.py:67: error: Argument 1 to \"get_profile\" has incompatible type \"str | None\"; expected \"str\"  [arg-type]\nsrc/firsttry/runner_light.py:67: note: Error code \"arg-type\" not covered by \"type: ignore\" comment\nsrc/firsttry/cache/s3.py:31: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/planner/dag.py:69: error: Item \"None\" of \"ProjectNode | None\" has no attribute \"lang\"  [union-attr]\nsrc/firsttry/lazy_orchestrator.py:24: error: Argument 2 to \"input_stats_match\" has incompatible type \"list[InputFileMeta] | None\"; expected \"list[InputFileMeta]\"  [arg-type]\nsrc/firsttry/reports/cli_summary.py:72: error: Too many arguments for \"render_summary\"  [call-arg]\nsrc/firsttry/doctor.py:73: error: Unsupported operand types for + (\"bytes\" and \"str\")  [operator]\nsrc/firsttry/doctor.py:73: note: Left operand is of type \"bytes | str\"\nsrc/firsttry/doctor.py:76: error: Incompatible return value type (got \"tuple[int, bytes | str]\", expected \"tuple[int, str]\")  [return-value]\nsrc/firsttry/cli_v2.py:100: error: Incompatible types in assignment (expression has type \"firsttry.runner_light.GateResult\", variable has type \"firsttry.gates.base.GateResult\")  [assignment]\nsrc/firsttry/executor/dag.py:66: error: Function \"builtins.callable\" is not valid as a type  [valid-type]\nsrc/firsttry/executor/dag.py:66: note: Perhaps you meant \"typing.Callable\" instead of \"callable\"?\nsrc/firsttry/parallel_pytest.py:148: error: Need type annotation for \"chunks\"  [var-annotated]\nsrc/firsttry/checks_orchestrator_optimized.py:24: error: Incompatible return value type (got \"tuple[int | None, str]\", expected \"tuple[int, str]\")  [return-value]\nsrc/firsttry/checks_orchestrator.py:52: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/checks_orchestrator.py:54: error: Unused \"type: ignore\" comment  [unused-ignore]\nsrc/firsttry/reporting/renderer.py:48: error: Argument 1 to \"_clip\" has incompatible type \"str | bytes\"; expected \"str\"  [arg-type]\nsrc/firsttry/reporting/renderer.py:51: error: Argument 1 to \"_clip\" has incompatible type \"str | bytes\"; expected \"str\"  [arg-type]\nsrc/firsttry/smart_pytest.py:213: error: Need type annotation for \"test_files\" (hint: \"test_files: list[<type>] = ...\")  [var-annotated]\nsrc/firsttry/cli.py:721: error: \"Callable[[list[str] | None], int]\" has no attribute \"main\"  [attr-defined]\nsrc/firsttry/cli.py:953: error: Argument \"deps\" to \"Task\" has incompatible type \"frozenset[Never]\"; expected \"set[str]\"  [arg-type]\nsrc/firsttry/cli.py:1707: error: Argument 1 to \"_iter_workflow_files\" has incompatible type \"Path | None\"; expected \"Path\"  [arg-type]\nsrc/firsttry/cli.py:2648: error: \"_S\" has no attribute \"ok\"  [attr-defined]\nsrc/firsttry/cli.py:2649: error: \"_S\" has no attribute \"duration_s\"  [attr-defined]\nsrc/firsttry/cli.py:2650: error: \"_S\" has no attribute \"stdout\"  [attr-defined]\nsrc/firsttry/cli.py:2651: error: \"_S\" has no attribute \"stderr\"  [attr-defined]\nsrc/firsttry/cli.py:2652: error: \"_S\" has no attribute \"cmd\"  [attr-defined]\nsrc/firsttry/cli.py:2887: error: \"Callable[[list[str] | None], int]\" has no attribute \"main\"  [attr-defined]\nsrc/firsttry/cached_orchestrator.py:31: error: Argument 2 to \"input_stats_match\" has incompatible type \"list[InputFileMeta] | None\"; expected \"list[InputFileMeta]\"  [arg-type]\nsrc/firsttry/cached_orchestrator.py:74: error: Incompatible return value type (got \"tuple[int | None, str]\", expected \"tuple[int, str]\")  [return-value]\nsrc/firsttry/cached_orchestrator.py:158: error: Need type annotation for \"buckets\"  [var-annotated]\nsrc/firsttry/performance_validator.py:294: error: Argument 1 to \"select_checks\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:298: error: Argument \"scenario\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:299: error: Argument \"profile\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"str\"  [arg-type]\nsrc/firsttry/performance_validator.py:301: error: Argument \"use_cache\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"bool\"  [arg-type]\nsrc/firsttry/performance_validator.py:302: error: Argument \"changed_files\" to \"benchmark_scenario\" of \"PerformanceBenchmark\" has incompatible type \"object\"; expected \"list[str] | None\"  [arg-type]\nFound 39 errors in 19 files (checked 163 source files)\n",
+      "stderr": "",
+      "cache_status": "miss-run"
     }
-  ]
+  }
 }

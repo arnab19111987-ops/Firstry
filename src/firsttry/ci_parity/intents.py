@@ -48,7 +48,7 @@ class MirrorJob:
 
 def _iter_workflow_files(root: Path = DEFAULT_WORKFLOWS_ROOT) -> Iterable[Path]:
     if not root.exists():
-        return []
+        return
     for ext in ("*.yml", "*.yaml"):
         yield from root.glob(ext)
 
@@ -166,7 +166,11 @@ def lint_intents(
         )
         return 1
 
-    unmapped_ci, stale_mirror = _compute_unmapped(ci_jobs, mirror_jobs)
+    from typing import cast
+
+    res = _compute_unmapped(ci_jobs, mirror_jobs)
+    unmapped_ci = cast(List[CiJob], res[0])
+    stale_mirror = cast(List[MirrorJob], res[1])
 
     if not unmapped_ci and not stale_mirror:
         print("[ci-parity] OK: All CI jobs are mapped in ci_mirror.toml")
@@ -184,8 +188,8 @@ def lint_intents(
         print(
             "[ci-parity] Stale mirror entries (present in mirror but missing in workflows):"
         )
-        for j in sorted(stale_mirror, key=lambda x: (x.workflow, x.job_id)):
-            print(f"  - {j.workflow}:{j.job_id} (plan={j.plan!r}, stage={j.stage!r})")
+        for m in sorted(stale_mirror, key=lambda x: (x.workflow, x.job_id)):
+            print(f"  - {m.workflow}:{m.job_id} (plan={m.plan!r}, stage={m.stage!r})")
 
     # Treat unmapped / stale as a parity failure (not a crash)
     return 2
@@ -262,5 +266,4 @@ def autofill_intents(
         fh.write("\n")
 
     print(f"[ci-parity] Appended {len(suggested_entries)} entries to {mpath}")
-    return 0
     return 0
