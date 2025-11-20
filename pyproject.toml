@@ -27,6 +27,7 @@ enterprise = ["boto3>=1.34"]
 dev = [
   "pytest-timeout>=2.0.0",
   "types-PyYAML",
+  "anyio",
 ]
 
 [project.scripts]
