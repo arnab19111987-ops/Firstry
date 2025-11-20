@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 try:
     from .. import executor as _legacy_executor
 
-    execute_plan = _legacy_executor.execute_plan  # type: ignore[attr-defined]
-    run_command = _legacy_executor.run_command  # type: ignore[attr-defined]
+    execute_plan = _legacy_executor.execute_plan
+    run_command = _legacy_executor.run_command
 except Exception:
     # Best-effort: don't raise at import time if the legacy module is missing
     pass
