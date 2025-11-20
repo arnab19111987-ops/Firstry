@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix/gates-and-parity
   pull_request:
     branches:
       - main
