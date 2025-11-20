@@ -28,7 +28,10 @@ def run_tool_with_smart_cache(
     cache_entry = ft_cache.load_tool_cache_entry(repo_root, tool_name)
 
     # 1) FAST PATH: stats match
-    if cache_entry and input_stats_match(cache_entry.input_files, current_stats):
+    # `collect_input_stats` may return `None` on error; only compare when present.
+    if cache_entry and current_stats is not None and input_stats_match(
+        cache_entry.input_files, current_stats
+    ):
         # 👉 if last run failed, just replay it instead of re-running
         if cache_entry.status == "fail":
             return {
@@ -71,7 +74,9 @@ async def run_subprocess(cmd: List[str], cwd: str | None = None) -> Tuple[int, s
         stderr=asyncio.subprocess.STDOUT,
     )
     stdout, _ = await proc.communicate()
-    return proc.returncode, stdout.decode("utf-8", "replace")
+    # `proc.returncode` may be None according to the runtime types; normalize to int
+    rc: int = proc.returncode if proc.returncode is not None else -1
+    return rc, stdout.decode("utf-8", "replace")
 
 
 async def _bounded_run(cmd: List[str], sem: asyncio.Semaphore, cwd: str | None = None):
@@ -155,7 +160,8 @@ async def run_checks_for_profile(
 
     # Group checks by bucket
     t_bucketing_start = time.monotonic()
-    buckets = {"fast": [], "mutating": [], "slow": []}
+    # Explicitly annotate buckets to satisfy type checkers
+    buckets: Dict[str, List[str]] = {"fast": [], "mutating": [], "slow": []}
 
     for check in checks:
         bucket = CHECK_REGISTRY.get(check, {}).get("bucket", "slow")

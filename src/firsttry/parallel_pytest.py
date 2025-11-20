@@ -324,7 +324,10 @@ async def run_parallel_pytest(
 
     # Create chunks
     max_workers = max_workers or min(4, os.cpu_count() or 2)
-    chunks = create_test_chunks(test_files, max_workers)
+    # Explicit annotation to satisfy mypy var-annotate
+    from typing import List as _List
+
+    chunks: _List[_List[str]] = create_test_chunks(test_files, max_workers)
 
     if len(chunks) <= 1:
         # Not worth chunking

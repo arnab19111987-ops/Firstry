@@ -21,7 +21,10 @@ def run_tool_with_smart_cache(repo_root: Path, tool) -> Dict[str, Any]:
     cache_entry = load_tool_cache_entry(str(repo_root), tool.name)
 
     # FAST PATH: stats match => we can reuse
-    if cache_entry and input_stats_match(cache_entry.input_files, current_stats):
+    # `collect_input_stats` may return None; only compare when present.
+    if cache_entry and current_stats is not None and input_stats_match(
+        cache_entry.input_files, current_stats
+    ):
         # Get the last real duration for analytics
         last_duration = cache_entry.extra.get("elapsed", 0.0)
 

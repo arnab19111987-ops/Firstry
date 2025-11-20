@@ -64,7 +64,10 @@ def get_profile(name: str | None = None) -> Any:
     try:
         from .profiles import get_profile as _gp
 
-        return _gp(name)  # type: ignore[return-value]
+        # The real `get_profile` expects a non-None name; callers may pass
+        # None here to indicate a default. Normalize to a concrete string so
+        # mypy correctly understands the call without changing runtime semantics.
+        return _gp(name or "fast")
     except Exception:
         # Minimal placeholder
         class _P:

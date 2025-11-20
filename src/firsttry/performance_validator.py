@@ -6,7 +6,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .cached_orchestrator import run_checks_for_profile
 from .run_profiles import select_checks
@@ -246,7 +246,7 @@ async def run_comprehensive_benchmark(repo_root: str) -> PerformanceBenchmark:
     benchmark = PerformanceBenchmark(repo_root)
 
     # Define benchmark scenarios
-    scenarios = [
+    scenarios: List[Dict[str, Any]] = [
         {
             "name": "Full Suite (Baseline)",
             "profile": "strict",

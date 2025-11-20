@@ -718,7 +718,7 @@ def cmd_pre_commit(args=None) -> int:
         ["--self-check", "--quiet"] if mode == "self-check" else ["--parity", "--quiet"]
     )
 
-    rc = ci_runner.main(argv)
+    rc = ci_runner(argv)
 
     # Run the local dev gate as an additional safety check
     try:
@@ -2884,7 +2884,7 @@ def cli_run(gate: str, require_license: bool, tier: str) -> None:
     if gate in ("ci", "ci-parity"):
         from .ci_parity import parity_runner as ci_runner
 
-        raise SystemExit(ci_runner.main([]))
+        raise SystemExit(ci_runner([]))
 
     # Unknown gate
     raise click.ClickException(f"Unknown gate: {gate}")

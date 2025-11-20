@@ -69,8 +69,15 @@ class ShellRunner:
             )
             return proc.returncode, proc.stdout or ""
         except subprocess.TimeoutExpired as exc:
-            out = (exc.stdout or "") + (
-                f"\n[firsttry doctor] Command timed out after {self.timeout or float(os.getenv('FIRSTTRY_DOCTOR_TIMEOUT', '30')):.0f}s: {cmd!r}\n"
+            # Normalize possible bytes stdout to str before concatenation
+            stdout_part = exc.stdout or ""
+            if isinstance(stdout_part, (bytes, bytearray)):
+                stdout_part = stdout_part.decode("utf-8", "replace")
+            out = (
+                stdout_part
+                + (
+                    f"\n[firsttry doctor] Command timed out after {self.timeout or float(os.getenv('FIRSTTRY_DOCTOR_TIMEOUT', '30')):.0f}s: {cmd!r}\n"
+                )
             )
             # 124 is a common timeout exit code (like GNU timeout)
             return int(os.getenv("FIRSTTRY_DOCTOR_TIMEOUT_EXITCODE", "124")), out
