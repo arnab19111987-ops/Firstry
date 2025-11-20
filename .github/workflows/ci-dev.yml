@@ -27,5 +27,8 @@ jobs:
       - name: Install dev dependencies
         run: pip install ".[dev]"
 
-      - name: Run FirstTry dev gate
-        run: firsttry gate dev
+      - name: Run dev quality checks (ruff / black / mypy)
+        run: |
+          ruff check src tests
+          black --check src tests
+          python -m mypy src tests
