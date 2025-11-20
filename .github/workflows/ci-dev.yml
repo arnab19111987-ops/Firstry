@@ -30,5 +30,5 @@ jobs:
       - name: Run dev quality checks (ruff / black / mypy)
         run: |
           ruff check src tests
-          black --check src tests
+          black --check src tests --exclude "\\.egg-info"
           python -m mypy src tests
