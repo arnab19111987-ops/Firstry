@@ -56,8 +56,11 @@ if os.getenv("FIRSTTRY_USE_REAL_RUNNERS") in ("1", "true", "True"):
 # otherwise return a minimal stub-like object with an `ok` attribute so
 # callers (and tests) can operate deterministically.
 
+
 def _make_stub_result(name: str):
-    return SimpleNamespace(name=name, ok=True, duration_s=0.0, stdout="", stderr="", cmd=())
+    return SimpleNamespace(
+        name=name, ok=True, duration_s=0.0, stdout="", stderr="", cmd=()
+    )
 
 
 def _call_runner(name: str, *args, **kwargs):

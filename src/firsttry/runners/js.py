@@ -23,7 +23,9 @@ class ESLintRunner(BaseRunner):
             if m:
                 res.code = m.group(1)
         return res
+
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
 
@@ -36,5 +38,7 @@ class NpmTestRunner(BaseRunner):
         name = f"tests-js[{idx}]"
         cmd = item.get("cmd") or "npm test"
         return await self.run_cmd(name, "npm-test", cmd)
+
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...

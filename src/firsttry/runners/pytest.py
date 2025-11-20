@@ -40,8 +40,15 @@ class PytestRunner(CheckRunner):
         # simulate pytest output continue to exercise parsing logic.
         import os
 
-        if "PYTEST_CURRENT_TEST" in os.environ and subprocess.run is _ORIG_SUBPROCESS_RUN:
-            return RunResult(status="skip", stdout="", stderr="(skipped nested pytest in test process)")
+        if (
+            "PYTEST_CURRENT_TEST" in os.environ
+            and subprocess.run is _ORIG_SUBPROCESS_RUN
+        ):
+            return RunResult(
+                status="skip",
+                stdout="",
+                stderr="(skipped nested pytest in test process)",
+            )
         try:
             # When running under the pytest test harness, invoking the
             # `pytest` command directly can lead to nested-run deadlocks.
@@ -77,7 +84,9 @@ class PytestRunner(CheckRunner):
                 )
             except TypeError:
                 # Monkeypatched subprocess.run may not accept env/timeout kwargs
-                proc = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
+                proc = subprocess.run(
+                    cmd, cwd=repo_root, text=True, capture_output=True
+                )
 
             return RunResult(
                 status="ok" if proc.returncode == 0 else "fail",

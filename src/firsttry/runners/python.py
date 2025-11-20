@@ -64,6 +64,7 @@ class RuffRunner(BaseRunner):
     from typing import TYPE_CHECKING
 
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
     async def run(
@@ -102,6 +103,7 @@ class MypyRunner(BaseRunner):
     tool = "mypy"
 
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
     async def run(
@@ -121,6 +123,7 @@ class PytestRunner(BaseRunner):
     tool = "pytest"
 
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
     async def run(
@@ -143,6 +146,7 @@ class BanditRunner(BaseRunner):
     tool = "bandit"
 
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
     async def run(

@@ -73,7 +73,14 @@ FT_ALIAS_MAP: Dict[str, AliasSpec] = {
     ),
     "lock": AliasSpec(
         name="lock",
-        args=["inspect", "report", "--json", ".firsttry/report.json", "--filter", "locked=true"],
+        args=[
+            "inspect",
+            "report",
+            "--json",
+            ".firsttry/report.json",
+            "--filter",
+            "locked=true",
+        ],
     ),
     "setup": AliasSpec(
         name="setup",

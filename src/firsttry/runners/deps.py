@@ -32,6 +32,7 @@ class PipAuditRunner(BaseRunner):
         return res
 
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...
 
 
@@ -67,4 +68,5 @@ class NpmAuditRunner(BaseRunner):
         return res
 
     if TYPE_CHECKING:  # pragma: no cover - static typing aid only
+
         async def run_cmd(self, name: str, tool: str, cmd: Any) -> RunnerResult: ...

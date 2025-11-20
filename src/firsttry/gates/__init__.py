@@ -39,7 +39,9 @@ class GateSummary:
 # Support legacy name FIRSTTRY_CHECK_TESTS_TIMEOUT or the more specific
 # FIRSTTRY_PYTEST_TIMEOUT. Default to 300s to cover the fast subset runtime.
 DEFAULT_CHECK_TESTS_TIMEOUT = float(
-    os.getenv("FIRSTTRY_CHECK_TESTS_TIMEOUT", os.getenv("FIRSTTRY_PYTEST_TIMEOUT", "300"))
+    os.getenv(
+        "FIRSTTRY_CHECK_TESTS_TIMEOUT", os.getenv("FIRSTTRY_PYTEST_TIMEOUT", "300")
+    )
 )
 # Exit code to use when pytest times out
 CHECK_TESTS_TIMEOUT_EXIT_CODE = int(
@@ -88,7 +90,9 @@ def run_gate(gate_name: str):
         # a no-arg call when necessary to preserve test compatibility.
         def _call_check_tests_with_fallback():
             try:
-                return check_tests(pytest_args=["pytest", "-q", "-m", "not slow", "--maxfail=1"])
+                return check_tests(
+                    pytest_args=["pytest", "-q", "-m", "not slow", "--maxfail=1"]
+                )
             except TypeError:
                 return check_tests()
 
@@ -242,7 +246,10 @@ def check_tests(
         # implementation recorded at import time; if it has been monkeypatched
         # then allow the monkeypatched function to run so tests that assert
         # parsing behavior still exercise the code path.
-        if "PYTEST_CURRENT_TEST" in os.environ and subprocess.run is _ORIGINAL_SUBPROCESS_RUN:
+        if (
+            "PYTEST_CURRENT_TEST" in os.environ
+            and subprocess.run is _ORIGINAL_SUBPROCESS_RUN
+        ):
             return GateResult(
                 gate_id="tests",
                 ok=True,
@@ -280,7 +287,11 @@ def check_tests(
             )
         except TypeError:
             # Monkeypatch replacement for subprocess.run may not accept all kwargs
-            result = subprocess.run(cmd if "cmd" in locals() else list(pytest_args), capture_output=True, text=True)
+            result = subprocess.run(
+                cmd if "cmd" in locals() else list(pytest_args),
+                capture_output=True,
+                text=True,
+            )
 
         # Parse test count from output like "23 passed in 1.5s"
         info = "pytest tests"
