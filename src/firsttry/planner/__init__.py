@@ -9,7 +9,7 @@ __all__ = ["dag", "build_plan"]
 try:
     from .. import planner as _legacy_planner
 
-    build_plan = _legacy_planner.build_plan
+    build_plan = _legacy_planner.build_plan  # type: ignore[attr-defined]
 except Exception:
     pass
 
